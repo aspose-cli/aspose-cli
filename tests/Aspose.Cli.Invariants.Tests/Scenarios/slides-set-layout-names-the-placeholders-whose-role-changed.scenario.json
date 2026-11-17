@@ -130,10 +130,6 @@
       "expect": {
         "exitCode": 4,
         "error": "PLACEHOLDER_NOT_FOUND",
-        "json": [
-          { "path": "error.hint", "contains": "first delete_shape each footer, date and slide-number placeholder of the slide, then put {\"op\":\"set_layout\",\"slides\":\"3\",\"layout\":\"Title Only\"} before this set_title in its batch" },
-          { "path": "error.hint", "contains": "after the set_title set them again with one set_footer that gives the footer's text, showNumber and showDate" }
-        ],
         "files": { "absent": ["never.pptx"] }
       }
     },

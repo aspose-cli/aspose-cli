@@ -79,8 +79,7 @@ internal static class LineSpan
     {
         long last = (long)at + count - 1;
         OperationInvalidException.Require(last <= A1.MaxRows,
-            $"rows {at}-{last} run past the sheet's last row, {A1.MaxRows}",
-            $"Lower count to at most {A1.MaxRows - at + 1}.");
+            $"rows {at}-{last} run past the sheet's last row, {A1.MaxRows}");
         return operation;
     }
 
@@ -89,8 +88,7 @@ internal static class LineSpan
         int first = A1.ParseColumn(at);
         long last = (long)first + count - 1;
         OperationInvalidException.Require(last < A1.MaxColumns,
-            $"{count} columns from {A1.ColumnName(first)} run past the sheet's last column, {A1.ColumnName(A1.MaxColumns - 1)}",
-            $"Lower count to at most {A1.MaxColumns - first}.");
+            $"{count} columns from {A1.ColumnName(first)} run past the sheet's last column, {A1.ColumnName(A1.MaxColumns - 1)}");
         return operation;
     }
 }

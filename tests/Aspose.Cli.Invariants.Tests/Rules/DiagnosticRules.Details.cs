@@ -59,7 +59,7 @@ internal static partial class ContractRules
             .. EnvelopeShapeProblems(catalog, ErrorSchema, definition: null, "the error envelope",
                 required: ["schema", "schemaVersion", "error"], properties: ["schema", "schemaVersion", "error"]),
             .. EnvelopeShapeProblems(catalog, ErrorPayload().SchemaId, definition: null, "error",
-                required: ["code", "message"], properties: ["code", "message", "details", "hint", "docs"]),
+                required: ["code", "message"], properties: ["code", "message", "details", "docs"]),
         ]);
         yield return Check("C-R25", "error schema publishes the details dictionary", () => PublishedDictionaryProblems(catalog));
         foreach (DetailsSample sample in DetailsSamples(catalog))

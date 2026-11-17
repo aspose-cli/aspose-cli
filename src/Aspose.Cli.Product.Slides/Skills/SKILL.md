@@ -24,7 +24,7 @@ A deck exported to PDF is a PDF: edit that file with the PDF Skill (`aspose-cli 
    ```
 
 3. **Existing deck:** inspect the structure, then read only the slides you need. A slide cut
-   short by `--max-chars` has `contentTruncated: true`; `window.next` reads it again, with a
+   short by `--max-chars` has `contentTruncated: true`; `window.next` selects it again, with a
    doubled budget when it alone exceeded the budget.
 
    ```powershell

@@ -766,14 +766,11 @@ public sealed class PdfMutateTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("the subject '采购申请' has characters beyond Latin-1", error.Message, StringComparison.Ordinal);
-        Assert.Contains("encrypt_document", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("--encrypt-env", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("decrypt_document", error.Hint, StringComparison.Ordinal);
         using var reopened = new Document(output, "owner");
         Assert.True(reopened.IsEncrypted);
         Assert.Equal("采购申请", reopened.Info.Subject);
 
-        // The hint's other way: decrypting first saves the text without encryption.
+        // Decrypting first saves the text without encryption.
         string plain = fixture.File("secured.plain.pdf");
         PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
@@ -802,7 +799,7 @@ public sealed class PdfMutateTests
     [InlineData("owner", Permissions.PrintDocument | Permissions.FillForm, "metadata", null)]
     [InlineData("owner", Permissions.PrintDocument, "decrypt_document", null)]
     public void Edit_DisclosesAModificationItsUserPermissionsForbid(
-        string password, Permissions granted, string change, string? hint)
+        string password, Permissions granted, string change, string? expected)
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.File("restricted.pdf");
@@ -844,12 +841,11 @@ public sealed class PdfMutateTests
         });
 
         Warning? warning = result.Warnings?.SingleOrDefault(static item => item.Code == WarningCodes.ProtectionNotEnforced);
-        Assert.Equal(hint is not null, warning is not null);
+        Assert.Equal(expected is not null, warning is not null);
         if (warning is not null)
         {
             Assert.Contains("user password", warning.Message, StringComparison.Ordinal);
             Assert.Contains("changed it", warning.Message, StringComparison.Ordinal);
-            Assert.Contains(hint!, warning.Hint, StringComparison.Ordinal);
         }
 
         if (change == "decrypt")
@@ -905,7 +901,6 @@ public sealed class PdfMutateTests
         Assert.Contains("do not allow set_properties, decrypt_document;", warning.Message, StringComparison.Ordinal);
         Assert.Contains("would change it", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("changed it", warning.Message, StringComparison.Ordinal);
-        Assert.Contains("would not be encrypted", warning.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 
@@ -1138,7 +1133,6 @@ public sealed class PdfMutateTests
         Assert.Empty(tables.Outputs);
         Warning warning = Assert.Single(tables.Warnings!, static warning => warning.Code.Name == "TABLES_NOT_FOUND");
         Assert.Contains("ruling lines", warning.Message, StringComparison.Ordinal);
-        Assert.Contains("pdf extract --what text", warning.Hint, StringComparison.Ordinal);
 
         // A ruled table is found, and then nothing warns.
         PdfExtractResult ruled = PdfExtract.Run(fixture.Session, new PdfExtractRequest
@@ -1223,17 +1217,17 @@ public sealed class PdfMutateTests
 
         Assert.Equal(
             [
-                "9 3 Use a top-level bookmark from 1 through 3.",
-                "1/5 2 Bookmark 1 has 2 child bookmarks; use 1/1 through 1/2.",
-                "9/1 3 Use a top-level bookmark from 1 through 3.",
-                "2/1 0 Bookmark 2 has no child bookmarks.",
+                "9 3",
+                "1/5 2",
+                "9/1 3",
+                "2/1 0",
             ],
             result.Applied.Select(static applied =>
             {
                 ErrorPayload error = applied.Error!;
                 Assert.Equal("BOOKMARK_NOT_FOUND", error.Code);
                 return $"{error.Details!["requested"]!.GetValue<string>()} "
-                    + $"{error.Details["availableCount"]!.GetValue<int>()} {error.Hint}";
+                    + $"{error.Details["availableCount"]!.GetValue<int>()}";
             }));
     }
 
@@ -1870,8 +1864,6 @@ public sealed class PdfMutateTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains($"'{name}'", error.Message, StringComparison.Ordinal);
-        Assert.Contains("add_stamp_image", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("pdf inspect --detail forms", error.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
         Assert.Equal(before, File.ReadAllBytes(input));
     }
@@ -2022,8 +2014,7 @@ public sealed class PdfMutateTests
         Assert.Equal("no-match", warning.Details["reason"]!.GetValue<string>());
         Assert.DoesNotContain("op-0001", warning.Message, StringComparison.Ordinal);
         // Like a verification issue, the warning never repeats the pattern.
-        Assert.DoesNotContain("4711", warning.Message + warning.Hint, StringComparison.Ordinal);
-        Assert.Contains("pdf search", warning.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("4711", warning.Message, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -2064,7 +2055,7 @@ public sealed class PdfMutateTests
         Assert.Contains("'op-0001' (redact_text) on page 1", warning.Message, StringComparison.Ordinal);
         Assert.Contains("'op-0002' (redact_area) on page 2", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("op-0003", warning.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("Jane", warning.Message + warning.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("Jane", warning.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

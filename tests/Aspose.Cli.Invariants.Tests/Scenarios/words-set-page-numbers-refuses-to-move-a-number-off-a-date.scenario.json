@@ -15,8 +15,7 @@
         "exitCode": 4,
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.message", "contains": "also holds a DATE field" },
-          { "path": "error.hint", "contains": "rewrite the footer with set_footer first" }
+          { "path": "error.message", "contains": "also holds a DATE field" }
         ],
         "files": { "absent": ["moved-with-text.docx"], "unchanged": ["footer.rtf"] }
       }
@@ -38,8 +37,7 @@
         "exitCode": 4,
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.message", "contains": "also holds a DATE field, which text would replace" },
-          { "path": "error.hint", "contains": "{\"op\":\"set_page_numbers\",\"location\":\"footer\",\"alignment\":\"right\"} keeps that paragraph, its words and its DATE field as they are" }
+          { "path": "error.message", "contains": "also holds a DATE field, which text would replace" }
         ],
         "files": { "absent": ["text-in-place.docx"], "unchanged": ["footer.rtf"] }
       }

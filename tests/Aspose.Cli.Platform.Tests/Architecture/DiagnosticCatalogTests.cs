@@ -49,7 +49,7 @@ public sealed class DiagnosticCatalogTests
     }
 
     [Fact]
-    public void Build_RejectsDuplicateOwnerSchemaExitAndHintViolations()
+    public void Build_RejectsDuplicateOwnerSchemaAndExitViolations()
     {
         DiagnosticDescriptor valid = DiagnosticDescriptor.Error(
             new ErrorCode("ALPHA_FAILURE", ExitCode.ValidationError),

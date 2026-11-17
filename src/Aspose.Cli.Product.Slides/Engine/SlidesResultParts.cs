@@ -42,7 +42,6 @@ internal static class SlidesResultParts
             {
                 warnings.Add(new Warning(SlidesDiagnostics.ChartTitleOverlaid, $"The chart '{chart}' on slide {slide} has an implicit automatic title, which this output draws over the plot, enlarging the plot area.")
                 {
-                    Hint = "Inspect the chart in PowerPoint and restore its title layout there if it changed.",
                     Location = SlidesStateProjection.SlideAddress(slide),
                     AffectsCompleteness = true,
                 });

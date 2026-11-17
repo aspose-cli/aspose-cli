@@ -48,8 +48,7 @@ internal static partial class SlidesMarkdownBuilder
             throw CliErrors.ContentUnsupported(
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"The Markdown table under '{title}' has {rows.Count} rows and {header.Count} columns; a slide table holds at most {SlidesInsertTableOp.MaxRows} rows and {SlidesInsertTableOp.MaxCols} columns."),
-                "Split the table into several tables under their own headings.");
+                    $"The Markdown table under '{title}' has {rows.Count} rows and {header.Count} columns; a slide table holds at most {SlidesInsertTableOp.MaxRows} rows and {SlidesInsertTableOp.MaxCols} columns."));
         }
 
         index = next - 1;

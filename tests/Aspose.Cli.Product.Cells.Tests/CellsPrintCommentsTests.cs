@@ -127,21 +127,6 @@ public sealed class CellsPrintCommentsTests : IDisposable
         Assert.Equal("as-displayed", PrintComments("Summary"));
     }
 
-    /// <summary>The warning of the comments a pdf leaves out names the field that keeps them, as it is written.</summary>
-    [Theory]
-    [InlineData("pdf")]
-    [InlineData("xps")]
-    public void Hint_NamesTheFieldThatPrintsTheComments(string format)
-    {
-        Book();
-
-        string hint = Text(Assert.Single(Lossy(Convert(format))), "hint");
-
-        Assert.Contains("set printComments to sheet-end with set_page_setup", hint, StringComparison.Ordinal);
-        Assert.Contains("cells inspect <file> --detail comments", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("no operation does", hint, StringComparison.Ordinal);
-    }
-
     /// <summary>A value outside the two the operation writes is refused with the two named, as-displayed included.</summary>
     [Theory]
     [InlineData("as-displayed")]
@@ -229,8 +214,7 @@ public sealed class CellsPrintCommentsTests : IDisposable
     /// <summary>
     /// A print area prints only the comments on the cells of its bounded ranges: a band of whole
     /// columns or rows prints none of them (CELLS-PRINT-AREA-BAND-COMMENTS), so a pdf of a sheet set
-    /// to print its comments at its end names every comment a band holds as left out, and the hint
-    /// says the ranges must be bounded.
+    /// to print its comments at its end names every comment a band holds as left out.
     /// </summary>
     [Theory]
     [InlineData("A:C", 4)]
@@ -256,7 +240,6 @@ public sealed class CellsPrintCommentsTests : IDisposable
         JsonNode lossy = Assert.Single(Lossy(Convert("pdf")));
 
         Assert.Contains($"leaves out {unprinted} comment(s)", Text(lossy, "message"), StringComparison.Ordinal);
-        Assert.Contains("none for whole rows or columns", Text(lossy, "hint"), StringComparison.Ordinal);
     }
 
     /// <summary>

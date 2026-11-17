@@ -20,8 +20,7 @@
         "json": [
           { "path": "pages[0].text", "notContains": "SECRETALICE" },
           { "path": "warnings[0].code", "equals": "FORM_VALUES_NOT_IN_TEXT" },
-          { "path": "warnings[0].message", "equals": "The page text leaves out the values of 2 filled form fields on the pages read: 'name', 'ssn'." },
-          { "path": "warnings[0].hint", "startsWith": "A field's value is not page text: read the values with 'aspose-cli pdf inspect " }
+          { "path": "warnings[0].message", "equals": "The page text leaves out the values of 2 filled form fields on the pages read: 'name', 'ssn'." }
         ]
       }
     },
@@ -32,8 +31,7 @@
         "json": [
           { "path": "window.returned", "equals": 0 },
           { "path": "warnings[0].code", "equals": "FORM_VALUES_NOT_IN_TEXT" },
-          { "path": "warnings[0].message", "equals": "The page text leaves out the values of 2 filled form fields on the pages read: 'name', 'ssn'." },
-          { "path": "warnings[0].hint", "startsWith": "A field's value is not page text: read the values with 'aspose-cli pdf inspect " }
+          { "path": "warnings[0].message", "equals": "The page text leaves out the values of 2 filled form fields on the pages read: 'name', 'ssn'." }
         ]
       }
     },

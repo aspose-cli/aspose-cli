@@ -50,6 +50,9 @@ public sealed record NotFoundDetails
     /// <summary>Where the missing file was configured, such as an environment variable; present when a setting names it.</summary>
     public string? Source { get; init; }
 
+    /// <summary>The worksheet whose targets available lists; present for a target looked up on one sheet.</summary>
+    public string? Sheet { get; init; }
+
     /// <summary>
     /// The names that exist, in document order; present for named targets and truncated to 50
     /// when availableCount is larger.

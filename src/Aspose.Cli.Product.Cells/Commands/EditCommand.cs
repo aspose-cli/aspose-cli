@@ -50,7 +50,7 @@ internal static class EditCommand
             {
                 if (parse.GetValue(noRecalc) && bounded.IsVerifyRequested(parse))
                 {
-                    throw CliErrors.OptionInvalid("--verify", "cannot be combined with --no-recalc", "Remove --no-recalc so formula-result verification is reliable.");
+                    throw CliErrors.OptionInvalid("--verify", "cannot be combined with --no-recalc");
                 }
             },
             examples:

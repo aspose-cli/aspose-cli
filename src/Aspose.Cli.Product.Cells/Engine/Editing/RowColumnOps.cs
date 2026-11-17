@@ -28,8 +28,7 @@ internal static class RowColumnOps
     {
         int last = sheet.Cells.MaxDataRow;
         OperationInvalidException.Require(last < op.At - 1 || last + op.Count < A1.MaxRows,
-            $"inserting {op.Count} rows at row {op.At} would push the data in row {last + 1} past the sheet's last row, {A1.MaxRows}",
-            "Delete or move the data at the bottom of the sheet first, or insert fewer rows.");
+            $"inserting {op.Count} rows at row {op.At} would push the data in row {last + 1} past the sheet's last row, {A1.MaxRows}");
         sheet.Cells.InsertRows(op.At - 1, op.Count, UpdateAll);
     }
 
@@ -45,8 +44,7 @@ internal static class RowColumnOps
         int at = ColumnIndex(op.At);
         int last = sheet.Cells.MaxDataColumn;
         OperationInvalidException.Require(last < at || last + op.Count < A1.MaxColumns,
-            $"inserting {op.Count} columns at column {op.At} would push the data in column {A1.ColumnName(last)} past the sheet's last column, {A1.ColumnName(A1.MaxColumns - 1)}",
-            "Delete or move the data at the right of the sheet first, or insert fewer columns.");
+            $"inserting {op.Count} columns at column {op.At} would push the data in column {A1.ColumnName(last)} past the sheet's last column, {A1.ColumnName(A1.MaxColumns - 1)}");
         sheet.Cells.InsertColumns(at, op.Count, UpdateAll);
     }
 

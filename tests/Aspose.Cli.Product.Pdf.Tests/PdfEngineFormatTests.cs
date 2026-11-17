@@ -48,21 +48,6 @@ public sealed class PdfEngineFormatTests
     }
 
     /// <summary>
-    /// A convert format said to read every page whatever --pages selects is one the engine writes
-    /// by removing the pages left out; every other is written from the selected pages alone.
-    /// </summary>
-    [Fact]
-    public void ConvertReadsEveryPage_IsTheEnginesWriteFromTheWholeDocument()
-    {
-        foreach (FormatDescriptor format in PdfFormats.Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert)))
-        {
-            Assert.True(
-                PdfFormats.ConvertReadsEveryPage(format) == (PdfEngineFormats.Of(format.Id).Write is PdfEngineWrite.Document or PdfEngineWrite.Archive),
-                format.Id);
-        }
-    }
-
-    /// <summary>
     /// A raster render format is one the engine writes with a page device, and a raster convert
     /// format is the multi-page TIFF; no vector format has a device, and every device has the
     /// encoding a grid drawn on its raster is written in.

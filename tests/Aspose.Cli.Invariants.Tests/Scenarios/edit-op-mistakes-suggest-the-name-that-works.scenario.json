@@ -29,10 +29,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "replace"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'replace'"
           }
         ],
         "files": {
@@ -54,10 +50,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "replace"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'replace'"
           }
         ],
         "files": {
@@ -79,10 +71,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "kind"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'kind'"
           }
         ],
         "files": {
@@ -104,10 +92,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "rect"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'rect'"
           }
         ],
         "files": {
@@ -129,10 +113,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "list"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'list'"
           }
         ],
         "files": {
@@ -154,10 +134,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "list"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'list'"
           }
         ],
         "files": {
@@ -179,10 +155,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "list"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'list'"
           }
         ],
         "files": {
@@ -204,10 +176,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "format_range"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'format_range'"
           }
         ],
         "files": {
@@ -229,10 +197,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "add_watermark_text"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'add_watermark_text'"
           }
         ],
         "files": {

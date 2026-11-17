@@ -12,9 +12,5 @@ internal static class ProductCatalogRouting
             ? product!
             : throw CliErrors.OptionInvalid(
                 "--product",
-                $"unknown product '{productId}'",
-                $"Use one of: {string.Join(
-                    ", ",
-                catalog.Products.Select(
-                        static item => item.Manifest.Id))}.");
+                $"unknown product '{productId}'");
 }

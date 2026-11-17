@@ -11,8 +11,7 @@
         "error": "OPTION_INVALID",
         "json": [
           { "path": "error.message", "equals": "--to openxps contradicts --out 'contract.openxps': its .openxps extension is not an extension of openxps. Must be one of: .oxps." },
-          { "path": "error.details", "equals": { "format": "openxps", "option": "--out", "extension": ".openxps", "available": [".oxps"] } },
-          { "path": "error.hint", "contains": "contract.oxps" }
+          { "path": "error.details", "equals": { "format": "openxps", "option": "--out", "extension": ".openxps", "available": [".oxps"] } }
         ],
         "files": { "nothingWritten": true }
       }

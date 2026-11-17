@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
 
@@ -21,17 +23,11 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <param name="Removed">The entries whose page the caller left out of the output.</param>
 internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNavigationCensus Removed)
 {
-    // The most bookmark addresses a hint names.
-    private const int NamedBookmarks = 20;
-
     /// <summary>The addresses in the output's outline of the bookmarks <see cref="Stranded"/> counts, when an edit found them.</summary>
     internal IReadOnlyList<string> StrandedBookmarks { get; init; } = [];
 
     /// <summary>The addresses in the output's outline of the bookmarks <see cref="Removed"/> counts, when an edit found them.</summary>
     internal IReadOnlyList<string> RemovedBookmarks { get; init; } = [];
-
-    /// <summary>The addresses in the output's outline of every other bookmark, which a hint's deletion must not reach.</summary>
-    internal IReadOnlyList<string> KeptBookmarks { get; init; } = [];
 
     /// <summary>What a navigation entry is.</summary>
     internal enum Kind
@@ -134,7 +130,6 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
         {
             StrandedBookmarks = strandedBookmarks,
             RemovedBookmarks = removedBookmarks,
-            KeptBookmarks = [.. after.Select(static entry => entry.Address).OfType<string>().Except(strandedBookmarks).Except(removedBookmarks)],
         };
     }
 
@@ -142,21 +137,19 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
     /// The warnings of an edit: one, which leaves the output incomplete, for the entries whose
     /// page is still in the output, and one for those whose page the edit deleted.
     /// </summary>
-    /// <param name="outlineInspection">The quoted command line that reads the bookmarks of the input as they were, or null when none can.</param>
-    internal IEnumerable<Warning> Warnings(string? outlineInspection) => new[]
+    internal IEnumerable<Warning> Warnings() => new[]
     {
         StrandedWarning(
             "no longer lead to a page, although the page they led to is still in the output: the edit could not point them at it, "
-                + "as with a destination whose top reads 0 on a moved page, which the SDK cannot tell apart from an omitted top",
-            StrandedHint(outlineInspection)),
-        RemovedWarning("lead to pages the edit deleted", DeletedHint()),
+                + "as with a destination whose top reads 0 on a moved page, which the SDK cannot tell apart from an omitted top"),
+        RemovedWarning("lead to pages the edit deleted"),
     }.OfType<Warning>();
 
     /// <summary>The warning for <see cref="Stranded"/>, which leaves the output incomplete, or null when it counts nothing.</summary>
-    internal Warning? StrandedWarning(string cause, string hint) => ToWarning(Stranded, cause, hint, affectsCompleteness: true);
+    internal Warning? StrandedWarning(string cause) => ToWarning(Stranded, StrandedBookmarks, cause, affectsCompleteness: true);
 
     /// <summary>The warning for <see cref="Removed"/>, which leaves the output as the caller asked, or null when it counts nothing.</summary>
-    internal Warning? RemovedWarning(string cause, string hint) => ToWarning(Removed, cause, hint, affectsCompleteness: false);
+    internal Warning? RemovedWarning(string cause) => ToWarning(Removed, RemovedBookmarks, cause, affectsCompleteness: false);
 
     /// <summary>
     /// The warning for bookmarks a copy opens at their whole page rather than at the place in it
@@ -165,56 +158,16 @@ internal sealed record PdfNavigationLoss(PdfNavigationCensus Stranded, PdfNaviga
     /// <param name="bookmarks">How many bookmarks lost their place.</param>
     /// <param name="output">What holds them, such as "parts".</param>
     internal static Warning? Repositioned(int bookmarks, string output) => bookmarks == 0 ? null : new Warning(PdfDiagnostics.NavigationDegraded,
-        $"{bookmarks} bookmark(s) of the {output} open their page as a whole, not at the place in it they opened in the input.")
-    {
-        Hint = "They still open their page. No operation sets the place in a page a bookmark opens at: tell the user if that place matters.",
-    };
+        $"{bookmarks} bookmark(s) of the {output} open their page as a whole, not at the place in it they opened in the input.");
 
-    private static Warning? ToWarning(PdfNavigationCensus lost, string cause, string hint, bool affectsCompleteness) => lost.Total == 0 ? null
+    private static Warning? ToWarning(PdfNavigationCensus lost, IReadOnlyList<string> bookmarks, string cause, bool affectsCompleteness) => lost.Total == 0 ? null
         : new Warning(PdfDiagnostics.NavigationDegraded,
             $"{lost.Bookmarks} bookmark(s), {lost.Links} link(s) and {lost.NamedDestinations} named destination(s) {cause}.")
         {
             AffectsCompleteness = affectsCompleteness,
-            Hint = hint,
+            Details = bookmarks.Count == 0 ? null
+                : new JsonObject { ["bookmarks"] = new JsonArray([.. bookmarks.Take(CliErrors.MaximumAvailableNames).Select(static address => (JsonNode)address)]) },
         };
-
-    private string StrandedHint(string? outlineInspection) => Sentences(
-        Stranded.Bookmarks == 0
-            ? null
-            : $"Read the page each bookmark of the input opened with {outlineInspection ?? "'pdf inspect --detail outline' on a copy of the original"}.",
-        Deletion(StrandedBookmarks, "the bookmarks the outline of the output shows without a page with delete_bookmarks") is { } deletion
-            ? $"In the same batch, after the page operations, delete {deletion} and add them again with add_bookmark at the numbers their pages have in the output."
-            : null,
-        Held(StrandedBookmarks, "and add_bookmark adds only a bookmark that opens a page, so what they hold cannot always be added back: tell the user which no longer open their page"),
-        Stranded.Links + Stranded.NamedDestinations == 0
-            ? null
-            : "No operation re-creates links or named destinations: tell the user which no longer lead to their page.");
-
-    private string DeletedHint() => Sentences(
-        "The pages they led to were deleted as the batch asked.",
-        Deletion(RemovedBookmarks, "delete_bookmarks") is { } deletion ? $"Bookmarks you no longer need can be removed with {deletion}." : null,
-        Held(RemovedBookmarks, "so keep them or tell the user"),
-        Removed.Links + Removed.NamedDestinations == 0 ? null : "No operation deletes links or named destinations: tell the user they lead nowhere.");
-
-    // The delete_bookmarks operation of the bookmarks at the addresses that hold no kept bookmark, without those another of
-    // them holds, which it deletes with it; tooMany when there are more than a hint names, null when there are none.
-    private string? Deletion(IReadOnlyList<string> bookmarks, string tooMany)
-    {
-        string[] free = [.. bookmarks.Where(address => !KeptBookmarks.Any(kept => Under(kept, address)))];
-        string[] deleted = [.. free.Where(address => !free.Any(parent => Under(address, parent)))];
-        return deleted.Length is 0 ? null : deleted.Length > NamedBookmarks ? tooMany
-            : $"{{\"op\":\"delete_bookmarks\",\"bookmarks\":[{string.Join(",", deleted.Select(static address => $"\"{address}\""))}]}}";
-    }
-
-    // The bookmarks at the addresses that hold a kept bookmark, which deleting them would delete too.
-    private string? Held(IReadOnlyList<string> bookmarks, string advice) =>
-        bookmarks.Where(address => KeptBookmarks.Any(kept => Under(kept, address))).ToArray() is { Length: > 0 } held
-            ? $"Bookmark(s) {string.Join(", ", held)} of the output lost their page but hold other bookmarks, which deleting them deletes too, {advice}."
-            : null;
-
-    private static bool Under(string address, string parent) => address.StartsWith(parent + "/", StringComparison.Ordinal);
-
-    private static string Sentences(params string?[] sentences) => string.Join(' ', sentences.OfType<string>());
 
     private static PdfNavigationCensus Census(int[] counts) =>
         new(counts[(int)Kind.Bookmark], counts[(int)Kind.Link], counts[(int)Kind.NamedDestination]);

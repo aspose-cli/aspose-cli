@@ -21,13 +21,10 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// more than 15 digits), and anything else — including the empty string — is
 /// text. Compiled values use the CLR shapes of ops parsed from an
 /// <c>--ops</c> document (string/bool, a number as a decimal or a double), so batching,
-/// dry runs, recalculation and the preview hint apply to them unchanged.
+/// dry runs and recalculation apply to them unchanged.
 /// </remarks>
 internal static class SetDirectiveParser
 {
-    private const string Example =
-        "Example: --set \"Sales!B3=42\" writes a number, --set \"Sales!G2==E2*F2\" sets a formula.";
-
     /// <summary>Compiles one directive; see the class remarks for the grammar.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> naming what is wrong with the directive.</exception>
     public static CellsOp Parse(string directive)
@@ -39,7 +36,7 @@ internal static class SetDirectiveParser
         int separator = directive.IndexOf('=');
         if (separator < 0)
         {
-            throw Invalid(directive, "there is no '=' between the target cell and the value", Example);
+            throw Invalid(directive, "there is no '=' between the target cell and the value");
         }
 
         (string sheet, string cell) = ParseTarget(directive, directive[..separator]);
@@ -49,8 +46,7 @@ internal static class SetDirectiveParser
         {
             if (rawValue.Length == 1)
             {
-                throw Invalid(directive, "the formula after '=' is empty",
-                    "Write the formula after the second '=', e.g. --set \"Sales!G2==E2*F2\".");
+                throw Invalid(directive, "the formula after '=' is empty");
             }
 
             return new SetFormulaOp { Sheet = sheet, Range = cell, Formula = rawValue };
@@ -63,7 +59,7 @@ internal static class SetDirectiveParser
     {
         if (target.Trim().Length == 0)
         {
-            throw Invalid(directive, "the target cell before '=' is missing", Example);
+            throw Invalid(directive, "the target cell before '=' is missing");
         }
 
         RangeSpec spec;
@@ -73,24 +69,18 @@ internal static class SetDirectiveParser
         }
         catch (CliException ex) when (ex.Code == ErrorCodes.OpsInvalid)
         {
-            throw Invalid(directive, ex.Message,
-                "The target must be a sheet-qualified single cell such as Sales!B3 " +
-                "('$' markers are allowed). " + Example);
+            throw Invalid(directive, ex.Message);
         }
 
         if (spec.SheetName is not { } sheet)
         {
-            throw Invalid(directive, $"the target '{target}' does not name a sheet; use SHEET!CELL",
-                "Prefix the cell with the sheet name and '!'; quote names that need it " +
-                "('My Sheet'!A1, a quote inside the name doubled as ''). " + Example);
+            throw Invalid(directive, $"the target '{target}' does not name a sheet; use SHEET!CELL");
         }
 
         if (spec.Range.CellCount != 1)
         {
             throw Invalid(directive,
-                $"the target '{target}' is a {spec.Range.RowCount}x{spec.Range.ColumnCount} range, not a single cell",
-                "--set writes one cell per flag. To fill a range, use --ops with a " +
-                "set_values matrix or a set_formula range.");
+                $"the target '{target}' is a {spec.Range.RowCount}x{spec.Range.ColumnCount} range, not a single cell");
         }
 
         return (sheet, A1.FormatCell(spec.Range.Start));
@@ -121,6 +111,6 @@ internal static class SetDirectiveParser
             && Math.Abs((double)written - number) <= Math.Abs(number) * 1e-15 ? written : number;
     }
 
-    private static CliException Invalid(string directive, string reason, string hint) =>
-        CliErrors.OptionInvalid("--set", $"in '{directive}': {reason}", hint);
+    private static CliException Invalid(string directive, string reason) =>
+        CliErrors.OptionInvalid("--set", $"in '{directive}': {reason}");
 }

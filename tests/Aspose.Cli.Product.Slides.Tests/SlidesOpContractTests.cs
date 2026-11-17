@@ -120,7 +120,6 @@ public sealed class SlidesOpContractTests
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
-        Assert.StartsWith("Did you mean 'path'", error.Hint, StringComparison.Ordinal);
     }
 
     private static SlidesOpsBatch Parse(string json) =>

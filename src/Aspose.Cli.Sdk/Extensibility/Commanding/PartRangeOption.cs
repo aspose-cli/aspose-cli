@@ -1,7 +1,5 @@
 using System.CommandLine;
-using System.Runtime.CompilerServices;
 using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Formats;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -12,23 +10,14 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// </summary>
 public sealed class PartRangeOption
 {
-    // Each option, with the outputs for which its selection keeps the engine from reading the parts it leaves out.
-    private static readonly ConditionalWeakTable<Option, Narrowing> Narrowings = [];
-
     private readonly Option<string?> _range;
 
     /// <summary>Creates the option.</summary>
     /// <param name="part">The part noun, such as <c>page</c>; the option is named after its plural.</param>
     /// <param name="defaultText">What the command processes when the option is omitted, such as <c>every page</c>.</param>
     /// <param name="onlyWith">The condition the option needs, such as <c>--by pages</c>, or null.</param>
-    /// <param name="narrowsReads">
-    /// Whether the engine reads only the selected parts when the command writes an output in the
-    /// given format, so a selection within an evaluation limit keeps the command within it and the
-    /// SDK may offer one; false for an output made by removing the other parts from the document,
-    /// which reads them. Null when the engine reads only the selected parts whatever the command writes.
-    /// </param>
     /// <param name="formats">The ids of the only output formats that hold a selection (<see cref="ParameterMetadata.Formats"/>), or null for every one.</param>
-    public PartRangeOption(string part, string defaultText, string? onlyWith = null, Func<FormatDescriptor, bool>? narrowsReads = null, IReadOnlyList<string>? formats = null)
+    public PartRangeOption(string part, string defaultText, string? onlyWith = null, IReadOnlyList<string>? formats = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(part);
         ArgumentException.ThrowIfNullOrWhiteSpace(defaultText);
@@ -40,39 +29,13 @@ public sealed class PartRangeOption
                 + (onlyWith is null ? string.Empty : $" Only with {onlyWith}."),
         }.WithInput(InputKind.None, formats: formats);
         Options = [_range];
-        Narrowings.Add(_range, new Narrowing(narrowsReads));
     }
-
-    /// <summary>
-    /// The selection option of <paramref name="command"/> over <paramref name="unit"/>, such as
-    /// <c>--pages</c> for <c>pages</c>, when a selection keeps the engine from reading the parts it
-    /// leaves out of the output in <paramref name="output"/>'s format; null otherwise.
-    /// </summary>
-    /// <param name="command">The command.</param>
-    /// <param name="unit">The unit of a limit, such as <c>pages</c>.</param>
-    /// <param name="output">The format of the command's output, asked only of an option that narrows the reads of some outputs.</param>
-    internal static string? NarrowingOption(Command command, string unit, Func<FormatDescriptor> output) =>
-        command.Options.FirstOrDefault(option => option.Name == "--" + unit) is { } option
-            && Narrowings.TryGetValue(option, out Narrowing? narrowing)
-            && (narrowing.ForOutput is null || narrowing.ForOutput(output()))
-            ? option.Name
-            : null;
-
-    /// <summary>Whether <paramref name="option"/> is a range option that selects the parts of <paramref name="unit"/>, such as <c>--pages</c> for pages.</summary>
-    internal static bool Selects(Option option, SplitBy unit) =>
-        Narrowings.TryGetValue(option, out _) && option.Name == "--" + SplitPlan.Spell(unit);
 
     /// <summary>The option name, such as <c>--pages</c>.</summary>
     public string Name => _range.Name;
 
     /// <summary>Whether an output in format <paramref name="format"/> holds a selection, as the option declares.</summary>
     public bool AppliesTo(string format) => _range.GetParameterMetadata().AppliesTo(format);
-
-    /// <summary>
-    /// What to do instead of a selection that is not one, such as naming the part through another
-    /// option; it leads the hint of the error. Null for the selection syntax alone.
-    /// </summary>
-    public string? InvalidHint { get; init; }
 
     /// <summary>The option, for a product command's option list.</summary>
     public IReadOnlyList<Option> Options { get; }
@@ -87,8 +50,5 @@ public sealed class PartRangeOption
     /// <summary>The parsed range, or null when the option is omitted.</summary>
     /// <exception cref="Errors.CliException"><c>OPTION_INVALID</c> when the value is not a selection.</exception>
     public PageRange? ReadRange(ParseResult parse) =>
-        Read(parse) is { } text ? PageRange.ParseOption(Name, text, InvalidHint) : null;
-
-    /// <summary>The outputs for which an option's selection narrows the engine's reads; null for every output.</summary>
-    private sealed record Narrowing(Func<FormatDescriptor, bool>? ForOutput);
+        Read(parse) is { } text ? PageRange.ParseOption(Name, text) : null;
 }

@@ -27,11 +27,10 @@ internal static class ReadCommand
             {
                 string? range = parse.GetValue(blocks);
                 int characters = maxChars.Read(parse);
-                int count = parse.GetInRange(maxBlocks, "Use a positive bounded block budget.");
+                int count = parse.GetInRange(maxBlocks);
                 return new WordsReadRequest
                 {
                     Input = standard.Input,
-                    Continuation = standard.ContinuationOf(standard.Input),
                     Blocks = range is null ? null : PageRange.ParseOption(blocks.Name, range),
                     Section = parse.GetValue(section),
                     Content = parse.GetValue(content) ?? WordsReadContents.Text,
@@ -42,8 +41,8 @@ internal static class ReadCommand
             },
             Table)
         {
-            Finish = static (_, request, result, standard) =>
-                result with { Window = result.Window with { Next = Next(standard.Continuation(), request, result) } },
+            Finish = static (_, request, result, _) =>
+                result with { Window = result.Window with { Next = Next(request, result) } },
             Examples =
             [
                 "words read contract.docx --blocks 1-30 --content full --output-format json",
@@ -70,11 +69,11 @@ internal static class ReadCommand
     }
 
     /// <summary>
-    /// The read that resumes where this one stopped, or null when it covered the selection.
-    /// The section and content filters travel with it, so the block range may name blocks the
-    /// filters then skip.
+    /// The option values of the read that resumes where this one stopped, or null when it covered
+    /// the selection. The section and content filters stay as given, so the block range may name
+    /// blocks the filters then skip.
     /// </summary>
-    private static string? Next(ContinuationCommand resume, WordsReadRequest request, WordsReadResult result)
+    private static IReadOnlyDictionary<string, string>? Next(WordsReadRequest request, WordsReadResult result)
     {
         if (!result.Window.Truncated || result.BlockCount == 0)
         {
@@ -83,25 +82,9 @@ internal static class ReadCommand
 
         IReadOnlyList<int> selection = request.Blocks?.Resolve(result.BlockCount, WordsDiagnostics.BlockNotFound, "block")
             ?? Enumerable.Range(1, result.BlockCount).ToArray();
-        if (ReadContinuation.After(
+        return ReadContinuation.After(
                 selection,
                 [.. result.Blocks.Select(static block => new ReadPart(block.Block, block.ContentTruncated))],
-                request.MaxCharacters) is not { } continuation)
-        {
-            return null;
-        }
-
-        ContinuationCommand next = resume
-            .Option("--blocks", continuation.Parts);
-        if (request.Section is { } section)
-        {
-            next.Option("--section", section);
-        }
-
-        return next
-            .Option("--content", request.Content)
-            .Option(MaxCharactersOption.Name, continuation.MaxCharacters)
-            .Option("--max-blocks", request.MaxBlocks)
-            .ToString();
+                request.MaxCharacters)?.Next("--blocks");
     }
 }

@@ -67,8 +67,7 @@ internal static class PdfRender
                 .Select(static format => format.Id)];
             throw CliErrors.OptionInvalid(
                 PdfOptionNames.Grid,
-                $"applies only to {Listed(raster, "and")} output",
-                $"Render the page with {Listed([.. raster.Select(static id => "--to " + id)], "or")} to draw a coordinate grid.");
+                $"applies only to {Listed(raster, "and")} output");
         }
 
         return PdfGridOverlay.Describe(spacing);

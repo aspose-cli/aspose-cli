@@ -30,9 +30,7 @@ internal static class WordsCompare
         {
             throw new CliException(
                 WordsDiagnostics.RevisionsUnresolved,
-                "Words comparison requires both source documents to have no existing revisions.",
-                hint: "List the revisions with 'aspose-cli words inspect <file> --detail revisions'. "
-                    + "Accept or reject revisions explicitly in copies of both documents, then compare again.");
+                "Words comparison requires both source documents to have no existing revisions.");
         }
 
         Document compared = leftLoaded.Document.Clone();
@@ -54,7 +52,7 @@ internal static class WordsCompare
             OutputProtection protection = OutputProtection.For(written, encrypt: null, leftLoaded.Protection, request.LeftPassword);
             SaveOptions options = WordsSavePipeline.Options(format, protection.Password);
             WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
-            conversion = PrepareConversion(compared, format, leftLoaded.Evaluation, redline: true, revised: request.Revised is { } revised ? (revised, redline.Path) : null);
+            conversion = PrepareConversion(compared, format, leftLoaded.Evaluation, redline: true);
             PublishedFile file = session.Outputs.Write(redline.Path, written, redline.Overwrite, compared, temp => compared.Save(temp, options),
                 encrypted: protection.Encrypted);
             output = FileObjects.Output(file, written, encrypted: protection.Encrypted);
@@ -85,7 +83,7 @@ internal static class WordsCompare
                 CompareWarnings(leftLoaded, rightLoaded),
                 format is null ? null : [.. conversion!, .. SaveWarnings(leftLoaded, format)],
                 revisions.Length > SampleLimit
-                    ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length, "Write the redline with --out to review every revision.")]
+                    ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length)]
                     : null),
         };
     }

@@ -24,10 +24,7 @@ public sealed class WordsMarkdownDrawingTests
     // The drawings of Drawn: two pictures, a chart, a group of a picture and a rectangle, a footnote's picture and a text box.
     private const string LeftOut = "The md output holds the text alone and leaves out 4 picture(s), 1 chart(s) and 2 other drawing(s), such as shapes, text boxes, WordArt and SmartArt; the text of shapes and text boxes stays in the body.";
 
-    /// <summary>
-    /// A redline compare writes into Markdown leaves out the drawings as a convert does, and its
-    /// hint names the pictures of the revised document; the scenarios run the command it gives.
-    /// </summary>
+    /// <summary>A redline compare writes into Markdown leaves out the drawings as a convert does.</summary>
     [Fact]
     public void CompareIntoMarkdown_LeavesOutTheDrawingsAsAConvertDoes()
     {
@@ -48,7 +45,6 @@ public sealed class WordsMarkdownDrawingTests
 
         Warning warning = Assert.Single(result.Warnings ?? [], static warning => warning.Message.Contains("holds the text alone", StringComparison.Ordinal));
         Assert.Equal(LeftOut, warning.Message);
-        Assert.Contains("those of the revised document", warning.Hint, StringComparison.Ordinal);
         Assert.DoesNotContain("data:", File.ReadAllText(output), StringComparison.Ordinal);
     }
 

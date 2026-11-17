@@ -80,15 +80,12 @@ public sealed class MistakeTests
         Assert.Empty(mistake.Suggestions);
         Assert.Null(mistake.Question);
         Assert.Equal(string.Empty, mistake.Aside());
-        Assert.Equal("Use one of the names in details.available.", mistake.Hint("Use one of the names in details.available."));
     }
 
     [Fact]
     public void Hint_AndAside_StateTheSuggestionsTheSameWay()
     {
         var mistake = Mistake.Of("naem", ["name", "title"]);
-
-        Assert.Equal("Did you mean 'name'? Check the field.", mistake.Hint("Check the field."));
         Assert.Equal(" (did you mean 'name'?)", mistake.Aside());
         Assert.Equal(" (did you mean its unused key 'name'?)", mistake.Aside("its unused key"));
     }

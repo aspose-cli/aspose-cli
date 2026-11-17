@@ -469,28 +469,19 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
-    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"line","color":"#2E75B6"}""", new[] { "G2", "G4:G5" })]
-    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E4:F4","at":"G4"}""", new[] { "G2", "G4:G5" })]
-    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"column"}""", new[] { "G2", "G4:G5" })]
-    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F5","at":"H2:H5","kind":"win-loss"}""", new[] { "H2:H5" })]
-    public void AddingSparklinesOverCellsAnotherGroupIsDrawnIn_IsRefusedWithTheOperationsThatClearIt(string operation, string[] cleared)
+    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"line","color":"#2E75B6"}""")]
+    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E4:F4","at":"G4"}""")]
+    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"column"}""")]
+    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F5","at":"H2:H5","kind":"win-loss"}""")]
+    public void AddingSparklinesOverCellsAnotherGroupIsDrawnIn_IsRefused(string operation)
     {
         string path = _fixture.CreateSalesWorkbook($"sparkline-overlap-{Guid.NewGuid():N}.xlsx");
         string seeded = Apply(path, $$"""{"ops":[{{SparklineData}},{{Sparklines}},{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F5","at":"H2:H5"}]}""").Output!.Path;
 
         Aspose.Cli.Sdk.Errors.CliException refused = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() => Apply(seeded, $$"""{"ops":[{{operation}}]}"""));
 
-        // The hint gives the operations that clear the group, ready to run, and says they clear the cells' values too.
         Assert.Equal("OPS_INVALID", refused.Code.Name);
         Assert.Contains("sparkline group", refused.Message, StringComparison.Ordinal);
-        Assert.Contains("values", refused.Hint, StringComparison.Ordinal);
-        string[] clears = [.. System.Text.RegularExpressions.Regex.Matches(refused.Hint!, """\{"op":"clear_range"[^{}]*\}""").Select(static match => match.Value)];
-        Assert.Equal(cleared, clears.Select(static op => System.Text.Json.Nodes.JsonNode.Parse(op)!["range"]!.GetValue<string>()));
-        CellsEditResult clearedGroup = Apply(seeded, $$"""{"ops":[{{string.Join(",", clears)}}]}""");
-        Assert.Single(SparklinesOf(clearedGroup.Output!.Path));
-        CellsEditResult added = Apply(clearedGroup.Output!.Path, $$"""{"ops":[{{operation}}]}""");
-        Assert.Equal(1, Assert.Single(added.Applied).ItemsAffected);
-        Assert.Equal(2, SparklinesOf(added.Output!.Path).Count);
     }
 
     [Fact]
@@ -552,19 +543,13 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void AddingSparklinesOverSeveralGroups_IsRefusedWithTheOperationsThatClearEachOfThem()
+    public void AddingSparklinesOverSeveralGroups_IsRefused()
     {
         string path = _fixture.CreateSalesWorkbook($"sparkline-several-{Guid.NewGuid():N}.xlsx");
         string seeded = Apply(path, $$"""{"ops":[{{SparklineData}},{{Sparklines}},{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F5","at":"H2:H5"}]}""").Output!.Path;
         const string across = """{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2","at":"G2:H2"}""";
 
-        Aspose.Cli.Sdk.Errors.CliException refused = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() => Apply(seeded, $$"""{"ops":[{{across}}]}"""));
-        string[] clears = [.. System.Text.RegularExpressions.Regex.Matches(refused.Hint!, """\{"op":"clear_range"[^{}]*\}""").Select(static match => match.Value)];
-
-        Assert.Equal(["G2", "G4:G5", "H2:H5"], clears.Select(static op => System.Text.Json.Nodes.JsonNode.Parse(op)!["range"]!.GetValue<string>()));
-        string cleared = Apply(seeded, $$"""{"ops":[{{string.Join(",", clears)}}]}""").Output!.Path;
-        Assert.Empty(SparklinesOf(cleared));
-        Assert.Equal(1, Assert.Single(Apply(cleared, $$"""{"ops":[{{across}}]}""").Applied).ItemsAffected);
+        Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() => Apply(seeded, $$"""{"ops":[{{across}}]}"""));
     }
 
     [Theory]
@@ -704,7 +689,6 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
             """{"ops":[{"op":"set_sheet_visibility","sheet":"Second","hidden":true}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
-        Assert.Contains("visibility", error.Hint ?? error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -759,13 +743,12 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void CenteringWithAnIndent_IsRefusedWithWhatToChange()
+    public void CenteringWithAnIndent_IsRefused()
     {
         CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
             """{"ops":[{"op":"format_range","range":"A1","style":{"alignment":"center","indent":1}}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
-        Assert.Contains("left or right", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -775,7 +758,6 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
             """{"ops":[{"op":"format_range","range":"A1","style":{"numFmt":"0.00"}}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition));
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
-        Assert.Contains("numberFormat", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]

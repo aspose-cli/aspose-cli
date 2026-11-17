@@ -68,8 +68,7 @@ internal static class PdfMerge
             warnings.AddRange(CopyAttachments(source, merged).Select(name =>
                 ContentLoss.Warning([ContentKind.Attachments],
                     $"Attachment '{name}' of '{path}' was left out: an earlier input has an attachment of that name, which the merged document keeps.",
-                    "Rename the attachment in that input (delete_attachment, then add_attachment with another name) and merge again, or deliver the file alongside the merged PDF.",
-                    PdfInfoProjection.Address("attachment", name),
+                    location: PdfInfoProjection.Address("attachment", name),
                     affectsCompleteness: true)));
             if (PortfolioNotKept(source, path) is { } portfolio)
             {
@@ -110,8 +109,7 @@ internal static class PdfMerge
         warnings.AddRange(new[]
         {
             navigation.StrandedWarning(
-                "no longer lead to their page, although the merged document holds it: it carries no named destinations, so what led there through one leads nowhere",
-                "No operation re-creates links or named destinations: tell the user which no longer lead to their page."),
+                "no longer lead to their page, although the merged document holds it: it carries no named destinations, so what led there through one leads nowhere"),
             PdfNavigationLoss.Repositioned(repositioned, "merged document"),
         }.OfType<Warning>());
 
@@ -142,11 +140,7 @@ internal static class PdfMerge
             ? null
             : new Warning(PdfDiagnostics.PageSizesMixed,
                 "The merged pages have different paper sizes, width by height: " + string.Join(", ", sizes.Select(static size => string.Create(CultureInfo.InvariantCulture,
-                    $"{(size.PageSize.Preset is { } preset ? preset + " " : "")}{size.PageSize.Width:0.##} x {size.PageSize.Height:0.##} pt ({size.PageCount} page{(size.PageCount == 1 ? "" : "s")})"))) + ".")
-            {
-                Hint = "Each page keeps its own size. For one paper size throughout, set it in the source documents before converting them to PDF and merge again, "
-                    + "or resize pages with set_page_size and scaleContent: true; 'pdf inspect' lists the pages' sizes.",
-            };
+                    $"{(size.PageSize.Preset is { } preset ? preset + " " : "")}{size.PageSize.Width:0.##} x {size.PageSize.Height:0.##} pt ({size.PageCount} page{(size.PageCount == 1 ? "" : "s")})"))) + ".");
     }
 
     /// <summary>
@@ -173,8 +167,6 @@ internal static class PdfMerge
         IFormatProvider invariant = System.Globalization.CultureInfo.InvariantCulture;
         throw CliErrors.EvaluationLimit(
             string.Create(invariant, $"Aspose.PDF evaluation mode reads only the first {limit} pages of a document, and the inputs hold {total} pages in total, so the merge stopped and wrote nothing."),
-            "Aspose.PDF",
-            string.Create(invariant, $"merge inputs of at most {limit} pages in total; these hold {total} pages"),
             new JsonObject { ["limit"] = PdfEvaluation.VisiblePages, ["unit"] = "pages" });
     }
 }

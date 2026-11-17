@@ -93,13 +93,11 @@ public sealed class WordsOpContractTests
     }
 
     [Fact]
-    public void InsertSection_WithABlockAddressAsAt_IsRefusedWithWhatAtTakes()
+    public void InsertSection_WithABlockAddressAsAt_IsRefused()
     {
         CliException error = Assert.Throws<CliException>(() => Parse("""{"ops":[{"op":"insert_section","at":{"block":3},"position":"after"}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Contains("'at' is the 1-based section number", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("position", error.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -119,7 +117,6 @@ public sealed class WordsOpContractTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal(closest, error.Details!["suggestions"]![0]!.GetValue<string>());
-        Assert.Contains("'color'", error.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -133,7 +130,6 @@ public sealed class WordsOpContractTests
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal("path", error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
-        Assert.StartsWith("Did you mean 'path'", error.Hint, StringComparison.Ordinal);
     }
 
     private static WordsOpsBatch Parse(string json) =>

@@ -80,7 +80,6 @@ public sealed class CellsEditByteOrderMarkTests : IDisposable
         Assert.Equal("--bom", refused["details"]!["option"]!.GetValue<string>());
         JsonNode convertRefused = JsonNode.Parse(convert.StdErr)!["error"]!;
         Assert.Equal(convertRefused["message"]!.GetValue<string>(), refused["message"]!.GetValue<string>());
-        Assert.Equal(convertRefused["hint"]!.GetValue<string>(), refused["hint"]!.GetValue<string>());
         Assert.False(File.Exists(_workspace.File("copy.xlsx")));
     }
 

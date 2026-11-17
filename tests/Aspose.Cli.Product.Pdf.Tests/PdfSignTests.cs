@@ -211,7 +211,6 @@ public sealed class PdfSignTests
         if (warning is not null)
         {
             Assert.Contains("--location", warning.Message, StringComparison.Ordinal);
-            Assert.Contains("ASCII", warning.Hint, StringComparison.Ordinal);
         }
     }
 
@@ -321,7 +320,6 @@ public sealed class PdfSignTests
         Sdk.Errors.CliException expected = Sdk.Errors.CliErrors.FormatUnsupported(requested, ["pfx", "p12"]);
         Assert.Equal(Sdk.Errors.ErrorCodes.FormatUnsupported, refused.Code);
         Assert.Equal(expected.Message, refused.Message);
-        Assert.Equal(expected.Hint, refused.Hint);
         Assert.Equal(expected.Details!.ToJsonString(), refused.Details!.ToJsonString());
         Assert.False(File.Exists(output));
     }
@@ -343,7 +341,6 @@ public sealed class PdfSignTests
         }));
         Assert.Equal("PASSWORD_INVALID", exception.Code.Name);
         Assert.Equal(certificate, exception.Details!["path"]!.GetValue<string>(), ignoreCase: true);
-        Assert.Contains("--certificate-password-env", exception.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 
@@ -411,7 +408,6 @@ public sealed class PdfSignTests
         });
 
         Warning clipped = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "SIGNATURE_TEXT_CLIPPED");
-        Assert.Contains("--rect", clipped.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>A certificate whose subject has no common name is named by its whole subject.</summary>
@@ -503,7 +499,6 @@ public sealed class PdfSignTests
         Assert.Equal(["SimSun", "Microsoft YaHei"], probed);
         Warning clipped = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "SIGNATURE_TEXT_CLIPPED");
         Assert.Contains("signer name 'CN=张伟'", clipped.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("--rect", clipped.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>A PKCS#12 certificate with the password "pw" whose subject is <paramref name="subject"/>.</summary>

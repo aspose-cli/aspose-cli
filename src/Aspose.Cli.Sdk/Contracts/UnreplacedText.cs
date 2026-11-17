@@ -89,25 +89,22 @@ public sealed class UnreplacedText
     /// <param name="operation">The operation, with the id the batch gave it.</param>
     /// <param name="op">The op name of the operation, such as replace_text.</param>
     /// <param name="message">Where the operation found the text and that it left it, never repeating the text.</param>
-    /// <param name="hint">How to change that text, such as the operation that does.</param>
     /// <param name="location">The address of the part, or of the unit that holds several.</param>
     /// <param name="remains">
     /// Whether the document as it is now still holds a match where the operation found one: read
     /// only from the objects that held a match then, and false for one no longer in the document.
     /// </param>
     /// <param name="docs">The topic of <c>aspose-cli docs</c> with background, or null.</param>
-    public static UnreplacedText Found(TextPart part, BoundedOperation operation, string op, string message, string hint, string location, Func<bool> remains, string? docs = null)
+    public static UnreplacedText Found(TextPart part, BoundedOperation operation, string op, string message, string location, Func<bool> remains, string? docs = null)
     {
         ArgumentNullException.ThrowIfNull(part);
         string id = operation?.Id ?? throw new ArgumentException("The operation has no id; warn about operations of a prepared batch.", nameof(operation));
         ArgumentException.ThrowIfNullOrWhiteSpace(op);
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
-        ArgumentException.ThrowIfNullOrWhiteSpace(hint);
         ArgumentException.ThrowIfNullOrWhiteSpace(location);
         ArgumentNullException.ThrowIfNull(remains);
         return new UnreplacedText(new Warning(WarningCodes.TextNotReplaced, message)
         {
-            Hint = hint,
             Location = location,
             Docs = docs,
             Details = new JsonObject { ["id"] = id, ["op"] = op, ["part"] = part.Token },

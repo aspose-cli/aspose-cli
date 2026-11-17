@@ -15,9 +15,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [
-          { "path": "error.hint", "contains": "'aspose-cli slides render locked.pptx --password-env DECK_PASSWORD --to png --slides 2 --font-dir fa --font-dir fb --out \"x y.png\" --output-format json'" }
-        ],
         "files": { "nothingWritten": true },
         "hidden": ["Invariant-Secret-5f1c9e7a"]
       }
@@ -40,10 +37,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [
-          { "path": "error.hint", "contains": "locked.pptx --password-env \"<password-env>\" --to png --slides 2 --out x.png " },
-          { "path": "error.hint", "notContains": "--password-stdin" }
-        ],
         "files": { "nothingWritten": true },
         "hidden": ["Invariant-Secret-5f1c9e7a"]
       }
@@ -54,9 +47,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [
-          { "path": "error.hint", "contains": "locked.pptx\" --password-env DECK_PASSWORD --slides 2 --to png --out w.png --output-format json' for png." }
-        ],
         "files": { "nothingWritten": true },
         "hidden": ["Invariant-Secret-5f1c9e7a"]
       }
@@ -79,10 +69,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [
-          { "path": "error.hint", "contains": "locked.pptx\" --password-env \"<password-env>\" --slides 2 --to png --out w.png " },
-          { "path": "error.hint", "notContains": "--password-stdin" }
-        ],
         "hidden": ["Invariant-Secret-5f1c9e7a"]
       }
     },
@@ -91,7 +77,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [{ "path": "error.hint", "contains": "doc.pdf\" --pages 1 --to png --out p.png --output-format json' for png." }],
         "files": { "nothingWritten": true }
       }
     },
@@ -108,7 +93,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [{ "path": "error.hint", "contains": "book.xlsx\" --sheets 1 --to png --out c.png --output-format json' for png." }],
         "files": { "nothingWritten": true }
       }
     },
@@ -125,7 +109,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [{ "path": "error.hint", "contains": "doc.docx\" --pages 1 --to jpeg --out w.jpg --output-format json' for jpeg." }],
         "files": { "nothingWritten": true }
       }
     },

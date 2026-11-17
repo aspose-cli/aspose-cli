@@ -11,8 +11,7 @@
         "warnings": { "only": ["REMOTE_RESOURCES_BLOCKED", "LOSSY_CONVERSION", "LOSSY_CONVERSION"] },
         "json": [
           { "path": "warnings[code=LOSSY_CONVERSION][1].details.content", "equals": ["pictures", "charts", "shapes"] },
-          { "path": "warnings[code=LOSSY_CONVERSION][1].message", "equals": "The md output holds the text alone and leaves out 6 picture(s), 1 chart(s) and 5 other drawing(s), such as shapes, text boxes, WordArt and SmartArt; the text of shapes and text boxes stays in the body." },
-          { "path": "warnings[code=LOSSY_CONVERSION][1].hint", "contains": " --what images --out-dir " }
+          { "path": "warnings[code=LOSSY_CONVERSION][1].message", "equals": "The md output holds the text alone and leaves out 6 picture(s), 1 chart(s) and 5 other drawing(s), such as shapes, text boxes, WordArt and SmartArt; the text of shapes and text boxes stays in the body." }
         ],
         "files": { "present": ["drawn.md"], "absent": ["drawn.001.png", "drawn-images"] },
         "hidden": ["data:", "!["]

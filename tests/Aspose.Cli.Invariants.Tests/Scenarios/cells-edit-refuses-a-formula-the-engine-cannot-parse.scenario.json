@@ -9,8 +9,7 @@
         "error": "OPS_INVALID",
         "json": [
           { "path": "error.details.reason", "equals": "invalid-value" },
-          { "path": "error.message", "contains": "=SUM(B1;B2)" },
-          { "path": "error.hint", "contains": "commas" }
+          { "path": "error.message", "contains": "=SUM(B1;B2)" }
         ],
         "files": { "unchanged": ["book.xlsx"], "nothingWritten": true }
       }

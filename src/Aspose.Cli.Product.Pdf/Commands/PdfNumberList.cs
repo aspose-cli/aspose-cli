@@ -8,9 +8,9 @@ internal static class PdfNumberList
 {
     /// <summary>
     /// Returns the numbers of <paramref name="text"/> in order, or refuses <paramref name="option"/>
-    /// with <paramref name="hint"/> when an entry is not a finite number.
+    /// when an entry is not a finite number.
     /// </summary>
-    public static double[] Parse(string text, string option, string hint)
+    public static double[] Parse(string text, string option)
     {
         string[] tokens = text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         var values = new double[tokens.Length];
@@ -19,7 +19,7 @@ internal static class PdfNumberList
             if (!double.TryParse(tokens[index], NumberStyles.Float, CultureInfo.InvariantCulture, out values[index])
                 || !double.IsFinite(values[index]))
             {
-                throw CliErrors.OptionInvalid(option, $"'{text}' is not a list of finite numbers", hint);
+                throw CliErrors.OptionInvalid(option, $"'{text}' is not a list of finite numbers");
             }
         }
 

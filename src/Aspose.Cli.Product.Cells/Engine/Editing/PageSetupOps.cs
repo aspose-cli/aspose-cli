@@ -157,7 +157,6 @@ internal static class PageSetupOps
         }
 
         throw new OperationInvalidException(
-            string.Create(CultureInfo.InvariantCulture, $"a workbook stores a standard paper size, and no standard paper is {width} by {height} points"),
-            "Give a preset such as a4 or letter, or the width and height of a standard paper.");
+            string.Create(CultureInfo.InvariantCulture, $"a workbook stores a standard paper size, and no standard paper is {width} by {height} points"));
     }
 }

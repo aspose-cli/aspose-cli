@@ -54,10 +54,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "then run 'aspose-cli cells convert <that file> --to pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -100,10 +96,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "then run 'aspose-cli slides convert <that file> --to pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -144,10 +136,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "then run 'aspose-cli slides convert <that file> --to ppt --output-format json' for ppt"
           }
         ],
         "files": {
@@ -186,10 +174,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "then run 'aspose-cli cells convert <that file> --to pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -232,10 +216,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "then run 'aspose-cli pdf convert <that file> --to md --output-format json' for md"
           }
         ],
         "files": {
@@ -276,10 +256,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "then run 'aspose-cli pdf convert <that file> --to md --output-format json' for md"
           }
         ],
         "files": {
@@ -322,10 +298,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "then run 'aspose-cli words convert <that file> --to pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -368,10 +340,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "then run 'aspose-cli words convert <that file> --to md --output-format json' for md"
           }
         ],
         "files": {
@@ -412,10 +380,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "then run 'aspose-cli words convert <that file> --to pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -456,10 +420,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "then run 'aspose-cli words convert <that file> --to md --output-format json' for md"
           }
         ],
         "files": {
@@ -500,14 +460,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "or run 'aspose-cli cells convert "
-          },
-          {
-            "path": "error.hint",
-            "contains": "a.xlsx\" --to pdf --out x.pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -548,14 +500,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "or run 'aspose-cli slides convert "
-          },
-          {
-            "path": "error.hint",
-            "contains": "a.pptx\" --to pdf --out x.pdf --output-format json' for pdf"
           }
         ],
         "files": {
@@ -596,14 +540,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "or run 'aspose-cli cells render "
-          },
-          {
-            "path": "error.hint",
-            "contains": "a.xlsx\" --to png --out x.png --output-format json' for png"
           }
         ],
         "files": {
@@ -644,14 +580,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "or run 'aspose-cli slides render "
-          },
-          {
-            "path": "error.hint",
-            "contains": "a.pptx\" --to png --out x.png --output-format json' for png"
           }
         ],
         "files": {
@@ -692,14 +620,6 @@
           {
             "path": "error.details.suggestions",
             "exists": false
-          },
-          {
-            "path": "error.hint",
-            "contains": "or run 'aspose-cli pdf render "
-          },
-          {
-            "path": "error.hint",
-            "contains": "a.pdf\" --to png --out x.png --output-format json' for png"
           }
         ],
         "files": {

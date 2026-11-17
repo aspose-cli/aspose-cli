@@ -14,7 +14,7 @@ public sealed class ListTruncatedWarningTests
     [Fact]
     public void ListTruncated_NamesTheListInDetailsAndHasNoLocation()
     {
-        Warning warning = EnvelopeParts.ListTruncated("outline", 100, 250, "Read a narrower range.");
+        Warning warning = EnvelopeParts.ListTruncated("outline", 100, 250);
 
         Assert.Equal(WarningCodes.ListTruncated, warning.Code);
         Assert.Null(warning.Location);

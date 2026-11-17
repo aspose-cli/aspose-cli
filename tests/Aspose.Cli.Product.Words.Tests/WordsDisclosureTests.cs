@@ -190,12 +190,11 @@ public sealed class WordsDisclosureTests
 
         // OpenDocument text keeps the content but not Word's editing restrictions.
         Warning lost = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion
-            && Regex.IsMatch(warning.Message + warning.Hint, "restrict|protect", RegexOptions.IgnoreCase));
+            && Regex.IsMatch(warning.Message, "restrict|protect", RegexOptions.IgnoreCase));
         Assert.Contains("cannot keep the read-only editing restrictions", lost.Message, StringComparison.Ordinal);
-        Warning restriction = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced);
-        Assert.DoesNotContain("output keeps", restriction.Hint, StringComparison.Ordinal);
+        Assert.Single(text.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced);
         Assert.DoesNotContain(word.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
-        Assert.Contains("output keeps the restrictions", Assert.Single(word.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced).Hint, StringComparison.Ordinal);
+        Assert.Single(word.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced);
     }
 
     [Theory]
@@ -250,7 +249,6 @@ public sealed class WordsDisclosureTests
 
         Warning lossy = Assert.Single(fromPdf.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
         Assert.Contains("may become body text, or headers and footers in which a number", lossy.Message, StringComparison.Ordinal);
-        Assert.Contains("--detail sections --detail fields", lossy.Hint, StringComparison.Ordinal);
         Assert.Equal(lossy, Assert.Single(edited.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion));
         Assert.DoesNotContain(fromDocx.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
     }
@@ -346,9 +344,9 @@ public sealed class WordsDisclosureTests
 
     /// <summary>
     /// A format the engine lays out on pages draws the tracked changes on them as markup and the
-    /// comments in balloons in a margin that narrows the pages: each is named, with a hint to
-    /// delete the comments and settle the revisions first. Other formats keep or drop them with
-    /// their own warnings, and a document without comments has no balloons to name.
+    /// comments in balloons in a margin that narrows the pages: each is named. Other formats keep
+    /// or drop them with their own warnings, and a document without comments has no balloons to
+    /// name.
     /// </summary>
     [Theory]
     [InlineData("pdf", true, true)]
@@ -385,8 +383,6 @@ public sealed class WordsDisclosureTests
         Warning warning = Assert.Single(balloons);
         Assert.Equal($"The {format} output draws 1 comment(s) in balloons in a margin beside the text, which narrows its pages.", warning.Message);
         Assert.Equal("""{"content":["comments"]}""", warning.Details?.ToJsonString());
-        Assert.Contains("delete_comments", warning.Hint, StringComparison.Ordinal);
-        Assert.Contains("accept_revisions or reject_revisions", warning.Hint, StringComparison.Ordinal);
         Assert.False(warning.AffectsCompleteness);
     }
 
@@ -466,8 +462,7 @@ public sealed class WordsDisclosureTests
     /// <summary>
     /// The comments and deleted text a plain-text or Markdown output mixes into its body are named
     /// whoever writes it: without the convert that names its input and output, as for a writer
-    /// that does not pass them, both warnings are still given, and their hints say what to do in
-    /// words, naming no command.
+    /// that does not pass them, both warnings are still given.
     /// </summary>
     [Fact]
     public void TextWarnings_WithoutTheConvertThatWroteTheOutput_AreStillGiven()
@@ -480,7 +475,6 @@ public sealed class WordsDisclosureTests
                 || warning.Message.Contains("deleted and moved-from text", StringComparison.Ordinal))];
 
         Assert.Equal(2, mixed.Length);
-        Assert.All(mixed, static warning => Assert.DoesNotContain("aspose-cli", warning.Hint, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -592,7 +586,6 @@ public sealed class WordsDisclosureTests
         string reason = format is "txt" or "md" ? "a text file holds the body text alone, without pages" : "an e-book flows its text without pages";
         Assert.Equal($"The {format} output leaves out {named}: {reason}, so it has no headers or footers.", warning.Message);
         Assert.Equal("""{"content":["headers-footers"]}""", warning.Details?.ToJsonString());
-        Assert.Contains("'aspose-cli words inspect <file> --detail sections'", warning.Hint, StringComparison.Ordinal);
         Assert.False(warning.AffectsCompleteness);
         Assert.DoesNotContain("Running head", text, StringComparison.Ordinal);
         Assert.DoesNotContain("First footer", text, StringComparison.Ordinal);
@@ -886,8 +879,7 @@ public sealed class WordsDisclosureTests
     /// revisions it is written to show: a format that marks them (struck through, or as HTML
     /// del and ins) is not told it cannot keep them as revisions, as a convert is. Plain text and
     /// Markdown cannot mark them, whether the redline replaces, only inserts or only formats
-    /// text, so they warn as a convert does, with a hint that names the formats that mark them
-    /// instead of telling to accept or reject them.
+    /// text, so they warn as a convert does.
     /// </summary>
     [Theory]
     [InlineData("md", "replace", 1)]
@@ -924,7 +916,6 @@ public sealed class WordsDisclosureTests
         if (text)
         {
             Warning shown = Assert.Single(compared.Warnings!, static warning => warning.Details?.ToJsonString() == RevisionsDetails);
-            Assert.Equal("To see what changed, write the redline as DOCX, PDF or HTML, which mark the changes.", shown.Hint);
         }
     }
 

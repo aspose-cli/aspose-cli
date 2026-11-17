@@ -40,7 +40,7 @@ internal static class CompareCommand
             [compare, maxDiffsOption],
             (parse, standard) =>
             {
-                int maxDiffs = parse.GetInRange(maxDiffsOption, "Lower the budget, or narrow the comparison to the sheets that matter.");
+                int maxDiffs = parse.GetInRange(maxDiffsOption);
                 return new CellsCompareRequest
                 {
                     Left = standard.Input,

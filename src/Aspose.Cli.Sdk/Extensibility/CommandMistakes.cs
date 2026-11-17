@@ -12,15 +12,12 @@ namespace Aspose.Cli.Sdk.Extensibility;
 public static class CommandMistakes
 {
     private static readonly ConditionalWeakTable<Command, IReadOnlyList<string>> Declared = [];
-    private static readonly ConditionalWeakTable<Command, string> Hints = [];
     private static readonly ConditionalWeakTable<Option, Func<string, string?>> MeantValues = [];
-    private static readonly ConditionalWeakTable<Command, IReadOnlyList<RefusedOption>> Refused = [];
 
     /// <summary>
-    /// Declares the names <paramref name="command"/> is mistaken for, and the hint that says how it
-    /// does what they name, or null for the advice to read help.
+    /// Declares the names <paramref name="command"/> is mistaken for.
     /// </summary>
-    internal static void Declare(Command command, IReadOnlyList<string> names, string? hint = null)
+    internal static void Declare(Command command, IReadOnlyList<string> names)
     {
         ArgumentNullException.ThrowIfNull(names);
         foreach (string name in names)
@@ -35,24 +32,6 @@ public static class CommandMistakes
         {
             Declared.AddOrUpdate(command, [.. names]);
         }
-
-        if (hint is not null)
-        {
-            Hints.AddOrUpdate(command, names.Count > 0
-                ? hint
-                : throw new InvalidOperationException($"Command '{command.Name}' declares a hint for mistaken names but no name."));
-        }
-    }
-
-    /// <summary>
-    /// The hint <paramref name="command"/> declares for the names it is mistaken for, such as the
-    /// operation of an edit that does what <c>merge</c> names; null when it declares none.
-    /// </summary>
-    /// <param name="command">The command a mistaken name stands for.</param>
-    public static string? MistakenNameHint(this Command command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        return Hints.TryGetValue(command, out string? hint) ? hint : null;
     }
 
     /// <summary>The names a caller may mistake for <paramref name="command"/>; empty when it declares none.</summary>
@@ -61,53 +40,6 @@ public static class CommandMistakes
     {
         ArgumentNullException.ThrowIfNull(command);
         return Declared.TryGetValue(command, out IReadOnlyList<string>? names) ? names : [];
-    }
-
-    /// <summary>
-    /// Declares the options <paramref name="command"/> does not have that a caller may reach for,
-    /// each with the hint its refusal gives. A name must be an option name the command does not
-    /// accept, or the declaration would never apply.
-    /// </summary>
-    internal static void DeclareRefused(Command command, IReadOnlyList<RefusedOption> refused)
-    {
-        ArgumentNullException.ThrowIfNull(refused);
-        string[] accepted = [.. command.Options.SelectMany(static option => option.Aliases.Prepend(option.Name))];
-        foreach (string name in refused.SelectMany(static option => option.Names))
-        {
-            if (!name.StartsWith('-') || accepted.Contains(name, StringComparer.Ordinal))
-            {
-                throw new InvalidOperationException($"Command '{command.Name}' refuses '{name}', which is no option name or an option it accepts.");
-            }
-        }
-
-        if (refused.Count > 0)
-        {
-            Refused.AddOrUpdate(command, [.. refused]);
-        }
-    }
-
-    /// <summary>
-    /// The hint <paramref name="command"/> declares for <paramref name="option"/>, an option it
-    /// does not have (a command definition's <c>RefusedOptions</c>); null when it declares none.
-    /// </summary>
-    /// <param name="command">The command the option was given to.</param>
-    /// <param name="option">The option as the caller wrote it, such as <c>--encrypt-env</c>.</param>
-    public static string? RefusedOptionHint(this Command command, string option)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        ArgumentNullException.ThrowIfNull(option);
-        return command.RefusedOptions().FirstOrDefault(item => item.Names.Contains(option, StringComparer.Ordinal))?.Hint;
-    }
-
-    /// <summary>
-    /// The options <paramref name="command"/> declares it does not have, each with the hint its
-    /// refusal gives (a command definition's <c>RefusedOptions</c>); empty when it declares none.
-    /// </summary>
-    /// <param name="command">The command to inspect.</param>
-    public static IReadOnlyList<RefusedOption> RefusedOptions(this Command command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        return Refused.TryGetValue(command, out IReadOnlyList<RefusedOption>? refused) ? refused : [];
     }
 
     /// <summary>

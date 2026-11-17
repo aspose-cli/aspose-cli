@@ -37,7 +37,6 @@ internal sealed class PdfDocumentLoader
     /// </summary>
     internal static readonly InputLoading Loading = new(
         "PDF document",
-        "Verify the file opens in a PDF reader and that its bytes are a PDF rather than a renamed file.",
         static exception => exception switch
         {
             InvalidPasswordException => LoadFailureKind.Password,

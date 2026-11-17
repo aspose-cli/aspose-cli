@@ -34,7 +34,6 @@ public sealed class CellsReviewTests
         Assert.True(rendered.ExitCode == 0, rendered.StdErr);
         JsonNode warning = Assert.Single(JsonNode.Parse(rendered.StdOut)!["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "SHEET_PARTIALLY_RENDERED")!;
         Assert.Contains("shows only the first, A1:B2", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("--range \"'Data'!E1:F2\"", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -57,7 +56,6 @@ public sealed class CellsReviewTests
         Assert.True(whole.ExitCode == 0, whole.StdErr);
         JsonNode warning = Assert.Single(JsonNode.Parse(whole.StdOut)!["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "RENDER_IMAGE_LARGE")!;
         Assert.Contains("more than 10000 on a side", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("--range \"'Data'!A1:B", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.True(window.ExitCode == 0, window.StdErr);
         Assert.DoesNotContain("RENDER_IMAGE_LARGE", window.StdOut, StringComparison.Ordinal);
     }

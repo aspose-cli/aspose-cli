@@ -45,7 +45,6 @@ public sealed class TimeoutWorkerSupervisorTests
             string message = error["message"]!.GetValue<string>();
             Assert.Contains(hex, message, StringComparison.Ordinal);
             Assert.Contains("no output was published", message, StringComparison.Ordinal);
-            Assert.Contains("re-exported copy", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
             Assert.DoesNotContain("Stack overflow", result.Stderr, StringComparison.Ordinal);
             Assert.False(File.Exists(target), "A crashed worker's output was published.");
             Assert.NotNull(root);

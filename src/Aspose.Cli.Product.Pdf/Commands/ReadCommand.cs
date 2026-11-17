@@ -31,13 +31,12 @@ internal static class ReadCommand
                     Content = parse.GetValue(content) ?? PdfReadContents.Text,
                     MaxCharacters = characters,
                     Password = standard.InputPassword,
-                    FormsInspection = PdfInputs.FormsInspection(standard),
                 };
             },
             Table)
         {
-            Finish = (_, request, result, standard) =>
-                result with { Window = result.Window with { Next = Next(standard.Continuation(), pages.Name, request, result) } },
+            Finish = (_, request, result, _) =>
+                result with { Window = result.Window with { Next = Next(pages.Name, request, result) } },
             Examples =
             [
                 "pdf read report.pdf --pages 1-5 --output-format json",
@@ -62,8 +61,8 @@ internal static class ReadCommand
         }
     }
 
-    /// <summary>The read that resumes where this one stopped, or null when it covered the selection.</summary>
-    private static string? Next(ContinuationCommand resume, string pagesOption, PdfReadRequest request, PdfReadResult result)
+    /// <summary>The option values of the read that resumes where this one stopped, or null when it covered the selection.</summary>
+    private static IReadOnlyDictionary<string, string>? Next(string pagesOption, PdfReadRequest request, PdfReadResult result)
     {
         if (!result.Window.Truncated)
         {
@@ -75,12 +74,6 @@ internal static class ReadCommand
         return ReadContinuation.After(
                 selection,
                 [.. result.Pages.Select(static page => new ReadPart(page.Page, page.ContentTruncated))],
-                request.MaxCharacters) is { } continuation
-            ? resume
-                .Option(pagesOption, continuation.Parts)
-                .Option("--content", request.Content)
-                .Option(MaxCharactersOption.Name, continuation.MaxCharacters)
-                .ToString()
-            : null;
+                request.MaxCharacters)?.Next(pagesOption);
     }
 }

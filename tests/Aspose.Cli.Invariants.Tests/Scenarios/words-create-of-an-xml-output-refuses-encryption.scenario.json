@@ -14,8 +14,7 @@
         "error": "OPTION_INVALID",
         "json": [
           { "path": "error.message", "contains": "'flatopc' format cannot be password-protected" },
-          { "path": "error.details.option", "equals": "--encrypt-env" },
-          { "path": "error.hint", "contains": "docx" }
+          { "path": "error.details.option", "equals": "--encrypt-env" }
         ],
         "files": { "nothingWritten": true },
         "hidden": ["Scenario-New-Secret-7d2a"]

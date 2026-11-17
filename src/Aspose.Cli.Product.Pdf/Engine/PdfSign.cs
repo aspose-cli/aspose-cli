@@ -49,8 +49,7 @@ internal static class PdfSign
         {
             throw CliErrors.OptionInvalid(
                 PdfOptionNames.Rect,
-                "signature width and height must be greater than zero",
-                "Use x,y,width,height in PDF points from the page's top-left corner, for example 36,36,180,60.");
+                "signature width and height must be greater than zero");
         }
 
         DrawingRectangle rectangle = visibleRect is null
@@ -273,33 +272,25 @@ internal static class PdfSign
     private static Warning TextClipped(PdfSignatureRect rect, bool clipped, string? unshownSigner)
     {
         List<string> message = [];
-        List<string> hint = [];
         if (unshownSigner is not null)
         {
             message.Add($"The signature appearance cannot show the signer name '{unshownSigner}': neither {string.Join(" nor ", ChineseFontFamilies)} is installed to draw its Chinese text, so the name is left out.");
-            hint.Add($"Install {string.Join(" or ", ChineseFontFamilies)} and sign again, or sign with a certificate whose subject name is in Latin letters.");
         }
 
         if (clipped)
         {
             message.Add(string.Create(CultureInfo.InvariantCulture,
                 $"The signature appearance cannot show all its text in the {rect.Width:0.##} by {rect.Height:0.##} point rectangle, even in {SmallestFontSize}-point type, so the end of its longest line or its last lines are cut off."));
-            hint.Add("Sign again with a larger --rect, wide enough for the longest line and 12 points high for each line, or with a shorter --reason, --location or --contact.");
         }
 
-        return new(PdfDiagnostics.SignatureTextClipped, string.Join(" ", message)) { Hint = string.Join(" ", hint) };
+        return new(PdfDiagnostics.SignatureTextClipped, string.Join(" ", message));
     }
 
     /// <summary>PDF-SIGN-FULL-FONT: the warning that the appearance embedded a whole font.</summary>
     private static Warning FontEmbedded(string[] beyondAscii, long growth) =>
         new(PdfDiagnostics.SignatureFontEmbedded, string.Create(CultureInfo.InvariantCulture,
             $"The signature appearance draws {(beyondAscii.Length > 0 ? $"text beyond ASCII from {string.Join(", ", beyondAscii)}" : "its text in an embedded font, as PDF/A requires")}, "
-            + $"so Aspose.PDF embedded a whole font program: the file grew by {growth} bytes."))
-        {
-            Hint = beyondAscii.Length > 0
-                ? "Sign again with --reason, --location and --contact in ASCII, and a certificate whose subject name is ASCII, to keep the file small."
-                : "PDF/A requires embedded fonts, so a signature of this document grows it by a whole font whatever its text.",
-        };
+            + $"so Aspose.PDF embedded a whole font program: the file grew by {growth} bytes."));
 
     /// <summary>
     /// The default visible rectangle in the bottom-left corner of the visible page: 180 by 60
@@ -332,8 +323,7 @@ internal static class PdfSign
         {
             throw CliErrors.OptionInvalid(
                 PdfOptionNames.Rect,
-                exception.Message,
-                "Use x,y,width,height in PDF points from the page's top-left corner that fit on the page; 'pdf inspect --sample' reports its size.");
+                exception.Message);
         }
 
         bool swapped = page.Rotate is Rotation.on90 or Rotation.on270;
@@ -415,7 +405,7 @@ internal static class PdfSign
         }
         catch (CryptographicException exception) when (exception.HResult == WrongPassword)
         {
-            throw CliErrors.PasswordInvalid(Path.GetFullPath(path), passwordEnvironmentOption: PdfOptionNames.CertificatePasswordEnvironment);
+            throw CliErrors.PasswordInvalid(Path.GetFullPath(path));
         }
         catch (CryptographicException exception)
         {
@@ -433,7 +423,6 @@ internal static class PdfSign
         new(
             PdfDiagnostics.SignCertInvalid,
             $"The PKCS#12 signing certificate could not be used: {reason}.",
-            hint: "Use a currently valid PKCS#12 certificate (.pfx or .p12) with a private key.",
             innerException: innerException);
 }
 

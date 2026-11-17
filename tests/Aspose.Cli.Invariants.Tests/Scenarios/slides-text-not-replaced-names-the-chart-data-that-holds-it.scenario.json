@@ -21,7 +21,6 @@
           { "path": "warnings[1].code", "equals": "TEXT_NOT_REPLACED" },
           { "path": "warnings[1].details.part", "equals": "chart-data" },
           { "path": "warnings[1].message", "contains": "found a match in the categories and series names of chart 'chart 2' (shapeId 2) on slide 3" },
-          { "path": "warnings[1].hint", "contains": "with the categories and every series as read, each changed where it matches" },
           { "path": "warnings[2]", "exists": false }
         ]
       }
@@ -37,7 +36,6 @@
           { "path": "warnings[1].location", "equals": "slide/3/shape/2" },
           { "path": "warnings[1].details.part", "equals": "chart-data" },
           { "path": "warnings[1].message", "contains": "found a match in the series names of chart 'chart 2' (shapeId 2) on slide 3" },
-          { "path": "warnings[1].hint", "contains": "with every series as read, values and all, renamed where its name matches" },
           { "path": "warnings[2]", "exists": false }
         ]
       }
@@ -60,7 +58,6 @@
           { "path": "verification.ok", "equals": true },
           { "path": "warnings[1].code", "equals": "TEXT_NOT_REPLACED" },
           { "path": "warnings[1].message", "contains": "found a match in the categories of chart 'chart 2' (shapeId 2) on slide 3" },
-          { "path": "warnings[1].hint", "contains": "with the categories, changed where they match" },
           { "path": "warnings[2]", "exists": false }
         ]
       }

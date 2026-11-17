@@ -115,7 +115,6 @@ internal static partial class CellsEvaluation
                 + $"'{Notice}...' an Aspose.Cells export without a license wrote after the data, so the load took {(one ? "it" : "them")} out: "
                 + $"commands do not read {(one ? "it" : "them")}, and a file written from this input does not hold {(one ? "it" : "them")}.")
         {
-            Hint = "Tell the user the file was written without a license.",
             Docs = "cells/troubleshooting",
             Location = CellsAddresses.At("row", sheet, one ? numbers[0] : $"{numbers[0]}:{numbers[^1]}"),
         };

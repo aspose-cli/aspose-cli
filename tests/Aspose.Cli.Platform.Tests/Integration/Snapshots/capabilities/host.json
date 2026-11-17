@@ -1121,7 +1121,7 @@
     "v2/common/error-payload": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/error-payload.schema.json",
-      "description": "Error details designed for agent self-correction: the message states the fact, details carries structured context (often including the valid alternatives), and hint tells the caller the most likely fix. The error envelope and a failed operation of a best-effort batch carry the same object.",
+      "description": "Error details: the message states the fact and details carries structured context, often including the valid alternatives. The error envelope and a failed operation of a best-effort batch carry the same object.",
       "type": "object",
       "required": [
         "code",
@@ -1163,6 +1163,9 @@
             },
             "availableCount": {
               "description": "How many names or values exist or are accepted."
+            },
+            "bookmarks": {
+              "description": "The outline addresses of the bookmarks a warning is about, such as 1/2."
             },
             "cause": {
               "description": "Why an operation field was refused."
@@ -1281,6 +1284,9 @@
             },
             "field": {
               "description": "The operation field the error is about."
+            },
+            "fields": {
+              "description": "The full names of the form fields the error is about."
             },
             "format": {
               "description": "The format id the error is about."
@@ -1434,10 +1440,6 @@
               "description": "The width of a render, in pixels."
             }
           }
-        },
-        "hint": {
-          "description": "Recommended next action for the caller.",
-          "type": "string"
         },
         "docs": {
           "description": "Topic name for aspose-cli docs <topic> with background details.",
@@ -1703,11 +1705,6 @@
               "type": "string",
               "minLength": 1
             },
-            "hint": {
-              "description": "How to fix the license; omitted when nothing needs fixing.",
-              "type": "string",
-              "minLength": 1
-            },
             "userLicenseInstalled": {
               "description": "Whether a user license for this product is installed.",
               "type": "boolean"
@@ -1746,6 +1743,10 @@
         },
         "source": {
           "description": "Where the missing file was configured, such as an environment variable; present when a setting names it.",
+          "type": "string"
+        },
+        "sheet": {
+          "description": "The worksheet whose targets available lists; present for a target looked up on one sheet.",
           "type": "string"
         },
         "available": {
@@ -1899,7 +1900,7 @@
     "v2/common/result-window": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json",
-      "description": "How much of a larger collection a bounded read or search returned, and the ready-to-run command that continues it. Every windowed result carries it as window, written after the payload and before license and warnings, so an agent always finds it in the same place.",
+      "description": "How much of a larger collection a bounded read or search returned, and the option values that continue it. Every windowed result carries it as window, written after the payload and before license and warnings, so an agent always finds it in the same place.",
       "type": "object",
       "required": [
         "unit",
@@ -1927,8 +1928,11 @@
           "type": "boolean"
         },
         "next": {
-          "description": "The command that returns the next window; omitted when nothing remains.",
-          "type": "string"
+          "description": "The values of the command's options that return the next window, by option name without its leading dashes: the same command with these values returns it. Omitted when nothing remains.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },
@@ -2168,10 +2172,6 @@
         "location": {
           "description": "The affected item's address in the targets syntax <unit>/<address>, such as page/3, slide/2/shape/4 or cell/Sheet1!A1, with names escaped as targets escape them; omitted unless the issue concerns exactly one item.",
           "type": "string"
-        },
-        "hint": {
-          "description": "Recommended next action for the caller.",
-          "type": "string"
         }
       }
     },
@@ -2265,7 +2265,7 @@
     "v2/common/warning": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json",
-      "description": "A non-fatal condition the caller should act on. Warnings are part of the public contract, and hint tells an agent what to do next.",
+      "description": "A non-fatal condition of a command that succeeded. Warnings are part of the public contract.",
       "type": "object",
       "required": [
         "code",
@@ -2280,11 +2280,6 @@
         },
         "message": {
           "description": "Human-readable statement of the condition.",
-          "type": "string",
-          "minLength": 1
-        },
-        "hint": {
-          "description": "Recommended next action for the caller.",
           "type": "string",
           "minLength": 1
         },

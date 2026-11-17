@@ -333,8 +333,7 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
 - **CLI behavior:** an edit or convert that writes ods from a sheet with the setting warns
   `LOSSY_CONVERSION` that the ods leaves it out and an xlsx workbook keeps it; when the edit's
   batch set it, the setting is in no file, so `--verify` fails. A
-  printout of an ods input warns of the comments it leaves out, and its hint, which names that
-  setting, adds that the ods does not keep it and to save the workbook as xlsx first.
+  printout of an ods input warns of the comments it leaves out.
 
 ### CELLS-PRINT-AREA-BAND-COMMENTS
 
@@ -351,8 +350,7 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   ```
 
 - **CLI behavior:** a printout counts the comments a band holds as left out and warns
-  `LOSSY_CONVERSION` with them; its hint says a print area prints only the comments on its
-  bounded ranges.
+  `LOSSY_CONVERSION` with them.
 
 ## Aspose.PDF.Drawing 26.8.0
 
@@ -445,9 +443,7 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   writing its value first, so the value leaves the file with the group unless the calculation
   order keeps it (PDF-REDACT-CALCULATED). `set_form_field` on such a group later in the same
   batch, and `redact_area` that covers its selected button but not its last, which clears its
-  value, are refused with `OPS_INVALID` before they change anything, naming the group; the hint
-  says to run them, and the operations after them, in a second `pdf edit` of the output of the
-  operations before them.
+  value, are refused with `OPS_INVALID` before they change anything, naming the group.
 - **Workaround:** set the group's value, or redact its selected button, in an edit of its own
   after the redaction.
 
@@ -584,8 +580,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   and PDF/A-3 and 6.5.3 in PDF/A-1 (the appearance of a button field must be a subdictionary of
   states).
 - **CLI behavior:** `pdf convert --to pdfa-*` validates the file it converted and fails with
-  `PDFA_CONVERSION_FAILED` when it does not conform; for appearance problems the hint names the
-  button fields on those pages that have one appearance for all their states.
+  `PDFA_CONVERSION_FAILED` when it does not conform; for appearance problems `details.fields` names
+  the button fields on those pages that have one appearance for all their states.
 - **Workaround:** flatten the named fields (`flatten_forms`) before converting.
 
 ### PDF-PDFA-LOG-REPEATS
@@ -959,7 +955,7 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
 - **CLI behavior:** `words convert` to `txt` or `md` warns `LOSSY_CONVERSION` with the number of
   comments written into the body; `words edit` writes neither format.
 - **Workaround:** delete the comments with `delete_comments` in a `words edit` that writes a Word
-  format such as docx, then convert that file to the text format, as the warning's hint gives.
+  format such as docx, then convert that file to the text format.
 
 ### WORDS-TEXT-DELETIONS
 
@@ -970,8 +966,8 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   has tracked deletions or moves; `words edit` writes neither format.
 - **Workaround:** accept or reject the revisions, as the reviewer decides, with
   `accept_revisions` or `reject_revisions` in a `words edit` that writes a Word format such as
-  docx, then convert that file to the text format, as the warning's hint gives; with
-  `delete_comments` in the same edit when the document has comments too.
+  docx, then convert that file to the text format; with `delete_comments` in the same edit when
+  the document has comments too.
 
 ### WORDS-PAGE-FIELD-LAYOUT
 

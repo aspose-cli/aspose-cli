@@ -3,8 +3,8 @@
 The error envelope, exit codes, not-found details and the codes every product
 shares are in `aspose-cli docs troubleshooting`; licensing and evaluation
 disclosure in `aspose-cli docs licensing`. Every Cells code, with its exit
-code, is listed by `aspose-cli capabilities cells`, and each error's message,
-hint and details name the cause. This page says what to do about the ones a
+code, is listed by `aspose-cli capabilities cells`, and each error's message
+and details name the cause. This page says what to do about the ones a
 workbook task commonly meets.
 
 ## Inputs that do not open
@@ -94,7 +94,7 @@ stays in the file for Excel.
 ERP and report exports often write a title and a query-condition row before
 the header, leave an empty row between groups and end with a total row. The
 CSV import keeps every row, so `cells inspect` and `cells convert` warn
-`TEXT_TABLE_LAYOUT` for each finding, and each hint names the ranges to use.
+`TEXT_TABLE_LAYOUT` for each finding.
 
 The check reads the first 10,000 rows and the last rows of a longer sheet.
 
@@ -112,9 +112,9 @@ semicolons counts `1,234` as a decimal comma too, unless it also writes a
 number with a decimal point (`19.90`, `20.00`, `$1,234.50`, `12.5%`): then `1,234` is a
 thousand. A point before exactly three digits (`1.500`) does not count.
 Every command that reads the file warns `NUMBERS_READ_AS_TEXT` with one such
-cell, and its hint converts the file with `--culture de-DE`, which fits a file
-whose decimals all have a comma. If the file also writes a decimal point
-(`19.90`), a culture like en-US wrote it, and de-DE would read `19.90` as 1990.
+cell. `--culture de-DE` fits a file whose decimals all have a comma. If the
+file also writes a decimal point (`19.90`), a culture like en-US wrote it, and
+de-DE would read `19.90` as 1990.
 
 ## Evaluation mode in workbooks
 

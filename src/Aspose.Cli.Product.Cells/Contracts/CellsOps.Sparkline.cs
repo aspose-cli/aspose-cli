@@ -99,8 +99,7 @@ public sealed record AddSparklineOp : CellsSheetOp
         }
 
         throw new OperationInvalidException(
-            $"'at' has {cells.Count} cells but 'dataRange' has {data.RowCount} rows and {data.ColumnCount} columns; make them match one of the two",
-            hint: "Give one cell of 'at' per data row (one sparkline per row) or one per data column.");
+            $"'at' has {cells.Count} cells but 'dataRange' has {data.RowCount} rows and {data.ColumnCount} columns; make them match one of the two");
     }
 
     /// <inheritdoc />

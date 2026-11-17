@@ -127,7 +127,7 @@ public sealed class WordsOpAddressTests
         var model = new WordsEditModel(loaded, resolved, static _ => throw new InvalidOperationException("no operation applies"));
         var unresolved = new WordsEditModel(
             loaded,
-            [.. Samples.Select(static op => new ResolvedWordsOp(op, [], [], []) { Failure = new OperationInvalidException("unresolved", "none") })],
+            [.. Samples.Select(static op => new ResolvedWordsOp(op, [], [], []) { Failure = new OperationInvalidException("unresolved") })],
             static _ => throw new InvalidOperationException("no operation applies"));
 
         string[] actual = [.. resolved.Select(item => Row(loaded.Document, item, model, unresolved))];

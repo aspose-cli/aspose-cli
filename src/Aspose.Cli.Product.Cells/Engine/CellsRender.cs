@@ -18,8 +18,6 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells render</c>: sheets, or a range of one, drawn as images.</summary>
 internal static class CellsRender
 {
-    /// <summary>The option of <c>cells render</c> that names the range a hint's command draws.</summary>
-    internal const string RangeOption = "--range";
 
     public static CellsRenderResult Run(CellsSession session, CellsRenderRequest request)
     {
@@ -75,10 +73,7 @@ internal static class CellsRender
         }
 
         transaction.Commit();
-        Warning? sheetsSkipped = skipped.Count == 0 ? null : new Warning(CellsDiagnostics.SheetsSkipped, $"Skipped {skipped.Count} sheet(s): {string.Join(", ", skipped)}.")
-        {
-            Hint = "Render a skipped sheet alone with --sheets to get the full error.",
-        };
+        Warning? sheetsSkipped = skipped.Count == 0 ? null : new Warning(CellsDiagnostics.SheetsSkipped, $"Skipped {skipped.Count} sheet(s): {string.Join(", ", skipped)}.");
 
         return new CellsRenderResult
         {
@@ -87,7 +82,7 @@ internal static class CellsRender
             Range = renderedRange,
             Dpi = request.Output.Format.Raster ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = loaded.Warnings([loaded.SkippedSheetWarning(defaulted, "Pass --sheets with the sheet's position from inspect to render another sheet."), sheetsSkipped, .. leftOut]),
+            Warnings = loaded.Warnings([loaded.SkippedSheetWarning(defaulted), sheetsSkipped, .. leftOut]),
         };
     }
 
@@ -102,7 +97,7 @@ internal static class CellsRender
     {
         if (request.Sheets is null && request.SheetsText is { } byName)
         {
-            throw Sheets.SelectedByName(workbook, byName, range: true);
+            throw Sheets.SelectedByName(workbook, byName);
         }
 
         bool all = request.Sheets is null || ReferenceEquals(request.Sheets, PageRange.All);
@@ -118,8 +113,7 @@ internal static class CellsRender
             {
                 throw CliErrors.OptionInvalid(
                     CellsOptionNames.Sheets,
-                    $"--range renders one sheet, but the selection holds {one.Count}",
-                    "Select one sheet, such as --sheets 2, or qualify the range, such as Sales!A1:G20.");
+                    $"--range renders one sheet, but the selection holds {one.Count}");
             }
 
             return ([workbook.Worksheets[one[0] - 1]], false);
@@ -150,36 +144,18 @@ internal static class CellsRender
                 CellsOptionNames.Sheets,
                 "sheet",
                 visible.Count,
-                RenderSelection.MaximumParts,
-                $"Select at most {RenderSelection.MaximumParts} sheets, such as --sheets 1-{RenderSelection.MaximumParts}, or render part of one with --range.");
+                RenderSelection.MaximumParts);
         }
 
         return (visible, false);
     }
 
-    /// <summary>
-    /// <c>RENDER_EMPTY</c> for <paramref name="sheet"/>, pointing to the first other sheet that
-    /// holds cell data or a drawing, leaving out the warning sheets an evaluation save added.
-    /// </summary>
-    private static CliException Empty(Worksheet sheet)
-    {
-        WorksheetCollection worksheets = sheet.Workbook.Worksheets;
-        for (int index = 0; index < worksheets.Count; index++)
-        {
-            Worksheet other = worksheets[index];
-            if (other.Index != sheet.Index && !CellsEvaluation.IsWarningSheet(other)
-                && (other.Cells.MaxDataRow >= 0 || other.Shapes.Count > 0))
-            {
-                return CellsErrors.RenderEmpty(sheet.Name, (index + 1, other.Name));
-            }
-        }
-
-        return CellsErrors.RenderEmpty(sheet.Name, withData: null);
-    }
+    /// <summary><c>RENDER_EMPTY</c> for <paramref name="sheet"/>.</summary>
+    private static CliException Empty(Worksheet sheet) => CellsErrors.RenderEmpty(sheet.Name);
 
     /// <summary>The 1-based positions a selection names, in workbook order, within the render limit.</summary>
     private static IReadOnlyList<int> Positions(Workbook workbook, CellsRenderRequest request) =>
-        [.. Sheets.Selected(workbook, request.SheetsText, range: true,
+        [.. Sheets.Selected(workbook, request.SheetsText,
             () => RenderSelection.Resolve(request.Sheets!, workbook.Worksheets.Count, CellsDiagnostics.SheetNotFound, "sheet")).Distinct().Order()];
 
     /// <summary>
@@ -230,7 +206,7 @@ internal static class CellsRender
             throw Empty(sheet);
         }
 
-        if (printArea is null && PrintAreasLeftOut(sheet, render, request.Continuation) is { } leftOut)
+        if (printArea is null && PrintAreasLeftOut(sheet, render) is { } leftOut)
         {
             warnings.Add(leftOut);
         }
@@ -239,8 +215,8 @@ internal static class CellsRender
         {
             if (isRaster)
             {
-                EnsureRenderable(budgets, render, request.Dpi, sheet, printArea);
-                if (Large(sheet, render, request, printArea) is { } large)
+                EnsureRenderable(budgets, render, request.Dpi);
+                if (Large(sheet, render, request) is { } large)
                 {
                     warnings.Add(large);
                 }
@@ -351,8 +327,7 @@ internal static class CellsRender
     /// </summary>
     /// <param name="sheet">The sheet drawn.</param>
     /// <param name="render">Its one-page-per-sheet render.</param>
-    /// <param name="renderCommand">Starts the <c>cells render</c> command of the workbook, for the commands that draw the rest.</param>
-    internal static Warning? PrintAreasLeftOut(Worksheet sheet, SheetRender render, Func<ContinuationCommand> renderCommand)
+    internal static Warning? PrintAreasLeftOut(Worksheet sheet, SheetRender render)
     {
         if (render.PageCount < 2 || SheetLayoutProjection.PrintArea(sheet.PageSetup)?.Range is not { } printArea)
         {
@@ -360,12 +335,9 @@ internal static class CellsRender
         }
 
         IReadOnlyList<string> areas = A1.SplitList(printArea);
-        string rest = string.Join("; ", areas.Skip(1).Select(area =>
-            renderCommand().Option(RangeOption, $"{Sheets.QuotedName(sheet.Name)}!{area}").ToString()));
         return new Warning(CellsDiagnostics.SheetPartiallyRendered,
             $"Worksheet '{sheet.Name}' prints {areas.Count} areas, {printArea}; its image shows only the first, {areas[0]}.")
         {
-            Hint = $"Draw each other area on its own: {rest}",
             Location = CellsAddresses.OfSheet("sheet", sheet.Name),
             AffectsCompleteness = true,
         };
@@ -375,10 +347,10 @@ internal static class CellsRender
     internal const int LargeImageSide = 10_000;
 
     /// <summary>
-    /// The warning for a raster image longer than <see cref="LargeImageSide"/> on a side, with the
-    /// first window of the sheet to render instead; null for a smaller image.
+    /// The warning for a raster image longer than <see cref="LargeImageSide"/> on a side; null for
+    /// a smaller image.
     /// </summary>
-    private static Warning? Large(Worksheet sheet, SheetRender render, CellsRenderRequest request, string? printArea)
+    private static Warning? Large(Worksheet sheet, SheetRender render, CellsRenderRequest request)
     {
         float[] inches = render.GetPageSizeInch(0);
         long width = (long)Math.Ceiling(inches[0] * request.Dpi);
@@ -391,56 +363,16 @@ internal static class CellsRender
         return new Warning(CellsDiagnostics.RenderImageLarge,
             $"The image of worksheet '{sheet.Name}' is {width} x {height} pixels, more than {LargeImageSide} on a side, which image viewers and models scale down or cut.")
         {
-            Hint = $"Render the sheet in windows with a sheet-qualified --range, such as "
-                + $"{request.Continuation().Option(RangeOption, Window(sheet, printArea, width, height))}, or lower --dpi.",
             Location = CellsAddresses.OfSheet("sheet", sheet.Name),
         };
     }
 
-    /// <summary>
-    /// The first window of the sheet's drawn cells, sheet-qualified, that renders within
-    /// <see cref="LargeImageSide"/> on a side: one image's worth of its rows and columns, by their
-    /// share of the image's height and width.
-    /// </summary>
-    private static string Window(Worksheet sheet, string? printArea, long width, long height)
-    {
-        RangeRef drawn = printArea is not null ? A1.ParseRange(printArea).Range
-            : Sheets.UsedRange(sheet) ?? new RangeRef(new CellRef(0, 0), new CellRef(0, 0));
-        return Qualified(sheet, FirstWindow(drawn, width, height, LargeImageSide));
-    }
-
-    /// <summary>A window of <paramref name="sheet"/> as a sheet-qualified <c>--range</c>, such as <c>'Data'!A1:F200</c>.</summary>
-    internal static string Qualified(Worksheet sheet, RangeRef window) =>
-        $"{Sheets.QuotedName(sheet.Name)}!" + A1.FormatRange(window);
-
-    /// <summary>
-    /// The first rows and columns of <paramref name="drawn"/>, by their share of an image of
-    /// <paramref name="width"/> by <paramref name="height"/> pixels, that draw within
-    /// <paramref name="side"/> pixels on a side; at least one row and one column.
-    /// </summary>
-    internal static RangeRef FirstWindow(RangeRef drawn, long width, long height, double side)
-    {
-        int rows = Math.Max(1, (int)(drawn.RowCount * Math.Min(1d, side / height)));
-        int columns = Math.Max(1, (int)(drawn.ColumnCount * Math.Min(1d, side / width)));
-        return new RangeRef(drawn.Start, new CellRef(drawn.Start.Row + rows - 1, drawn.Start.Column + columns - 1));
-    }
-
-    /// <summary>
-    /// Rejects raster output whose bitmap would exceed the shared pixel budget, with the first
-    /// sheet-qualified window of <paramref name="sheet"/> to render instead.
-    /// </summary>
-    internal static void EnsureRenderable(ResourceBudgetLedger budgets, SheetRender render, int dpi, Worksheet sheet, string? printArea)
+    /// <summary>Rejects raster output whose bitmap would exceed the shared pixel budget.</summary>
+    internal static void EnsureRenderable(ResourceBudgetLedger budgets, SheetRender render, int dpi)
     {
         float[] inches = render.GetPageSizeInch(0);
         long width = (long)Math.Ceiling(inches[0] * dpi);
         long height = (long)Math.Ceiling(inches[1] * dpi);
-        RenderPixelGuard.EnsureFits(
-            budgets,
-            width,
-            height,
-            dpi,
-            $"Render a window of the sheet with a sheet-qualified --range, such as --range \"{Window(sheet, printArea, width, height)}\", or lower --dpi.");
+        RenderPixelGuard.EnsureFits(budgets, width, height, dpi);
     }
-
-
 }

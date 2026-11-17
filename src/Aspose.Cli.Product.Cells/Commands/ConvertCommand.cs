@@ -58,8 +58,7 @@ internal static class ConvertCommand
                 {
                     throw CliErrors.OptionInvalid(
                         sheets.Name,
-                        $"the '{format}' format always converts the whole workbook",
-                        $"Drop {sheets.Name}, or use one of: {string.Join(", ", CellsFormats.SheetScoped)}.");
+                        $"the '{format}' format always converts the whole workbook; it applies only to {string.Join(", ", CellsFormats.SheetScoped)}");
                 }
 
                 bool byteOrderMark = CellsInputs.ReadBom(bom, parse, format);
@@ -68,7 +67,6 @@ internal static class ConvertCommand
                 return new CellsConvertRequest
                 {
                     Input = standard.Input,
-                    Continuation = standard.ContinuationOf(standard.Input),
                     Output = output,
                     Sheets = selection,
                     SheetsText = text,

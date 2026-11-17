@@ -17,7 +17,6 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 public sealed class ContentLossTests
 {
     private const string Message = "The pdf output leaves out 2 comment(s): 2 on worksheet 'Data'.";
-    private const string Hint = "Read the comments with 'aspose-cli cells inspect <file> --detail comments'.";
 
     public static TheoryData<string> Kinds() => [.. ContentKind.All.Select(static kind => kind.Token)];
 
@@ -29,11 +28,10 @@ public sealed class ContentLossTests
     {
         ContentKind kind = Assert.Single(ContentKind.All, kind => kind.Token == token);
 
-        Warning warning = ContentLoss.Warning([kind], Message, Hint, "sheet/Data", affectsCompleteness: true);
+        Warning warning = ContentLoss.Warning([kind], Message, "sheet/Data", affectsCompleteness: true);
 
         Assert.Equal(WarningCodes.LossyConversion, warning.Code);
         Assert.Equal(Message, warning.Message);
-        Assert.Equal(Hint, warning.Hint);
         Assert.Equal("sheet/Data", warning.Location);
         Assert.True(warning.AffectsCompleteness);
         Assert.Equal([token], Content(warning));
@@ -47,7 +45,7 @@ public sealed class ContentLossTests
     [Fact]
     public void ContentLoss_WithoutLocation_LeavesItOutAndKeepsTheOutputComplete()
     {
-        Warning warning = ContentLoss.Warning([ContentKind.SpeakerNotes], Message, Hint);
+        Warning warning = ContentLoss.Warning([ContentKind.SpeakerNotes], Message);
 
         Assert.Null(warning.Location);
         Assert.False(warning.AffectsCompleteness);
@@ -58,7 +56,7 @@ public sealed class ContentLossTests
     [Fact]
     public void SeveralKinds_AreListedInTheOrderGiven()
     {
-        Warning warning = ContentLoss.Warning([ContentKind.Charts, ContentKind.Pictures, ContentKind.Shapes], Message, Hint);
+        Warning warning = ContentLoss.Warning([ContentKind.Charts, ContentKind.Pictures, ContentKind.Shapes], Message);
 
         Assert.Equal(["charts", "pictures", "shapes"], Content(warning));
     }
@@ -67,8 +65,8 @@ public sealed class ContentLossTests
     [Fact]
     public void ContentLoss_RefusesNoKindAndARepeatedKind()
     {
-        Assert.Throws<ArgumentException>(() => ContentLoss.Warning([], Message, Hint));
-        Assert.Throws<ArgumentException>(() => ContentLoss.Warning([ContentKind.Comments, ContentKind.Comments], Message, Hint));
+        Assert.Throws<ArgumentException>(() => ContentLoss.Warning([], Message));
+        Assert.Throws<ArgumentException>(() => ContentLoss.Warning([ContentKind.Comments, ContentKind.Comments], Message));
     }
 
     /// <summary>
@@ -100,12 +98,11 @@ public sealed class ContentLossTests
 
         Warning warning = UnreplacedText.Found(part, new Operation { Id = "rename" }, "replace_text",
             "Operation rename (replace_text) found a match in the comment of cell B2 and left it as it was.",
-            "Set the new text of the comment with set_comment.", "comment/Data!B2", static () => true, docs: "cells/editing").Warning;
+            "comment/Data!B2", static () => true, docs: "cells/editing").Warning;
 
         Assert.Equal(WarningCodes.TextNotReplaced, warning.Code);
         Assert.Equal("TEXT_NOT_REPLACED", warning.Code.Name);
         Assert.Equal("comment/Data!B2", warning.Location);
-        Assert.Equal("Set the new text of the comment with set_comment.", warning.Hint);
         Assert.Equal("cells/editing", warning.Docs);
         Assert.False(warning.AffectsCompleteness);
         Assert.True(JsonNode.DeepEquals(new JsonObject { ["id"] = "rename", ["op"] = "replace_text", ["part"] = token }, warning.Details),
@@ -116,7 +113,7 @@ public sealed class ContentLossTests
     /// <summary>A warning about an operation needs the id the batch gave it.</summary>
     [Fact]
     public void UnreplacedText_RefusesAnOperationWithoutAnId() =>
-        Assert.Throws<ArgumentException>(() => UnreplacedText.Found(TextPart.Comment, new Operation(), "replace_text", "m", "h", "comment/Data!B2", static () => true));
+        Assert.Throws<ArgumentException>(() => UnreplacedText.Found(TextPart.Comment, new Operation(), "replace_text", "m", "comment/Data!B2", static () => true));
 
     /// <summary>
     /// A product picks a member of a set: a token written as a string, or a member it makes
@@ -127,10 +124,10 @@ public sealed class ContentLossTests
     [InlineData("""ContentLoss.Warning([ContentKind.Comments], "m", "h")""", true)]
     [InlineData("""ContentLoss.Warning(["comments"], "m", "h")""", false)]
     [InlineData("""ContentLoss.Warning([new ContentKind("comments")], "m", "h")""", false)]
-    [InlineData("""UnreplacedText.Found(TextPart.Comment, operation, "replace_text", "m", "h", "comment/Data!B2", () => true)""", true)]
-    [InlineData("""UnreplacedText.Found("comment", operation, "replace_text", "m", "h", "comment/Data!B2", () => true)""", false)]
-    [InlineData("""UnreplacedText.Found(new TextPart("comment"), operation, "replace_text", "m", "h", "comment/Data!B2", () => true)""", false)]
-    [InlineData("""UnreplacedText.Found(TextPart.Comment, operation, "replace_text", "m", "h", "comment/Data!B2", () => true).Warning""", false)]
+    [InlineData("""UnreplacedText.Found(TextPart.Comment, operation, "replace_text", "m", "comment/Data!B2", () => true)""", true)]
+    [InlineData("""UnreplacedText.Found("comment", operation, "replace_text", "m", "comment/Data!B2", () => true)""", false)]
+    [InlineData("""UnreplacedText.Found(new TextPart("comment"), operation, "replace_text", "m", "comment/Data!B2", () => true)""", false)]
+    [InlineData("""UnreplacedText.Found(TextPart.Comment, operation, "replace_text", "m", "comment/Data!B2", () => true).Warning""", false)]
     [InlineData("""new Warning(WarningCodes.TextNotReplaced, "m")""", false)]
     public void ATokenOutsideTheSet_DoesNotCompile(string call, bool compiles)
     {

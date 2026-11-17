@@ -78,8 +78,8 @@ internal sealed partial class PdfMutationHandlers
     {
         EnsureInsertionPosition(_document, operation.At);
 
-        using LoadedPdf source = _loader.Open(operation.Path, PasswordSource.OperationField(
-            OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv), "sourcePasswordEnv"));
+        using LoadedPdf source = _loader.Open(operation.Path, PasswordSource.Option(
+            OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv)));
         IReadOnlyList<int> pages = operation.Pages is null
             ? Enumerable.Range(1, source.Document.Pages.Count).ToArray()
             : Resolve(source.Document, operation.Pages);

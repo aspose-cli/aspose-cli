@@ -35,15 +35,13 @@ internal static class CompareCommand
                 {
                     throw CliErrors.OptionInvalid(
                         "--author",
-                        "the author is empty",
-                        "Pass the person or agent the redline's revisions are attributed to, or omit --author.");
+                        "the author is empty");
                 }
 
                 return new WordsCompareRequest
                 {
                     Left = standard.Input,
                     Right = standard.Other,
-                    Revised = standard.InputPassword is null && standard.OtherPassword is null ? standard.ContinuationOf(standard.Other) : null,
                     IgnoreFormatting = parse.GetValue(ignoreFormatting),
                     Granularity = parse.GetValue(granularity)!,
                     Author = name,

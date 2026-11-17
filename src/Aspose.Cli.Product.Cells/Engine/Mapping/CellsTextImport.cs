@@ -99,9 +99,6 @@ internal static partial class CellsTextImport
             $"'{Path.GetFileName(input)}' writes numbers with a decimal comma, such as '{sample.StringValue}' in {sample.Name}, "
                 + $"so its {count + separated.Count} number(s) written with a comma or a point are kept as text rather than read by a guess.")
         {
-            Hint = $"Read them as numbers with the culture that wrote them: {CellsErrors.Import(input).Option("--culture", "de-DE")}. "
-                + "That fits a file whose decimals all have a comma; if it also writes a decimal point, such as 19.90, "
-                + "a culture like en-US wrote it, and de-DE would read 19.90 as 1990.",
             Docs = "cells/troubleshooting",
             Location = CellsAddresses.At("cell", sheet.Name, sample.Name),
         };
@@ -326,16 +323,14 @@ internal static partial class CellsTextImport
         {
             throw CliErrors.OptionInvalid(
                 CellsOptionNames.Encoding,
-                $"'{name}' is not a known text encoding",
-                "Use an encoding name such as utf-8, gb18030, big5, shift_jis or windows-1252.");
+                $"'{name}' is not a known text encoding");
         }
 
         if (marked is not null && marked.CodePage != named.CodePage)
         {
             throw CliErrors.OptionInvalid(
                 CellsOptionNames.Encoding,
-                $"the file starts with a {marked.WebName} byte order mark",
-                "Drop --encoding; the byte order mark already names the encoding.");
+                $"the file starts with a {marked.WebName} byte order mark");
         }
 
         return named;
@@ -351,8 +346,7 @@ internal static partial class CellsTextImport
         {
             throw CliErrors.OptionInvalid(
                 CellsOptionNames.Culture,
-                $"'{name}' is not a known culture",
-                "Use a culture name such as de-DE, fr-FR, en-US or zh-CN.");
+                $"'{name}' is not a known culture");
         }
     }
 

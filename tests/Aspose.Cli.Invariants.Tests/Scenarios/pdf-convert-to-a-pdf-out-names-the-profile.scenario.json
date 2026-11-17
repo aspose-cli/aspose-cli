@@ -10,8 +10,7 @@
         "exitCode": 2,
         "error": "USAGE_ERROR",
         "json": [
-          { "path": "error.message", "contains": "pdfa-1b, pdfa-2b and pdfa-3b" },
-          { "path": "error.hint", "contains": "--to pdfa-1b, --to pdfa-2b or --to pdfa-3b" }
+          { "path": "error.message", "contains": "pdfa-1b, pdfa-2b and pdfa-3b" }
         ],
         "files": { "absent": ["archive.pdf"], "unchanged": ["input.pdf"], "nothingWritten": true }
       }
@@ -22,10 +21,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.details.suggestions", "notContains": ".pdf" },
-          { "path": "error.hint", "contains": "input.pdf\" --to pdfa-1b --out archive.pdf --output-format json', 'aspose-cli pdf convert \"" },
-          { "path": "error.hint", "contains": "input.pdf\" --to pdfa-2b --out archive.pdf --output-format json' or 'aspose-cli pdf convert \"" },
-          { "path": "error.hint", "contains": "input.pdf\" --to pdfa-3b --out archive.pdf --output-format json' for pdfa-1b, pdfa-2b or pdfa-3b." }
+          { "path": "error.details.suggestions", "notContains": ".pdf" }
         ],
         "files": { "absent": ["archive.pfd", "archive.pdf"], "nothingWritten": true }
       }

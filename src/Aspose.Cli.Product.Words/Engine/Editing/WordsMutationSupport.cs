@@ -138,9 +138,8 @@ internal static class WordsMutationSupport
                 ErrorCodes.StyleNotFound,
                 "table style",
                 name,
-                document.Styles.Where(static candidate => candidate.Type == StyleType.Table).Select(static candidate => candidate.Name).ToArray(),
-                hint: "Word's built-in table styles, such as 'Table Grid' and 'Grid Table 4', also work by name.");
+                document.Styles.Where(static candidate => candidate.Type == StyleType.Table).Select(static candidate => candidate.Name).ToArray());
 
-    internal static OperationInvalidException Invalid(string reason, string? hint = null) => new(reason, hint);
+    internal static OperationInvalidException Invalid(string reason) => new(reason);
 }
 

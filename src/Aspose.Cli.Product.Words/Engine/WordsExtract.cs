@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Extraction;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
@@ -59,7 +58,6 @@ internal static class WordsExtract
             {
                 warnings.Add(new Warning(WordsDiagnostics.LinkedImagesSkipped, $"{linked} linked image(s) store no bytes in the document and were not extracted.")
                 {
-                    Hint = "Embed linked images in the source document to extract them.",
                     AffectsCompleteness = true,
                 });
             }
@@ -80,7 +78,7 @@ internal static class WordsExtract
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(WordsText.Lines(index.Entries.Select(static entry => entry.Node)));
             PublishedFile file = guard.StageAllBytes("document.txt", bytes);
             outputs.Add(new WordsExtractedOutput(FileObjects.Companion(file)));
-            warnings.AddRange(EnvelopeParts.CombineWarnings(WordsText.CommentsLeftOut(index.Entries.Select(static entry => entry.Node), request.Continuation ?? new ContinuationInput(request.Input))) ?? []);
+            warnings.AddRange(EnvelopeParts.CombineWarnings(WordsText.CommentsLeftOut(index.Entries.Select(static entry => entry.Node))) ?? []);
         }
         else if (request.What == WordsExtractTargets.Tables)
         {

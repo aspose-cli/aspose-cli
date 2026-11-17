@@ -12,9 +12,6 @@ namespace Aspose.Cli.Sdk.Text;
 /// </summary>
 public sealed class TextReplacement
 {
-    private const string RegexHint =
-        "Escape the characters . $ ^ { [ ( | ) * + ? \\ with a backslash, or set regex to false for literal text.";
-
     private readonly string _find;
     private readonly string _replace;
     private readonly bool _caseSensitive;
@@ -31,16 +28,16 @@ public sealed class TextReplacement
     }
 
     /// <summary>
-    /// Why an operation's find cannot be used, with a recovery hint, or null when it can: find
-    /// must be non-empty, and a regular expression must compile and must not match an empty
-    /// string, as a search's pattern must not.
+    /// Why an operation's find cannot be used, or null when it can: find must be non-empty, and a
+    /// regular expression must compile and must not match an empty string, as a search's pattern
+    /// must not.
     /// </summary>
-    public static (string Reason, string Hint)? Problem(string find, bool regex, bool caseSensitive)
+    public static string? Problem(string find, bool regex, bool caseSensitive)
     {
         ArgumentNullException.ThrowIfNull(find);
         if (find.Length == 0)
         {
-            return ("find is empty", "Set find to the text or regular expression to replace.");
+            return "find is empty";
         }
 
         if (!regex)
@@ -55,11 +52,11 @@ public sealed class TextReplacement
         }
         catch (ArgumentException exception)
         {
-            return ($"find is not a valid .NET regular expression: {exception.Message}", RegexHint);
+            return $"find is not a valid .NET regular expression: {exception.Message}";
         }
 
         return expression.IsMatch(string.Empty)
-            ? ("find matches an empty string", "Use an expression that matches at least one character, such as x+ rather than x*.")
+            ? "find matches an empty string"
             : null;
     }
 
@@ -75,7 +72,7 @@ public sealed class TextReplacement
         ArgumentNullException.ThrowIfNull(replace);
         if (Problem(find, regex, caseSensitive) is { } problem)
         {
-            throw new ArgumentException(problem.Reason, nameof(find));
+            throw new ArgumentException(problem, nameof(find));
         }
 
         return new TextReplacement(find, replace, caseSensitive, wholeWord, regex ? SafeRegex.Create(find, caseSensitive) : null);

@@ -31,14 +31,13 @@ internal static class ConvertCommand
                 string? pageText = pages.Read(parse);
                 if (pageText is not null && !pages.AppliesTo(format))
                 {
-                    throw CliErrors.OptionInvalid(pages.Name, $"'{format}' output holds the whole document", $"Use {pages.Name} only with {fixedPageTargets}.");
+                    throw CliErrors.OptionInvalid(pages.Name, $"'{format}' output holds the whole document; it applies only with {fixedPageTargets}");
                 }
 
                 Secret? encryptPassword = standard.EncryptPassword();
                 return new WordsConvertRequest
                 {
                     Input = standard.Input,
-                    Continuation = standard.ContinuationOf(standard.Input),
                     Output = output,
                     Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,

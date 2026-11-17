@@ -20,8 +20,7 @@
         "warnings": { "only": ["COMMENTS_NOT_IN_TEXT"] },
         "json": [
           { "path": "blocks[1].text", "equals": "Payment is due in thirty days." },
-          { "path": "warnings[code=COMMENTS_NOT_IN_TEXT][0].message", "equals": "The text leaves out the 2 comment(s) anchored in it: a comment is not body text." },
-          { "path": "warnings[code=COMMENTS_NOT_IN_TEXT][0].hint", "contains": " --detail comments " }
+          { "path": "warnings[code=COMMENTS_NOT_IN_TEXT][0].message", "equals": "The text leaves out the 2 comment(s) anchored in it: a comment is not body text." }
         ]
       }
     },

@@ -1,5 +1,4 @@
 using System.Text;
-using Aspose.Cli.Sdk;
 using Aspose.Words;
 using Aspose.Words.Fields;
 using Aspose.Words.Notes;
@@ -242,15 +241,12 @@ internal static class WordsText
 
     /// <summary>
     /// The warning that the text of <paramref name="blocks"/> leaves out the comments anchored in
-    /// them, each a story of its own, with the command that lists them; null when none is.
+    /// them, each a story of its own; null when none is.
     /// </summary>
-    internal static Warning? CommentsLeftOut(IEnumerable<Node> blocks, ContinuationInput input)
+    internal static Warning? CommentsLeftOut(IEnumerable<Node> blocks)
     {
         int comments = blocks.OfType<CompositeNode>().Sum(static block => block.GetChildNodes(NodeType.Comment, true).Count);
-        return comments == 0 ? null : new Warning(WordsDiagnostics.CommentsNotInText, $"The text leaves out the {comments} comment(s) anchored in it: a comment is not body text.")
-        {
-            Hint = $"Read them with {input.ContinuationAt("words", "inspect").Option("--detail", WordsInspectDetails.Comments).Quoted()}, which gives each comment's author, text and block.",
-        };
+        return comments == 0 ? null : new Warning(WordsDiagnostics.CommentsNotInText, $"The text leaves out the {comments} comment(s) anchored in it: a comment is not body text.");
     }
 
     /// <summary>

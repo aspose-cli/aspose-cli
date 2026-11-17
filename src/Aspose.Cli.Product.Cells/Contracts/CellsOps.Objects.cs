@@ -182,7 +182,7 @@ public sealed record CellsPivotValueField
     /// <summary>The number format code of the field, such as #,##0.</summary>
     [Pattern(@"\S")] public string? NumberFormat { get; init; }
 
-    /// <summary>The caption of the value field, such as Net sales; derived from the function and field when omitted.</summary>
+    /// <summary>The caption of the value field, such as Net sales; derived from the function and field when omitted. Excel compares it with the source headers and the other captions ignoring case.</summary>
     [Pattern(@"\S")] public string? Label { get; init; }
 }
 
@@ -270,14 +270,12 @@ public sealed record DefineTableOp : CellsSheetOp
     {
         if (Name is { } name)
         {
-            const string Hint = "Use a descriptive name such as SalesTable or tbl_Sales.";
             Rune[] runes = [.. name.EnumerateRunes()];
             OperationInvalidException.Require(
                 (Rune.IsLetter(runes[0]) || runes[0].Value is '_' or '\\')
                     && runes.Skip(1).All(static rune => Rune.IsLetterOrDigit(rune) || IsCombiningMark(rune) || rune.Value is '.' or '_' or '\\' or '?'),
-                $"table name '{name}' must start with a letter, '_' or '\\' and continue with letters, digits, '.', '_', '\\' or '?'",
-                Hint);
-            OperationInvalidException.Require(!ReadsAsCellReference(name), $"table name '{name}' reads as a cell reference", Hint);
+                $"table name '{name}' must start with a letter, '_' or '\\' and continue with letters, digits, '.', '_', '\\' or '?'");
+            OperationInvalidException.Require(!ReadsAsCellReference(name), $"table name '{name}' reads as a cell reference");
         }
 
         return this;

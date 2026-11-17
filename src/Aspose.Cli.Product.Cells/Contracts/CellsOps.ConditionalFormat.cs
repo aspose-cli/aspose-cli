@@ -53,9 +53,7 @@ public sealed record AddConditionalFormatOp : CellsSheetOp
                 break;
             case CellsConditionalRuleKinds.Formula:
                 Require(rule.Value1 is not null,
-                    "a 'formula' rule needs 'value1' set to a formula",
-                    "The formula anchors at the range's top-left cell and shifts per cell; anchor the tested "
-                    + "column with '$' to highlight whole rows, e.g. =$F2=\"OVERDUE\" over A2:F100.");
+                    "a 'formula' rule needs 'value1' set to a formula");
                 break;
             case CellsConditionalRuleKinds.TopBottom:
                 Require(rule.Rank is not null && (!rule.Percent || rule.Rank <= 100),
@@ -89,8 +87,8 @@ public sealed record AddConditionalFormatOp : CellsSheetOp
 
         static string? Comparison(string? value) => value is ['"', .., '"'] ? "=" + value : value;
 
-        static void Require(bool condition, string reason, string? hint = null) =>
-            OperationInvalidException.Require(condition, reason, hint);
+        static void Require(bool condition, string reason) =>
+            OperationInvalidException.Require(condition, reason);
     }
 }
 

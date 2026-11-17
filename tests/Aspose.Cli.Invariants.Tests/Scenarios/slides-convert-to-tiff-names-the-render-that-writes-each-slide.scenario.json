@@ -15,8 +15,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.details.option", "equals": "--to" },
-          { "path": "error.hint", "contains": "'aspose-cli slides render deck.pptx --to tiff --out x.tiff --output-format json'" }
+          { "path": "error.details.option", "equals": "--to" }
         ],
         "files": { "absent": ["x.tiff", "x.1.tiff"] }
       }
@@ -39,9 +38,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [
-          { "path": "error.hint", "contains": "'aspose-cli slides render locked.pptx --password-env DECK_PASSWORD --to tiff --slides 2 --out \"y z.tiff\" --output-format json'" }
-        ],
         "files": { "nothingWritten": true },
         "hidden": ["Invariant-Secret-5f1c9e7a"]
       }
@@ -65,10 +61,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [
-          { "path": "error.hint", "contains": "locked.pptx --password-env \"<password-env>\" --to tiff --slides 2 --out " },
-          { "path": "error.hint", "notContains": "--password-stdin" }
-        ],
         "hidden": ["Invariant-Secret-5f1c9e7a"]
       }
     },
@@ -78,8 +70,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.message", "contains": "has the .tiff extension of tiff, which aspose-cli slides convert does not write" },
-          { "path": "error.hint", "contains": " --to tiff --out w.tiff --output-format json' for tiff." }
+          { "path": "error.message", "contains": "has the .tiff extension of tiff, which aspose-cli slides convert does not write" }
         ],
         "files": { "absent": ["w.tiff"] }
       }
@@ -89,9 +80,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [
-          { "path": "error.hint", "contains": "deck.pptx\" --slides 2 --to tiff --out w.tiff --output-format json' for tiff." }
-        ],
         "files": { "absent": ["w.tiff"] }
       }
     },
@@ -112,9 +100,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [
-          { "path": "error.hint", "contains": "locked.pptx\" --password-env DECK_PASSWORD --slides 2 --to tiff --out v.tiff --output-format json' for tiff." }
-        ],
         "files": { "nothingWritten": true },
         "hidden": ["Invariant-Secret-5f1c9e7a"]
       }
@@ -125,10 +110,6 @@
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [
-          { "path": "error.hint", "contains": "locked.pptx\" --password-env \"<password-env>\" --slides 2 --to tiff --out v.tiff " },
-          { "path": "error.hint", "notContains": "--password-stdin" }
-        ],
         "hidden": ["Invariant-Secret-5f1c9e7a"]
       }
     },
@@ -146,8 +127,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.message", "contains": "has the .png extension of png, which aspose-cli slides convert does not write" },
-          { "path": "error.hint", "contains": " --to png --out w.png --output-format json' for png." }
+          { "path": "error.message", "contains": "has the .png extension of png, which aspose-cli slides convert does not write" }
         ],
         "files": { "absent": ["w.png"] }
       }

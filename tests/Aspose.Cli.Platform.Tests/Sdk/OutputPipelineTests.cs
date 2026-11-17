@@ -76,7 +76,7 @@ public sealed class OutputPipelineTests
         Warning both = Assert.Single(pipeline.Disclosure()!);
 
         Assert.Equal(WarningCodes.EvaluationMode, text.Code);
-        Assert.DoesNotContain("watermark", text.Message + text.Hint, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("watermark", text.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("cut the content short", text.Message, StringComparison.Ordinal);
         Assert.Equal(requested, text.Message.Contains("--license-mode evaluation", StringComparison.Ordinal));
         Assert.Contains("watermark", both.Message, StringComparison.Ordinal);

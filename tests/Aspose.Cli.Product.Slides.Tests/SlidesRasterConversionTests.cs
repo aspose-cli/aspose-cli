@@ -24,10 +24,6 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         Assert.Equal(2, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(
-            $"Give --out the .png extension, as in png.png, or name a file inside the png folder, as in {Path.Combine("png", "page.png")}; "
-                + "an output of several parts is written beside that file as numbered files.",
-            error["hint"]!.GetValue<string>());
         Assert.Equal(["deck.pptx"], Directory.GetFileSystemEntries(workspace.Path).Select(Path.GetFileName));
     }
 
@@ -67,9 +63,6 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("--width", error["details"]!["option"]!.GetValue<string>());
         Assert.Contains("cannot be combined with --dpi", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Equal(
-            "Drop --dpi to render at an exact pixel width, or drop --width to render at a DPI.",
-            error["hint"]!.GetValue<string>());
         Assert.Equal(["deck.pptx"], Directory.GetFileSystemEntries(workspace.Path).Select(Path.GetFileName));
     }
 

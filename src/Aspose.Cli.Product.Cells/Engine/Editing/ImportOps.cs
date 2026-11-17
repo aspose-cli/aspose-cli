@@ -38,8 +38,7 @@ internal sealed class CellsImportSources(
     {
         if (!_opened.TryGetValue(path, out LoadedWorkbook? loaded))
         {
-            loaded = loader.Open(path, PasswordSource.OperationField(
-                OperationSecrets.Resolve(secrets, sourcePasswordEnv), "sourcePasswordEnv"));
+            loaded = loader.Open(path, PasswordSource.Option(OperationSecrets.Resolve(secrets, sourcePasswordEnv)));
 
             _opened.Add(path, loaded);
         }
@@ -93,8 +92,7 @@ internal static class ImportOps
         Workbook source = sources.Open(op.Path, op.SourcePasswordEnv);
         Worksheet origin = op.SourceSheet is { } sheetName ? Sheets.Resolve(source, sheetName) : source.Worksheets[0];
         string name = op.Name ?? origin.Name;
-        SheetOps.RequireUnusedName(
-            workbook, name, "Give the imported sheet another name with \"name\", or rename or delete the existing sheet first.");
+        SheetOps.RequireUnusedName(workbook, name);
 
         RefuseConflictingNames(workbook, origin);
         // The source was checked once when it opened; each import adds its sheet again.
@@ -200,8 +198,6 @@ internal static class ImportOps
         {
             // --verify reports it as a verification issue: the output's results differ from the source's.
             AffectsCompleteness = true,
-            Hint = "Recalculation never opens the linked workbook. Replace these formulas with set_formula or set_values, or open the "
-                + "source in Excel with the linked workbook available and save it so the link caches its values.",
             Docs = "cells/editing",
             Location = CellsAddresses.At("cell", to.Name, changed[0]),
         });
@@ -233,8 +229,7 @@ internal static class ImportOps
         if (conflicts.Length > 0)
         {
             throw new OperationInvalidException(
-                $"the source and this workbook both define the name{(conflicts.Length == 1 ? string.Empty : "s")} {string.Join(", ", conflicts.Select(static text => $"'{text}'"))} differently",
-                "Rename or delete the name in one of the workbooks (delete_name, define_name), or import the cells with import_range.");
+                $"the source and this workbook both define the name{(conflicts.Length == 1 ? string.Empty : "s")} {string.Join(", ", conflicts.Select(static text => $"'{text}'"))} differently");
         }
     }
 

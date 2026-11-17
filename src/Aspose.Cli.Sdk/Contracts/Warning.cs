@@ -4,8 +4,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
-/// A non-fatal condition the caller should act on. Warnings are part of the
-/// public contract, and <see cref="Hint"/> tells an agent what to do next.
+/// A non-fatal condition of a command that succeeded. Warnings are part of the public contract.
 /// </summary>
 [SchemaId("warning")]
 public sealed record Warning
@@ -28,10 +27,6 @@ public sealed record Warning
     /// <summary>Human-readable statement of the condition.</summary>
     [MinLength(1)]
     public string Message { get; init; }
-
-    /// <summary>Recommended next action for the caller.</summary>
-    [MinLength(1)]
-    public string? Hint { get; init; }
 
     /// <summary>Topic name for <c>aspose-cli docs &lt;topic&gt;</c> with background details.</summary>
     [MinLength(1)]

@@ -147,7 +147,7 @@ public sealed class WordsMergeDataTests
     }
 
     [Fact]
-    public void JsonFile_WithBadSyntax_IsInvalidWithASyntaxHint()
+    public void JsonFile_WithBadSyntax_IsInvalid()
     {
         using var temp = new TempDirectory();
         string path = Write(temp, "rows.json", "[{\"a\":");
@@ -155,7 +155,6 @@ public sealed class WordsMergeDataTests
         CliException error = Assert.Throws<CliException>(() => WordsMergeData.Read(path, Inputs()));
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
-        Assert.Contains("JSON syntax", error.Hint!, StringComparison.Ordinal);
     }
 
     [Theory]

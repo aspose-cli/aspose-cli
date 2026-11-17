@@ -1,7 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Formats;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
@@ -99,8 +98,8 @@ internal sealed class CellsProtectionTracker
         }
     }
 
-    /// <summary>The warning for an output in <paramref name="format"/>, or null when no operation went through protection.</summary>
-    internal Warning? Warning(FormatDescriptor format)
+    /// <summary>The warning for the output, or null when no operation went through protection.</summary>
+    internal Warning? Warning()
     {
         if (_sheets.Count == 0 && !_structure)
         {
@@ -119,19 +118,10 @@ internal sealed class CellsProtectionTracker
             changed.Add("the protected workbook structure");
         }
 
-        string kept = CellsEngineFormats.KeepsSheetProtection(format.Id)
-            ? "The output keeps the protection unless the batch removed it with unprotect_sheet or unprotect_workbook."
-            : $"A {format.Id} output does not keep the protection; save to xlsx or another workbook format to keep it.";
         string passwords = _keptPasswords.Count == 0 ? string.Empty
             : $" protect_sheet kept the existing password of {(_keptPasswords.Count == 1 ? "sheet" : "sheets")} {string.Join(", ", _keptPasswords.Select(Sheets.QuotedName))}: only that password unprotects it, and a password the operation named has no effect; unprotect_sheet first to change it.";
         return new Warning(WarningCodes.ProtectionNotEnforced, $"The edit changed {string.Join(" and ", changed)}; protection only guides Excel, so the edit was applied through it." + passwords)
         {
-            Hint = "Confirm the change is authorized: " + (_sheets.Count == 0
-                    ? "Excel adds, deletes, renames, moves, hides and recolors no sheets while the structure is protected. "
-                    : _structure
-                        ? "Excel lets users change only unlocked cells and the actions a sheet's protection allows, and no sheets or tab colors while the structure is protected. "
-                        : "Excel lets users change only unlocked cells and the actions a sheet's protection allows. ")
-                + kept,
             Location = _sheets.Count == 1 && !_structure ? CellsAddresses.OfSheet("sheet", _sheets[0]) : null,
         };
     }

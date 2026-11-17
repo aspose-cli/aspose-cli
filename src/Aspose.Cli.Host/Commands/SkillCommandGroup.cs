@@ -85,25 +85,25 @@ internal static class SkillCommandGroup
             BundledSkill? package = catalog.All.FirstOrDefault(candidate => candidate.Name == packageName);
             if (package is null)
             {
-                throw CliErrors.OptionInvalid("skill", $"unknown bundled skill '{packageName}'", $"Run 'aspose-cli skill list'; available: {string.Join(", ", catalog.All.Select(static item => item.Name))}.");
+                throw CliErrors.OptionInvalid("skill", $"unknown bundled skill '{packageName}'", Mistake.Of(packageName, catalog.All.Select(static item => item.Name)));
             }
 
             string? explicitTarget = parseResult.GetValue(targetOption);
             string? host = parseResult.GetValue(hostOption);
             if (explicitTarget is null && host is null)
             {
-                throw CliErrors.OptionInvalid("--host", "a host is required unless --target is used", "Choose codex, claude-code, or opencode.");
+                throw CliErrors.OptionInvalid("--host", "a host is required unless --target is used", Mistake.Of(string.Empty, [Codex, ClaudeCode, OpenCode]));
             }
 
             if (explicitTarget is not null && host is not null)
             {
-                throw CliErrors.OptionInvalid("--target", "cannot be combined with --host", "Use the host convention or an explicit target, not both.");
+                throw CliErrors.OptionInvalid("--target", "cannot be combined with --host");
             }
 
             // --dir names the project and --user the user's own directory, so they never apply together.
             if (parseResult.GetValue(userOption) && parseResult.GetValue(dirOption) is not null)
             {
-                throw CliErrors.OptionInvalid("--dir", "cannot be combined with --user", "Drop --dir to install for the current user, or drop --user to install into the project at --dir.");
+                throw CliErrors.OptionInvalid("--dir", "cannot be combined with --user");
             }
 
             string parent = explicitTarget is not null
@@ -135,7 +135,7 @@ internal static class SkillCommandGroup
             (ClaudeCode, true) => Path.Combine(root, ".claude", "skills"),
             (OpenCode, false) => Path.Combine(root, ".opencode", "skills"),
             (OpenCode, true) => Path.Combine(root, ".config", "opencode", "skills"),
-            _ => throw CliErrors.OptionInvalid("--host", $"unsupported host '{host}'", "Choose codex, claude-code, or opencode."),
+            _ => throw CliErrors.OptionInvalid("--host", $"unsupported host '{host}'"),
         };
     }
 }

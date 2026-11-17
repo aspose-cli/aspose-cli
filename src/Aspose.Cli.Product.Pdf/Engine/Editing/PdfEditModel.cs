@@ -174,12 +174,7 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
     {
         // Like a verification issue, it never repeats the pattern.
         RedactTextOp => new NoEffect(NoEffectReasons.NoMatch,
-            $"Operation {operation.Id} (redact_text) matched no text on the pages searched, so nothing was redacted there.")
-        {
-            Hint = "Search the pages with 'pdf search' and the same pattern. When the text shows on the page but is not found, "
-                + "its extracted text differs, for example by spaces between characters: match it with a regular expression "
-                + "that allows them (\\s*), or cover it with redact_area.",
-        },
+            $"Operation {operation.Id} (redact_text) matched no text on the pages searched, so nothing was redacted there."),
         FlattenFormsOp => new NoEffect(NoEffectReasons.NoMatch,
             $"Operation {operation.Id} (flatten_forms) found no form field to flatten."),
         DecryptDocumentOp => new NoEffect(NoEffectReasons.NoChange,
@@ -203,9 +198,7 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
             {
                 string name = PdfPropertyNames.Standard(key)?.Name ?? key;
                 throw new OperationInvalidException(
-                    $"the {name} '{value}' has characters beyond Latin-1, which the PDF engine writes garbled into an encrypted file, and the input stays encrypted",
-                    "Add encrypt_document after set_properties in the same batch, or pass --encrypt-env: the edit then encrypts a copy that keeps the text. "
-                    + "Or add decrypt_document before set_properties to save the output without encryption, or use Latin-1 text.");
+                    $"the {name} '{value}' has characters beyond Latin-1, which the PDF engine writes garbled into an encrypted file, and the input stays encrypted");
             }
         }
     }

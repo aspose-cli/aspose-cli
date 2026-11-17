@@ -15,9 +15,7 @@
         "error": "OPS_INVALID",
         "json": [
           { "path": "error.details.id", "equals": "op-0002" },
-          { "path": "error.message", "contains": "Section 'A' already starts at slide 2" },
-          { "path": "error.hint", "contains": "Give 'at' a slide no section starts at" },
-          { "path": "error.hint", "contains": "A section the input already holds stays, since no operation renames or deletes one: then give 'at' another slide." }
+          { "path": "error.message", "contains": "Section 'A' already starts at slide 2" }
         ],
         "files": { "absent": ["twice.pptx"] }
       }
@@ -28,8 +26,7 @@
         "exitCode": 4,
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.message", "contains": "Section 'Default Section' already starts at slide 1" },
-          { "path": "error.hint", "contains": "so insert the section of slide 1 first in the batch" }
+          { "path": "error.message", "contains": "Section 'Default Section' already starts at slide 1" }
         ],
         "files": { "absent": ["default.pptx"] }
       }
@@ -44,8 +41,7 @@
         "exitCode": 4,
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.message", "contains": "Section 'Default Section' already starts at slide 1" },
-          { "path": "error.hint", "contains": "A section the input already holds stays, since no operation renames or deletes one: then give 'at' another slide." }
+          { "path": "error.message", "contains": "Section 'Default Section' already starts at slide 1" }
         ],
         "files": { "absent": ["kept.pptx"] }
       }

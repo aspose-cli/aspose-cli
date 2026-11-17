@@ -30,7 +30,6 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal("invalid-value", error.Details["reason"]!.GetValue<string>());
         Assert.Equal("value", error.Details["field"]!.GetValue<string>());
         Assert.EndsWith("is invalid: value must be at least 0", error.Message, StringComparison.Ordinal);
-        Assert.Contains("aspose-cli schema v2/common/ops", error.Hint, StringComparison.Ordinal);
         Assert.Equal(["op-0001", "op-0002"], Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] })
             .Ops.Select(static op => op.Id));
     }
@@ -157,7 +156,6 @@ public sealed class BoundedOperationPipelineTests
             $$"""{"ops":[{{operation}}]}""", TestContracts.Json));
 
         Assert.Equal(suggestion, error.Details!["suggestions"]?[0]?.GetValue<string>());
-        Assert.StartsWith($"Did you mean '{suggestion}'", error.Hint, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -211,25 +209,6 @@ public sealed class BoundedOperationPipelineTests
     }
 
     /// <summary>
-    /// A document that is not JSON names no operation, so its hint points at the syntax error's
-    /// position, and a backslash a JSON string cannot hold, as in a regular expression, is shown
-    /// written as two.
-    /// </summary>
-    [Theory]
-    [InlineData("{\"ops\":[{\"op\":\"note\",\"text\":\"(\\+86 *)?1[3-9]\\\\d{9}\"}]}", true)]
-    [InlineData("{\"ops\":[{\"op\":\"note\" \"text\":\"a\"}]}", false)]
-    public void Parse_HintsAtTheJsonSyntaxRatherThanAnOperation(string document, bool escape)
-    {
-        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
-
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.DoesNotContain("named operation", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("JSON syntax", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("line", error.Hint, StringComparison.Ordinal);
-        Assert.Equal(escape, error.Hint!.Contains("\"\\\\+\"", StringComparison.Ordinal));
-    }
-
-    /// <summary>
     /// A trailing comma is explained in the document's terms, at its position: the comma before
     /// the closing bracket or brace is deleted; nothing speaks of the JSON reader's options.
     /// </summary>
@@ -241,10 +220,9 @@ public sealed class BoundedOperationPipelineTests
         CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.DoesNotContain("reader options", error.Message + error.Hint, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("in this mode", error.Message + error.Hint, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("reader options", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("in this mode", error.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("delete the comma", error.Message, StringComparison.Ordinal);
-        Assert.Contains("delete the comma", error.Hint, StringComparison.Ordinal);
         Assert.Matches(@"\(line 1, byte \d+\)$", error.Message);
         Assert.Equal("invalid-json", error.Details!["reason"]!.GetValue<string>());
     }
@@ -371,7 +349,6 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(2, applied);
         Assert.Contains("the batch stopped and nothing was written", error.Message, StringComparison.Ordinal);
-        Assert.Equal(EngineErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
     public static TheoryData<Exception> CliIoFailures() => new()
@@ -541,20 +518,6 @@ public sealed class BoundedOperationPipelineTests
     };
 
     [Theory]
-    [MemberData(nameof(FileAccessFailures))]
-    public void Run_BlamesFileAccessNotTheDocumentWhenTheEngineCannotOpenAFile(Exception cause)
-    {
-        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
-
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, _ =>
-            throw new EngineOpException("in use", cause)));
-
-        Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
-        Assert.DoesNotContain("may not support", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("close", error.Hint, StringComparison.Ordinal);
-    }
-
-    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void Run_NamesTheOperationWhoseDeadlineExpiredInsideIt(bool bestEffort)
@@ -610,17 +573,6 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
         Assert.Null(error.Details!["id"]);
         Assert.Equal("operations", error.Details["phase"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void Run_KeepsTheFeatureHintWhenTheEngineReadsTruncatedData()
-    {
-        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
-
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, static _ =>
-            throw new EngineOpException("truncated", new EndOfStreamException("Unable to read beyond the end."))));
-
-        Assert.Equal(EngineErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
     private static IReadOnlyList<BoundedOperationOutcome> Run(TestBatch batch, bool bestEffort, Action<TestOp> apply) =>

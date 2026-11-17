@@ -30,7 +30,7 @@ reading`. What Words adds:
 `words read --blocks 1- --max-blocks 30` reads the first 30 blocks, or all of
 a shorter document. `--section` with `--blocks` reads only that section's
 blocks in the range; block numbers run through the whole document, so a range
-with none of them is `BLOCK_NOT_FOUND`, whose hint names the section's blocks.
+with none of them is `BLOCK_NOT_FOUND`.
 
 `extract --what text` writes the visible text of every block to one file, one
 line per paragraph and per table row, whose cells are separated by tabs. It
@@ -206,10 +206,7 @@ Neither writes a page number: when the primary header or footer they replace
 held one (a PAGE, NUMPAGES or SECTIONPAGES field) and the batch leaves the
 section's primary header and footer without one, the edit reports
 `PAGE_NUMBERS_REMOVED`, naming each section that showed it, a later section
-that continues it too. Its hint gives the `set_page_numbers` that numbers the
-sections whose header or footer the operation wrote, which those that continue
-it follow, and writes the number as it read; words beside a field such as
-`DATE` it names instead, since no `text` writes that field. A first-page or even-page kind is not checked, since
+that continues it too. A first-page or even-page kind is not checked, since
 no operation numbers those pages again.
 After `import_sections`, check the result with `inspect --detail sections`; to
 give the whole document one header and footer, follow with `set_header` and
@@ -282,8 +279,7 @@ Use `--in-place` without `--backup`, which would keep the unencrypted PDF.
 the Word formats (`doc`, `dot`, `docx`, `docm`, `dotx`, `dotm`, and Flat OPC
 or WordML `.xml`), `rtf`, `odt` and `ott`. Any other output, such as
 `--out report.pdf` or `notes.md`, or an in-place edit of such an input, is
-refused with `OPTION_INVALID` before anything is read; the hint names the
-convert to run on the edited copy:
+refused with `OPTION_INVALID` before anything is read; convert the edited copy:
 
 ```powershell
 aspose-cli words edit contract.docx --ops ops.json --out revised.docx --verify --output-format json

@@ -88,7 +88,6 @@ public sealed class CellsResourceLoadingTests
         {
             // The Host restates it as FORMAT_UNSUPPORTED or FORMAT_MISMATCH where routing says so.
             Assert.Equal(ErrorCodes.FileCorrupt, refused.Code);
-            Assert.StartsWith("cells writes html, mhtml", refused.Hint, StringComparison.Ordinal);
         }
         Assert.False(File.Exists(fixture.Temp.File("converted-" + extension + ".xlsx")));
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));

@@ -69,13 +69,9 @@ public sealed class WordsSplitExtractCliTests : IDisposable
         Assert.True(split.ExitCode == 0, split.StdErr + split.StdOut);
         JsonNode result = JsonNode.Parse(split.StdOut)!;
         Assert.Equal(2, result["outputs"]!.AsArray().Count);
-        JsonNode warning = Assert.Single(
+        Assert.Single(
             result["warnings"]!.AsArray(),
-            static item => item!["code"]!.GetValue<string>() == "SPLIT_SINGLE_HEADING")!;
-        string hint = warning["hint"]!.GetValue<string>();
-        Assert.Contains("""{"op":"set_style","target":{"block":""", hint, StringComparison.Ordinal);
-        Assert.Contains("""style":"Heading 1"}""", hint, StringComparison.Ordinal);
-        Assert.Contains("--by sections", hint, StringComparison.Ordinal);
+            static item => item!["code"]!.GetValue<string>() == "SPLIT_SINGLE_HEADING");
     }
 
     [Category(TestCategory.Slow)]

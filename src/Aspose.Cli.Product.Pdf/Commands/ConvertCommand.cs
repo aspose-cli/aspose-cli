@@ -8,7 +8,7 @@ internal static class ConvertCommand
 {
     public static CommandDefinition<PdfConvertRequest, PdfConvertResult> Create()
     {
-        var pages = new PartRangeOption("page", "every page", narrowsReads: static format => !PdfFormats.ConvertReadsEveryPage(format));
+        var pages = new PartRangeOption("page", "every page");
         return new(
             "convert",
             "Convert selected PDF pages to a supported format.",
@@ -29,20 +29,10 @@ internal static class ConvertCommand
                     Output = output,
                     Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,
-                    EditableConversion = standard.EditableConversion(),
-                    FormsInspection = PdfInputs.FormsInspection(standard),
-                    PictureExtraction = PdfInputs.PictureExtraction(standard, output, pages.Read(parse)),
                 };
             },
             Table)
         {
-            RefusedOptions =
-            [
-                new RefusedOption(
-                    ["--encrypt", "--encrypt-env", "--encrypt-stdin"],
-                    "'pdf convert' does not encrypt its output. To encrypt a PDF, run 'pdf edit --out --ops' on it "
-                        + "with an encrypt_document operation, which writes an encrypted copy."),
-            ],
             Examples =
             [
                 "pdf convert report.pdf --out report.docx",

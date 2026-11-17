@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Words.Contracts;
@@ -13,8 +12,6 @@ public sealed record WordsCompareRequest
     public required string Left { get; init; }
     /// <summary>The changed document.</summary>
     public required string Right { get; init; }
-    /// <summary>The changed document as a command a hint names opens it; null when either document has a password, which such a command cannot pass on.</summary>
-    public ContinuationInput? Revised { get; init; }
     public bool IgnoreFormatting { get; init; }
     /// <summary>The unit a change is marked in: <c>word</c> or <c>char</c>.</summary>
     public string Granularity { get; init; } = DefaultGranularity;

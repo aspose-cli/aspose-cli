@@ -28,7 +28,6 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
 
         CliException refused = Assert.Throws<CliException>(() => CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = path }));
         Assert.Equal(ErrorCodes.InputEncodingInvalid, refused.Code);
-        Assert.Contains($"cells convert \"{path}\" --to xlsx --encoding gb18030", refused.Hint, StringComparison.Ordinal);
 
         CellsReadResult read = ImportAndRead(path, new CellsTextImportOptions { Encoding = "gb18030" });
         Assert.Equal("华东一区", read.Sheet!.Cells![1][0].V?.ToString());

@@ -477,11 +477,8 @@ internal sealed partial class WordsMutationHandlers
         string location = isHeader ? WordsHeaderFooterLocations.Header : WordsHeaderFooterLocations.Footer;
         if (WordsReadBack.UnwrittenField(paragraph) is { } name)
         {
-            string aligned = WordsReadBack.AlignmentName(paragraph) is { } alignment ? $",\"alignment\":\"{alignment}\"" : string.Empty;
             throw new OperationInvalidException(
-                $"the {location} paragraph that holds the page number also holds a {name} field, which {(moving ? "moving the number would clear" : "text would replace")} with that paragraph: a page number's text, given or taken along, writes no field but {{n}} and {{N}}",
-                $"To {(moving ? "move the number" : "write the number's words")}, rewrite the {location} with {(isHeader ? "set_header" : "set_footer")} first, which writes no {name} field, and then number the pages; "
-                    + $"{{\"op\":\"set_page_numbers\",\"location\":\"{location}\"{aligned}}} keeps that paragraph, its words and its {name} field as they are.");
+                $"the {location} paragraph that holds the page number also holds a {name} field, which {(moving ? "moving the number would clear" : "text would replace")} with that paragraph: a page number's text, given or taken along, writes no field but {{n}} and {{N}}");
         }
 
         if (paragraph.GetChildNodes(NodeType.Any, isDeep: false).Cast<Node>().All(IsTextOrField))
@@ -491,9 +488,7 @@ internal sealed partial class WordsMutationHandlers
 
         throw new OperationInvalidException(
             $"the {location} paragraph that holds the page number also holds an image or another object that text cannot carry, and "
-                + (moving ? "moving the number clears that whole paragraph" : "text replaces the whole paragraph"),
-            $"Rewrite the {location} with {(isHeader ? "set_header" : "set_footer")} first so that the page number stands in a paragraph of its own"
-                + (moving ? "." : ", or omit text to keep the paragraph as it is."));
+                + (moving ? "moving the number clears that whole paragraph" : "text replaces the whole paragraph"));
     }
 
     private bool IsTextOrField(Node node) =>
@@ -541,7 +536,6 @@ internal sealed partial class WordsMutationHandlers
     }
 
     private LoadedDocument OpenSource(ImportSectionsOp operation) =>
-        _loader.Open(operation.Path, PasswordSource.OperationField(
-            OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv), "sourcePasswordEnv"));
+        _loader.Open(operation.Path, PasswordSource.Option(OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv)));
 }
 

@@ -129,7 +129,6 @@ public sealed class SlidesContractDriftTests
         Assert.Equal(SlidesInfo.MediaListLimit, info.Media!.Count);
         Warning warning = Assert.Single(info.Warnings ?? [], static warning => warning.Code == WarningCodes.ListTruncated);
         Assert.Equal("media", warning.Details!["list"]!.GetValue<string>());
-        Assert.Contains("--what media", warning.Hint, StringComparison.Ordinal);
     }
 
     [Fact]

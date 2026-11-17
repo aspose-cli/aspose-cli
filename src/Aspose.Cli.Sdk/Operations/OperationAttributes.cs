@@ -150,13 +150,6 @@ public sealed class OperationAttribute(string name) : Attribute
 {
     /// <summary>The value of the operation's <c>op</c> discriminator.</summary>
     public string Name { get; } = name;
-
-    /// <summary>
-    /// What to do instead when an entry of this operation omits a required field or gives an
-    /// unknown one, such as the operation that removes what this one sets; it leads the hint of
-    /// the error. Null for none.
-    /// </summary>
-    public string? Hint { get; set; }
 }
 
 /// <summary>
@@ -210,12 +203,3 @@ public abstract class NotBlankAttribute : MinLengthAttribute
         Visible.Describe(schema);
     }
 }
-
-/// <summary>
-/// Marks the operation that encrypts the document its edit publishes, with a password read only
-/// from the environment variables its <see cref="SecretEnvAttribute"/> fields name, so the CLI can
-/// tell how to protect an output another command wrote without a password, and an edit given
-/// <c>--encrypt-env</c> and no operation how to only encrypt.
-/// </summary>
-[AttributeUsage(AttributeTargets.Class, Inherited = false)]
-public sealed class EncryptsOutputAttribute : Attribute;

@@ -15,7 +15,7 @@ internal static class PdfRead
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         IReadOnlyList<int> requested = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
-        var reading = new TextReading(loaded.Document, request.FormsInspection);
+        var reading = new TextReading(loaded.Document);
         var pages = new List<PdfPageText>();
         var scanned = new List<int>();
         int remaining = request.MaxCharacters;
@@ -49,12 +49,7 @@ internal static class PdfRead
         var warnings = new List<Warning>();
         if (scanned.Count > 0)
         {
-            warnings.Add(new Warning(PdfDiagnostics.ScannedPagesSuspected, $"Pages with no extractable text appear image-dominated: {string.Join(", ", scanned)}.")
-            {
-                Hint = "This build has no OCR: read those pages from rendered images ('aspose-cli pdf render'), and hide content "
-                    + "on them with redact_area, whose coordinates you can read from 'aspose-cli pdf render --grid 50', "
-                    + "which labels points from the page's top-left corner.",
-            });
+            warnings.Add(new Warning(PdfDiagnostics.ScannedPagesSuspected, $"Pages with no extractable text appear image-dominated: {string.Join(", ", scanned)}."));
         }
 
         if (reading.FormValuesNotInText() is { } filled)

@@ -116,7 +116,6 @@ internal sealed partial class SlidesMutationHandlers
             _warnings.Add(new Warning(SlidesDiagnostics.PlaceholderRoleChanged, string.Create(CultureInfo.InvariantCulture,
                 $"Shape {shape.OfficeInteropShapeId} on slide {number} was its {was} placeholder and is its {now} placeholder under layout '{slide.LayoutSlide.Name}'{(now == SlidesPlaceholderRoles.Title ? ", so the slide's title is now the text of that shape" : "")}."))
             {
-                Hint = $"The layout has no {was} placeholder in that place. Check the slide's placeholders: set_title or set_text rewrites the shape's text, delete_shape removes it, and set_footer sets a footer, date or slide number again; {ShapeListing}.",
                 Location = SlidesStateProjection.ShapeAddress(number, shape.OfficeInteropShapeId),
                 Details = new JsonObject { ["shapeId"] = shape.OfficeInteropShapeId, ["from"] = was, ["to"] = now },
             });
@@ -140,16 +139,9 @@ internal sealed partial class SlidesMutationHandlers
         int number = _presentation.Slides.IndexOf(slide) + 1;
         IMasterSlide[] masters = [.. _presentation.Masters];
         (int from, int to) = (Array.IndexOf(masters, was) + 1, Array.IndexOf(masters, now) + 1);
-        // The names set_layout, which looks a name up in the slide's own master first, takes back to its former master.
-        string[] back = [.. was.LayoutSlides
-            .Where(layout => !string.IsNullOrWhiteSpace(layout.Name) && ResolveLayout(_presentation, layout.Name, now).MasterSlide == was)
-            .Select(static layout => $"'{layout.Name}'")];
         _warnings.Add(new Warning(SlidesDiagnostics.SlideMasterChanged, string.Create(CultureInfo.InvariantCulture,
             $"Slide {number} took layout '{slide.LayoutSlide.Name}' of master {to} '{now.Name}', since {(beside is null ? "its " : "")}master {from} '{was.Name}'{(beside is null ? "" : $" of the slide {beside} it")} has no layout of that name, and now shows the theme and art of master {to}."))
         {
-            Hint = back.Length > 0
-                ? string.Create(CultureInfo.InvariantCulture, $"To take the slide back to master {from}, set_layout it to one of {string.Join(", ", back)}, the layouts of master {from} whose names master {to} has none of; 'slides inspect --detail masters' lists the masters in order.")
-                : string.Create(CultureInfo.InvariantCulture, $"No layout name takes the slide back to master {from}: set_layout looks a name up in the slide's own master first, then takes the first layout of the presentation by that name, and none of those is a layout of master {from}."),
             Location = SlidesStateProjection.SlideAddress(number),
             Details = new JsonObject { ["fromMaster"] = from, ["toMaster"] = to },
         });
@@ -174,7 +166,6 @@ internal sealed partial class SlidesMutationHandlers
             _warnings.Add(new Warning(SlidesDiagnostics.SlideBackgroundReset, string.Create(
                 CultureInfo.InvariantCulture, $"The own background of slide {number} was removed, so it shows its layout's background."))
             {
-                Hint = "To keep a background, set it again with set_background after this operation, then review the slides.",
                 Location = SlidesStateProjection.SlideAddress(number),
             });
         }
@@ -219,8 +210,7 @@ internal sealed partial class SlidesMutationHandlers
         if (_presentation.Sections.FirstOrDefault(section => section.StartedFromSlide == Slide) is { } starting)
         {
             throw new OperationInvalidException(
-                string.Create(CultureInfo.InvariantCulture, $"Section '{starting.Name}' already starts at slide {operation.At}, and a slide starts one section at most."),
-                "Give 'at' a slide no section starts at; 'slides inspect --detail sections' lists each section's startSlide. A section inserted at a later slide of a presentation without sections gives the slides before it a section named 'Default Section', so insert the section of slide 1 first in the batch. A section the input already holds stays, since no operation renames or deletes one: then give 'at' another slide.");
+                string.Create(CultureInfo.InvariantCulture, $"Section '{starting.Name}' already starts at slide {operation.At}, and a slide starts one section at most."));
         }
 
         _presentation.Sections.AddSection(operation.Name, Slide);
@@ -229,8 +219,7 @@ internal sealed partial class SlidesMutationHandlers
 
     public ValueTuple Apply(ImportSlidesOp operation)
     {
-        using LoadedPresentation source = _loader.Open(operation.Path, PasswordSource.OperationField(
-            OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv), "sourcePasswordEnv"));
+        using LoadedPresentation source = _loader.Open(operation.Path, PasswordSource.Option(OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv)));
         var clones = new List<ISlide>();
         foreach (ISlide slide in source.Presentation.Slides)
         {

@@ -21,13 +21,11 @@ internal sealed class WordsDocumentLoader
     /// </summary>
     internal static readonly InputLoading Loading = new(
         "supported word-processing document",
-        "Verify the file opens in Word and that its content matches a format listed by 'aspose-cli capabilities'.",
         Classify);
 
-    // A damaged PDF is named as a PDF, so the hint sends the reader to a PDF reader, not Word.
+    // A damaged PDF is named as a PDF, not as a word-processing document.
     private static readonly InputLoading PdfLoading = new(
         "PDF document",
-        "Verify the file opens in a PDF reader; a damaged or truncated PDF cannot be read.",
         Classify);
 
     private readonly ResourceBudgetLedger _resourceBudgets;

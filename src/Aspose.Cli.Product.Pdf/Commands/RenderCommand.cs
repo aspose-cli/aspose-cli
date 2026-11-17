@@ -39,7 +39,7 @@ internal static class RenderCommand
                     Output = output,
                     Pages = selection,
                     Dpi = resolution,
-                    Grid = parse.GetInRange(grid, "Choose a spacing such as --grid 50."),
+                    Grid = parse.GetInRange(grid),
                     Password = standard.InputPassword,
                 };
             },

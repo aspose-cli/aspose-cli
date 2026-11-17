@@ -425,23 +425,6 @@ public sealed class StandardOptions
     internal OutputTarget? OutputTarget { get; }
 
     /// <summary>
-    /// The output options of every other command, refused by one that names the file it creates
-    /// by its argument: the error shows the command line with their value as that argument.
-    /// </summary>
-    internal IReadOnlyList<RefusedOption> RefusedOutputOptions =>
-        CreatedFile is null
-            ? []
-            :
-            [
-                new RefusedOption(
-                    [StandardOptionNames.Out, "--output", StandardOptionNames.OutAlias],
-                    "The file to create is the first argument of this command, not an option.")
-                {
-                    Argument = CreatedFile.Name,
-                },
-            ];
-
-    /// <summary>
     /// Creates the command: the document arguments, the command's own arguments, then the
     /// target format, the command's own options in declaration order and the common options.
     /// </summary>
@@ -642,9 +625,8 @@ public partial class StandardInvocation
     }
 
     /// <summary>
-    /// Restates a password error about one of the two documents a command reads with that
-    /// document's own password option, which the loader that raised it cannot know, and one
-    /// about any other document with both options; returns any other error unchanged.
+    /// Restates a password error about one of the two documents a command reads, naming that
+    /// input, which the loader that raised it cannot know; returns any other error unchanged.
     /// </summary>
     internal CliException ForPairedInput(CliException error)
     {
@@ -658,14 +640,7 @@ public partial class StandardInvocation
             string.Equals(path, _input, StringComparison.Ordinal) ? (_options.Input, _options.InputPassword)
             : string.Equals(path, _other, StringComparison.Ordinal) ? (_options.Other, _options.OtherPassword)
             : (null, null);
-        if (argument is not null && password is not null)
-        {
-            return CliErrors.ForInput(error, argument.Name, password.EnvironmentOption);
-        }
-
-        return _options.InputPassword is { } first && _options.OtherPassword is { } second
-            ? CliErrors.ForPairedCommand(error, first.EnvironmentOption, second.EnvironmentOption)
-            : error;
+        return argument is not null && password is not null ? CliErrors.ForInput(error, argument.Name) : error;
     }
 
     /// <summary>The parameter naming the output file and the value the caller gave it, or null when none was named.</summary>
@@ -714,65 +689,6 @@ public partial class StandardInvocation
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a conflicting, empty or unavailable source.</exception>
     public Secret? InputPassword => _inputPassword.Value;
-
-    /// <summary>
-    /// Starts the command that continues this invocation for a result's <c>window.next</c>: the
-    /// same command path and input, and the input's password passed on as
-    /// <see cref="ContinuationOf"/> passes it. The product appends its own options.
-    /// </summary>
-    public ContinuationCommand Continuation() => ContinuationAt(CommandPath());
-
-    /// <summary>
-    /// Starts the command at <paramref name="path"/>, such as <c>cells render</c>, on this
-    /// invocation's input, with the input's password passed on as <see cref="ContinuationOf"/>
-    /// passes it: the one way a hint names a command on the input, so the command opens the input
-    /// as this one did. The caller appends its own options.
-    /// </summary>
-    /// <param name="path">The command path below the root.</param>
-    /// <exception cref="CliException">The input does not exist.</exception>
-    public ContinuationCommand ContinuationAt(params string[] path) => ContinuationOf(Input).ContinuationAt(path);
-
-    /// <summary>
-    /// <paramref name="document"/> as a command that continues this invocation names it, with the
-    /// input's password passed on, never the password itself: by the environment variable the
-    /// caller named for it, or, when the caller gave it on stdin or literally, by a
-    /// <c>&lt;password-env&gt;</c> placeholder the caller replaces with a variable that holds it
-    /// (<see cref="ContinuationInput"/>).
-    /// </summary>
-    /// <param name="document">The document, as the command names it.</param>
-    public ContinuationInput ContinuationOf(string document) => InputOf(_options, _parse, document, Paths.BaseDirectory);
-
-    /// <summary>
-    /// The rule of <see cref="ContinuationOf(string)"/> for the command <paramref name="parse"/> holds,
-    /// created with <paramref name="options"/> or by other means. The <c>--workdir</c> it passes on is
-    /// absolute, so the command runs from any directory as it would from this one:
-    /// <paramref name="workDirectory"/>, the directory the invocation resolved it to, or, for a
-    /// command line refused before its command ran, the value resolved against the current directory.
-    /// </summary>
-    internal static ContinuationInput InputOf(StandardOptions? options, ParseResult parse, string document, string? workDirectory = null)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(document);
-        string? workDir = WorkDirOf(parse)?.Tokens.FirstOrDefault()?.Value is { Length: > 0 } given
-            ? workDirectory ?? new IO.Paths.PathResolver(Directory.GetCurrentDirectory()).ResolveOutput(given)
-            : null;
-        return options?.InputPassword?.Continued(parse) is var (option, variable)
-            ? new ContinuationInput(document, option, variable, workDir)
-            : new ContinuationInput(document, WorkDir: workDir);
-    }
-
-    /// <summary>The <c>--workdir</c> the command line <paramref name="parse"/> holds gives, wherever it stands; null for none.</summary>
-    internal static OptionResult? WorkDirOf(ParseResult parse)
-    {
-        for (CommandResult? command = parse.CommandResult; command is not null; command = command.Parent as CommandResult)
-        {
-            if (command.Children.OfType<OptionResult>().FirstOrDefault(static result => result is { Implicit: false, Option.Name: GlobalOptionNames.WorkDir }) is { } workDir)
-            {
-                return workDir;
-            }
-        }
-
-        return null;
-    }
 
     /// <summary>The password for <see cref="Other"/>, or null when none was given.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a conflicting, empty or missing source.</exception>
@@ -907,16 +823,14 @@ public partial class StandardInvocation
         {
             throw CliErrors.OptionInvalid(
                 StandardOptionNames.InPlace,
-                $"cannot be combined with {StandardOptionNames.Out}",
-                $"Choose {StandardOptionNames.Out} or {StandardOptionNames.InPlace}.");
+                $"cannot be combined with {StandardOptionNames.Out}");
         }
 
         if (backup && !inPlace)
         {
             throw CliErrors.OptionInvalid(
                 StandardOptionNames.Backup,
-                $"a backup is only meaningful with {StandardOptionNames.InPlace}",
-                $"Pass {StandardOptionNames.InPlace} or omit {StandardOptionNames.Backup}.");
+                $"a backup is only meaningful with {StandardOptionNames.InPlace}");
         }
 
         if (inPlace)
@@ -925,16 +839,15 @@ public partial class StandardInvocation
         }
 
         string output = requested is null
-            ? Derived(OutputFileOption.DerivePath(Input, Path.GetExtension(Input)), inPlaceAvailable: true)
-            : OutputFileOption.ResolveExplicit(
-                Paths, requested, StandardOptionNames.Out, inPlaceAvailable: true, DeclaredInputs());
+            ? Derived(OutputFileOption.DerivePath(Input, Path.GetExtension(Input)))
+            : OutputFileOption.ResolveExplicit(Paths, requested, StandardOptionNames.Out, DeclaredInputs());
         return new ResolvedOutput(format, output, Overwrite, inPlace: false, backupPath: null, alternatives);
     }
 
     // A derived output is refused like a named one: the caller moves it with --out.
-    private string Derived(string output, bool inPlaceAvailable)
+    private string Derived(string output)
     {
-        OutputFileOption.EnsureNotInput(output, StandardOptionNames.Out, inPlaceAvailable, DeclaredInputs());
+        OutputFileOption.EnsureNotInput(output, StandardOptionNames.Out, DeclaredInputs());
         return output;
     }
 

@@ -53,8 +53,7 @@ internal static class ProtectOps
     {
         OperationInvalidException.Require(
             !Sheets.StructurePasswordProtected(workbook),
-            "the workbook structure is already protected with a password",
-            "Run unprotect_workbook with that password's passwordEnv first, then protect_workbook.");
+            "the workbook structure is already protected with a password");
         workbook.Protect(ProtectionType.Structure, OperationSecrets.Resolve(secrets, op.PasswordEnv)?.Reveal());
     }
 

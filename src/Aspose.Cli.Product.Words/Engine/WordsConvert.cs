@@ -1,5 +1,4 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -20,8 +19,7 @@ internal static class WordsConvert
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
         SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, protection.Password, pages);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, request.Output.Format.Id);
-        IReadOnlyList<Warning> conversion = PrepareConversion(loaded.Document, request.Output.Format.Id, loaded.Evaluation,
-            (request.Continuation ?? new ContinuationInput(request.Input), request.Output.Path));
+        IReadOnlyList<Warning> conversion = PrepareConversion(loaded.Document, request.Output.Format.Id, loaded.Evaluation);
         PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, loaded.Document, temp =>
         {
             try { loaded.Document.Save(temp, options); }

@@ -39,8 +39,7 @@ public sealed class TextSearch
         {
             throw CliErrors.OptionInvalid(
                 PatternOption,
-                "the pattern is empty",
-                "Pass the text or regular expression to find.");
+                "the pattern is empty");
         }
 
         if (!regex)
@@ -57,16 +56,14 @@ public sealed class TextSearch
         {
             throw CliErrors.OptionInvalid(
                 PatternOption,
-                $"invalid regular expression: {exception.Message}",
-                "Fix the expression, or drop --regex for a literal search.");
+                $"invalid regular expression: {exception.Message}");
         }
 
         if (expression.IsMatch(string.Empty))
         {
             throw CliErrors.OptionInvalid(
                 PatternOption,
-                "the regular expression must not match an empty string",
-                "Use an expression that matches at least one character.");
+                "the regular expression must not match an empty string");
         }
 
         return new TextSearch(pattern, caseSensitive, expression);

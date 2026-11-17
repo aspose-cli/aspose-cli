@@ -248,7 +248,7 @@ public sealed class CellsRendererGoldenTests
                 new BoundedOperationOutcome
                 {
                     Id = "total", Op = "set_formula", Status = OpStatuses.Failed, ItemsAffected = 0,
-                    Error = new ErrorPayload { Code = "OPS_INVALID", Message = "sheet 'Missing' does not exist", Hint = "Inspect the sheets first." },
+                    Error = new ErrorPayload { Code = "OPS_INVALID", Message = "sheet 'Missing' does not exist"},
                 },
             ],
             Backup = new BackupInfo
@@ -268,7 +268,7 @@ public sealed class CellsRendererGoldenTests
                 Truncated = false,
                 Issues =
                 [
-                    VerificationIssues.Of(CellsDiagnostics.FormulaErrors, "C7 evaluates to #REF!", "Data!C7", "Fix the cell."),
+                    VerificationIssues.Of(CellsDiagnostics.FormulaErrors, "C7 evaluates to #REF!", "Data!C7"),
                     VerificationIssue.From(new Warning(new WarningCode("RENDER_SKIPPED"), "no render was requested")),
                 ],
             },
@@ -282,11 +282,9 @@ public sealed class CellsRendererGoldenTests
               [op-0001] set_values: ok (3 item(s))
               [total] set_formula: failed (0 item(s))
                   OPS_INVALID: sheet 'Missing' does not exist
-                  hint: Inspect the sheets first.
             backup: book.backup.xlsx (created)
             verification: needs attention; checked ops: op-0001; 1 direct, 0 formula-result, 1 formula error(s)
               FORMULA_ERRORS [Data!C7]: C7 evaluates to #REF!
-                hint: Fix the cell.
               RENDER_SKIPPED: no render was requested
             """,
             text);

@@ -18,8 +18,7 @@
         "json": [
           { "path": "outputs[0].path", "equals": "<workspace>/pictured.md" },
           { "path": "warnings[code=LOSSY_CONVERSION][1].details.content", "equals": ["pictures"] },
-          { "path": "warnings[code=LOSSY_CONVERSION][1].message", "equals": "The md output holds the text alone and leaves out 2 picture(s)." },
-          { "path": "warnings[code=LOSSY_CONVERSION][1].hint", "contains": " --what images --out-dir " }
+          { "path": "warnings[code=LOSSY_CONVERSION][1].message", "equals": "The md output holds the text alone and leaves out 2 picture(s)." }
         ],
         "files": { "present": ["pictured.md"], "absent": ["pictured.001.png", "pictured-images"] },
         "hidden": ["data:", "!["]

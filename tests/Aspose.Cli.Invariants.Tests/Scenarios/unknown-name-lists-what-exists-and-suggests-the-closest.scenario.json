@@ -17,10 +17,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "editing"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'editing'?"
           }
         ]
       }
@@ -41,10 +37,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "v2/common/not-found-details"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'v2/common/not-found-details'?"
           }
         ]
       }
@@ -67,10 +59,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "rotate_pages"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'rotate_pages'?"
           }
         ]
       }

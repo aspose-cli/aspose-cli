@@ -36,8 +36,7 @@ internal static class EditCommand
                 CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "what --verify reads back"),
             ],
             // Presentations merge by appending with the import_slides operation.
-            mistakenFor: ["merge"],
-            mistakenForHint: "To merge presentations, run 'slides edit' on the first with an import_slides operation for each other presentation.");
+            mistakenFor: ["merge"]);
 
     internal static void Table(SlidesEditResult result, TableSurface surface)
     {

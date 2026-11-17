@@ -191,7 +191,6 @@ public sealed class PdfEngineTests
 
         Warning lossy = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.LossyConversion);
         Assert.Contains("dropped 2 input(s) of type image, hidden", lossy.Message, StringComparison.Ordinal);
-        Assert.Contains("add_stamp_image", lossy.Hint, StringComparison.Ordinal);
         using var created = new Document(output);
         Assert.Equal(["employee"], created.Form.Fields.Select(static field => field.FullName));
     }
@@ -849,7 +848,6 @@ public sealed class PdfEngineTests
         PdfConvertResult result = PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = input, Output = TestOutput.At(output, format: "html") });
 
         Warning lossy = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.LossyConversion);
-        Assert.StartsWith("Open the HTML in a browser", lossy.Hint, StringComparison.Ordinal);
         System.Text.RegularExpressions.Match title = System.Text.RegularExpressions.Regex.Match(
             File.ReadAllText(output), "<title>(.*?)</title>", System.Text.RegularExpressions.RegexOptions.Singleline);
         Assert.True(title.Success);

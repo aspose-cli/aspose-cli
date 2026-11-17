@@ -12,14 +12,6 @@ internal static class EditCommand
                 Contracts = ProductJsonContext.Definition,
                 VerifyDescription = "Read the staged output back and check the effect of each form, redaction, bookmark, metadata, attachment and page operation.",
                 Writes = PdfFormats.Document,
-                EncryptOnly = EncryptsAsTheOutputPassword,
-                // Every permission is denied unless the caller grants it as the original did, which
-                // inspect --detail permissions reads.
-                EncryptOwnerOnly = new OwnerPasswordEncryption<PdfOp>(
-                    static variable => new EncryptDocumentOp { OwnerPasswordEnv = variable },
-                    "permissions",
-                    "inspect",
-                    [("--detail", "permissions")]),
             }),
             "Apply one validated, atomic PDF operation batch.",
             new CommandTraits
@@ -29,7 +21,7 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             [],
-            static (_, edit, standard) => new PdfEditRequest(edit) { OutlineInspection = PdfInputs.OutlineInspection(standard, edit.Output) },
+            static (_, edit, _) => new PdfEditRequest(edit),
             Table,
             examples:
             [
@@ -42,25 +34,6 @@ internal static class EditCommand
                 CommandHelpLink.Schema<PdfOp>("the operation JSON schema"),
                 CommandHelpLink.Docs(PdfModule.Manifest, "verification", "what --verify reads back"),
             ]);
-
-    // The encrypt_document that writes what --encrypt-env writes: the one password opens the file
-    // and is its owner password, and the file grants readers every permission.
-    private static PdfOp EncryptsAsTheOutputPassword(string variable) => new EncryptDocumentOp
-    {
-        UserPasswordEnv = variable,
-        OwnerPasswordEnv = variable,
-        Permissions = new PdfPermissionsInput
-        {
-            Print = true,
-            Copy = true,
-            Modify = true,
-            Annotate = true,
-            FillForms = true,
-            ExtractAccessibility = true,
-            Assemble = true,
-            PrintHighResolution = true,
-        },
-    };
 
     internal static void Table(PdfEditResult result, TableSurface surface)
     {

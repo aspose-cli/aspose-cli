@@ -27,8 +27,7 @@ public sealed record SetValuesOp : CellsSheetOp
         RangeRef range = A1.ParseRange(Range).Range;
         OperationInvalidException.Require(
             range.CellCount == 1 || (range.RowCount == values.Count && range.ColumnCount == values[0].Count),
-            $"the range spans {range.RowCount}x{range.ColumnCount} but the matrix is {values.Count}x{values[0].Count}",
-            "Use a single anchor cell (e.g. \"B2\") to write a matrix of any size, or make the range match the matrix.");
+            $"the range spans {range.RowCount}x{range.ColumnCount} but the matrix is {values.Count}x{values[0].Count}");
         return this with { Values = values };
     }
 }
@@ -46,7 +45,7 @@ public sealed record SetFormulaOp : CellsSheetOp
     /// <summary>The range to fill, such as C2:C100.</summary>
     [A1Range] public required string Range { get; init; }
 
-    /// <summary>The formula of the range's top-left cell in A1 notation, such as =SUM(B2:B10).</summary>
+    /// <summary>The formula of the range's top-left cell in A1 notation, with English function names and commas between arguments, such as =SUM(B2:B10).</summary>
     [ReadBackByPosition] // Reads back as the f of the compact cells (kept on purpose).
     [Pattern("^=")] public required string Formula { get; init; }
 }
@@ -108,8 +107,7 @@ public sealed record FormatRangeOp : CellsSheetOp
     {
         // Excel indents only text aligned left or right: an indent puts centered text on the left.
         OperationInvalidException.Require(Style is not { Alignment: CellsHorizontalAlignments.Center, Indent: > 0 },
-            "an indent applies only to text aligned left or right, so centered text with an indent stays on the left",
-            "Drop indent, or set alignment to left or right.");
+            "an indent applies only to text aligned left or right, so centered text with an indent stays on the left");
         return this;
     }
 }
@@ -175,7 +173,7 @@ public sealed record ReplaceTextOp : CellsSheetOp
     {
         if (TextReplacement.Problem(Find, Regex, CaseSensitive) is { } problem)
         {
-            throw new OperationInvalidException(problem.Reason, problem.Hint);
+            throw new OperationInvalidException(problem);
         }
 
         return this;

@@ -20,9 +20,6 @@
         "json": [
           { "path": "error.message", "contains": "Aspose.PDF evaluation mode reads only the first 4 pages of a document" },
           { "path": "error.message", "contains": "8 pages" },
-          { "path": "error.hint", "contains": "8 pages" },
-          { "path": "error.hint", "contains": "at most 4 pages in total" },
-          { "path": "error.hint", "contains": "drop --license-mode evaluation" },
           { "path": "error.details.limit", "equals": 4 },
           { "path": "error.details.unit", "equals": "pages" }
         ],

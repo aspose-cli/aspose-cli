@@ -12,10 +12,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "--help"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean '--help'?"
           }
         ]
       }
@@ -31,10 +27,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "--version"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean '--version'?"
           }
         ]
       }
@@ -51,10 +43,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "cells --help"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'cells --help'?"
           }
         ]
       }
@@ -72,10 +60,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "words edit --help"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'words edit --help'?"
           }
         ]
       }
@@ -93,10 +77,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "words edit --help"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean 'words edit --help'?"
           }
         ]
       }
@@ -113,10 +93,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "--version"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean '--version'?"
           }
         ]
       }

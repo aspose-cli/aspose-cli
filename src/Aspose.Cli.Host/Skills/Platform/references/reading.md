@@ -43,25 +43,14 @@ Every bounded read and search reports `window` after its payload
 (`aspose-cli schema v2/common/result-window`):
 
 ```json
-"window": {
-  "unit": "hit",
-  "returned": 2,
-  "truncated": true,
-  "next": "aspose-cli cells search \"C:\\work\\book.xlsx\" --pattern x --content values --max-hits 2 --skip 2 --output-format json"
-}
+"window": {"unit": "block", "returned": 2, "total": 6, "truncated": true, "next": {"blocks": "3-6", "max-chars": "20000"}}
 ```
 
 - `truncated` true means units remain or the last one was cut short; treat
   the window as partial evidence.
-- `next` is the ready-to-run command for the following window; it is absent
-  when nothing remains. Run it verbatim instead of composing the next page
-  yourself, adding again the global options it does not repeat, such as
-  `--timeout` or `--license`. It never repeats a password: one
-  given with `--password-env` is passed on by the variable's name, and one
-  given another way shows as `--password-env "<password-env>"`; put the name
-  of an environment variable that holds the input's password in place of
-  `<password-env>`, or replace the option with `--password-stdin` and pipe
-  the password.
+- `next` names options of the same command, without the leading `--`, and
+  the values that select the following window; it is absent when nothing
+  remains. Run the command again with those options replaced or added.
 - `total` is absent when the read stopped before counting every unit, as a
   search usually does.
 
@@ -71,8 +60,8 @@ with `next` keeps each result small.
 ## Search paging
 
 `<product> search` returns at most its `--max-hits` budget of hits in
-document order. A truncated search's `window.next` repeats the search with
-`--skip` past the hits already returned. Each hit is one match: its `text` is the
+document order. A truncated search's `window.next` holds only a `skip` past
+the hits already returned. Each hit is one match: its `text` is the
 matched text itself, and its `context` is the text around it, at most 40
 characters on each side, on one line, with an ellipsis where it is cut. In
 Cells a hit is one cell, holding the first match in that cell.
@@ -80,20 +69,19 @@ Cells a hit is one cell, holding the first match in that cell.
 ## Capped lists
 
 A list inside a result, such as an `inspect --detail` list or a comparison's
-samples, can be capped. A `LIST_TRUNCATED` warning in `warnings` then says so,
-and its hint names the command that reads the rest. Treat a capped list as
-incomplete evidence.
+samples, can be capped. A `LIST_TRUNCATED` warning in `warnings` then says so.
+Treat a capped list as incomplete evidence.
 
 ## Rendering
 
 `render` writes every page, slide or sheet unless you select fewer, up to a
-per-run cap that `--help` states; a larger selection is refused with a hint
-that names a smaller one, so render a long document in several runs. When a
-command writes several files, `--help` for its `--out` or `--out-dir` names
-them, such as `<stem>.<page>.<ext>` beside `--out`; take the written paths
-from the result's `outputs` instead of composing them. A `convert` result
-lists its files in `outputs[]` too, even when it writes one: read that file
-from `outputs[0]`; a convert result has no `output`.
+per-run cap that `--help` states; a larger selection is refused, so render a
+long document in several runs. When a command writes several files, `--help`
+for its `--out` or `--out-dir` names them, such as `<stem>.<page>.<ext>`
+beside `--out`; take the written paths from the result's `outputs` instead of
+composing them. A `convert` result lists its files in `outputs[]` too, even
+when it writes one: read that file from `outputs[0]`; a convert result has no
+`output`.
 
 `--dpi` sets the resolution of a raster image such as png or jpeg. An svg is
 vector and has no pixel size, so `render --to svg` refuses `--dpi`, and any

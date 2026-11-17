@@ -235,7 +235,6 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         }));
         Assert.Equal(ErrorCodes.OpsInvalid, ambiguous.Code);
         Assert.Contains("rows 2, 3", ambiguous.Message, StringComparison.Ordinal);
-        Assert.Contains("Pass row", ambiguous.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
 
         WordsEdit.Run(_fixture.Session, new WordsEditRequest

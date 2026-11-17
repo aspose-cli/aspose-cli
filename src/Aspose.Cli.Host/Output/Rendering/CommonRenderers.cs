@@ -27,13 +27,6 @@ internal static class CommonRenderers
             }
 
             table.WriteTo(surface.Out, surface.Format);
-            foreach (ProductLicenseStatus product in products)
-            {
-                if (product.Hint is { } hint)
-                {
-                    surface.Out.WriteLine($"  {product.Product}: {hint}");
-                }
-            }
         }
     }
 

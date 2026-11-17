@@ -47,9 +47,6 @@
       "expect": {
         "exitCode": 4,
         "error": "PLACEHOLDER_NOT_FOUND",
-        "json": [
-          { "path": "error.hint", "contains": "put {\"op\":\"set_layout\",\"slides\":\"5\",\"layout\":\"Title and Content\"} before this set_title in its batch" }
-        ],
         "files": { "absent": ["never.pptx"] }
       }
     },

@@ -36,8 +36,7 @@ internal static class SearchCommand
                 CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "slide read-back and visual review"),
                 new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
-            Finish = static (_, request, result, standard) =>
-                result with { Window = SearchOptions.Continue(request.Query, result.Window, standard.Continuation()) },
+            Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
         };
     }
 

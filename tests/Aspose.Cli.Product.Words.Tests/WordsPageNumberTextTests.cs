@@ -303,8 +303,7 @@ public sealed class WordsPageNumberTextTests : IDisposable
 
         CliResult edited = Edit("""{"ops":[{"op":"set_page_numbers","location":"header"}]}""", "--out", "moved.docx");
 
-        AssertRefused(edited, "an image", "set_footer");
-        Assert.DoesNotContain("omit text", JsonNode.Parse(edited.StdErr)!["error"]!["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        AssertRefused(edited, "an image");
         Assert.False(File.Exists(_workspace.File("moved.docx")));
         Assert.Equal(before, File.ReadAllBytes(_workspace.File("input.docx")));
     }
@@ -312,8 +311,8 @@ public sealed class WordsPageNumberTextTests : IDisposable
     /// <summary>
     /// Moving the number off a paragraph that also holds a field other than the page number and
     /// count is refused with text as without, and so is text over it where it is, naming the
-    /// field, and nothing is written. The hint's way out works: rewriting the footer first leaves
-    /// a number with no paragraph to clear or replace.
+    /// field, and nothing is written. Rewriting the footer first leaves a number with no paragraph
+    /// to clear or replace.
     /// </summary>
     [Theory]
     [InlineData("DATE", null, "header")]
@@ -338,7 +337,7 @@ public sealed class WordsPageNumberTextTests : IDisposable
 
         CliResult refused = Edit($$"""{"ops":[{"op":"set_page_numbers","location":"{{location}}"{{written}}}]}""", "--out", "moved.docx");
 
-        AssertRefused(refused, $"a {other} field", "rewrite the footer with set_footer first", $"writes no {other} field", "{\"op\":\"set_page_numbers\",\"location\":\"footer\",\"alignment\":\"", "keeps that paragraph, its words and its");
+        AssertRefused(refused, $"a {other} field");
         Assert.DoesNotContain("image", JsonNode.Parse(refused.StdErr)!["error"]!["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("moved.docx")));
         Assert.Equal(before, File.ReadAllBytes(_workspace.File("input.docx")));
@@ -372,7 +371,7 @@ public sealed class WordsPageNumberTextTests : IDisposable
 
         CliResult edited = Edit("""{"ops":[{"op":"set_page_numbers","location":"header"}]}""", "--out", "moved.docx", "--verify");
 
-        AssertRefused(edited, "a DATE field", "set_footer");
+        AssertRefused(edited, "a DATE field");
         Assert.False(File.Exists(_workspace.File("moved.docx")));
     }
 
@@ -425,16 +424,16 @@ public sealed class WordsPageNumberTextTests : IDisposable
 
     /// <summary>A text is its paragraph's whole content, so a paragraph that also holds an image refuses it and the document stays as it was.</summary>
     [Theory]
-    [InlineData("footer", "set_footer")]
-    [InlineData("header", "set_header")]
-    public void Text_OverAParagraphWithAnImage_IsRefused(string location, string rewrite)
+    [InlineData("footer")]
+    [InlineData("header")]
+    public void Text_OverAParagraphWithAnImage_IsRefused(string location)
     {
         CreateNumberedParagraphWithAnImage(location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary);
         byte[] before = File.ReadAllBytes(_workspace.File("input.docx"));
 
         CliResult edited = Edit($$"""{"ops":[{"op":"set_page_numbers","location":"{{location}}","text":"第 {n} 页"}]}""", "--out", "numbered.docx");
 
-        AssertRefused(edited, "image", rewrite);
+        AssertRefused(edited, "image");
         Assert.False(File.Exists(_workspace.File("numbered.docx")));
         Assert.Equal(before, File.ReadAllBytes(_workspace.File("input.docx")));
     }
@@ -468,8 +467,7 @@ public sealed class WordsPageNumberTextTests : IDisposable
 
         CliResult edited = Edit("""{"ops":[{"op":"set_page_numbers","location":"header","text":"第 {n} 页"}]}""", "--out", "moved.docx");
 
-        AssertRefused(edited, "image", "set_footer");
-        Assert.DoesNotContain("omit text", JsonNode.Parse(edited.StdErr)!["error"]!["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        AssertRefused(edited, "image");
         Assert.False(File.Exists(_workspace.File("moved.docx")));
     }
 
@@ -484,7 +482,7 @@ public sealed class WordsPageNumberTextTests : IDisposable
 
         CliResult edited = Edit($$"""{"ops":[{"op":"set_page_numbers","text":"{{text}}"}]}""", "--out", "numbered.docx");
 
-        AssertRefused(edited, "literal", "{n}", "{N}");
+        AssertRefused(edited, "literal");
     }
 
     /// <summary>On a document of several pages, the PDF of the edited document shows each page's number and the real page count.</summary>
@@ -590,17 +588,13 @@ public sealed class WordsPageNumberTextTests : IDisposable
     private static byte[] Pixel { get; } = Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==");
 
-    /// <summary>The edit failed with OPS_INVALID, its message names the reason and its hint each way out.</summary>
-    private static void AssertRefused(CliResult result, string reason, params string[] hints)
+    /// <summary>The edit failed with OPS_INVALID and its message names the reason.</summary>
+    private static void AssertRefused(CliResult result, string reason)
     {
         Assert.NotEqual(0, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdOut.Length > 0 ? result.StdOut : result.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains(reason, error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        foreach (string hint in hints)
-        {
-            Assert.Contains(hint, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        }
     }
 
     private CliResult Edit(string ops, params string[] options) =>

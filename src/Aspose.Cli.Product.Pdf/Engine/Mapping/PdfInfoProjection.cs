@@ -43,8 +43,7 @@ internal static class PdfInfoProjection
             warnings.Add(EnvelopeParts.ListTruncated(
                 "pages",
                 PdfInspectResult.PagePreviewLimit,
-                document.Pages.Count,
-                "'pdf.distinctPageSizes' counts the size of every page."));
+                document.Pages.Count));
         }
 
         if (outline?.Length == PdfInspectResult.OutlineLimit && PdfOutlineAddresses.CountOutline(document.Outlines) is int total and > PdfInspectResult.OutlineLimit)
@@ -52,8 +51,7 @@ internal static class PdfInfoProjection
             warnings.Add(EnvelopeParts.ListTruncated(
                 "outline",
                 PdfInspectResult.OutlineLimit,
-                total,
-                "Split at top-level bookmarks with 'aspose-cli pdf split --by bookmarks' and inspect each part's outline."));
+                total));
         }
 
         if (form is not null && fieldsTruncated)
@@ -61,8 +59,7 @@ internal static class PdfInfoProjection
             warnings.Add(EnvelopeParts.ListTruncated(
                 "forms.fields",
                 PdfInspectResult.FieldLimit,
-                form.FieldCount,
-                "Fill or export the form as a whole with 'aspose-cli pdf extract --what forms --form-format json --out-dir <dir>'."));
+                form.FieldCount));
         }
 
         var result = new PdfInspectResult
@@ -109,8 +106,7 @@ internal static class PdfInfoProjection
                 return taken;
             }
 
-            warnings.Add(EnvelopeParts.ListTruncated(list, PdfInspectResult.LinkLimit, items.Count(),
-                "Inspect a split part of the document, such as 'aspose-cli pdf split --by pages --every 50', to see the rest."));
+            warnings.Add(EnvelopeParts.ListTruncated(list, PdfInspectResult.LinkLimit, items.Count()));
             return taken[..PdfInspectResult.LinkLimit];
         }
     }

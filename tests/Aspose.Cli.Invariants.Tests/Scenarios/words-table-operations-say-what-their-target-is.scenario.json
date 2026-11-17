@@ -20,9 +20,7 @@
       "expect": {
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.message", "contains": "set_table_pagination must target one table block, but its target is 1 block, a paragraph" },
-          { "path": "error.hint", "contains": "'words inspect --detail tables'" },
-          { "path": "error.hint", "contains": "block number" }
+          { "path": "error.message", "contains": "set_table_pagination must target one table block, but its target is 1 block, a paragraph" }
         ],
         "files": { "absent": ["a.docx"], "unchanged": ["doc.docx"] }
       }
@@ -40,8 +38,7 @@
       "expect": {
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.message", "contains": "set_table_cell must target one table block, but its target is 1 block, a paragraph" },
-          { "path": "error.hint", "contains": "'words inspect --detail tables'" }
+          { "path": "error.message", "contains": "set_table_cell must target one table block, but its target is 1 block, a paragraph" }
         ],
         "files": { "absent": ["b.docx"] }
       }
@@ -51,8 +48,7 @@
       "expect": {
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.message", "contains": "repeat_table_row must target one table block, but its target is 2 blocks, 1 of them table(s)" },
-          { "path": "error.hint", "contains": "'words inspect --detail tables'" }
+          { "path": "error.message", "contains": "repeat_table_row must target one table block, but its target is 2 blocks, 1 of them table(s)" }
         ],
         "files": { "absent": ["c.docx"] }
       }
@@ -62,8 +58,7 @@
       "expect": {
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.message", "contains": "set_table_style must target one table block, but its target is 1 block, a paragraph" },
-          { "path": "error.hint", "contains": "'words inspect --detail tables'" }
+          { "path": "error.message", "contains": "set_table_style must target one table block, but its target is 1 block, a paragraph" }
         ],
         "files": { "absent": ["f.docx"] }
       }

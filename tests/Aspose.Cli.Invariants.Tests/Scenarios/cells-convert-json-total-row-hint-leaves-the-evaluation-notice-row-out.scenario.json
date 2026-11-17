@@ -19,7 +19,6 @@
         "warnings": { "present": ["TEXT_TABLE_LAYOUT"] },
         "json": [
           { "path": "warnings[1].message", "startsWith": "Row 4 of sheet 'Data' is a total row" },
-          { "path": "warnings[1].hint", "contains": "--sheet Data --range A4:C4 --output-format json" },
           { "path": "warnings[2].message", "startsWith": "Row 5 of sheet 'Data' is not data: it is the evaluation notice" }
         ]
       }

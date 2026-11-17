@@ -119,7 +119,6 @@ internal static class InfoProjection
                 };
             },
             "outline",
-            "Read every heading in windows with 'words read --content outline'.",
             warnings);
 
     private static IReadOnlyList<WordsFieldData> Fields(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
@@ -135,7 +134,6 @@ internal static class InfoProjection
                 MaxLevel = field is Aspose.Words.Fields.FieldToc toc ? TocMaxLevel(toc.HeadingLevelRange) : null,
             },
             "fields",
-            "Split the document with 'words split --by sections' and inspect each part with '--detail fields'.",
             warnings);
 
     private static IReadOnlyList<WordsCommentData> Comments(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
@@ -148,7 +146,6 @@ internal static class InfoProjection
                 Block = index.FindBlock(comment),
             },
             "comments",
-            "Extract every comment with 'words extract --what comments'.",
             warnings);
 
     /// <summary>
@@ -168,7 +165,6 @@ internal static class InfoProjection
             changes,
             change => Entry(change.Change.First, change.Number, change.Change.Text, index),
             "revisions",
-            "Split the document with 'words split --by sections' and inspect each part with '--detail revisions'.",
             warnings);
     }
 
@@ -393,7 +389,6 @@ internal static class InfoProjection
                 Height = shape.Height,
             },
             "images",
-            "Extract every image with 'words extract --what images'.",
             warnings);
 
     /// <summary>
@@ -404,12 +399,11 @@ internal static class InfoProjection
         IReadOnlyList<TSource> source,
         Func<TSource, TItem> project,
         string list,
-        string hint,
         List<Warning> warnings)
     {
         if (source.Count > ListLimit)
         {
-            warnings.Add(EnvelopeParts.ListTruncated(list, ListLimit, source.Count, hint));
+            warnings.Add(EnvelopeParts.ListTruncated(list, ListLimit, source.Count));
         }
 
         return source.Take(ListLimit).Select(project).ToArray();

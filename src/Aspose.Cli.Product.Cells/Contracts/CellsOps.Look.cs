@@ -27,7 +27,7 @@ public sealed record SetDefaultFontOp : CellsOp
 }
 
 /// <summary>Sets a sheet's tab color; clear_tab_color removes it.</summary>
-[Operation("set_tab_color", Hint = "To remove the tab color, use clear_tab_color.")]
+[Operation("set_tab_color")]
 public sealed record SetTabColorOp : CellsSheetOp
 {
     /// <summary>The tab color.</summary>

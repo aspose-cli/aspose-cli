@@ -154,7 +154,7 @@ Options:
   --if-match <if-match>          Require the current input SHA-256 fingerprint before editing.
   --best-effort                  Keep successful operations, report failures, and exit 8.
   --verify                       Compare the staged document after save and reopen to report semantic verification. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
-  --track-changes                Track this batch as revisions.
+  --track-changes                Track this batch as revisions; only content insertions and deletions are tracked.
   --author <author>              Revision author; required with --track-changes.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.

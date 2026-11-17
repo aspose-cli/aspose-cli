@@ -43,7 +43,6 @@ internal static class CellsDiff
             ? EnvelopeParts.ListTruncated(
                 "sheets[].cells",
                 diff.Sheets.Sum(static sheet => sheet.Cells?.Count ?? 0),
-                diff.Summary.CellsDiffering,
-                "Raise --max-diffs to list more differing cells; summary.cellsDiffering counts them all.")
+                diff.Summary.CellsDiffering)
             : null;
 }

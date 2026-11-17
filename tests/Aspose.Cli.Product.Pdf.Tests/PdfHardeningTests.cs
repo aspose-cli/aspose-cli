@@ -95,8 +95,6 @@ public sealed class PdfHardeningTests
         }));
 
         Assert.Equal(code, error.Code.Name);
-        Assert.Contains("\"sourcePasswordEnv\"", error.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("--password-env", error.Hint, StringComparison.Ordinal);
         Assert.Equal(source, error.Details!["path"]!.GetValue<string>());
         Assert.False(File.Exists(output));
     }

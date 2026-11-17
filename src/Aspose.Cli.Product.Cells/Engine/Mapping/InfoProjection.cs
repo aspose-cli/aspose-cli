@@ -31,7 +31,7 @@ internal static class InfoProjection
             if (total > formulaErrors.Count)
             {
                 errorsTruncated = EnvelopeParts.ListTruncated(
-                    "workbook.formulaErrors", formulaErrors.Count, total, FormulaErrorsCappedHint);
+                    "workbook.formulaErrors", formulaErrors.Count, total);
             }
         }
 
@@ -126,9 +126,6 @@ internal static class InfoProjection
         [.. DefinedNames.Of(workbook).Select(DefinedNames.Info)];
 
     /// <summary>How to read formula errors beyond a capped list.</summary>
-    internal const string FormulaErrorsCappedHint =
-        "Sheets scanned after the cap are not represented; read a sheet with "
-            + "'cells read --sheet <name>' and look for cells of type error.";
 
     /// <summary>Counts every stored error under the work budget and returns the first bounded sample.</summary>
     internal static (IReadOnlyList<CellsCellError> Errors, int Total) ScanFormulaErrors(

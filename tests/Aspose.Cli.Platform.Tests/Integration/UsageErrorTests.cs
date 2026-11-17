@@ -44,17 +44,16 @@ public sealed class UsageErrorTests : IDisposable
     /// command of the product whose format the file's extension names, ready to run.
     /// </summary>
     [Theory]
-    [InlineData("read file a.docx", "words read", "Run 'aspose-cli words read a.docx ")]
-    [InlineData("read a.docx", "words read", "Run 'aspose-cli words read a.docx ")]
-    [InlineData("inspect b.xlsx", "cells inspect", "Run 'aspose-cli cells inspect b.xlsx ")]
-    public void AProductCommandWithoutItsProduct_SuggestsTheProductOfItsFile(string commandLine, string suggestion, string run)
+    [InlineData("read file a.docx", "words read")]
+    [InlineData("read a.docx", "words read")]
+    [InlineData("inspect b.xlsx", "cells inspect")]
+    public void AProductCommandWithoutItsProduct_SuggestsTheProductOfItsFile(string commandLine, string suggestion)
     {
         Assert.Equal(0, _workspace.Run("cells", "create", "b.xlsx", "--output-format", "json").ExitCode);
 
         JsonNode error = Refused(commandLine, "USAGE_ERROR");
 
         Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.Contains(run, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>A file whose extension no product claims suggests no product's command.</summary>
@@ -64,7 +63,6 @@ public sealed class UsageErrorTests : IDisposable
         JsonNode error = Refused("read a.zzq", "USAGE_ERROR");
 
         Assert.Null(error["details"]!["suggestions"]);
-        Assert.DoesNotContain("read", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Theory]
@@ -99,7 +97,6 @@ public sealed class UsageErrorTests : IDisposable
         JsonNode error = Refused("words inspect a.docx --password-env ASPOSE_CLI_TEST_UNSET_SECRET", "OPTION_INVALID");
 
         Assert.Equal("--password-env", error["details"]!["option"]!.GetValue<string>());
-        Assert.Contains("--password-stdin", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -133,7 +130,6 @@ public sealed class UsageErrorTests : IDisposable
         JsonNode error = Refused(commandLine, "USAGE_ERROR");
 
         Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -142,7 +138,6 @@ public sealed class UsageErrorTests : IDisposable
         JsonNode error = Refused("words read file a.docx", "USAGE_ERROR");
 
         Assert.Equal("'file' stands for the <file> argument, whose value follows it.", error["message"]!.GetValue<string>());
-        Assert.Equal("Run 'aspose-cli words read a.docx --output-format json'.", error["hint"]!.GetValue<string>());
         Assert.Equal(0, _workspace.Run("words", "read", "a.docx", "--output-format", "json").ExitCode);
     }
 
@@ -154,7 +149,6 @@ public sealed class UsageErrorTests : IDisposable
         JsonNode error = Refused(commandLine, "OPTION_INVALID");
 
         Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]

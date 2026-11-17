@@ -33,11 +33,9 @@ public sealed record ErrorEnvelope
 }
 
 /// <summary>
-/// Error details designed for agent self-correction: the <see cref="Message"/>
-/// states the fact, <see cref="Details"/> carries structured context (often
-/// including the valid alternatives), and <see cref="Hint"/> tells the caller
-/// the most likely fix. The error envelope and a failed operation of a best-effort batch carry
-/// the same object.
+/// Error details: the <see cref="Message"/> states the fact and <see cref="Details"/> carries
+/// structured context, often including the valid alternatives. The error envelope and a failed
+/// operation of a best-effort batch carry the same object.
 /// </summary>
 [SchemaId(Id)]
 public sealed record ErrorPayload
@@ -58,9 +56,6 @@ public sealed record ErrorPayload
     /// </summary>
     [ErrorDetails]
     public JsonObject? Details { get; init; }
-
-    /// <summary>Recommended next action for the caller.</summary>
-    public string? Hint { get; init; }
 
     /// <summary>Topic name for <c>aspose-cli docs &lt;topic&gt;</c> with background details.</summary>
     public string? Docs { get; init; }

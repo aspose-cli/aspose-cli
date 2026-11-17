@@ -33,7 +33,7 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
 
     /// <summary>
     /// A printed output leaves out the comments the page setup does not print, which by default
-    /// is every one: the warning counts them per sheet, names the sheet, and its hint reads them.
+    /// is every one: the warning counts them per sheet and names the sheet.
     /// The pdf holds the cell text and not the comment.
     /// </summary>
     [Theory]
@@ -50,7 +50,6 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
         Assert.Contains("3 comment(s)", message, StringComparison.Ordinal);
         Assert.Contains("2 on worksheet 'Summary'", message, StringComparison.Ordinal);
         Assert.Contains("1 on worksheet 'Notes'", message, StringComparison.Ordinal);
-        Assert.Contains("cells inspect <file> --detail comments", Text(lossy, "hint"), StringComparison.Ordinal);
         Assert.Null(lossy["location"]);
         Assert.Null(lossy["affectsCompleteness"]);
         // Aspose.PDF evaluation mode reads only the first 4 pages, fewer than the evaluation pdf has.
@@ -126,10 +125,8 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
         JsonNode charts = Assert.Single(lossy, static warning => Text(warning, "message").Contains("chart", StringComparison.Ordinal));
         Assert.Contains("1 chart(s) as pictures", Text(charts, "message"), StringComparison.Ordinal);
         Assert.Equal("sheet/Summary", Text(charts, "location"));
-        Assert.Contains("cells inspect <file> --detail charts", Text(charts, "hint"), StringComparison.Ordinal);
         JsonNode headers = Assert.Single(lossy, static warning => Text(warning, "message").Contains("headers and footers", StringComparison.Ordinal));
         Assert.Contains("worksheet 'Summary'", Text(headers, "message"), StringComparison.Ordinal);
-        Assert.Contains("cells inspect <file> --detail layout", Text(headers, "hint"), StringComparison.Ordinal);
         Assert.All(lossy, static warning => Assert.Null(warning["affectsCompleteness"]));
         // The parts of an mhtml archive are quoted-printable, whose soft line breaks may split a word.
         string page = File.ReadAllText(_workspace.File($"converted.{format}")).Replace("=\r\n", string.Empty, StringComparison.Ordinal);
@@ -284,11 +281,9 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
         });
         JsonNode comments = lossy[0];
         Assert.Equal(format == "md" ? MarkdownComments : $"The {format} output leaves out 2 comment(s): 2 on worksheet 'Summary'.", Text(comments, "message"));
-        Assert.Contains("cells inspect <file> --detail comments", Text(comments, "hint"), StringComparison.Ordinal);
         JsonNode headers = lossy[^1];
         Assert.Equal($"The {format} output leaves out the headers and footers of worksheet 'Summary': a table of cells has no pages to print them on.",
             Text(headers, "message"));
-        Assert.Contains("cells inspect <file> --detail layout", Text(headers, "hint"), StringComparison.Ordinal);
         string table = File.ReadAllText(_workspace.File($"converted.{format}"));
         Assert.Contains("ZqxCellA", table, StringComparison.Ordinal);
         Assert.DoesNotContain("Quarterly", table, StringComparison.Ordinal);
@@ -361,7 +356,6 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
         Assert.Equal("""["comments"]""", comments["details"]?["content"]?.ToJsonString());
         Assert.Equal(MarkdownComments, Text(comments, "message"));
         Assert.DoesNotContain("leaves out", Text(comments, "message"), StringComparison.Ordinal);
-        Assert.Equal("Read the comments with 'aspose-cli cells inspect <file> --detail comments'; the workbook keeps them.", Text(comments, "hint"));
         Assert.Equal("sheet/Summary", Text(comments, "location"));
         Assert.Null(comments["affectsCompleteness"]);
         Assert.Contains("ZqxNoteA", File.ReadAllText(_workspace.File("converted.md")), StringComparison.Ordinal);
@@ -411,7 +405,7 @@ public sealed class CellsConvertUnwrittenContentTests : IDisposable
     /// <summary>
     /// An edit that writes a csv or tsv names the comments and the headers and footers of the
     /// sheet it writes exactly as a convert of the same workbook does: the same warnings, with
-    /// the same message, hint, location and details.
+    /// the same message, location and details.
     /// </summary>
     [Theory]
     [InlineData("csv")]

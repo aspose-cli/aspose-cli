@@ -7,7 +7,7 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 public sealed class ResultTextTests
 {
     [Fact]
-    public void Edit_PrintsEveryBestEffortFailureWithItsHintAndTheBackup()
+    public void Edit_PrintsEveryBestEffortFailureAndTheBackup()
     {
         var output = new OutputInfo { Path = "out.docx", Format = "docx", SizeBytes = 1_024, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } };
         BoundedOperationOutcome[] applied =
@@ -19,7 +19,7 @@ public sealed class ResultTextTests
                 Op = "delete_block",
                 Status = OpStatuses.Failed,
                 ItemsAffected = 0,
-                Error = new ErrorPayload { Code = "OPS_INVALID", Message = "block 9 does not exist", Hint = "Read the blocks first." },
+                Error = new ErrorPayload { Code = "OPS_INVALID", Message = "block 9 does not exist"},
             },
         ];
 
@@ -40,7 +40,6 @@ public sealed class ResultTextTests
                 "  [op-0001] set_text: ok (2 item(s))",
                 "  [title] delete_block: failed (0 item(s))",
                 "      OPS_INVALID: block 9 does not exist",
-                "      hint: Read the blocks first.",
                 "backup: in.backup.docx (created)",
             ],
             Lines(text));
@@ -183,7 +182,7 @@ public sealed class ResultTextTests
         Assert.Equal(expected, TableText.Points(value));
 
     [Fact]
-    public void Verification_WritesTheOutcomeTheCheckedOpsTheEvidenceAndEveryIssueWithItsLocationAndHint()
+    public void Verification_WritesTheOutcomeTheCheckedOpsTheEvidenceAndEveryIssueWithItsLocation()
     {
         var verification = new TestVerification
         {
@@ -191,7 +190,7 @@ public sealed class ResultTextTests
             CheckedOps = ["op-0001", "title"],
             Issues =
             [
-                VerificationIssue.From(new Warning(new WarningCode("FIELD_STALE"), "1 field needs an update") { Location = "block/4", Hint = "Update the fields." }),
+                VerificationIssue.From(new Warning(new WarningCode("FIELD_STALE"), "1 field needs an update") { Location = "block/4"}),
                 VerificationIssue.From(new Warning(new WarningCode("COUNT_CHANGED"), "The count changed.")),
             ],
         };
@@ -202,7 +201,6 @@ public sealed class ResultTextTests
             [
                 "verification: needs attention; checked ops: op-0001, title; 1 direct",
                 "  FIELD_STALE [block/4]: 1 field needs an update",
-                "    hint: Update the fields.",
                 "  COUNT_CHANGED: The count changed.",
             ],
             Lines(text));

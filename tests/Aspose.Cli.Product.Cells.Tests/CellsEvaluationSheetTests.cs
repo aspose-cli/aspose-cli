@@ -70,6 +70,6 @@ public sealed class CellsEvaluationSheetTests
         using LoadedWorkbook loaded = new CellsWorkbookLoader(budgets, outputs).Open(input, password: null);
         WorksheetCollection sheets = loaded.Workbook.Worksheets;
         return (sheets[sheets.ActiveSheetIndex].Name,
-            loaded.SkippedSheetWarning(defaultedToActiveSheet: true, "Pass --sheet with the sheet's name from inspect to read another sheet."));
+            loaded.SkippedSheetWarning(defaultedToActiveSheet: true));
     }
 }

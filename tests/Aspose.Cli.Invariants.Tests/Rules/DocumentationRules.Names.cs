@@ -7,7 +7,7 @@ using Aspose.Cli.TestKit.Scenarios;
 namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
-/// C-R38: the names that error messages, hints, help, the descriptions the schemas publish
+/// C-R38: the names that error messages, help, the descriptions the schemas publish
 /// (documentation comments), the Skills, the README and <c>KNOWN-ISSUES.md</c> write must exist
 /// in this build, all read by one reader (DocumentationRules.Sources.cs). The same reading of the
 /// sources finds the public text that names a hidden option or command (C-R04).
@@ -116,7 +116,6 @@ internal static partial class ContractRules
         });
         yield return Check("C-R38", "written mistakes", () => WrittenMistakes(names));
         yield return Check("C-R04", "Skills and README hidden names", names.HiddenInDocuments);
-        yield return HiddenInHintCase(catalog);
     }
 
     /// <summary>The files of a directory by pattern, bin and obj left out, in order, with their path relative to it.</summary>
@@ -361,36 +360,6 @@ internal static partial class ContractRules
             }
         }
     }
-
-    /// <summary>
-    /// A <c>cells read</c> over its cell budget, whose follow-up a source composes from constants
-    /// that the reading of the sources cannot see: it succeeds with its first window and a
-    /// window.next, and no message or hint it prints names a hidden option; only the generated
-    /// window.next carries one.
-    /// </summary>
-    private static InvariantCase HiddenInHintCase(CliCatalog catalog) =>
-        Check("C-R04", "cells read budget hint", () =>
-        {
-            string[] hidden = [.. HiddenOptions(catalog)];
-            using var workspace = new TempWorkspace();
-            File.WriteAllBytes(workspace.File("book.xlsx"), ScenarioFixtures.Read("cells.xlsx"));
-            CliResult result = workspace.Run("cells", "read", "book.xlsx", "--range", "A1:Z100", "--max-cells", "1", "--output-format", "json");
-            if (result.ExitCode != 0 || JsonNode.Parse(result.StdOut.Length > 0 ? result.StdOut : result.StdErr) is not { } document
-                || document["error"] is not null)
-            {
-                return [$"a read over its budget failed with exit {result.ExitCode}: {result.StdErr.Trim()}"];
-            }
-
-            if (document["window"]?["next"] is null)
-            {
-                return ["a read over its budget gave no window.next"];
-            }
-
-            string text = string.Join(' ', (document["warnings"]?.AsArray() ?? [])
-                .Select(static warning => $"{warning?["message"]} {warning?["hint"]}"));
-            return hidden.Where(name => OptionMention(name).IsMatch(text))
-                .Select(name => $"a warning of the read names the hidden option {name}");
-        }, shard: "cells");
 
     /// <summary>The options that every command hides: a name some command shows is public.</summary>
     private static IEnumerable<string> HiddenOptions(CliCatalog catalog)

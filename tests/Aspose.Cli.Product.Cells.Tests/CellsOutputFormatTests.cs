@@ -99,7 +99,6 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
         Assert.Contains(".xlsx", refused.StdErr, StringComparison.Ordinal);
         System.Text.Json.Nodes.JsonNode error = System.Text.Json.Nodes.JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.StartsWith($"The file '{path}' has ", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.StartsWith("Give the file one of these extensions", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Empty(Directory.GetFileSystemEntries(workspace.Path));
     }
 
@@ -110,7 +109,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     [InlineData("book.xps", "xps")]
     [InlineData("book.htm", "html")]
     [InlineData("book.mhtml", "mhtml")]
-    public void ACreatedWorkbookInAFormatEditCannotWrite_IsRefused_AndPointsToTheConvertThatWritesIt(string path, string format)
+    public void ACreatedWorkbookInAFormatEditCannotWrite_IsRefused(string path, string format)
     {
         using var workspace = new TempWorkspace();
 
@@ -125,9 +124,8 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
             error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.Empty(Directory.GetFileSystemEntries(workspace.Path));
         string convert = $"aspose-cli cells convert <that file> --to {format}";
-        Assert.Equal($"Give the file one of these extensions, then run '{convert} --output-format json' for {format}.", error["hint"]!.GetValue<string>());
 
-        // The hint works as written: create a workbook, then run the convert it names.
+        // A workbook created as .xlsx, then the convert of it to that format.
         CliResult kept = workspace.Run("cells", "create", "book.xlsx", "--output-format", "json");
         Assert.True(kept.ExitCode == 0, kept.StdErr);
         string[] converting = convert.Replace("<that file>", "book.xlsx", StringComparison.Ordinal).Split(' ')[1..];

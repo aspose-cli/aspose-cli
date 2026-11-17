@@ -30,11 +30,6 @@
             "contains": "aspose-cli pdf render writes only images. Must be one of: .png,"
           },
           {
-            "path": "error.hint",
-            "notContains": "convert",
-            "exists": true
-          },
-          {
             "path": "error.details.suggestions",
             "exists": false
           },
@@ -64,11 +59,6 @@
           {
             "path": "error.message",
             "contains": "aspose-cli cells render writes only images. Must be one of: .png,"
-          },
-          {
-            "path": "error.hint",
-            "notContains": "convert",
-            "exists": true
           },
           {
             "path": "error.details.suggestions",

@@ -8,8 +8,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// <summary>
 /// <c>cells read</c> — step two of the projection ladder: windowed cell data of one sheet.
 /// Reads are budgeted (<c>--max-cells</c>) so output stays affordable for agents; a read over
-/// the budget returns its first window and the ready-to-run window.next command that reads
-/// the rest page by page.
+/// the budget returns its first window and, in window.next, the option values of the next page.
 /// </summary>
 internal static class ReadCommand
 {
@@ -27,7 +26,7 @@ internal static class ReadCommand
             Description = "Window to read, e.g. A1:F50 or Sales!A1:F50, or all. Default: the used range, subject to --max-cells.",
         }.WithInput(InputKind.None);
 
-        // Set only by a generated window.next command: it names the region a planned scan
+        // Set only from window.next: it names the region a planned scan
         // covers, so each page's --range is one window of that region and the chain keeps
         // covering columns the budget could not fit in one window. Hidden — it is
         // CLI-internal plumbing, not a knob a human sets.
@@ -50,7 +49,7 @@ internal static class ReadCommand
             [sheet, rangeOption, scanOption, contentOption, maxCellsOption],
             (parse, standard) =>
             {
-                int maxCells = parse.GetInRange(maxCellsOption, "Keep the budget modest; page through large sheets with each window.next command instead.");
+                int maxCells = parse.GetInRange(maxCellsOption);
                 string content = parse.GetValue(contentOption) ?? CellsReadContents.Values;
                 (string? sheetName, RangeRef? range) = SheetRangeInput.Resolve(
                     parse.GetValue(sheet), parse.GetValue(rangeOption));
@@ -71,12 +70,9 @@ internal static class ReadCommand
             // A read within the budget is complete. A read over it is a planned scan with
             // another page: of the used range by default, of the data inside an explicit
             // range, or of the region a generated page's command carries.
-            Finish = static (_, request, result, standard) => result with
+            Finish = static (_, request, result, _) => result with
             {
-                Window = result.Window with
-                {
-                    Next = ScanContinuation.Build(standard.Continuation(), result, request.Range, request.Scan, request.MaxCells),
-                },
+                Window = result.Window with { Next = ScanContinuation.Build(result, request.Range, request.Scan, request.MaxCells) },
             },
             Examples =
             [

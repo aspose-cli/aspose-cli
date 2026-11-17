@@ -2,7 +2,7 @@
 
 The error envelope and the shared codes are in `aspose-cli docs troubleshooting`;
 `aspose-cli capabilities pdf` lists every PDF code with its exit code. This page
-adds what to do about the PDF cases that need more than the error's hint.
+adds what to do about PDF cases.
 
 ## Sources that can reach the network
 
@@ -47,8 +47,7 @@ result warns `PROTECTION_NOT_ENFORCED`. Filling fields needs `fillForms`, `annot
 or `modify`; inserting, moving, rotating or deleting pages and adding bookmarks need
 `assemble` or `modify`; other changes need `modify`; `encrypt_document` and
 `decrypt_document` always need the owner password. Confirm the owner authorized the
-change; the hint says which encryption the output carries. A merge or split that
-keeps an input's open password warns too.
+change. A merge or split that keeps an input's open password warns too.
 
 [Encryption](forms-security.md#encryption) says which outputs warn
 `ENCRYPTION_REMOVED` and how to keep them protected. `pdf convert` does not encrypt and

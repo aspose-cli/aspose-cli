@@ -19,8 +19,6 @@
           { "path": "warnings[1].location", "equals": "slide/1" },
           { "path": "warnings[1].details.fields", "equals": ["text", "showNumber", "showDate"] },
           { "path": "warnings[1].message", "contains": "its layout 'Title Slide' has no footer or slide-number or date placeholder" },
-          { "path": "warnings[1].hint", "startsWith": "set_footer shows footer text, a slide number and a date only in the placeholders of a slide's layout, and a layout such as a title slide's often has none, so that the slide shows none of them: leave the slide so. Only where this slide must show them, set_layout it to a layout of its master that has them ('Title and Content'" },
-          { "path": "warnings[1].hint", "contains": "that changes the slide's layout and look" },
           { "path": "warnings[2]", "exists": false }
         ],
         "files": { "present": ["footed.pptx"] }

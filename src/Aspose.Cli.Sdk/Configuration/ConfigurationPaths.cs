@@ -19,7 +19,7 @@ public static class ConfigurationPaths
         string? configured = Environment.GetEnvironmentVariable(EnvironmentVariableName);
         if (!string.IsNullOrWhiteSpace(configured) && !Path.IsPathFullyQualified(configured))
         {
-            throw CliErrors.OptionInvalid(EnvironmentVariableName, "configuration path is not absolute", "Use an absolute directory dedicated to this CLI.");
+            throw CliErrors.OptionInvalid(EnvironmentVariableName, "configuration path is not absolute");
         }
         string root = Path.GetFullPath(string.IsNullOrWhiteSpace(configured)
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData,
@@ -102,6 +102,5 @@ public static class ConfigurationPaths
     }
 
     private static CliException Conflict() => CliErrors.OptionInvalid(
-        EnvironmentVariableName, "configuration ownership could not be verified for this application",
-        "Choose a different configuration directory. Existing files were preserved.");
+        EnvironmentVariableName, "configuration ownership could not be verified for this application");
 }

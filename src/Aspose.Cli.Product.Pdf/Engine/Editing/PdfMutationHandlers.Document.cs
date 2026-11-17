@@ -155,7 +155,7 @@ internal sealed partial class PdfMutationHandlers
     public ValueTuple Apply(SetFormFieldOp operation)
     {
         EnsureAcroForm(_document);
-        Field field = Settable(FormField(_document, operation.Name), "set_form_field", "which this set_form_field sets");
+        Field field = Settable(FormField(_document, operation.Name), "which this set_form_field sets");
         RequireValueField(field);
         if (operation.Value is not null && RejectedFieldValue(field, operation.Value) is { } rejected)
         {
@@ -258,9 +258,7 @@ internal sealed partial class PdfMutationHandlers
         if (operation.CompressStreams && _document.IsEncrypted)
         {
             throw new OperationInvalidException(
-                "compressStreams packs objects into object streams, which the PDF engine writes unreadable into an encrypted document",
-                "Set \"compressStreams\": false to optimize the document as it is encrypted, or put decrypt_document before optimize_document "
-                + "and encrypt_document after it (or pass --encrypt-env) to pack the objects and encrypt the result.");
+                "compressStreams packs objects into object streams, which the PDF engine writes unreadable into an encrypted document");
         }
 
         var options = new OptimizationOptions

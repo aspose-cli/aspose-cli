@@ -12,26 +12,4 @@ public sealed record PdfConvertRequest
     public PageRange? Pages { get; init; }
     public Secret? Password { get; init; }
 
-    /// <summary>
-    /// The command lines, quoted and followed by <c>instead</c> and the part they leave to delete,
-    /// that write an editable file of the output's format from the input, or from the selected
-    /// pages split from it, over the output, with the input password's environment variable when
-    /// one gave it, which the conversion's <c>LOSSY_CONVERSION</c> names; null when no other product
-    /// writes an editable file of the format.
-    /// </summary>
-    public string? EditableConversion { get; init; }
-
-    /// <summary>
-    /// The quoted command line that reads the input's form fields with their values, with the
-    /// input password's environment variable when one gave it, which the warning that the output
-    /// leaves out field values names; null for a conversion made without a command line.
-    /// </summary>
-    public string? FormsInspection { get; init; }
-
-    /// <summary>
-    /// The quoted command line that extracts the pictures of the selected pages of the input into a
-    /// new folder beside the output, which the warning that the output leaves out its pictures
-    /// names; null for a conversion made without a command line.
-    /// </summary>
-    public string? PictureExtraction { get; init; }
 }

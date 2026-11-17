@@ -190,8 +190,8 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// <c>-</c> names only standard input: <c>--out -</c> is <c>OPTION_INVALID</c> with a hint
-    /// to name a file, on every command that has <c>--out</c> (that a refusal writes nothing is
+    /// <c>-</c> names only standard input: <c>--out -</c> is <c>OPTION_INVALID</c>, on every
+    /// command that has <c>--out</c> (that a refusal writes nothing is
     /// the <c>unwritable-output</c> invariant's); and <c>--</c> ends the options, so a file whose
     /// name starts with a dash can follow it.
     /// </summary>
@@ -205,7 +205,6 @@ internal static partial class ContractRules
                 {
                     ExitCode = [2],
                     Error = ["OPTION_INVALID"],
-                    Json = [new JsonAssertion { Path = "error.hint", Contains = "name a file" }],
                 });
         }
         string output = OutputOption(catalog);
@@ -545,7 +544,7 @@ internal static partial class ContractRules
     /// and <c>docs</c> (a topic). The <c>unknown-*</c> and <c>invalid-enum</c> invariants already
     /// check the exit code, the error code and that <c>details.suggestions</c> holds the intended
     /// name; this rule adds that <c>details.available</c> lists at most 50 names and
-    /// <c>details.suggestions</c> is present, the hint starts with "Did you mean", and the message
+    /// <c>details.suggestions</c> is present, and the message
     /// is one line saying "Must be one of: a, b" with exactly <c>details.available</c>. The kinds
     /// no invariant covers, enum values and target names, also check the suggestion.
     /// </summary>
@@ -728,11 +727,6 @@ internal static partial class ContractRules
         else if (suggests && !suggestions.Contains(intended, StringComparer.Ordinal))
         {
             yield return $"details.suggestions [{string.Join(", ", suggestions)}] leaves out '{intended}'";
-        }
-        string hint = error["hint"]?.GetValue<string>() ?? string.Empty;
-        if (!hint.StartsWith("Did you mean", StringComparison.Ordinal))
-        {
-            yield return $"the hint does not start with 'Did you mean': {Excerpt(hint)}";
         }
         string message = error["message"]?.GetValue<string>() ?? string.Empty;
         int lines = message.ReplaceLineEndings("\n").Split('\n').Length;

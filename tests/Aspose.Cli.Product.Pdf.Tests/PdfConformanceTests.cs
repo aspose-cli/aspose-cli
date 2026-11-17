@@ -129,14 +129,9 @@ public sealed class PdfConformanceTests
 
         Assert.Equal("PDFA_CONVERSION_FAILED", error.Code.Name);
         Assert.Equal(clause, Assert.Single(error.Details!["problems"]!.AsArray())!["clause"]!.GetValue<string>());
-        Assert.Contains("'radio'", error.Hint, StringComparison.Ordinal);
-        // Text fields and check boxes, whose appearances have a state each, conform as they are.
-        Assert.DoesNotContain("'company'", error.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("'field_", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("flatten_forms", error.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
 
-        // The remedy the hint names, flattening only the named fields, makes the conversion conform.
+        // Flattening only the named fields makes the conversion conform.
         string flattened = fixture.File("form.flat.pdf");
         PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
@@ -185,7 +180,6 @@ public sealed class PdfConformanceTests
             Warning warning = Assert.Single(result.Warnings!, warning => warning.Location == $"attachment/{name}");
             Assert.Equal(WarningCodes.LossyConversion, warning.Code);
             Assert.Contains(profile == "pdfa-1b" ? "PDF/A-1 does not allow attachments" : "PDF/A-2 allows only attachments that are PDF/A documents", warning.Message, StringComparison.Ordinal);
-            Assert.Contains("pdfa-3b", warning.Hint, StringComparison.Ordinal);
         }
 
         Assert.DoesNotContain(result.Warnings ?? [], warning => kept.Any(name => warning.Location == $"attachment/{name}"));

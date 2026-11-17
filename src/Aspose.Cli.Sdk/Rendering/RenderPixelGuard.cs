@@ -26,17 +26,16 @@ public static class RenderPixelGuard
     /// <param name="width">Image width in pixels.</param>
     /// <param name="height">Image height in pixels.</param>
     /// <param name="dpi">The resolution that produced the size, or null for an explicit size.</param>
-    /// <param name="hint">Product guidance naming its own way to shrink the image.</param>
+    /// <param name="target">The address of what would be rendered, such as <c>page/3</c>, when it is not the whole request.</param>
     /// <exception cref="CliException"><c>RENDER_TOO_LARGE</c>.</exception>
     public static void EnsureFits(
         ResourceBudgetLedger budgets,
         long width,
         long height,
         int? dpi,
-        string hint = "Select a smaller render region or lower --dpi.")
+        string? target = null)
     {
         ArgumentNullException.ThrowIfNull(budgets);
-        ArgumentException.ThrowIfNullOrWhiteSpace(hint);
         long maxPixels = budgets.Limit(ResourceBudgetKinds.RasterPixels);
         if (width <= 0
             || height <= 0
@@ -44,7 +43,7 @@ public static class RenderPixelGuard
             || height > maxPixels
             || width > maxPixels / height)
         {
-            throw CliErrors.RenderTooLarge(width, height, dpi, maxPixels, hint);
+            throw CliErrors.RenderTooLarge(width, height, dpi, maxPixels, target);
         }
     }
 }

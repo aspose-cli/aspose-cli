@@ -23,7 +23,6 @@ public static class OperationSecrets
 
         return secrets is not null && secrets.TryGetValue(variable, out Secret? value)
             ? value
-            : throw new OperationInvalidException(
-                Errors.CliErrors.SecretMissingReason(variable), Errors.CliErrors.SecretMissingHint(variable));
+            : throw new OperationInvalidException(Errors.CliErrors.SecretMissingReason(variable));
     }
 }

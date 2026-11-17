@@ -30,7 +30,6 @@ internal static class SvgPictures
             + $"{fromSvg} reference(s) inside SVG images, which the pictures no longer hold; a workbook package the command "
             + "writes may still carry each original SVG, references included, as a part nothing in it refers to.")
         {
-            Hint = "Embed an SVG image's images as base64 data: URIs (PNG, JPEG or GIF); copy other files the workbook needs into the input's folder, or a folder below it, and reference them by a relative path. Then review the incomplete output.",
             AffectsCompleteness = true,
         };
 

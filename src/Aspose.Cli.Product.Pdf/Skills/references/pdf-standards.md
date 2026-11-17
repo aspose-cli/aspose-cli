@@ -37,8 +37,7 @@ document conform, or the converted file does not validate, the command fails
 with `PDFA_CONVERSION_FAILED`, writes no output and lists what it could not fix
 in `error.details.problems`. Button fields the conversion leaves with
 appearances the profile rejects, such as the radio groups of a form made with
-`pdf create --from-html`, are named in `error.hint`: flatten them with a
-`flatten_forms` edit, which ends their fillability, then convert again. PDF/A must
+`pdf create --from-html`, are named in `error.message`. PDF/A must
 embed every font, so a font missing here fails the conversion; pass the
 delivered fonts with `--font-dir`. `pdf validate` checks only the selected
 profile, not signatures, redaction or permissions, and completes with exit 8 when
@@ -81,9 +80,8 @@ flattened file to `txt`: `md` writes each value of a form that
 `--to md` writes the text of the pages as one file and leaves out their
 pictures: a `LOSSY_CONVERSION` with `details.content` `["pictures"]` counts the
 pictures the pages store as image objects, those in table cells included, one
-for each time a page shows one, and its hint gives the `pdf extract --what images`
-command, which writes each of them as an image file; a picture drawn inline in a
-page is not one of them, and `pdf render` shows it.
+for each time a page shows one; a picture drawn inline in a page is not one of
+them, and `pdf render` shows it.
 
 HTML output is one self-contained file that places every line of text
 absolutely and embeds subsets of the PDF's fonts; its `<title>` is the PDF

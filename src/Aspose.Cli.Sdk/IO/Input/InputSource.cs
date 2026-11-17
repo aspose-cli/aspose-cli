@@ -156,18 +156,16 @@ public sealed class InputSource
     /// <see cref="ReadSecretLine(TextReader)"/> of bytes, such as piped standard input: UTF-8 text
     /// after a UTF-8 byte order mark, if there is one, whatever the console's code page, so a secret
     /// reads the same from stdin as from an environment variable. Bytes that are not UTF-8 are
-    /// refused as the error of <paramref name="option"/>, such as <c>--password-stdin</c>, whose hint
-    /// offers <paramref name="alternative"/>, the option that reads the secret from an environment
-    /// variable; the error repeats none of the bytes.
+    /// refused as the error of <paramref name="option"/>, such as <c>--password-stdin</c>; the
+    /// error repeats none of the bytes.
     /// </summary>
-    internal string ReadSecretLine(Stream input, string option, string alternative)
+    internal string ReadSecretLine(Stream input, string option)
     {
         using var reader = new StreamReader(input, MarkedStrictUtf8, detectEncodingFromByteOrderMarks: false, bufferSize: -1, leaveOpen: true);
         try { return ReadSecretLine(reader); }
         catch (DecoderFallbackException)
         {
-            throw CliErrors.OptionInvalid(option, "stdin is read as UTF-8 text, and the password on it is not",
-                $"Pipe the password as UTF-8 text, or name an environment variable that holds it with {alternative}.");
+            throw CliErrors.OptionInvalid(option, "stdin is read as UTF-8 text, and the password on it is not");
         }
     }
 

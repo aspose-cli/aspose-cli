@@ -74,12 +74,6 @@ internal static class PdfForms
         return names.Count > Shown ? $"{listed}, and {names.Count - Shown} more" : listed;
     }
 
-    /// <summary>
-    /// The command a hint gives to read the field values: the command line built for the
-    /// invocation's input, or, for a request made without one, the command's name.
-    /// </summary>
-    internal static string Inspection(string? commandLine) => commandLine ?? "'pdf inspect --detail forms'";
-
     /// <summary>The kind and value a read reports for a field; a radio button reports its group's.</summary>
     internal static (string Kind, string? Value) State(Field field)
     {
@@ -204,8 +198,7 @@ internal static class PdfForms
         {
             throw new CliException(
                 PdfDiagnostics.FormXfaUnsupported,
-                "XFA forms are read-only in the current PDF command surface.",
-                hint: "Convert the XFA form to AcroForm before filling, flattening or exporting it.");
+                "XFA forms are read-only in the current PDF command surface.");
         }
     }
 }

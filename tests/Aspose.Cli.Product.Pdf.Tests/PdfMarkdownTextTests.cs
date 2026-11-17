@@ -18,7 +18,7 @@ public sealed class PdfMarkdownTextTests
     {
         const string Exported = "# Table\r\n\r\n| Dot |  |\r\n\r\n ![](image_1.png) \r\n\r\nBefore  after.\r\n\r\n ![](image_1.png)  ![](image_2.png) \r\n\r\nLast\r\n\r\n ![](image_2.png) \r\n";
 
-        (string text, int removed) = PdfMarkdownText.TakeOutPictures(Exported, ["image_1.png", "image_2.png"], extraction: null);
+        (string text, int removed) = PdfMarkdownText.TakeOutPictures(Exported, ["image_1.png", "image_2.png"]);
 
         Assert.Equal("# Table\r\n\r\n| Dot |  |\r\n\r\nBefore  after.\r\n\r\nLast\r\n", text);
         Assert.Equal(4, removed);
@@ -35,13 +35,10 @@ public sealed class PdfMarkdownTextTests
     [InlineData("Text\r\n\r\n ![](image_1.png) \r\n<img src=\"image_1.png\">\r\n", null)]
     public void TakeOutPictures_RefusesAPictureItCannotTakeOut(string exported, string? another)
     {
-        const string Extraction = "'aspose-cli pdf extract in.pdf --what images --out-dir out-images --output-format json'";
         string[] pictures = another is null ? ["image_1.png"] : ["image_1.png", another];
 
-        CliException error = Assert.Throws<CliException>(() => PdfMarkdownText.TakeOutPictures(exported, pictures, Extraction));
+        CliException error = Assert.Throws<CliException>(() => PdfMarkdownText.TakeOutPictures(exported, pictures));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
-        Assert.Contains("--to txt", error.Hint, StringComparison.Ordinal);
-        Assert.Contains(Extraction, error.Hint, StringComparison.Ordinal);
     }
 }

@@ -1,5 +1,4 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
@@ -34,24 +33,9 @@ internal static class WordsCreate
         };
     }
 
-    /// <summary>
-    /// A template, which opens without a password: an encrypted one is refused with the convert
-    /// that writes an unencrypted copy of it, Flat OPC, which carries no password but keeps
-    /// everything a template supplies, or else the advice to ask for an unencrypted copy.
-    /// </summary>
-    private static LoadedDocument OpenTemplate(WordsSession session, string path)
-    {
-        string copy = Path.Combine(Path.GetDirectoryName(path) ?? string.Empty, Path.GetFileNameWithoutExtension(path) + ".unencrypted.xml");
-        // This command takes no password for its template, so the convert opens it with a variable
-        // the caller names: the input's password option without a variable, which is a placeholder.
-        ContinuationCommand convert = new ContinuationInput(path, "--password-env").ContinuationAt("words", "convert")
-            .Option("--to", "flatopc")
-            .Out(ContinuationOutput.New(copy));
-        return session.Loader.Open(path, PasswordSource.None(
-            "'words create' cannot open an encrypted template. With its password, write an unencrypted copy: "
-            + $"{convert.Quoted()}, "
-            + "then pass that copy to --template. Without the password, ask the user for an unencrypted copy of the template."));
-    }
+    /// <summary>A template, which opens without a password: an encrypted one is refused.</summary>
+    private static LoadedDocument OpenTemplate(WordsSession session, string path) =>
+        session.Loader.Open(path, PasswordSource.None());
 
     /// <summary>
     /// A template (the built-in A4 design unless one is given) supplies styles, page setup,
@@ -147,7 +131,7 @@ internal static class WordsCreate
 
         if (created.WasSigned)
         {
-            extra.Add(new Warning(WarningCodes.SignatureInvalidated, "Creating from the signed source invalidates its digital signature.") { Hint = "Sign the produced document after review." });
+            extra.Add(new Warning(WarningCodes.SignatureInvalidated, "Creating from the signed source invalidates its digital signature."));
         }
 
         return EnvelopeParts.CombineWarnings(extra);

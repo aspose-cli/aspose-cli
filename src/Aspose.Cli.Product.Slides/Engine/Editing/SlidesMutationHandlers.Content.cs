@@ -1,8 +1,6 @@
-using System.Globalization;
 using System.Text;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
-using Aspose.Slides.Charts;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEvaluationMarks;
 
 namespace Aspose.Cli.Product.Slides.Engine.Editing;
@@ -66,10 +64,9 @@ internal sealed partial class SlidesMutationHandlers
             SlidesTextUnit[][] candidates = found.Length == 1 ? [found] : [[found[0]], [found[1]], found];
             foreach (SlidesTextUnit[] named in candidates)
             {
-                (string where, string left, string unchanged, string hint) = Unchanged(named);
+                (string where, string left, string unchanged) = Unchanged(named);
                 _unreplaced.Add(UnreplacedText.Found(named[0].Part!, operation, "replace_text",
-                    $"Operation {operation.Id} (replace_text) found a match in {where} and left {left}: replace_text does not change {unchanged}.",
-                    hint, named[0].Location!, () => found.All(unit => named.Contains(unit) == Remains(unit))));
+                    $"Operation {operation.Id} (replace_text) found a match in {where} and left {left}: replace_text does not change {unchanged}.", named[0].Location!, () => found.All(unit => named.Contains(unit) == Remains(unit))));
             }
         }
 
@@ -83,67 +80,28 @@ internal sealed partial class SlidesMutationHandlers
 
     /// <summary>
     /// How replace_text names text it found and left, by the kind of part that holds it: where it
-    /// found it, what it left, what it does not change and how to change that text. The message
-    /// never repeats the find text or the part's text.
+    /// found it, what it left and what it does not change. The message never repeats the find
+    /// text or the part's text.
     /// </summary>
-    private static (string Found, string Left, string Unchanged, string Hint) Unchanged(SlidesTextUnit[] units)
+    private static (string Found, string Left, string Unchanged) Unchanged(SlidesTextUnit[] units)
     {
         SlidesTextUnit unit = units[0];
         const string Charts = "chart titles or chart data";
-        IChart? chart = unit.Holder as IChart;
-        bool grouped = unit.Shape is IGroupShape;
         if (unit.Part == TextPart.ChartTitle)
         {
-            return ($"the title of {unit.Where}", "the title as it was", Charts,
-                grouped ? GroupedChartHint : RebuildHint(unit.Slide, chart!, "To change the title, rebuild the chart", "the same data, the new title"));
+            return ($"the title of {unit.Where}", "the title as it was", Charts);
         }
 
         if (unit.Part == TextPart.ChartData)
         {
-            string change = units.Length > 1 ? "the categories and every series as read, each changed where it matches"
-                : unit.ChartData == SlidesTextUnits.Categories ? "the categories, changed where they match"
-                : "every series as read, values and all, renamed where its name matches";
-            return ($"the {string.Join(" and ", units.Select(static item => item.ChartData))} of {unit.Where}", "them as they were", Charts, grouped ? GroupedChartHint : DataHint(unit.Slide, chart!, change));
+            return ($"the {string.Join(" and ", units.Select(static item => item.ChartData))} of {unit.Where}", "them as they were", Charts);
         }
 
-        return unit.Part == TextPart.AxisTitle ? ($"an axis title of {unit.Where}", "it as it was", "a chart's axis titles", AxisTitleHint)
-            : unit.Part == TextPart.DataLabel ? ($"a data label of {unit.Where}", "it as it was", "a chart's data labels", Unchangeable("a chart's data labels"))
-            : unit.Part == TextPart.AltText ? ($"the alternative text of {unit.Where}", "it as it was", "alternative text", Unchangeable("the alternative text of a shape"))
-            : unit.Part == TextPart.Comment ? (unit.Where, "it as it was", "comments", Unchangeable("comments"))
-            : (unit.Where, "it as it was", "the text of layouts and masters", Unchangeable("the text of a layout or master, which every slide on it shows"));
-    }
-
-    // The hint for text no operation changes.
-    private static string Unchangeable(string what) =>
-        $"No operation changes {what}, so it keeps that text: report it as unchanged, or change it in a presentation editor.";
-
-    // No operation addresses a shape inside a group, and slides read reports only a slide's own shapes.
-    private const string GroupedChartHint =
-        "No operation addresses a shape inside a group, so the chart keeps that text: report it as unchanged, or " + RebuildGroupedChart + ".";
-
-    // A chart inside a group is rebuilt as any chart is (editing.md), with the group it was in.
-    private const string RebuildGroupedChart =
-        "rebuild the chart outside the group: apply delete_shape to the group, which removes everything the group holds, then insert_chart the chart as it should be and insert again what else the group held; 'slides read' does not report what a group holds";
-
-    // No operation writes an axis title, and a chart insert_chart rebuilds has none.
-    private const string AxisTitleHint =
-        "No operation changes a chart's axis titles, so the chart keeps that text: report it as unchanged, or change it in a presentation editor.";
-
-    // How to change the data of a chart on the slide itself: set_chart_data, unless it cannot
-    // update the chart in place, when the chart is rebuilt as its title would be.
-    private static string DataHint(int number, IChart chart, string change) =>
-        SlidesChartUpdate.CannotUpdate(chart) is not null
-            ? RebuildHint(number, chart, "To change them, rebuild the chart, since its data cannot be updated in place", "the changed data, its title")
-            : string.Create(CultureInfo.InvariantCulture,
-                $"To change them, read the chart's categories and series with 'slides read --slides {number} --content full', then apply set_chart_data to shapeId {chart.OfficeInteropShapeId} on slide {number} with {change}.");
-
-    // A hint that rebuilds the chart: read it, delete it, then insert it again at its rect.
-    private static string RebuildHint(int number, IChart chart, string change, string with)
-    {
-        string rect = string.Create(CultureInfo.InvariantCulture,
-            $$"""{"x":{{chart.X:0.##}},"y":{{chart.Y:0.##}},"width":{{chart.Width:0.##}},"height":{{chart.Height:0.##}}}""");
-        return string.Create(CultureInfo.InvariantCulture,
-            $$"""{{change}}: read its kind, categories and series with 'slides read --slides {{number}} --content full', apply {"op":"delete_shape","slide":{{number}},"shapeId":{{chart.OfficeInteropShapeId}}}, then insert_chart on slide {{number}} with {{with}} and "rect":{{rect}}. The new chart takes the automatic chart style.""");
+        return unit.Part == TextPart.AxisTitle ? ($"an axis title of {unit.Where}", "it as it was", "a chart's axis titles")
+            : unit.Part == TextPart.DataLabel ? ($"a data label of {unit.Where}", "it as it was", "a chart's data labels")
+            : unit.Part == TextPart.AltText ? ($"the alternative text of {unit.Where}", "it as it was", "alternative text")
+            : unit.Part == TextPart.Comment ? (unit.Where, "it as it was", "comments")
+            : (unit.Where, "it as it was", "the text of layouts and masters");
     }
 
     private static int Replace(IParagraph paragraph, TextReplacement replacement, int limit)

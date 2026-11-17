@@ -158,8 +158,7 @@ internal static class PdfMutationSupport
         if (kind is not null)
         {
             throw new OperationInvalidException(
-                $"{kind} '{field.FullName}' holds no value",
-                "To place an image on the form, use add_stamp_image with the field's page and rect from 'pdf inspect --detail forms'; a signature field is filled by 'pdf sign'.");
+                $"{kind} '{field.FullName}' holds no value");
         }
     }
 }

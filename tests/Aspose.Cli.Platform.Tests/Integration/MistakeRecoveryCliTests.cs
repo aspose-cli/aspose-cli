@@ -50,12 +50,12 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
     /// <summary>A <c>--to</c> format the command does not write but a command beside it does points to that command.</summary>
     [Theory]
-    [InlineData("cells convert a.xlsx --to png", "Run 'aspose-cli cells render a.xlsx --to png --output-format json' for png.")]
-    [InlineData("pdf convert a.pdf --to png", "Run 'aspose-cli pdf render a.pdf --to png --output-format json' for png.")]
-    [InlineData("slides convert a.pptx --to png", "Run 'aspose-cli slides render a.pptx --to png --output-format json' for png.")]
-    [InlineData("slides convert a.pptx --to jpeg", "Run 'aspose-cli slides render a.pptx --to jpeg --output-format json' for jpeg.")]
-    [InlineData("slides convert a.pptx --to svg", "Run 'aspose-cli slides render a.pptx --to svg --output-format json' for svg.")]
-    public void TargetFormatAnotherCommandWrites_PointsToThatCommand(string commandLine, string producer)
+    [InlineData("cells convert a.xlsx --to png")]
+    [InlineData("pdf convert a.pdf --to png")]
+    [InlineData("slides convert a.pptx --to png")]
+    [InlineData("slides convert a.pptx --to jpeg")]
+    [InlineData("slides convert a.pptx --to svg")]
+    public void TargetFormatAnotherCommandWrites_PointsToThatCommand(string commandLine)
     {
         File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
         File.WriteAllText(_workspace.File("a.pptx"), "not a document");
@@ -68,7 +68,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("--to", error["details"]!["option"]!.GetValue<string>());
-        Assert.Contains(producer, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -91,9 +90,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
             "cells", "convert", "book.xlsx", "--password-env", "BOOK_PASSWORD", "--to", "png", "--out", "x.png", "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
-        string hint = JsonNode.Parse(refused.StdErr)!["error"]!["hint"]!.GetValue<string>();
         const string Command = "aspose-cli cells render book.xlsx --password-env BOOK_PASSWORD --to png --out x.png --output-format json";
-        Assert.Equal($"Run '{Command}' for png.", hint);
         CliResult rendered = _workspace.RunCommandLine(Command, password);
         Assert.True(rendered.ExitCode == 0, rendered.StdErr);
         JsonArray outputs = JsonNode.Parse(rendered.StdOut)!["outputs"]!.AsArray();
@@ -116,27 +113,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
             error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.Null(error["details"]!["supported"]);
         Assert.EndsWith("Must be one of: .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .txt, .tsv.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.DoesNotContain(".pdf", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("then run 'aspose-cli cells render <that file> --to png --output-format json'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// Table output states a mistake's question once, in the hint, for a target the document does
-    /// not contain and for an unknown option alike.
-    /// </summary>
-    [Theory]
-    [InlineData("cells read a.xlsx --range Shet1!A1:B2", "error SHEET_NOT_FOUND: ", "Did you mean 'Sheet1'?")]
-    [InlineData("cells read a.xlsx --rnage Sheet1!A1", "error USAGE_ERROR: ", "Did you mean '--range'?")]
-    public void TableOutput_AsksTheMistakesQuestionOnce(string commandLine, string error, string question)
-    {
-        Assert.Equal(0, _workspace.Run("cells", "create", "a.xlsx", "--output-format", "json").ExitCode);
-
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "table"]);
-
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains(error, result.StdErr, StringComparison.Ordinal);
-        Assert.Contains($"  hint: {question}", result.StdErr, StringComparison.Ordinal);
-        Assert.Single(result.StdErr.Split('\n'), static line => line.Contains("did you mean", StringComparison.OrdinalIgnoreCase));
     }
 
     [Theory]
@@ -157,8 +133,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains(suggestion, error["details"]!["suggestions"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.Contains(suggestion, error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
-        Assert.StartsWith("Did you mean ", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains($"'{suggestion}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -167,9 +141,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     /// suggests no extension the command itself cannot write.
     /// </summary>
     [Theory]
-    [InlineData("words edit a.docx --ops words.json --out x.pfd", "then run 'aspose-cli words convert <that file> --to pdf --output-format json' for pdf")]
-    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pfd", "then run 'aspose-cli cells convert <that file> --to pdf --output-format json' for pdf")]
-    public void MistypedExtensionOfASiblingsFormat_NamesTheSiblingAndSuggestsNothingItCannotWrite(string commandLine, string producer)
+    [InlineData("words edit a.docx --ops words.json --out x.pfd")]
+    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pfd")]
+    public void MistypedExtensionOfASiblingsFormat_NamesTheSiblingAndSuggestsNothingItCannotWrite(string commandLine)
     {
         File.WriteAllText(_workspace.File("a.docx"), "not a document");
         File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
@@ -182,9 +156,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Null(error["details"]!["suggestions"]);
         Assert.Equal("pdf", error["details"]!["format"]!.GetValue<string>());
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.DoesNotContain("Did you mean", hint, StringComparison.Ordinal);
-        Assert.Contains(producer, hint, StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("x.pfd")));
     }
 
@@ -195,9 +166,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     /// product's render writes.
     /// </summary>
     [Theory]
-    [InlineData("pdf render a.pdf --out x.gif", "pdf convert", "a.pdf", "--to tiff --out x.tif", ".png .jpg .jpeg .svg")]
-    [InlineData("slides render a.pptx --out x.gifx", "slides convert", "a.pptx", "--to gif --out x.gif", ".png .jpg .jpeg .svg .tiff .tif")]
-    public void RenderOutputCloseToAnotherCommandsFormat_SuggestsOnlyExtensionsRenderWrites(string commandLine, string producer, string input, string options, string rendered)
+    [InlineData("pdf render a.pdf --out x.gif", ".png .jpg .jpeg .svg")]
+    [InlineData("slides render a.pptx --out x.gifx", ".png .jpg .jpeg .svg .tiff .tif")]
+    public void RenderOutputCloseToAnotherCommandsFormat_SuggestsOnlyExtensionsRenderWrites(string commandLine, string rendered)
     {
         File.WriteAllText(_workspace.File("a.pdf"), "not a document");
         File.WriteAllText(_workspace.File("a.pptx"), "not a document");
@@ -211,9 +182,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Subset(new HashSet<string>(rendered.Split(' ')), new HashSet<string>(available));
         string[] suggestions = error["details"]!["suggestions"]?.AsArray().Select(static extension => extension!.GetValue<string>()).ToArray() ?? [];
         Assert.Subset(new HashSet<string>(available), new HashSet<string>(suggestions));
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.DoesNotContain("Did you mean", hint, StringComparison.Ordinal);
-        Assert.Contains($"'aspose-cli {producer} \"{_workspace.File(input)}\" {options} --output-format json'", hint, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -221,11 +189,11 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     /// points to the render beside it, with the format render calls it and the same output.
     /// </summary>
     [Theory]
-    [InlineData("slides convert a.pptx --to jpg --out x.jpg", "Run 'aspose-cli slides render a.pptx --to jpeg --out x.jpg --output-format json' for jpeg.")]
-    [InlineData("pdf convert a.pdf --to jpg --out x.jpg", "Run 'aspose-cli pdf render a.pdf --to jpeg --out x.jpg --output-format json' for jpeg.")]
-    [InlineData("words convert a.docx --to jpg --out x.jpg", "Run 'aspose-cli words render a.docx --to jpeg --out x.jpg --output-format json' for jpeg.")]
-    [InlineData("cells convert a.xlsx --to jpg", "Run 'aspose-cli cells render a.xlsx --to jpeg --output-format json' for jpeg.")]
-    public void ImageFormatNamedByItsExtension_PointsToRenderWithTheSameOutput(string commandLine, string producer)
+    [InlineData("slides convert a.pptx --to jpg --out x.jpg")]
+    [InlineData("pdf convert a.pdf --to jpg --out x.jpg")]
+    [InlineData("words convert a.docx --to jpg --out x.jpg")]
+    [InlineData("cells convert a.xlsx --to jpg")]
+    public void ImageFormatNamedByItsExtension_PointsToRenderWithTheSameOutput(string commandLine)
     {
         File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
         File.WriteAllText(_workspace.File("a.pptx"), "not a document");
@@ -238,7 +206,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("--to", error["details"]!["option"]!.GetValue<string>());
-        Assert.Contains(producer, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -260,7 +227,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains(meant, error["details"]!["suggestions"]!.AsArray().Select(static value => value!.GetValue<string>()));
-        Assert.Contains($"Did you mean '{meant}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -280,7 +246,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(meant, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.Contains($"Did you mean '{meant}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>A missing required array of fixed values says it is an array and shows one.</summary>

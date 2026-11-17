@@ -22,13 +22,4 @@ public sealed class FileAccessProbeTests
         Assert.False(FileAccessProbe.IsSharingViolation(new IOException(
             "Unrelated error with matching low bits", unchecked((int)0x80130020))));
     }
-
-    [Fact]
-    public void LockedFileGuidance_IsIndependentOfTheDocumentProduct()
-    {
-        CliException error = CliErrors.FileLocked("document.docx");
-        Assert.Equal(ErrorCodes.FileLocked, error.Code);
-        Assert.DoesNotContain("Excel", error.Hint!, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("application", error.Hint!, StringComparison.OrdinalIgnoreCase);
-    }
 }

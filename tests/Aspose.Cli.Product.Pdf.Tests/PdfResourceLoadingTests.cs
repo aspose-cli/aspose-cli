@@ -200,8 +200,7 @@ public sealed class PdfResourceLoadingTests
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.Contains(JsonNode.Parse(result.StdOut)!["warnings"]!.AsArray(),
             warning => warning!["code"]!.GetValue<string>() == "REMOTE_RESOURCES_BLOCKED"
-                && warning["message"]!.GetValue<string>().Contains($"{server.Url}/svg.png", StringComparison.Ordinal)
-                && warning["hint"]!.GetValue<string>().Contains("data:", StringComparison.Ordinal));
+                && warning["message"]!.GetValue<string>().Contains($"{server.Url}/svg.png", StringComparison.Ordinal));
     }
 
     [Fact]

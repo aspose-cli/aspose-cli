@@ -26,6 +26,5 @@ internal static class SlidesRenderSizing
             resourceBudgets,
             width,
             height,
-            dpi,
-            "Lower --dpi or pass a smaller --width.");
+            dpi);
 }

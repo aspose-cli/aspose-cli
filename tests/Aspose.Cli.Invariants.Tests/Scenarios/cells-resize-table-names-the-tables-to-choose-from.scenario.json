@@ -10,8 +10,7 @@
       "expect": {
         "error": "TABLE_NOT_FOUND",
         "json": [
-          { "path": "error.message", "contains": "Items" },
-          { "path": "error.hint", "contains": "--detail tables" }
+          { "path": "error.message", "contains": "Items" }
         ],
         "files": { "nothingWritten": true }
       }

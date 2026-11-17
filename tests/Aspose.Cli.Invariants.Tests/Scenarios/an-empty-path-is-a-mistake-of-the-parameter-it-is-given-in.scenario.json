@@ -69,8 +69,7 @@
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.message", "equals": "Invalid use of --ops: the value is empty" },
-          { "path": "error.hint", "equals": "Pass a path to the document, inline JSON starting with { or [, or '-' for stdin." }
+          { "path": "error.message", "equals": "Invalid use of --ops: the value is empty" }
         ]
       }
     }

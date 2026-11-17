@@ -1,6 +1,4 @@
 using System.Text.RegularExpressions;
-using Aspose.Cli.Sdk;
-using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
@@ -279,10 +277,7 @@ internal static partial class SlidesExport
         {
             string numbers = string.Join(", ", skipped);
             warnings.Add(new Warning(SlidesDiagnostics.HiddenSlidesSkipped,
-                $"The {targetFormatId} output leaves out the hidden slide(s) {numbers}, as a slide show and PowerPoint's export do.")
-            {
-                Hint = $"To include them, name every slide to convert with --slides, such as --slides 1-{loaded.Presentation.Slides.Count}; a selected hidden slide is converted.",
-            });
+                $"The {targetFormatId} output leaves out the hidden slide(s) {numbers}, as a slide show and PowerPoint's export do."));
         }
 
         // An export holds the slides alone, with no notes pages, so the speaker notes of the
@@ -293,8 +288,7 @@ internal static partial class SlidesExport
         if (noted.Length > 0)
         {
             warnings.Add(ContentLoss.Warning([ContentKind.SpeakerNotes],
-                $"The {targetFormatId} output does not include the speaker notes of slide(s) {string.Join(", ", noted)}: an export holds the slides alone.",
-                $"Read the notes with 'slides read --slides {string.Join(",", noted)} --notes'; a pptx output keeps them."));
+                $"The {targetFormatId} output does not include the speaker notes of slide(s) {string.Join(", ", noted)}: an export holds the slides alone."));
         }
 
         if (lost is not null)
@@ -304,10 +298,7 @@ internal static partial class SlidesExport
 
         if (SlidesEngineFormats.IsLossy(targetFormatId))
         {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Slides conversion to {targetFormatId} may not preserve every presentation feature.")
-            {
-                Hint = "Keep the source deck and inspect the produced file for layout, animation and interactive-media changes.",
-            });
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Slides conversion to {targetFormatId} may not preserve every presentation feature."));
         }
 
         return warnings;
@@ -315,7 +306,7 @@ internal static partial class SlidesExport
 
     /// <summary>
     /// The warning that an output of the slides' text holds none of the pictures they show
-    /// (<see cref="SlidesContentLoss.Pictures"/>), counted as the extract its hint names writes
+    /// (<see cref="SlidesContentLoss.Pictures"/>), counted as 'slides extract --what media' writes
     /// them, each once (<see cref="SlidesExtract.ShownMedia"/>); null when the format keeps them or
     /// the shown slides have none.
     /// </summary>
@@ -330,13 +321,8 @@ internal static partial class SlidesExport
             return null;
         }
 
-        string md = request.Output.Path;
-        ContinuationCommand extract = (request.Continuation ?? new ContinuationInput(request.Input)).ContinuationAt("slides", "extract")
-            .Option("--what", SlidesExtractKinds.Media).Option("--slides", string.Join(",", pictured))
-            .OutDir(ContinuationOutput.New(Path.Combine(Path.GetDirectoryName(md)!, Path.GetFileNameWithoutExtension(md) + ".pictures")));
         return ContentLoss.Warning([ContentKind.Pictures],
-            $"The {format} output holds the slides' text alone and leaves out the {SlidesExtract.ShownMedia(loaded.Presentation, pictured).OfType<IPPImage>().Count()} picture(s) shown on slide(s) {string.Join(", ", pictured)}.",
-            $"Extract them with {extract.Quoted()}, which writes each of them once as a media.image file, beside the audio and video of those slides; a pptx output keeps them.");
+            $"The {format} output holds the slides' text alone and leaves out the {SlidesExtract.ShownMedia(loaded.Presentation, pictured).OfType<IPPImage>().Count()} picture(s) shown on slide(s) {string.Join(", ", pictured)}.");
     }
 
     // What a save in the format does not keep of the slides it shows (SlidesEngineFormat.Loses),
@@ -373,17 +359,8 @@ internal static partial class SlidesExport
             return null;
         }
 
-        string[] kept =
-        [
-            .. loses.HasFlag(SlidesContentLoss.Charts) ? new[] { "the charts editable" } : [],
-            .. loses.HasFlag(SlidesContentLoss.Transitions) ? new[] { "the transitions" } : [],
-            .. loses.HasFlag(SlidesContentLoss.Sections) ? new[] { "the sections" } : [],
-            .. loses.HasFlag(SlidesContentLoss.TableStyles) ? new[] { "the table styles" } : [],
-        ];
-        string keep = kept.Length == 1 ? kept[0] : $"{string.Join(", ", kept[..^1])} and {kept[^1]}";
         return ContentLoss.Warning([.. lost.Select(static item => item.Kind)],
-            $"The {format} output does not keep {string.Join("; ", lost.Select(static item => item.Text))}{(tables.Length == 0 ? ", though its slides look as in the deck." : ".")}",
-            $"Keep the source deck for further edits; to keep {keep}, convert to pptx instead.");
+            $"The {format} output does not keep {string.Join("; ", lost.Select(static item => item.Text))}{(tables.Length == 0 ? ", though its slides look as in the deck." : ".")}");
 
         int[] Slides(SlidesContentLoss kind, Func<ISlide, bool> holds) => loses.HasFlag(kind)
             ? [.. shown.Where(number => holds(presentation.Slides[number - 1]))]
@@ -421,10 +398,7 @@ internal static partial class SlidesExport
         return hidden.Length == 0
             ? null
             : [new Warning(SlidesDiagnostics.HiddenSlidesRendered,
-                $"The rendered slide(s) {string.Join(", ", hidden)} are hidden: a slide show and a convert of every slide leave them out.")
-            {
-                Hint = $$"""To show them in the deck, edit it with {"op":"set_slide_hidden","slides":"{{string.Join(",", hidden)}}","hidden":false}; otherwise leave them out of what you report as the deck's content.""",
-            }];
+                $"The rendered slide(s) {string.Join(", ", hidden)} are hidden: a slide show and a convert of every slide leave them out.")];
     }
 
     private static IReadOnlyList<SlidesSlideOutput> RenderImages(

@@ -1,6 +1,5 @@
 using System.Globalization;
 using Aspose.Cells;
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Budgets;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -97,7 +96,7 @@ internal static class TextTableLayout
         }
 
         (IReadOnlyList<TextRowShape> head, IReadOnlyList<TextRowShape> tail) = ReadShapes(sheet, used, budgets);
-        return Describe(Detect(head, tail), sheet.Name, used.End.Column, capped: tail.Count > 0);
+        return Describe(Detect(head, tail), sheet.Name, capped: tail.Count > 0);
     }
 
     /// <summary>
@@ -108,10 +107,7 @@ internal static class TextTableLayout
     /// </summary>
     /// <param name="sheets">The sheets the export writes.</param>
     /// <param name="budgets">The budgets of the command.</param>
-    /// <param name="input">The input as a command a hint names opens it.</param>
-    /// <param name="textImport">The options a text input was imported with; null when it needed none.</param>
-    internal static IReadOnlyList<Warning> JsonWarnings(
-        IEnumerable<Worksheet> sheets, ResourceBudgetLedger budgets, ContinuationInput input, CellsTextImportOptions? textImport)
+    internal static IReadOnlyList<Warning> JsonWarnings(IEnumerable<Worksheet> sheets, ResourceBudgetLedger budgets)
     {
         var warnings = new List<Warning>();
         foreach (Worksheet sheet in sheets)
@@ -132,89 +128,40 @@ internal static class TextTableLayout
                 : Detect(head, tail);
             warnings.AddRange(findings
                 .Where(finding => finding.Kind != TextTableFindingKind.Preamble || finding.HeaderRow > firstUsed)
-                .Select(finding => JsonWarning(finding, sheet.Name, firstUsed, used.End.Column, capped: tail.Count > 0, input, textImport)));
+                .Select(finding => JsonWarning(finding, sheet.Name, firstUsed, capped: tail.Count > 0)));
         }
 
         return warnings;
     }
 
-    private static Warning JsonWarning(
-        TextTableFinding finding, string sheetName, int firstUsed, int lastColumn, bool capped, ContinuationInput input, CellsTextImportOptions? textImport)
+    private static Warning JsonWarning(TextTableFinding finding, string sheetName, int firstUsed, bool capped)
     {
         string sheet = $"sheet '{sheetName}'";
         string listed = string.Join(", ", finding.Rows.Take(ListedRows).Select(static row => (row + 1).ToString(CultureInfo.InvariantCulture)))
             + (finding.Rows.Count > ListedRows ? ", ..." : string.Empty);
-        (string message, string hint) = finding.Kind switch
+        string message = finding.Kind switch
         {
-            TextTableFindingKind.Preamble => (
+            TextTableFindingKind.Preamble =>
                 $"The JSON of {sheet} takes its keys from row {firstUsed + 1}, but the table header is probably row {finding.HeaderRow + 1}; "
                     + (finding.HeaderRow - firstUsed == 1 ? $"row {firstUsed + 1} looks" : $"rows {firstUsed + 1}-{finding.HeaderRow} look")
                     + " like a title or notes, so the header and the rows below it are written as records under the wrong keys.",
-                ReadFirst(input, textImport, sheetName, firstUsed, finding.HeaderRow, lastColumn)
-                    + ": the header is inferred from the shape of the rows. If those above it are only a title or notes, "
-                    + RemoveInferredRows("them")),
-            TextTableFindingKind.BlankRows => (
+            TextTableFindingKind.BlankRows =>
                 (finding.Rows.Count == 1 ? $"Row {listed} of {sheet} is" : $"{finding.Rows.Count} rows of {sheet} ({listed}) are")
                     + " empty inside the table" + (capped ? $" (only the first {ScanRows} rows were checked)" : string.Empty)
                     + $"; the JSON writes {(finding.Rows.Count == 1 ? "it" : "each")} as a null record.",
-                "Skip null records downstream, or " + LowerFirst(RemoveRows(sheetName, "the empty rows", " and the \"at\" of each row, one operation per row, the bottom row first,"))),
-            TextTableFindingKind.TotalRows => (
+            TextTableFindingKind.TotalRows =>
                 (finding.Rows.Count == 1 ? $"Row {finding.Rows[0] + 1} of {sheet} is a total row" : $"Rows {listed} of {sheet} are total rows")
                     + $" ('{string.Join("', '", finding.Labels)}'); the JSON writes {(finding.Rows.Count == 1 ? "it as a record" : "them as records")}, "
                     + "so a sum over the records counts the data twice.",
-                "Leave the last records out downstream. To remove them instead, " + LowerFirst(ReadFirst(input, textImport, sheetName, finding.Rows[0], finding.LastRow, lastColumn))
-                    + ": a total row is recognized by its label alone. If they are totals, " + RemoveInferredRows("them")),
-            _ => (
+            _ =>
                 $"Row {finding.LastRow + 1} of {sheet} is not data: it is the evaluation notice an Aspose.Cells export without a license "
                     + "wrote after the data, and the JSON writes it as a record.",
-                "Tell the user, and leave the last record out, or " + LowerFirst(RemoveRows(sheetName, "it", $", \"at\": {finding.LastRow + 1}"))),
         };
         string rows = finding.Kind == TextTableFindingKind.Preamble
             ? RowReference(firstUsed + 1, finding.HeaderRow)
             : string.Join(",", finding.Rows.Take(ListedRows).Select(static row => RowReference(row + 1, row + 1)));
-        return Build(message, hint, sheetName, rows);
+        return Build(message, sheetName, rows);
     }
-
-    private static string RemoveRows(string sheetName, string what, string rows) =>
-        $"Convert a copy without {what}: delete_rows with \"sheet\": \"{sheetName}\"{rows} in 'cells edit' with --out, then convert the copy.";
-
-    /// <summary>
-    /// The step before deleting rows the check only infers to be something other than data: a
-    /// command that shows the zero-based rows <paramref name="first"/> to <paramref name="last"/>.
-    /// A text input imported with --encoding or --culture reads as it did only with them, which no
-    /// command that reads or edits takes, so it is converted to a workbook first with the same options.
-    /// </summary>
-    private static string ReadFirst(ContinuationInput input, CellsTextImportOptions? textImport, string sheetName, int first, int last, int lastColumn)
-    {
-        (int from, int to) = (first + 1, last + 1);
-        if (textImport is not null)
-        {
-            ContinuationCommand convert = input.ContinuationAt("cells", "convert").Option("--to", "xlsx");
-            if (textImport.Encoding is { } encoding)
-            {
-                convert.Option(CellsOptionNames.Encoding, encoding);
-            }
-
-            if (textImport.Culture is { } culture)
-            {
-                convert.Option(CellsOptionNames.Culture, culture);
-            }
-
-            return $"Only a conversion opens this input with its options, so convert it first with {convert.Quoted()}, "
-                + $"and read {(from == to ? $"row {from}" : $"rows {from}-{to}")} of sheet '{sheetName}' in that workbook";
-        }
-
-        string command = input.ContinuationAt("cells", "read")
-            .Option("--sheet", sheetName)
-            .Option("--range", $"A{from}:{A1.ColumnName(lastColumn)}{to}")
-            .Quoted();
-        return $"Read them first with {command}";
-    }
-
-    private static string RemoveInferredRows(string what) =>
-        $"convert a copy without {what}: delete_rows in 'cells edit' with --out, then convert the copy.";
-
-    private static string LowerFirst(string text) => char.ToLowerInvariant(text[0]) + text[1..];
 
     /// <summary>
     /// Finds the layout problems in a table's rows. <paramref name="head"/> holds every row from
@@ -435,28 +382,26 @@ internal static class TextTableLayout
     /// Words the findings on sheet <paramref name="sheetName"/> as warnings; rows are reported
     /// one-based, as A1 row references.
     /// </summary>
-    internal static IReadOnlyList<Warning> Describe(IReadOnlyList<TextTableFinding> findings, string sheetName, int lastColumn, bool capped)
+    internal static IReadOnlyList<Warning> Describe(IReadOnlyList<TextTableFinding> findings, string sheetName, bool capped)
     {
-        string last = A1.ColumnName(lastColumn);
         return [.. findings.Select(finding => finding.Kind switch
         {
-            TextTableFindingKind.Preamble => Preamble(finding, sheetName, last),
-            TextTableFindingKind.BlankRows => BlankRows(finding, sheetName, last, capped),
+            TextTableFindingKind.Preamble => Preamble(finding, sheetName),
+            TextTableFindingKind.BlankRows => BlankRows(finding, sheetName, capped),
             _ => TotalRows(finding, sheetName),
         })];
     }
 
-    private static Warning Preamble(TextTableFinding finding, string sheetName, string lastColumn)
+    private static Warning Preamble(TextTableFinding finding, string sheetName)
     {
         int header = finding.HeaderRow + 1;
         string rows = finding.Rows.Count == 1 ? "row 1 looks" : $"rows 1-{finding.Rows.Count} look";
         return Build(
             $"The table header is probably row {header}; {rows} like a title, notes or empty lines, not data.",
-            $"Read the header with 'cells read <file> --sheet \"{sheetName}\" --range A{header}:{lastColumn}{header}' and start data ranges, formulas and sorts at row {header + 1}, not row 2.",
             sheetName, RowReference(1, finding.Rows.Count));
     }
 
-    private static Warning BlankRows(TextTableFinding finding, string sheetName, string lastColumn, bool capped)
+    private static Warning BlankRows(TextTableFinding finding, string sheetName, bool capped)
     {
         string listed = string.Join(", ", finding.Rows.Take(ListedRows).Select(static row => (row + 1).ToString(CultureInfo.InvariantCulture)))
             + (finding.Rows.Count > ListedRows ? ", ..." : string.Empty);
@@ -464,35 +409,24 @@ internal static class TextTableLayout
         string scope = capped ? $" (only the first {ScanRows} rows were checked)" : string.Empty;
         return Build(
             $"{subject} empty inside the table{scope}; sorting, filtering and anything that stops at the first empty row sees separate blocks.",
-            $"Address the whole table explicitly (A{finding.HeaderRow + 1}:{lastColumn}{finding.LastRow + 1}), or remove the empty rows with the delete_rows operation of 'cells edit' after converting to xlsx; row numbers below them then move up.",
             sheetName, string.Join(",", finding.Rows.Take(ListedRows).Select(static row => RowReference(row + 1, row + 1))));
     }
 
     private static Warning TotalRows(TextTableFinding finding, string sheetName)
     {
         int first = finding.Rows[0] + 1;
-        int end = (finding.DataEnd ?? finding.Rows[0] - 1) + 1;
         string labels = string.Join("', '", finding.Labels);
         string subject = finding.Rows.Count == 1
             ? $"Row {first} is a total row ('{labels}')"
             : $"Rows {string.Join(", ", finding.Rows.Select(static row => (row + 1).ToString(CultureInfo.InvariantCulture)))} are total rows ('{labels}')";
-        int dataStart = finding.HeaderRow + 2;
-        // The example sums a column the total row holds a number in, so it is never a text column.
-        string example = finding.NumberColumn is int column
-            ? $", for example =SUM({A1.ColumnName(column)}{dataStart}:{A1.ColumnName(column)}{end}) for column {A1.ColumnName(column)}"
-            : string.Empty;
         return Build(
             $"{subject}; a sum or formula over a column that includes it counts the data twice, and sorts, pivots and charts take it for data.",
-            end >= dataStart
-                ? $"End data ranges at row {end}{example}, and leave row {first} out of sorts, pivots and charts."
-                : $"Leave row {first} out of formulas, sorts, pivots and charts.",
             sheetName, string.Join(",", finding.Rows.Select(static row => RowReference(row + 1, row + 1))));
     }
 
     /// <summary>A layout warning located at the <paramref name="rows"/> of sheet <paramref name="sheetName"/>, such as <c>row/Sales!1:3</c>.</summary>
-    private static Warning Build(string message, string hint, string sheetName, string rows) => new(CellsDiagnostics.TextTableLayout, message)
+    private static Warning Build(string message, string sheetName, string rows) => new(CellsDiagnostics.TextTableLayout, message)
     {
-        Hint = hint,
         Docs = "cells/troubleshooting",
         Location = CellsAddresses.At("row", sheetName, rows),
     };

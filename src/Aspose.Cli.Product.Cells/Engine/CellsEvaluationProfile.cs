@@ -37,7 +37,7 @@ internal sealed class CellsEvaluationProfile : IEvaluationProfile<Workbook>
     /// which only a long-lived process reaches.
     /// </summary>
     public EvaluationLimitFact? RecognizeLimit(Exception exception) => IsOpenLimit(exception)
-        ? new EvaluationLimitFact($"opens at most {OpenLimit} files in one process", OpenLimit, "files", "run the command again in a new process")
+        ? new EvaluationLimitFact($"opens at most {OpenLimit} files in one process", OpenLimit, "files")
         : null;
 
     /// <summary>Whether <paramref name="exception"/> is evaluation mode refusing to open another file.</summary>

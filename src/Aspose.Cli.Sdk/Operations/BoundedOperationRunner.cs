@@ -44,8 +44,6 @@ public sealed class AppliedOperation
 /// </remarks>
 public static class BoundedOperationRunner
 {
-    private const string BestEffortHint = "Fix or remove this operation, then retry the batch.";
-
     /// <summary>
     /// Runs every operation of a validated batch through the product's object model: the SDK
     /// snapshots the objects each operation can change before and after it, and an operation's
@@ -141,7 +139,7 @@ public static class BoundedOperationRunner
                     NoEffect effect = model.Explain(operation) ?? new NoEffect(
                         NoEffectReasons.NoChange,
                         $"Operation {id} ({name}) changed nothing: what it addresses already had the state it sets.");
-                    warnings.Add(catalog.NoEffect(operation, effect.Reason, effect.Message) with { Hint = effect.Hint });
+                    warnings.Add(catalog.NoEffect(operation, effect.Reason, effect.Message));
                 }
 
                 if (verifier is not null)
@@ -359,7 +357,7 @@ public static class BoundedOperationRunner
             }
             catch (OperationInvalidException invalid)
             {
-                rejection = OperationErrors.InvalidAt(id, name, invalid, catalog.DefaultHint);
+                rejection = OperationErrors.InvalidAt(id, name, invalid);
             }
             catch (CliException failure) when (!failure.IsInvocationFailure)
             {
@@ -428,7 +426,7 @@ public static class BoundedOperationRunner
                 Status = OpStatuses.Failed,
                 ItemsAffected = 0,
                 Targets = attemptedTargets(operation),
-                Error = rejection.ToEnvelope().Error with { Hint = rejection.Hint ?? BestEffortHint },
+                Error = rejection.ToEnvelope().Error,
             });
         }
 

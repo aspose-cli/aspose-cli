@@ -51,7 +51,7 @@ internal static class TimeoutWorkerSupervisor
             {
                 result = ExecuteAsync(host, args, invocation,
                     TimeSpan.FromSeconds(invocation.GlobalValues.TimeoutSeconds.Value), cancellationToken,
-                    () => SelfProcessLauncher.CreateBackground(GlobalOptionNames.Timeout, "Run from the installed aspose-cli executable."),
+                    () => SelfProcessLauncher.CreateBackground(GlobalOptionNames.Timeout),
                     InvocationInputs.Current?.Inherited).GetAwaiter().GetResult();
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return (int)ExitCode.Cancelled; }
@@ -139,9 +139,7 @@ internal static class TimeoutWorkerSupervisor
                 // The runtime ended the worker, as a stack overflow in an engine does
                 // (PDF-FORM-RECURSION-CRASH); what it printed is the runtime's, never a result.
                 return RenderError(host, args, CliErrors.Internal(
-                    $"The worker process ended with exit code 0x{exitCode:X8} before it reported a result, so no output was published.",
-                    "If this input ends the worker every time, it may trigger a defect in the document engine: "
-                    + "ask its source for a re-exported copy of the file, and report the command you ran."));
+                    $"The worker process ended with exit code 0x{exitCode:X8} before it reported a result, so no output was published."));
             }
             if (exitCode is (int)ExitCode.Success or (int)ExitCode.PartialFailure && File.Exists(manifest))
             {

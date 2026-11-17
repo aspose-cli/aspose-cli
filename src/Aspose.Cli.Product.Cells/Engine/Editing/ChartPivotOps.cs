@@ -130,8 +130,7 @@ internal static class ChartPivotOps
         if (FindPivot(sheet, name) is not null)
         {
             throw new OperationInvalidException(
-                $"sheet '{sheet.Name}' already has a pivot table named '{name}'",
-                hint: "Give the new pivot a 'name' that is unique on its sheet, or omit it for a generated one.");
+                $"sheet '{sheet.Name}' already has a pivot table named '{name}'");
         }
 
         int pivotIndex = sheet.PivotTables.Add(source, op.At, name);
@@ -259,8 +258,7 @@ internal static class ChartPivotOps
     }
 
     private static OperationInvalidException LabelTaken(int index, string label, string owner) => new(
-        $"insert_pivot values[{index}].label '{label}' repeats {owner}; Excel refuses a value field name that is already taken",
-        hint: "Give each value field a label that differs, ignoring case, from every source header and every other value field's caption.");
+        $"insert_pivot values[{index}].label '{label}' repeats {owner}; Excel refuses a value field name that is already taken");
 
     /// <summary>Excel's Simplified Chinese value field prefixes, with its ASCII colon.</summary>
     private static string ChineseCaptionPrefix(string function) => function switch
@@ -356,8 +354,7 @@ internal static class ChartPivotOps
 
             throw new OperationInvalidException(
                 $"insert_pivot references field '{field}', which is not a column of the source data; " +
-                $"available fields: {string.Join(", ", available)}",
-                hint: "Use one of the source header names (case-sensitive) for 'rows', 'columns' and 'values[].field'.");
+                $"available fields: {string.Join(", ", available)}");
         }
 
         return index;
@@ -497,14 +494,13 @@ internal static class ChartPivotOps
             1 => matches[0],
             0 => throw CliErrors.NotFound(CellsDiagnostics.ChartNotFound, "chart", name!, names),
             _ => throw new OperationInvalidException(
-                $"{matches.Count} charts on sheet '{sheet.Name}' are named '{name}', at indexes {string.Join(", ", matches.Select(static match => match + 1))}",
-                hint: "Address the chart by its 1-based 'index' instead of 'name'."),
+                $"{matches.Count} charts on sheet '{sheet.Name}' are named '{name}', at indexes {string.Join(", ", matches.Select(static match => match + 1))}"),
         };
     }
 
     /// <summary>
     /// <c>CHART_NOT_FOUND</c> for an index past the sheet's charts. Chart indexes are
-    /// 1-based, so the message and hint state the sheet's own index range.
+    /// 1-based, so the message states the sheet's own index range.
     /// </summary>
     private static CliException ChartIndexNotFound(Worksheet sheet, int index)
     {
@@ -513,10 +509,7 @@ internal static class ChartPivotOps
             CellsDiagnostics.ChartNotFound,
             "chart index",
             index.ToString(CultureInfo.InvariantCulture),
-            count,
-            count == 0
-                ? $"Sheet '{sheet.Name}' has no chart; select the sheet that holds it."
-                : $"Use a 1-based index from 1 through {count}, or address the chart by 'name'.");
+            count);
     }
 
     /// <summary>

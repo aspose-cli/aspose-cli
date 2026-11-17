@@ -8,9 +8,7 @@ public static partial class CliErrors
     /// its own, so the failure is this CLI's: an internal error.
     /// </summary>
     /// <param name="message">What could not be done.</param>
-    /// <param name="hint">How to see why, if the caller knows.</param>
-    public static CliException Internal(string message, string? hint = null) => CliException.Create(
+    public static CliException Internal(string message) => CliException.Create(
         ErrorCodes.Internal,
-        message,
-        hint: hint);
+        message);
 }

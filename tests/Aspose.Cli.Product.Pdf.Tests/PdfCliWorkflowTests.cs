@@ -121,8 +121,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
         JsonNode error = JsonNode.Parse(convert.StdErr)!["error"]!;
         Assert.Equal("EVALUATION_LIMIT", error["code"]!.GetValue<string>());
         Assert.Equal(4, error["details"]!["limit"]!.GetValue<int>());
-        // A selection would read the other pages all the same, so the hint offers none.
-        Assert.DoesNotContain("--pages", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File(output)));
     }
 
@@ -164,7 +162,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Equal("EVALUATION_LIMIT", error["code"]!.GetValue<string>());
         Assert.Contains("reads only the first 4 pages", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Equal("pages", error["details"]!["unit"]!.GetValue<string>());
-        Assert.DoesNotContain("--pages", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("merged.pdf")));
     }
 
@@ -300,13 +297,10 @@ public sealed class PdfCliWorkflowTests : IDisposable
         int cut = pages[^1]!["page"]!.GetValue<int>();
         string resume = cut == 3 ? "3" : $"{cut}-3";
         int budget = pages.Count == 1 ? 48 : 24;
-        string next = result["window"]!["next"]!.GetValue<string>();
-        Assert.StartsWith("aspose-cli pdf read ", next, StringComparison.Ordinal);
-        Assert.EndsWith($" --pages {resume} --content text --max-chars {budget} --output-format json", next, StringComparison.Ordinal);
-        Assert.EndsWith(
-            " --pages 2 --content text --max-chars 10 --output-format json",
-            single.Json()["window"]!["next"]!.GetValue<string>(),
-            StringComparison.Ordinal);
+        JsonNode next = result["window"]!["next"]!;
+        Assert.Equal((resume, $"{budget}"), (next["pages"]!.GetValue<string>(), next["max-chars"]!.GetValue<string>()));
+        JsonNode singleNext = single.Json()["window"]!["next"]!;
+        Assert.Equal(("2", "10"), (singleNext["pages"]!.GetValue<string>(), singleNext["max-chars"]!.GetValue<string>()));
     }
 
     [Fact]
@@ -329,12 +323,10 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Equal("hit", window["unit"]!.GetValue<string>());
         Assert.Equal(4, window["returned"]!.GetValue<int>());
         Assert.True(window["truncated"]!.GetValue<bool>());
-        string next = window["next"]!.GetValue<string>();
-        Assert.StartsWith("aspose-cli pdf search ", next, StringComparison.Ordinal);
-        Assert.EndsWith(
-            "markers.pdf\" --pages 1-3 --pattern marker --max-hits 4 --skip 4 --output-format json", next, StringComparison.Ordinal);
+        JsonNode next = window["next"]!;
+        Assert.Equal("4", next["skip"]!.GetValue<string>());
 
-        CliResult second = _workspace.RunCommandLine(next);
+        CliResult second = _workspace.RunNext(next, "pdf", "search", "markers.pdf", "--pages", "1-3", "--pattern", "marker", "--max-hits", "4", "--output-format", "json");
 
         JsonNode rest = second.Json();
         JsonArray hits = rest["hits"]!.AsArray();
@@ -365,8 +357,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
             </form></body></html>
             """);
 
-        // One after another: the hint check of each run copies the workspace, which a run publishing into it would break.
-        CliResult form = _workspace.Run("pdf", "create", "form.pdf", "--from-html", "form.html", "--output-format", "json");
+        CliResult form =_workspace.Run("pdf", "create", "form.pdf", "--from-html", "form.html", "--output-format", "json");
         CliResult fields = _workspace.Run("pdf", "inspect", "form.pdf", "--detail", "forms", "--output-format", "json");
         CliResult text = _workspace.Run("pdf", "create", "text.pdf", "--from-html", "text.html", "--output-format", "json");
         CliResult contact = _workspace.Run("pdf", "create", "contact.pdf", "--from-html", "contact.html", "--output-format", "json");
@@ -378,7 +369,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
         string[] generated = [.. read.Select(static field => field!["name"]!.GetValue<string>()).Where(static name => name != "company").Distinct()];
         Assert.NotEmpty(generated);
         Assert.All(generated, name => Assert.Contains($"'{name}'", lossy["message"]!.GetValue<string>(), StringComparison.Ordinal));
-        Assert.Contains("rect", lossy["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.True(text.ExitCode == 0, text.StdErr);
         Assert.DoesNotContain("LOSSY_CONVERSION", text.StdOut, StringComparison.Ordinal);
         // The importer drops some input types without a field; the HTML shows which.
@@ -544,24 +534,19 @@ public sealed class PdfCliWorkflowTests : IDisposable
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         Assert.Equal(encryption[0], error["details"]!["option"]!.GetValue<string>());
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.Contains("'pdf convert' does not encrypt", hint, StringComparison.Ordinal);
-        Assert.Contains("'pdf edit --out --ops'", hint, StringComparison.Ordinal);
-        Assert.Contains("encrypt_document", hint, StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("plain.docx")));
         Assert.DoesNotContain("--encrypt", help.StdOut, StringComparison.Ordinal);
     }
 
     /// <summary>
     /// Page images come from pdf render alone: pdf convert refuses an image target, whether
-    /// --to or the --out extension names it, the extension with a hint that runs pdf render,
-    /// and capabilities does not list it as a convert format.
+    /// --to or the --out extension names it, and capabilities does not list it as a convert format.
     /// </summary>
     [Theory]
     [InlineData("png", "page.png")]
     [InlineData("jpeg", "page.jpg")]
     [InlineData("svg", "page.svg")]
-    public void Convert_RefusesAPageImageTargetWithTheRenderThatWritesIt(string format, string output)
+    public void Convert_RefusesAPageImageTargetThatRenderWrites(string format, string output)
     {
         using (var document = new Document())
         {
@@ -580,8 +565,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
             Assert.True(refused.ExitCode == 2, refused.StdErr);
             Assert.Equal("OPTION_INVALID", JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
         }
-
-        Assert.Contains("pdf render", JsonNode.Parse(byExtension.StdErr)!["error"]!["hint"]!.GetValue<string>(), StringComparison.Ordinal);
 
         Assert.False(File.Exists(_workspace.File(output)));
         JsonNode pdf = JsonNode.Parse(capabilities.StdOut)!["products"]!.AsArray()
@@ -631,11 +614,10 @@ public sealed class PdfCliWorkflowTests : IDisposable
 
     /// <summary>
     /// PDF-2: the headings of a PDF created from Markdown are not bookmarks, so a split by
-    /// bookmarks is refused with a hint that names add_bookmark in an operation that runs as
-    /// given, after which the split succeeds.
+    /// bookmarks is refused.
     /// </summary>
     [Fact]
-    public void MarkdownHeadings_MakeNoBookmarks_SoSplitByBookmarksNeedsAddBookmark()
+    public void MarkdownHeadings_MakeNoBookmarks_SoSplitByBookmarksIsRefused()
     {
         File.WriteAllText(_workspace.File("notes.md"), "# One\n\nFirst part.\n\n# Two\n\nSecond part.\n");
         Assert.Equal(0, _workspace.Run("pdf", "create", "notes.pdf", "--from-markdown", "notes.md").ExitCode);
@@ -645,14 +627,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
 
         Assert.Empty(inspected["outline"]?.AsArray() ?? []);
         Assert.Equal(2, refused.ExitCode);
-        string hint = JsonNode.Parse(refused.StdErr)!["error"]!["hint"]!.GetValue<string>();
-        Assert.Contains("pdf edit", hint, StringComparison.Ordinal);
-        Match operation = Regex.Match(hint, "\\{\"op\":\"add_bookmark\"[^}]*\\}");
-        Assert.True(operation.Success, hint);
-        CliResult edited = _workspace.Run("pdf", "edit", "notes.pdf", "--ops", $"{{\"ops\":[{operation.Value}]}}", "--out", "marked.pdf");
-        Assert.True(edited.ExitCode == 0, edited.StdErr);
-        CliResult split = _workspace.Run("pdf", "split", "marked.pdf", "--by", "bookmarks", "--out-dir", "parts", "--output-format", "json");
-        Assert.True(split.ExitCode == 0, split.StdErr);
     }
 
     public void Dispose() => _workspace.Dispose();

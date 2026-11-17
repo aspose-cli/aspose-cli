@@ -16,7 +16,7 @@ public sealed class InputLoadingTests
         public DamagedFailure(string message) : base(message) { }
     }
 
-    private static readonly InputLoading Loading = new("test document", "Check the test document.", static exception => exception switch
+    private static readonly InputLoading Loading = new("test document", static exception => exception switch
     {
         PasswordFailure => LoadFailureKind.Password,
         DamagedFailure => LoadFailureKind.Corrupt,
@@ -51,7 +51,6 @@ public sealed class InputLoadingTests
         Assert.Equal("its content is Docx, not a test document this command reads", unloadable.Explanation);
         Assert.All([damaged, unloadable, truncated], static error => Assert.Null(error.Details!["reason"]));
         Assert.Contains("(The file format is not supported.)", damaged.Message, StringComparison.Ordinal);
-        Assert.Equal("Check the test document.", damaged.Hint);
         Assert.IsType<DamagedFailure>(damaged.InnerException);
     }
 

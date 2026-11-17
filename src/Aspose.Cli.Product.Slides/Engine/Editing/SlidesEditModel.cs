@@ -142,33 +142,11 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
     {
         // Like a verification issue, it never repeats the find text.
         SlidesReplaceTextOp replace when _truncated.Contains(operation) => new NoEffect(NoEffectReasons.EvaluationTruncated,
-            $"Operation {operation.Id} (replace_text) replaced nothing: evaluation mode read text in scope '{replace.Scope}' cut short, and text it cut is left as it is.")
-        {
-            Hint = "Apply an Aspose.Slides license and run the edit again; a search in evaluation mode reads the same cut text. "
-                + replace.Scope switch
-                {
-                    SlidesSearchScopes.Notes => "Without one, set_notes replaces a slide's whole speaker notes without reading them.",
-                    SlidesSearchScopes.Shapes => "Without one, set_text replaces a shape's whole text without reading it.",
-                    _ => "Without one, set_text replaces a shape's whole text and set_notes a slide's whole speaker notes without reading them.",
-                },
-        },
+            $"Operation {operation.Id} (replace_text) replaced nothing: evaluation mode read text in scope '{replace.Scope}' cut short, and text it cut is left as it is."),
         SlidesReplaceTextOp replace when _foundUnchanged.Contains(operation) => new NoEffect(NoEffectReasons.NoMatch,
-            $"Operation {operation.Id} (replace_text) replaced nothing: each match in scope '{replace.Scope}' is in a part it does not change, such as a chart, an alternative text, a comment, a layout or a master.")
-        {
-            Hint = "A TEXT_NOT_REPLACED warning names each such part the output still holds and how to change its text.",
-        },
+            $"Operation {operation.Id} (replace_text) replaced nothing: each match in scope '{replace.Scope}' is in a part it does not change, such as a chart, an alternative text, a comment, a layout or a master."),
         SlidesReplaceTextOp replace => new NoEffect(NoEffectReasons.NoMatch,
-            $"Operation {operation.Id} (replace_text) matched no text in scope '{replace.Scope}', so nothing was replaced.")
-        {
-            Hint = "Search with 'slides search' and the same pattern and scope"
-                + replace.Scope switch
-                {
-                    SlidesSearchScopes.All => ". ",
-                    SlidesSearchScopes.Shapes or SlidesSearchScopes.Notes => ", or set \"scope\": \"all\" on the op to cover both shape text and speaker notes. ",
-                    _ => "; it replaces shape text and speaker notes, with scope shapes, notes or all. ",
-                }
-                + "A match outside shape text and notes, such as in a chart or an alternative text, is never replaced and is named by TEXT_NOT_REPLACED.",
-        },
+            $"Operation {operation.Id} (replace_text) matched no text in scope '{replace.Scope}', so nothing was replaced."),
         _ => null,
     };
 }

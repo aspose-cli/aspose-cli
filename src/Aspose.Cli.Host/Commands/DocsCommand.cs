@@ -41,7 +41,6 @@ internal static class DocsCommand
                 : throw CliErrors.OptionInvalid(
                     "topic",
                     $"unknown docs topic '{topic}'",
-                    "Use one of the topics in details.available.",
                     Mistake.Of(topic, catalog.Topics));
         }));
 

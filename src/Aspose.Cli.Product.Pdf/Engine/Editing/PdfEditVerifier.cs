@@ -148,8 +148,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                 PdfDiagnostics.PageCountMismatch,
                 _pageOps,
                 $"the output has {output.Pages.Count} page(s); they should leave {_expectedPages}",
-                location: "page/all",
-                hint: "Inspect the output with 'pdf inspect' and repeat the page operations on the original."));
+                location: "page/all"));
         }
     }
 
@@ -171,8 +170,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     field is null
                         ? $"form field '{name}' is not in the output"
                         : $"form field '{name}' reads '{actual}' in the output, not '{expected.Value}'",
-                    location: PdfInfoProjection.Address("field", name),
-                    hint: "Read the field with 'pdf inspect --detail forms' and check the value against the field's options."));
+                    location: PdfInfoProjection.Address("field", name)));
             }
         }
 
@@ -182,8 +180,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                 PdfDiagnostics.FieldValueMismatch,
                 [id],
                 $"form field '{name}' is still in the output, although the area covers every widget of it",
-                location: PdfInfoProjection.Address("field", name),
-                hint: "Read the field with 'pdf inspect --detail forms' and clear its value with set_form_field."));
+                location: PdfInfoProjection.Address("field", name)));
         }
     }
 
@@ -204,8 +201,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     PdfDiagnostics.FieldNotFlattened,
                     [flatten.Id],
                     $"the output still has the form field(s) {string.Join(", ", remaining.Select(static name => $"'{name}'"))}",
-                    location: "field/all",
-                    hint: "List the remaining fields with 'pdf inspect --detail forms' and flatten them again."));
+                    location: "field/all"));
             }
         }
     }
@@ -225,8 +221,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                 PdfDiagnostics.BookmarkMismatch,
                 _bookmarkOps,
                 $"the output has {count} bookmark(s); they should leave {_expectedBookmarks}",
-                location: "bookmark/all",
-                hint: "Compare 'pdf inspect --detail outline' of the input and the output."));
+                location: "bookmark/all"));
         }
 
         Dictionary<string, (PdfOutlineItem Item, int Destination)> outline = PdfInfoProjection.Outline(output, output.Outlines, parent: null, int.MaxValue, int.MaxValue)
@@ -243,8 +238,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     item is null
                         ? $"the output has no bookmark {bookmark.Index}, where it added '{bookmark.Title}'"
                         : $"bookmark {bookmark.Index} of the output is '{item.Title}' on page {page}, not '{bookmark.Title}' on page {bookmark.Page}",
-                    location: $"bookmark/{bookmark.Index}",
-                    hint: "Compare 'pdf inspect --detail outline' of the output with the batch."));
+                    location: $"bookmark/{bookmark.Index}"));
             }
         }
     }
@@ -272,8 +266,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     PdfDiagnostics.LinkMismatch,
                     [id],
                     $"page {expected.Page} of the output has no link to '{expected.Url}' over the area the operation gave",
-                    location: $"page/{expected.Page}",
-                    hint: "Compare 'pdf inspect --detail links' of the output with the batch."));
+                    location: $"page/{expected.Page}"));
             }
         }
 
@@ -294,8 +287,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     PdfDiagnostics.PropertiesMismatch,
                     [expected.Id],
                     $"document information '{key}' reads '{actual}' in the output, not '{expected.Value}'",
-                    location: PdfInfoProjection.PropertyAddress(key),
-                    hint: "Inspect the output with 'pdf inspect --detail properties'."));
+                    location: PdfInfoProjection.PropertyAddress(key)));
             }
         }
     }
@@ -340,18 +332,17 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     PdfDiagnostics.AttachmentMismatch,
                     [id],
                     problem,
-                    location: PdfInfoProjection.Address("attachment", name),
-                    hint: "List the attachments with 'pdf inspect --detail attachments' and extract them with 'pdf extract --what attachments' to compare."));
+                    location: PdfInfoProjection.Address("attachment", name)));
             }
         }
     }
 
     /// <summary>An issue whose message names the operations it concerns, by id and name.</summary>
-    private VerificationIssue Issue(DiagnosticDescriptor code, IReadOnlyCollection<string> ids, string problem, string location, string hint)
+    private VerificationIssue Issue(DiagnosticDescriptor code, IReadOnlyCollection<string> ids, string problem, string location)
     {
         string operations = string.Join(", ", ids.Select(id => $"'{id}' ({_recorded.First(item => item.Id == id).Op})"));
         string subject = ids.Count == 1 ? $"Operation {operations}" : $"Operations {operations}";
-        return VerificationIssues.Of(code, $"{subject}: {problem}.", location, hint);
+        return VerificationIssues.Of(code, $"{subject}: {problem}.", location);
     }
 
     /// <summary>The index of the bookmark add_bookmark just appended below <paramref name="parent"/>.</summary>

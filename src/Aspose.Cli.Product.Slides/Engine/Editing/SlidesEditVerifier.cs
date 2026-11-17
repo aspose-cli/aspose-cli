@@ -160,8 +160,7 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
                 issues.Add(VerificationIssues.Of(
                     expectation.Code,
                     $"Operation {expectation.Ops[^1]}: the output does not hold {expectation.Subject} the operation left.",
-                    expectation.Locate(output),
-                    "Read the output back with 'slides read' or 'slides inspect', then apply the operation again."));
+                    expectation.Locate(output)));
             }
         }
 

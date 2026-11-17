@@ -9,7 +9,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// </summary>
 public sealed class MaxCharactersOption
 {
-    /// <summary>The option name, for continuation commands.</summary>
+    /// <summary>The option name, as <c>window.next</c> names it without its dashes.</summary>
     public const string Name = "--max-chars";
 
     /// <summary>The budget used when the option is omitted.</summary>
@@ -38,6 +38,6 @@ public sealed class MaxCharactersOption
     public int Read(ParseResult parse)
     {
         ArgumentNullException.ThrowIfNull(parse);
-        return parse.GetInRange(_maxCharacters, "Use a positive bounded character budget.");
+        return parse.GetInRange(_maxCharacters);
     }
 }

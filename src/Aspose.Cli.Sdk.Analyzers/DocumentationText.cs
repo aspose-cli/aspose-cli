@@ -77,7 +77,7 @@ internal static class DocumentationText
         }));
 
     /// <summary>
-    /// The wire name of the property a <c>cref</c> names, such as <c>hint</c> for <c>Hint</c> or
+    /// The wire name of the property a <c>cref</c> names, such as <c>message</c> for <c>Message</c> or
     /// <c>code</c> for <c>ErrorPayload.Code</c>; the cref's last segment when it names anything else.
     /// </summary>
     private static string Reference(string? cref, INamedTypeSymbol? context)

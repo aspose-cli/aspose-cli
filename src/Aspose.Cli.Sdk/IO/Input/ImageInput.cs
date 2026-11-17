@@ -76,9 +76,6 @@ public static class ImageInput
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking,
         TimeSpan.FromSeconds(10));
 
-    internal const string Hint =
-        "Supply an intact image file, such as PNG or JPEG; export a damaged or truncated image again from its source.";
-
     /// <summary>
     /// Reads an image file in full, charged as <see cref="InputSource.ReadAllBytes"/> charges it,
     /// and refuses it unless it is an intact image.
@@ -178,15 +175,14 @@ public static class ImageInput
         if (content.Length >= 2 && content[0] == 0x1F && content[1] == 0x8B)
         {
             return CliErrors.ResourceRefused(
-                $"The image is compressed (SVGZ) and its references cannot be removed: {path}.",
-                "Decompress it to an .svg file, or supply a raster image.");
+                $"The image is compressed (SVGZ) and its references cannot be removed: {path}.");
         }
 
         return Problem(content, budgets) is { } reason ? invalid(path, reason) : null;
     }
 
     /// <summary>The <c>FILE_CORRUPT</c> error for an image input that is not an intact image.</summary>
-    internal static Exception Corrupt(string path, string reason) => CliErrors.InputUnreadable(path, "image", reason, Hint);
+    internal static Exception Corrupt(string path, string reason) => CliErrors.InputUnreadable(path, "image", reason);
 
     /// <summary>Why the bytes are not an intact image, or null when they are.</summary>
     internal static string? Problem(byte[] content, ResourceBudgetLedger budgets)

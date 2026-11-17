@@ -26,7 +26,7 @@ internal static class PdfExtract
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
-        var reading = new TextReading(loaded.Document, request.FormsInspection);
+        var reading = new TextReading(loaded.Document);
         // An attachment is copied as the PDF stores it, so it carries nothing evaluation mode adds.
         using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite,
             request.What == PdfExtractKinds.Attachments ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived, request.ByteOrderMark);
@@ -42,7 +42,7 @@ internal static class PdfExtract
             Outputs = outputs,
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(
-                request.What == PdfExtractKinds.Tables && outputs.Count == 0 ? TablesNotFound(request) : null, reading.FormValuesNotInText()),
+                request.What == PdfExtractKinds.Tables && outputs.Count == 0 ? TablesNotFound() : null, reading.FormValuesNotInText()),
         };
     }
 
@@ -63,12 +63,9 @@ internal static class PdfExtract
     /// The table absorber recognizes a table by its ruling lines, so an empty result does not
     /// mean the pages hold no table.
     /// </summary>
-    private static Warning TablesNotFound(PdfExtractRequest request) => new(
+    private static Warning TablesNotFound() => new(
         PdfDiagnostics.TablesNotFound,
-        "No table was recognized on the selected pages; a table drawn without ruling lines, such as one laid out from Markdown, may not be recognized.")
-    {
-        Hint = $"Compare with {request.TextExtraction ?? "'pdf extract --what text'"}, and take the table from the text if it is there.",
-    };
+        "No table was recognized on the selected pages; a table drawn without ruling lines, such as one laid out from Markdown, may not be recognized.");
 
     private static IReadOnlyList<(PublishedFile File, int? Page)> ExtractImages(
         Document document,
@@ -85,8 +82,7 @@ internal static class PdfExtract
             // extraction stream does not allow, so the bounded image is encoded in memory
             // and then written through the extraction budget.
             XImage image = placement.Image;
-            RenderPixelGuard.EnsureFits(budgets, image.Width, image.Height, dpi: null,
-                hint: $"The image on page {pageNumber} is too large to decode; extract the other pages with --pages.");
+            RenderPixelGuard.EnsureFits(budgets, image.Width, image.Height, dpi: null, target: $"page/{pageNumber}");
 
             using var encoded = new MemoryStream();
             placement.Save(encoded, DrawingImageFormat.Png);

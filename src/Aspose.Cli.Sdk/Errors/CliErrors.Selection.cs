@@ -14,17 +14,14 @@ public static partial class CliErrors
     /// <param name="part">What one part is called, such as <c>page</c>.</param>
     /// <param name="actual">How many parts the selection holds.</param>
     /// <param name="limit">The most parts one run takes.</param>
-    /// <param name="hint">How to select fewer parts with <paramref name="option"/>.</param>
-    public static CliException SelectionTooLarge(string option, string part, int actual, int limit, string hint)
+    public static CliException SelectionTooLarge(string option, string part, int actual, int limit)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(option);
         ArgumentException.ThrowIfNullOrWhiteSpace(part);
-        ArgumentException.ThrowIfNullOrWhiteSpace(hint);
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(actual, limit);
         return CliException.Create(
             ErrorCodes.OptionInvalid,
             string.Create(CultureInfo.InvariantCulture, $"The selection holds {actual} {part}s; one run takes at most {limit}."),
-            hint,
             new JsonObject
             {
                 ["option"] = option,

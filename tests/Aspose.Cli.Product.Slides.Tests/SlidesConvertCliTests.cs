@@ -26,7 +26,7 @@ public sealed partial class SlidesConvertCliTests : IDisposable
 
     /// <summary>
     /// An export of every slide leaves the hidden slide out, as PowerPoint's export does, and
-    /// names it in a warning whose hint selects it; a presentation format keeps it, hidden.
+    /// names it in a warning; a presentation format keeps it, hidden.
     /// </summary>
     [Theory]
     [InlineData("pdf", 3)]
@@ -49,7 +49,6 @@ public sealed partial class SlidesConvertCliTests : IDisposable
 
         Assert.NotNull(warning);
         Assert.Contains("hidden slide(s) 2,", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("--slides 1-4", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>A hidden slide that --slides selects is converted, whatever the export format.</summary>
@@ -93,7 +92,6 @@ public sealed partial class SlidesConvertCliTests : IDisposable
         Assert.Equal(drawn, result["outputs"]!.AsArray().Count);
         JsonNode warning = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "HIDDEN_SLIDES_RENDERED")!;
         Assert.Contains("slide(s) 2 are hidden", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("""{"op":"set_slide_hidden","slides":"2","hidden":false}""", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>A render of slides none of which is hidden does not warn.</summary>
@@ -294,9 +292,6 @@ public sealed partial class SlidesConvertCliTests : IDisposable
             "The ppt output does not keep the native charts of slide(s) 2, which become pictures; the 2 section(s); "
                 + "the table styles of slide(s) 3, so those tables lose the fills, borders and text formatting of their style.",
             warning["message"]!.GetValue<string>());
-        Assert.Equal(
-            "Keep the source deck for further edits; to keep the charts editable, the sections and the table styles, convert to pptx instead.",
-            warning["hint"]!.GetValue<string>());
         Assert.NotEqual(true, warning["affectsCompleteness"]?.GetValue<bool>());
     }
 
@@ -384,7 +379,6 @@ public sealed partial class SlidesConvertCliTests : IDisposable
         if (format == "html5")
         {
             Assert.Equal("""["charts"]""", lost["details"]!["content"]!.ToJsonString());
-            Assert.Equal("Keep the source deck for further edits; to keep the charts editable, convert to pptx instead.", lost["hint"]!.GetValue<string>());
         }
     }
 
@@ -458,16 +452,14 @@ public sealed partial class SlidesConvertCliTests : IDisposable
     }
 
     /// <summary>
-    /// A convert to TIFF, a format only render writes, is refused before anything is written, and
-    /// the render its hint gives runs as written: it writes each slide the convert selected into a
-    /// TIFF of one frame that decodes, on a deck at a path with a space, for a selection, and on an
-    /// encrypted deck.
+    /// A convert to TIFF, a format only render writes, is refused before anything is written, on a
+    /// deck at a path with a space, for a selection, and on an encrypted deck.
     /// </summary>
     [Theory]
-    [InlineData("with space", null, false, new[] { 1, 2, 3, 4 })]
-    [InlineData("plain", "2-3", false, new[] { 2, 3 })]
-    [InlineData("locked", "2", true, new[] { 2 })]
-    public void TiffConvert_IsRefused_AndTheRenderItsHintGivesWritesTheSelectedSlides(string folder, string? slides, bool encrypted, int[] written)
+    [InlineData("with space", null, false)]
+    [InlineData("plain", "2-3", false)]
+    [InlineData("locked", "2", true)]
+    public void TiffConvert_IsRefusedBeforeAnythingIsWritten(string folder, string? slides, bool encrypted)
     {
         const string Variable = "SLIDES_TIFF_PASSWORD";
         var variables = new Dictionary<string, string?> { [Variable] = "Tiff-Secret-7c2e" };
@@ -484,24 +476,7 @@ public sealed partial class SlidesConvertCliTests : IDisposable
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(["deck.pptx"], Directory.EnumerateFiles(_workspace.File(folder)).Select(Path.GetFileName));
-        string command = Assert.Single(HintCommand().Matches(error["hint"]!.GetValue<string>())).Groups[1].Value;
-        Assert.StartsWith("aspose-cli slides render ", command, StringComparison.Ordinal);
-        CliResult run = _workspace.RunCommandLine(command, variables);
-        Assert.True(run.ExitCode == 0, $"{command}{Environment.NewLine}{run.StdErr}");
-
-        string stem = Path.Combine(_workspace.File(folder), "deck");
-        string[] images = written.Length == 1 ? [stem + ".tiff"] : [.. written.Select(number => $"{stem}.{number}.tiff")];
-        Assert.Equal(images.Order(StringComparer.Ordinal), Directory.EnumerateFiles(_workspace.File(folder), "*.tiff").Order(StringComparer.Ordinal));
-        foreach (string image in images)
-        {
-            Assert.Equal(1, SlidesEngineFixture.TiffFrames(File.ReadAllBytes(image)));
-            using IImage decoded = Images.FromFile(image);
-            Assert.True(decoded.Width > 0);
-        }
     }
-
-    [System.Text.RegularExpressions.GeneratedRegex("'(aspose-cli [^']+)'")]
-    private static partial System.Text.RegularExpressions.Regex HintCommand();
 
     private JsonNode Run(params string[] args)
     {

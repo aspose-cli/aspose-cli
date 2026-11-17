@@ -43,7 +43,7 @@ public sealed class BomOption
         ArgumentNullException.ThrowIfNull(parse);
         bool requested = parse.GetValue(_bom);
         return requested && refusal is not null
-            ? throw CliErrors.OptionInvalid(Name, refusal, $"Drop {Name}.")
+            ? throw CliErrors.OptionInvalid(Name, refusal)
             : requested;
     }
 }

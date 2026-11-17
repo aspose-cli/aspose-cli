@@ -72,15 +72,12 @@ public sealed class LocalDocumentResourceLoader : IDisposable
 
     public int OmittedCount { get { lock (_gate) { return _omitted.Count; } } }
 
-    private const string DefaultHint = "Copy each file the document needs into the input's folder, or a folder below it, and reference it by a relative path; network resources are not loaded. Then review the incomplete output.";
-
     /// <summary>
     /// The completeness warning for external resources a document engine was denied, known only
     /// by their number, or null when none were.
     /// </summary>
     public static Warning? OmissionWarning(int omitted) => omitted <= 0 ? null : new Warning(WarningCodes.RemoteResourcesBlocked, $"{omitted} resource(s) the document references were omitted.")
     {
-        Hint = DefaultHint,
         AffectsCompleteness = true,
     };
 
@@ -90,7 +87,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     /// omitted resources through this one warning; a reference several loaders left out is
     /// named once.
     /// </summary>
-    public static Warning? OmissionWarning(IEnumerable<OmittedResource> omitted, string? hint = null)
+    public static Warning? OmissionWarning(IEnumerable<OmittedResource> omitted)
     {
         ArgumentNullException.ThrowIfNull(omitted);
         OmittedResource[] distinct = [.. omitted.DistinctBy(static item => item.Reference, StringComparer.Ordinal)];
@@ -101,7 +98,6 @@ public sealed class LocalDocumentResourceLoader : IDisposable
 
         return new Warning(WarningCodes.RemoteResourcesBlocked, $"{distinct.Length} resource(s) the document references were omitted: {Describe(distinct)}.")
         {
-            Hint = hint ?? DefaultHint,
             AffectsCompleteness = true,
         };
     }

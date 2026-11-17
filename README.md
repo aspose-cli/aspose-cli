@@ -54,7 +54,7 @@ A breaking change removes or renames any of these, changes its type or meaning, 
 input it accepts, or changes a default or an exit code; it happens only in a major version.
 A minor or patch release may add commands, options, operations, optional input fields, result
 fields, warning codes, error codes and enumeration values. Text is not part of the contract:
-messages, hints, help, the bundled docs and Skill prose, the layout of human-readable output and
+messages, help, the bundled docs and Skill prose, the layout of human-readable output and
 the diagnostic output of `--verbose` can change in any release.
 
 A consumer must ignore result fields, warning codes and error codes it does not know. The result

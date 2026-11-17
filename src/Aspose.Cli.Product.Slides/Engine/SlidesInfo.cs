@@ -101,8 +101,7 @@ internal static class SlidesInfo
                         EnvelopeParts.ListTruncated(
                             "media",
                             MediaListLimit,
-                            media.Count,
-                            "Run 'aspose-cli slides extract <presentation> --what media --out-dir <directory>' to export every media item."),
+                            media.Count),
                     ]
                     : null),
         };

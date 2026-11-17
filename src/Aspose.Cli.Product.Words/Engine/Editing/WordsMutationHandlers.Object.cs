@@ -67,7 +67,7 @@ internal sealed partial class WordsMutationHandlers
             throw Invalid($"bookmark '{operation.Name}' already exists");
         }
 
-        Paragraph paragraph = AnnotatedParagraph("insert_bookmark", "bookmark");
+        Paragraph paragraph = AnnotatedParagraph("insert_bookmark");
         paragraph.PrependChild(new BookmarkStart(_document, operation.Name));
         paragraph.AppendChild(new BookmarkEnd(_document, operation.Name));
         return default;
@@ -240,8 +240,7 @@ internal sealed partial class WordsMutationHandlers
             if (_document.Revisions.Count(listed.IsMatch) != expected)
             {
                 throw new OperationInvalidException(
-                    "it lists revisions an earlier operation in the batch already decided",
-                    "Decide each revision once: list it in only one accept_revisions or reject_revisions, after no decision by author or of every revision.");
+                    "it lists revisions an earlier operation in the batch already decided");
             }
 
             int decided = accept ? _document.Revisions.Accept(listed) : _document.Revisions.Reject(listed);
@@ -280,7 +279,7 @@ internal sealed partial class WordsMutationHandlers
 
     public ValueTuple Apply(AddCommentOp operation)
     {
-        Paragraph paragraph = AnnotatedParagraph("add_comment", "comment");
+        Paragraph paragraph = AnnotatedParagraph("add_comment");
         string initials = string.Concat(operation.Author.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(static part => char.ToUpperInvariant(part[0])));
         Untracked(() =>
         {
@@ -300,10 +299,9 @@ internal sealed partial class WordsMutationHandlers
     /// The paragraph a comment or bookmark anchors to. A block is a paragraph or a table, and an
     /// address that reaches a table, as a find text inside a cell does, is refused naming that block.
     /// </summary>
-    private Paragraph AnnotatedParagraph(string op, string annotation) => Anchor as Paragraph
+    private Paragraph AnnotatedParagraph(string op) => Anchor as Paragraph
         ?? throw Invalid(
-            $"{op} must target a paragraph block, but {_resolved.Targets[0]} is a table",
-            $"A {annotation} anchors only to a body paragraph, not to a table or the text in it. Target the paragraph before or after the table instead.");
+            $"{op} must target a paragraph block, but {_resolved.Targets[0]} is a table");
 
     /// <summary>
     /// Changes comments outside revision tracking: a comment is a review annotation of its own,

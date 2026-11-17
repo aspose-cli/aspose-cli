@@ -63,10 +63,8 @@ public sealed class SearchOptionsTests
 
         Assert.Equal([2, 3], hits.Hits);
         Assert.Equal(4, offered);
-        Assert.Equal(
-            "aspose-cli p search in.x --pattern \"a b\" --regex --scope body --max-hits 2 --skip 3 --output-format json",
-            SearchOptions.Continue(query, hits.Window(), new ContinuationCommand("p", "search").Argument("in.x")).Next);
-        Assert.Null(SearchOptions.Continue(query, query.Collect<int>().Window(), new ContinuationCommand("p", "search")).Next);
+        Assert.Equal(new Dictionary<string, string> { ["skip"] = "3" }, SearchOptions.Continue(query, hits.Window()).Next);
+        Assert.Null(SearchOptions.Continue(query, query.Collect<int>().Window()).Next);
     }
 
     [Theory]

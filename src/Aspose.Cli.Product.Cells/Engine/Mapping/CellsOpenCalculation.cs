@@ -1,5 +1,4 @@
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using Aspose.Cells;
 using Aspose.Cli.Sdk.IO.Budgets;
 
@@ -58,18 +57,8 @@ internal static partial class CellsOpenCalculation
                 ["formulaCount"] = stored.Count,
                 ["storedWithoutResultCount"] = empty,
             },
-            Hint = changed.Any(static entry => Volatile(entry.Cell.Formula))
-                ? "The values shown are the engine's, as Excel shows them on opening. Formulas that call a volatile function, "
-                    + "such as RAND, NOW, TODAY, OFFSET or INDIRECT, are calculated again every time and can change each time, "
-                    + "so saving the workbook does not settle them; run 'cells read <file> --content formulas' to see the formulas."
-                : "The values shown are the engine's, as Excel shows them on opening. Save the workbook with 'cells edit' "
-                    + "to store them, or run 'cells read <file> --content formulas' to see the formulas.",
         };
     }
-
-    // Whether a formula calls a volatile function outside its string literals and quoted sheet names.
-    private static bool Volatile(string? formula) =>
-        formula is not null && VolatileCall().IsMatch(QuotedText().Replace(formula, string.Empty));
 
     // A stored whole number reads back as Int32 and the calculated one as Double; compare numbers
     // by value, allowing for the last bits of floating-point rounding.
@@ -86,11 +75,4 @@ internal static partial class CellsOpenCalculation
         decimal number => (double)number,
         _ => null,
     };
-
-    // The functions Excel recalculates at every calculation, whatever their arguments, called by name.
-    [GeneratedRegex(@"(?<![\w.])(?:_xlfn\.)?(?:RAND|RANDBETWEEN|RANDARRAY|NOW|TODAY|OFFSET|INDIRECT|CELL|INFO)\s*\(", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex VolatileCall();
-
-    [GeneratedRegex(@"""[^""]*""|'[^']*'")]
-    private static partial Regex QuotedText();
 }

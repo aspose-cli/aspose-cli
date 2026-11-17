@@ -20,7 +20,6 @@
         "json": [
           { "path": "warnings[code=LOSSY_CONVERSION][0].message", "contains": "leaves out 1 comment(s)" },
           { "path": "warnings[code=LOSSY_CONVERSION][0].details.content", "equals": ["comments"] },
-          { "path": "warnings[code=LOSSY_CONVERSION][0].hint", "contains": "A print area prints only the comments on the cells of its bounded ranges" },
           { "path": "warnings[code=LOSSY_CONVERSION][1]", "exists": false }
         ]
       }

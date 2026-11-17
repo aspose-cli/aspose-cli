@@ -31,8 +31,7 @@ public sealed class PdfEncryptedOptimizeTests
             Output = TestOutput.At(output),
         }));
 
-        Assert.Contains("compressStreams", error.Message + error.Hint, StringComparison.Ordinal);
-        Assert.Contains("decrypt_document", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("compressStreams", error.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 

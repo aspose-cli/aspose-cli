@@ -113,40 +113,7 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.Equal(ErrorCodes.PasswordRequired, right.Code);
         Assert.Equal(("right", _temp.File("other.test")),
             (right.Details!["argument"]!.GetValue<string>(), right.Details["path"]!.GetValue<string>()));
-        Assert.Contains("--right-password-env", right.Hint, StringComparison.Ordinal);
         Assert.Equal((ErrorCodes.PasswordInvalid, "left"), (left.Code, left.Details!["argument"]!.GetValue<string>()));
-        Assert.Contains("--left-password-env", left.Hint, StringComparison.Ordinal);
-    }
-
-    /// <summary>A password error about neither input keeps the hint that names options per input.</summary>
-    [Fact]
-    public void APasswordErrorOfAThirdDocument_PointsToThePerInputOptions()
-    {
-        Command command = Create(
-            Paired,
-            (_, _) => throw CliErrors.PasswordRequired(_temp.File("third.test")));
-
-        CliException error = RunFailing(command, "report.test", "other.test");
-
-        Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
-        Assert.Null(error.Details!["argument"]);
-        Assert.Contains("--left-password-env", error.Hint, StringComparison.Ordinal);
-        Assert.Contains("--right-password-env", error.Hint, StringComparison.Ordinal);
-    }
-
-    /// <summary>A command that reads one document names its own password option, and no option of a command that reads two.</summary>
-    [Fact]
-    public void APasswordErrorOfASingleInputCommand_NamesItsOwnOption()
-    {
-        Command command = Create(
-            new CommandTraits { Input = Report },
-            (_, standard) => throw CliErrors.PasswordRequired(standard.Input));
-
-        CliException error = RunFailing(command, "report.test");
-
-        Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
-        Assert.Contains("--password-env <NAME>", error.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("--left-password-env", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -221,7 +188,6 @@ public sealed class CommandDefinitionTests : IDisposable
             CliException error = RunFailing(command, arguments);
             Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
             Assert.Equal(parameter, error.Details![parameter.StartsWith('-') ? "option" : "argument"]!.GetValue<string>());
-            Assert.Contains("`-` is not supported", error.Hint, StringComparison.Ordinal);
         }
 
         Assert.False(File.Exists(_temp.File("-")));
@@ -362,15 +328,9 @@ public sealed class CommandDefinitionTests : IDisposable
         CliException conflict = RunFailing(command, "report.test", "--to", "png", "--out", "page.svg");
         Assert.Equal(ErrorCodes.OptionInvalid, conflict.Code);
         Assert.Equal("--to png contradicts --out 'page.svg': its .svg extension is not an extension of png. Must be one of: .png.", conflict.Message);
-        Assert.Equal("Give --out the .png extension, as in page.png, or pass --to svg to write svg.", conflict.Hint);
 
-        // An output without an extension often names a folder: the hint names both corrected paths.
-        CliException folder = RunFailing(command, "report.test", "--to", "jpeg", "--out", Path.Combine("deliver", "png"));
-        Assert.Equal(
-            $"Give --out the .jpg or .jpeg extension, as in {Path.Combine("deliver", "png.jpg")}, or name a file inside the "
-                + $"{Path.Combine("deliver", "png")} folder, as in {Path.Combine("deliver", "png", "page.jpg")}; "
-                + "an output of several parts is written beside that file as numbered files.",
-            folder.Hint);
+        // An output without an extension is refused with --to too.
+        RunFailing(command, "report.test", "--to", "jpeg", "--out", Path.Combine("deliver", "png"));
         Assert.Throws<ArgumentException>(() => Create(traits with { Output = null }, (_, _) => Result()));
         Assert.Throws<ArgumentException>(() => Create(
             traits with { Target = TargetFormat.Render(formats, "doc") }, (_, _) => Result()));
@@ -447,18 +407,15 @@ public sealed class CommandDefinitionTests : IDisposable
         CliException unprotectable = RunFailing(create, "new.tsx", "--encrypt-env", "MISSING");
         Assert.Equal(ErrorCodes.OptionInvalid, unprotectable.Code);
         Assert.Equal("--encrypt-env", unprotectable.Details!["option"]!.GetValue<string>());
-        Assert.Contains("Protect only tst outputs", unprotectable.Hint, StringComparison.Ordinal);
 
         CliException producer = Refused("new.pdf");
         Assert.Equal(ErrorCodes.OptionInvalid, producer.Code);
         Assert.Equal("The file 'new.pdf' has the .pdf extension of pdf, which aspose-cli test create does not write. Must be one of: .tst, .test, .tsx.", producer.Message);
-        Assert.Equal("Give the file one of these extensions, then run 'aspose-cli test convert <that file> --to pdf --output-format json' for pdf.", producer.Hint);
         Assert.Equal("file", producer.Details!["argument"]!.GetValue<string>());
         foreach (string file in new[] { "new.foo", "new" })
         {
             CliException refused = Refused(file);
             Assert.Equal(ErrorCodes.OptionInvalid, refused.Code);
-            Assert.Equal("Give the file one of these extensions.", refused.Hint);
         }
     }
 
@@ -571,37 +528,13 @@ public sealed class CommandDefinitionTests : IDisposable
         CliException unset = RunFailing(command, "report.test", "--key-password-env", "MISSING");
         Assert.Equal(ErrorCodes.OptionInvalid, unset.Code);
         Assert.Equal("--key-password-env", unset.Details!["option"]!.GetValue<string>());
-        Assert.DoesNotContain("another source", unset.Hint, StringComparison.Ordinal);
 
         CliException none = RunFailing(command, "report.test");
         Assert.Equal(ErrorCodes.OptionInvalid, none.Code);
         Assert.Equal("--key-password-env", none.Details!["option"]!.GetValue<string>());
-        Assert.Contains("--key-password-stdin", none.Hint, StringComparison.Ordinal);
 
         CliException both = RunFailing(command, "report.test", "--key-password-env", "LEFT", "--key-password-stdin");
         Assert.Equal(ErrorCodes.OptionInvalid, both.Code);
-        Assert.Equal("Use only one of --key-password-env or --key-password-stdin.", both.Hint);
-    }
-
-    [Fact]
-    public void Continuation_RepeatsThePathInputAndPasswordVariableButNeverThePassword()
-    {
-        Command command = Create(
-            "run",
-            "Runs.",
-            new CommandTraits { Input = Report },
-            [],
-            (_, standard) => Result(standard.Continuation().ToString()));
-        var root = new RootCommand { command };
-
-        string fromVariable = Run(root, "run", "report.test", "--password-env", "LEFT")!;
-        string literal = Run(root, "run", "report.test", "--password", "secret")!;
-
-        Assert.StartsWith("aspose-cli run ", fromVariable, StringComparison.Ordinal);
-        Assert.EndsWith("report.test\" --password-env LEFT --output-format json", fromVariable, StringComparison.Ordinal);
-        Assert.DoesNotContain("secret", literal, StringComparison.Ordinal);
-        // A password given literally is passed on by a placeholder for the variable that holds it.
-        Assert.EndsWith("report.test\" --password-env \"<password-env>\" --output-format json", literal, StringComparison.Ordinal);
     }
 
     [Fact]

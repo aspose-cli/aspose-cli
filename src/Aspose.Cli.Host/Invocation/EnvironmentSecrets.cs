@@ -16,8 +16,7 @@ internal sealed class EnvironmentSecrets(Func<string, string?> source, ResourceB
     {
         if (string.IsNullOrEmpty(name) || name.IndexOfAny(['\0', '=']) >= 0)
         {
-            throw CliErrors.OptionInvalid("environment variable", "the name is invalid",
-                "Use a non-empty environment variable name without NUL or '='.");
+            throw CliErrors.OptionInvalid("environment variable", "the name is invalid");
         }
         lock (_gate)
         {

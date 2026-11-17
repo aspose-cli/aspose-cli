@@ -77,8 +77,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.False(result.Verification!.Ok);
         VerificationIssue issue = Assert.Single(result.Verification.Issues, issue => issue.Code == "SHEETS_DROPPED");
         Assert.Equal(dropped.Message, issue.Message);
-        Assert.NotNull(issue.Hint);
-        Assert.Equal(dropped.Hint, issue.Hint);
     }
 
     [Fact]
@@ -232,7 +230,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             new CellsEditRequest { Input = source, Batch = ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"D2","formula":"=求和(B2:C2)"}]}"""), Output = TestOutput.At(_fixture.Temp.File("verify-unknown-function.out.xlsx")), Verify = true });
 
         Assert.Equal("#NAME?", Assert.Single(result.Verification!.FormulaErrors).Error);
-        Assert.Contains("English function names", Assert.Single(result.Verification.Issues).Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -263,18 +260,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Contains("fx.xlsx", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("far.xlsx", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(again.Warnings ?? [], static warning => warning.Code.Name == "EXTERNAL_LINK_RELATIVE");
-    }
-
-    [Fact]
-    public void ALinkNamedLikeASheetSuggestsTheSheet()
-    {
-        string source = _fixture.CreateSalesWorkbook("sheet-typo.xlsx");
-
-        CellsEditResult result = CellsEdit.Run(_fixture.Session,
-            new CellsEditRequest { Input = source, Batch = ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E5","formula":"='Secnd'!A1"}]}"""), Output = TestOutput.At(_fixture.Temp.File("sheet-typo.out.xlsx")) });
-
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "EXTERNAL_LINK_RELATIVE");
-        Assert.StartsWith("No sheet is named 'Secnd'. Did you mean 'Second'?", warning.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -444,7 +429,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code == WarningCodes.ListTruncated);
         Assert.NotNull(warning);
         Assert.Contains("1001", warning!.Message, StringComparison.Ordinal);
-        Assert.NotNull(warning.Hint);
     }
 
     [Fact]
@@ -601,7 +585,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         }));
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
-        Assert.Equal("Give a preset such as a4 or letter, or the width and height of a standard paper.", error.Hint);
     }
 
     [Fact]
@@ -854,7 +837,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code.Name == "DATA_TRUNCATED");
         Assert.NotNull(warning);
         Assert.Contains("row", warning!.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.NotNull(warning.Hint);
     }
 
     [Fact]
@@ -975,7 +957,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code.Name == "FORMULAS_BROKEN");
         Assert.NotNull(warning);
         Assert.Contains("#REF!", warning!.Message, StringComparison.Ordinal);
-        Assert.NotNull(warning.Hint);
     }
 
     // The same formula converted to a modern grid stays intact — no false warning.
@@ -1002,37 +983,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void Render_TooLargeForTheBudget_HintsASheetQualifiedWindow()
-    {
-        string path = _fixture.Temp.File($"too-large-{Guid.NewGuid():N}.xlsx");
-        using (var workbook = new Aspose.Cells.Workbook())
-        {
-            Aspose.Cells.Worksheet sheet = workbook.Worksheets[0];
-            sheet.Name = "Big Data";
-            for (int row = 0; row < 3000; row++)
-            {
-                for (int column = 0; column < 30; column++)
-                {
-                    sheet.Cells[row, column].PutValue(row + column);
-                }
-            }
-
-            workbook.Save(path);
-        }
-
-        CliException error = Assert.Throws<CliException>(() => CellsRender.Run(_fixture.Session, new CellsRenderRequest
-        {
-            Input = path,
-            Continuation = () => new ContinuationCommand("cells", "render").Argument(path),
-            Output = TestOutput.At(_fixture.Temp.File($"too-large-{Guid.NewGuid():N}.png"), format: "png"),
-            Dpi = 1200,
-        }));
-
-        Assert.Equal("RENDER_TOO_LARGE", error.Code.Name);
-        Assert.Contains("--range \"'Big Data'!A1:", error.Hint, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void Render_ToPng_ProducesAPngImage()
     {
         string path = _fixture.CreateSalesWorkbook("render.xlsx");
@@ -1041,7 +991,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsRenderResult result = CellsRender.Run(_fixture.Session, new CellsRenderRequest
         {
             Input = path,
-            Continuation = () => new ContinuationCommand("cells", "render").Argument(path),
             Output = TestOutput.At(output, format: "png"),
             SheetName = "Data",
             Range = new RangeRef(new CellRef(0, 0), new CellRef(2, 2)),
@@ -1068,7 +1017,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsRenderResult images = CellsRender.Run(_fixture.Session, new CellsRenderRequest
         {
             Input = path,
-            Continuation = () => new ContinuationCommand("cells", "render").Argument(path),
             Output = TestOutput.At(_fixture.Temp.File("selected.png"), format: "png"),
             Sheets = PageRange.Parse("2,1"),
             Dpi = 72,
@@ -1104,7 +1052,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsRenderResult result = CellsRender.Run(_fixture.Session, new CellsRenderRequest
         {
             Input = path,
-            Continuation = () => new ContinuationCommand("cells", "render").Argument(path),
             Output = TestOutput.At(_fixture.Temp.File("colliding.png"), format: "png"),
             Dpi = 72,
         });
@@ -1123,7 +1070,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsRenderResult result = CellsRender.Run(_fixture.Session, new CellsRenderRequest
         {
             Input = path,
-            Continuation = () => new ContinuationCommand("cells", "render").Argument(path),
             Output = TestOutput.At(output, format: "svg"),
             Sheets = PageRange.Parse("1"),
         });
@@ -1193,15 +1139,14 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
     /// <summary>
     /// Delimited text under an extension no input declares is refused, naming the extension and
-    /// the ones that import it; under the extension of a format cells only writes, such as .json
-    /// in any case, the hint says what to give instead.
+    /// the ones that import it.
     /// </summary>
     [Theory]
-    [InlineData("records.json", "its .json extension names no", true)]
-    [InlineData("records.JSON", "its .JSON extension names no", true)]
-    [InlineData("records.dat", "its .dat extension names no", false)]
-    [InlineData("records", "it has no extension that names a", false)]
-    public void Open_DelimitedTextUnderAnUndeclaredExtension_IsRefused(string fileName, string named, bool writtenOnly)
+    [InlineData("records.json", "its .json extension names no")]
+    [InlineData("records.JSON", "its .JSON extension names no")]
+    [InlineData("records.dat", "its .dat extension names no")]
+    [InlineData("records", "it has no extension that names a")]
+    public void Open_DelimitedTextUnderAnUndeclaredExtension_IsRefused(string fileName, string named)
     {
         string path = _fixture.Temp.File(fileName);
         File.WriteAllText(path, "Item\tAmount\nFirst\t1\nSecond\t2\n");
@@ -1212,12 +1157,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Equal(
             $"its content is delimited text, but {named} spreadsheet input; give it one of the extensions .csv, .tsv, .txt to import it as text",
             error.Explanation);
-        Assert.Equal(
-            writtenOnly
-                ? "cells writes html, mhtml, pdf, xps, json, md with convert but does not read them; give it a workbook (xlsx, xls, xlsb, ods) "
-                    + "or delimited text (csv, tsv, txt) instead, such as the file the export was made from."
-                : "Verify the file opens in a spreadsheet application and is one of the supported input formats.",
-            error.Hint);
     }
 
     /// <summary>Many systems "export to Excel" as tab-separated text named .xls; it imports as before.</summary>

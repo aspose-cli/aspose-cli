@@ -510,9 +510,6 @@ public sealed class CliContractTests : IDisposable
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         // One problem is the message; details.errors lists problems only when there are several.
         Assert.Null(error["details"]!["errors"]);
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.Contains("aspose-cli --help", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("aspose-cli cells", hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -558,7 +555,6 @@ public sealed class CliContractTests : IDisposable
         Assert.Equal(
             ["--left-password-env", "--right-password-env"],
             error["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.StartsWith("Did you mean '--left-password-env' or '--right-password-env'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Theory]
@@ -574,7 +570,6 @@ public sealed class CliContractTests : IDisposable
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains(suggestion, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Theory]

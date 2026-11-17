@@ -59,7 +59,6 @@ public sealed class DevicePathCliTests
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal(("OPTION_INVALID", parameter), (error["code"]!.GetValue<string>(), error["details"]![key]!.GetValue<string>()));
         Assert.Equal($@"Invalid use of {parameter}: a device path that spells no plain path, such as \\.\PhysicalDrive0, is not accepted", error["message"]!.GetValue<string>());
-        Assert.Equal(@"Pass the file or directory by its plain path, such as C:\work or \\server\share.", error["hint"]!.GetValue<string>());
     }
 
     [Theory]

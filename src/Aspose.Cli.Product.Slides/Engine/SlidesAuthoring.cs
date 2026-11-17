@@ -136,7 +136,6 @@ internal static class SlidesAuthoring
                     CultureInfo.InvariantCulture,
                     $"The table on slide {slideNumber} is {table.Height:0} pt high but its area is {areaHeight:0} pt, so it runs past the area."))
             {
-                Hint = "Split the table across slides under the same heading, shorten its cells or give it a smaller fontSize with format_shape, then review the slide.",
                 Location = SlidesStateProjection.SlideAddress(slideNumber),
             };
 

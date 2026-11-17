@@ -60,14 +60,13 @@ public static class CellsSheetNames
     /// <summary>Refuses a name Excel would not open, with what to change in it.</summary>
     internal static void Require(string name)
     {
-        const string Hint = "Excel refuses : \\ / ? * [ ] in a sheet name, an apostrophe at its start or end, the name History, and more than 31 characters; replace or drop them, e.g. 华东-销售.";
         int forbidden = name.IndexOfAny(Forbidden);
         OperationInvalidException.Require(forbidden < 0,
-            $"sheet name '{name}' holds '{(forbidden < 0 ? ' ' : name[forbidden])}', which Excel does not allow in a sheet name", Hint);
+            $"sheet name '{name}' holds '{(forbidden < 0 ? ' ' : name[forbidden])}', which Excel does not allow in a sheet name");
         OperationInvalidException.Require(!name.StartsWith('\'') && !name.EndsWith('\''),
-            $"sheet name '{name}' starts or ends with an apostrophe, which Excel does not allow", Hint);
+            $"sheet name '{name}' starts or ends with an apostrophe, which Excel does not allow");
         OperationInvalidException.Require(!string.Equals(name, "History", StringComparison.OrdinalIgnoreCase),
-            "Excel reserves the sheet name History", Hint);
+            "Excel reserves the sheet name History");
     }
 }
 
@@ -131,7 +130,7 @@ public sealed record MoveSheetOp : CellsSheetOp
 /// Freezes the panes above and left of a cell: A2 freezes row 1, B2 row 1 and column A.
 /// unfreeze_panes removes frozen panes.
 /// </summary>
-[Operation("freeze_panes", Hint = "To remove frozen panes, use unfreeze_panes.")]
+[Operation("freeze_panes")]
 public sealed record FreezePanesOp : CellsSheetOp
 {
     /// <summary>The top-left cell of the scrolling pane; not A1, which freezes nothing.</summary>
@@ -142,7 +141,7 @@ public sealed record FreezePanesOp : CellsSheetOp
     protected override BoundedOperation Validated()
     {
         OperationInvalidException.Require(A1.ParseCell(Cell) != new CellRef(0, 0),
-            "'A1' freezes nothing", "Freeze below or right of A1, such as A2 or B2; remove frozen panes with unfreeze_panes.");
+            "'A1' freezes nothing");
         return this;
     }
 }
@@ -155,7 +154,7 @@ public sealed record UnfreezePanesOp : CellsSheetOp;
 /// Sets the page layout for printing and PDF export: at least one field, and margins set at
 /// least one side. Only the fields present are applied; the rest of the page setup is preserved.
 /// </summary>
-[Operation("set_page_setup", Hint = "The header and footer distances are headerMargin and footerMargin, beside margins.")]
+[Operation("set_page_setup")]
 [AtLeastOneOf("orientation", "pageSize", "fitToWidth", "fitToHeight", "scalePercent", "margins", "headerMargin", "footerMargin", "headerCenter", "footerCenter", "printComments")]
 public sealed record SetPageSetupOp : CellsSheetOp
 {
@@ -223,7 +222,7 @@ public sealed record SetPageSetupOp : CellsSheetOp
 /// Sets the print area of a sheet and the rows and columns repeated on every printed page;
 /// titles omitted are removed. clear_print_area removes all three.
 /// </summary>
-[Operation("set_print_area", Hint = "To remove the print area and titles, use clear_print_area.")]
+[Operation("set_print_area")]
 public sealed record SetPrintAreaOp : CellsSheetOp
 {
     /// <summary>The print area, such as A1:H50, or several areas separated by commas, such as A1:B5,D1:E5, each printed on pages of its own.</summary>

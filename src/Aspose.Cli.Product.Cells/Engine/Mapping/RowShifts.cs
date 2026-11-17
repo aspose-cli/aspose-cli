@@ -35,10 +35,10 @@ internal sealed class RowShifts
     }
 
     /// <summary>
-    /// The shifts of sheet <paramref name="leftSheet"/> of the left workbook against sheet
-    /// <paramref name="sheet"/> of the right one, or null when no row shifted.
+    /// The shifts of the left workbook's sheet against sheet <paramref name="sheet"/> of the right
+    /// one, or null when no row shifted.
     /// </summary>
-    internal Warning? Describe(string leftSheet, string sheet, OperationDeadline deadline)
+    internal Warning? Describe(string sheet, OperationDeadline deadline)
     {
         var ids = new Dictionary<string, int>(StringComparer.Ordinal);
         int[] left = Ids(_left, ids);
@@ -92,15 +92,9 @@ internal sealed class RowShifts
         return shifts.Count == 0 ? null : new Warning(CellsDiagnostics.RowsShifted, $"Rows of sheet '{sheet}' appear shifted: {string.Join("; ", shifts)}. Cells are compared by address, "
                 + "so the cells below a shift are compared with the row that held their address before, and their differences are not edits.")
         {
-            Hint = $"The shift is inferred by matching rows, so read the rows it names in both workbooks first: {ContinuationCommand.Steps([Read("left workbook", leftSheet), Read("right workbook", sheet)])}. "
-                + "To compare row for row, apply the same insert_rows or delete_rows to a copy of the left workbook with the edit command, and compare that copy.",
             Location = CellsAddresses.OfSheet("sheet", sheet),
         };
     }
-
-    // One read per workbook, each of the sheet by its own name, which a renamed sheet does not share.
-    private ContinuationCommand Read(string workbook, string sheet) => new ContinuationCommand("cells", "read").Placeholder(workbook)
-        .Option("--sheet", sheet).Option("--range", A1.FormatRange(new(new(_firstRow, _firstColumn), new(_lastRow, _lastColumn))));
 
     // first: zero-based first row of each side's unmatched run; count: its length.
     private void AddShift(List<string> shifts, int leftFirst, int leftCount, int rightFirst, int rightCount)

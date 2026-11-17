@@ -80,7 +80,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     [Fact]
-    public void Create_FromAnEncryptedTemplate_AsksForAnUnencryptedOne()
+    public void Create_FromAnEncryptedTemplate_IsPasswordRequired()
     {
         using (var template = new Presentation())
         {
@@ -94,11 +94,6 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.Equal(3, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("PASSWORD_REQUIRED", error["code"]!.GetValue<string>());
-        string hint = error["hint"]!.GetValue<string>();
-        Assert.Contains("encrypted template", hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("--password-env", hint, StringComparison.Ordinal);
-        // No command decrypts the template, so the hint asks only for an unencrypted copy.
-        Assert.DoesNotContain("decrypt", hint, StringComparison.OrdinalIgnoreCase);
         Assert.False(File.Exists(_workspace.File("deck.pptx")));
     }
 
@@ -212,15 +207,12 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         int[] selection = [1, 2, 4];
         int resume = Array.IndexOf(selection, last["slide"]!.GetValue<int>()) + (cut ? 0 : 1);
         int budget = cut && returned.Count == 1 ? 40 : 20;
-        Assert.EndsWith(
-            $" --slides {Aspose.Cli.Sdk.Addressing.PageRange.Describe(selection[resume..])} --content shapes --max-chars {budget} --output-format json",
-            read["window"]!["next"]!.GetValue<string>(),
-            StringComparison.Ordinal);
+        Assert.Equal(
+            (Aspose.Cli.Sdk.Addressing.PageRange.Describe(selection[resume..]), $"{budget}"),
+            (read["window"]!["next"]!["slides"]!.GetValue<string>(), read["window"]!["next"]!["max-chars"]!.GetValue<string>()));
         Assert.True(single.ExitCode == 0, single.StdErr);
-        Assert.EndsWith(
-            " --slides 1-4 --content shapes --notes --max-chars 8 --output-format json",
-            JsonNode.Parse(single.StdOut)!["window"]!["next"]!.GetValue<string>(),
-            StringComparison.Ordinal);
+        JsonNode singleNext = JsonNode.Parse(single.StdOut)!["window"]!["next"]!;
+        Assert.Equal(("1-4", "8"), (singleNext["slides"]!.GetValue<string>(), singleNext["max-chars"]!.GetValue<string>()));
     }
 
     [Fact]
@@ -245,11 +237,10 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.Equal(expected[..2], Hits(page));
         Assert.Equal(2, page["window"]!["returned"]!.GetValue<int>());
         Assert.True(page["window"]!["truncated"]!.GetValue<bool>());
-        string next = page["window"]!["next"]!.GetValue<string>();
-        Assert.EndsWith(
-            " --pattern Slide --scope shapes --max-hits 2 --skip 2 --output-format json", next, StringComparison.Ordinal);
+        JsonNode next = page["window"]!["next"]!;
+        Assert.Equal("2", next["skip"]!.GetValue<string>());
 
-        CliResult following = _workspace.RunCommandLine(next);
+        CliResult following = _workspace.RunNext(next, "slides", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes", "--max-hits", "2", "--output-format", "json");
 
         Assert.True(following.ExitCode == 0, following.StdErr);
         JsonNode rest = JsonNode.Parse(following.StdOut)!;
@@ -414,30 +405,6 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.Contains(JsonNode.Parse(inspect.StdOut)!["layouts"]!.AsArray(), static layout => layout!["name"] is null);
     }
 
-    [Theory]
-    [InlineData("notes", "set_notes")]
-    [InlineData("shapes", "set_text")]
-    public void EvaluationReplaceOverCutText_HintsTheOperationThatWritesWithoutReading(string scope, string operation)
-    {
-        using (var presentation = new Presentation())
-        {
-            ISlide slide = presentation.Slides[0];
-            slide.Shapes.AddAutoShape(ShapeType.Rectangle, 50, 50, 400, 80).TextFrame.Text = "Speaker text long enough to be cut short.";
-            slide.NotesSlideManager.AddNotesSlide().NotesTextFrame.Text = "Speaker notes long enough to be cut short.";
-            presentation.Save(_workspace.File("cut.pptx"), SaveFormat.Pptx);
-        }
-
-        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{"op":"replace_text","find":"Speaker","replace":"Talk","scope":"{{scope}}"}]}""");
-
-        CliResult edit = _workspace.Run(
-            "slides", "edit", "cut.pptx", "--ops", "ops.json", "--out", "out.pptx", "--license-mode", "evaluation", "--output-format", "json");
-
-        Assert.True(edit.ExitCode == 0, edit.StdOut + edit.StdErr);
-        JsonNode warning = JsonNode.Parse(edit.StdOut)!["warnings"]!.AsArray()
-            .Single(static warning => warning!["code"]!.GetValue<string>() == "OP_NO_EFFECT")!;
-        Assert.Contains(operation, warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
     [Fact]
     public void TruncatedPresentation_IsReportedAsIncompleteRatherThanAnUnknownFormat()
     {
@@ -455,8 +422,6 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
         Assert.DoesNotContain("Unknown", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains("incomplete", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.DoesNotContain("Use one of", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("truncated", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -466,6 +431,5 @@ public sealed class SlidesCliWorkflowTests : IDisposable
 
         JsonNode error = JsonNode.Parse(merge.StdErr)!["error"]!;
         Assert.Equal("slides edit", error["details"]!["suggestions"]!.AsArray()[0]!.GetValue<string>());
-        Assert.Contains("import_slides", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 }

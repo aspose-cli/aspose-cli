@@ -140,10 +140,6 @@ public static class NetworkGate
                 return new Warning(WarningCodes.RemoteResourcesBlocked,
                     $"{omitted.Length} resource(s) outside the input were blocked or removed before the document engine could read them: {listed}{more}.")
                 {
-                    // Every reference an SVG image names outside itself is removed, a relative path too.
-                    Hint = Withheld.Count == 0
-                        ? "Place required resources beside the input and reference them by relative path, then review the incomplete output."
-                        : "Embed an SVG image's images as base64 PNG, JPEG or GIF data: URIs, place other resources beside the input and reference them by relative path, then review the incomplete output.",
                     AffectsCompleteness = true,
                 };
             }

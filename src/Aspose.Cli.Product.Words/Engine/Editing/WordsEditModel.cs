@@ -1,6 +1,5 @@
 using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
@@ -59,8 +58,7 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
         if (operation is RevisionDecisionOp { Revisions: not null } && _edited)
         {
             throw new OperationInvalidException(
-                "with revisions it must come before every operation other than a revision decision",
-                "Put the revision decisions first in the batch, or run them in a batch of their own; their numbers always name the changes the input lists.");
+                "with revisions it must come before every operation other than a revision decision");
         }
 
         // The authors a review operation could match, as the document had them before it.
@@ -116,16 +114,9 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
     {
         // Like a verification issue, it never repeats the find text.
         ReplaceTextOp replace when _matched.GetValueOrDefault(operation) == 0 => new NoEffect(NoEffectReasons.NoMatch,
-            $"Operation {operation.Id} (replace_text) matched no text in scope '{replace.Scope}', so nothing was replaced.")
-        {
-            Hint = "Search with 'words search' and the same pattern and scope, or set \"scope\": \"all\" on the op for headers, footers, "
-                + "footnotes and comments. Field codes and text a tracked change deletes are never matched.",
-        },
+            $"Operation {operation.Id} (replace_text) matched no text in scope '{replace.Scope}', so nothing was replaced."),
         FormatTextOp { Match: not null } when _matched.GetValueOrDefault(operation) == 0 => new NoEffect(NoEffectReasons.NoMatch,
-            $"Operation {operation.Id} (format_text) matched no text in its target blocks, so nothing was formatted.")
-        {
-            Hint = "Read the target blocks with 'words read' to check their text; field codes and text a tracked change deletes are never matched.",
-        },
+            $"Operation {operation.Id} (format_text) matched no text in its target blocks, so nothing was formatted."),
         RevisionDecisionOp { Author: { } author } => AuthorNoMatch(operation, author, "tracked revision", _authors.GetValueOrDefault(operation) ?? []),
         DeleteCommentsOp { Author: { } author } => AuthorNoMatch(operation, author, "comment", _authors.GetValueOrDefault(operation) ?? []),
         DeleteWatermarkOp => new NoEffect(NoEffectReasons.NoChange,
@@ -137,7 +128,7 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
 
     /// <summary>
     /// Why a review operation changed nothing when its author has no <paramref name="items"/> in
-    /// the document: it names the closest of the authors it has.
+    /// the document.
     /// </summary>
     private static NoEffect? AuthorNoMatch(WordsOp operation, string author, string items, IReadOnlyList<string> present)
     {
@@ -147,13 +138,7 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
             return null;
         }
 
-        string listed = string.Join(", ", authors.Select(static name => $"'{name}'"));
         return new NoEffect(NoEffectReasons.NoMatch,
-            $"Operation {operation.Id} ({WordsOp.Catalog.NameOf(operation)}) changed nothing: the document has no {items} by '{author}'.")
-        {
-            Hint = authors.Length == 0
-                ? $"The document has no {items}s; check 'words inspect --detail revisions --detail comments'."
-                : Mistake.Of(author, authors).Hint($"Authors match exactly; the document's are {listed}."),
-        };
+            $"Operation {operation.Id} ({WordsOp.Catalog.NameOf(operation)}) changed nothing: the document has no {items} by '{author}'.");
     }
 }

@@ -69,8 +69,6 @@ public sealed class LicenseModeTests : IDisposable
         JsonNode warning = Assert.Single(
             created["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE")!;
         Assert.Contains("--license-mode evaluation", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("--license-mode evaluation", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.DoesNotContain("ASPOSE_LICENSE_PATH", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         return created;
     }
 

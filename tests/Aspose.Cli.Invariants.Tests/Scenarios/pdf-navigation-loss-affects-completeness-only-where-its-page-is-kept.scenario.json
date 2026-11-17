@@ -11,9 +11,9 @@
       "expect": {
         "exitCode": 0,
         "json": [
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 0 link(s) and 1 named destination(s) no longer lead to their page, although their part holds it: the parts carry no named destinations, so what led there through one leads nowhere.", "hint": "No operation re-creates links or named destinations: tell the user which no longer lead to their page.", "affectsCompleteness": true } },
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 2 link(s) and 0 named destination(s) lead to a page their part does not hold, so they lead nowhere in it.", "hint": "The pages they led to are in other parts or in none, as the split asked; tell the user they lead nowhere in the parts." } },
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s) of the parts open their page as a whole, not at the place in it they opened in the input.", "hint": "They still open their page. No operation sets the place in a page a bookmark opens at: tell the user if that place matters." } }
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 0 link(s) and 1 named destination(s) no longer lead to their page, although their part holds it: the parts carry no named destinations, so what led there through one leads nowhere.", "affectsCompleteness": true } },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 2 link(s) and 0 named destination(s) lead to a page their part does not hold, so they lead nowhere in it." } },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s) of the parts open their page as a whole, not at the place in it they opened in the input." } }
         ]
       }
     },
@@ -22,7 +22,7 @@
       "expect": {
         "exitCode": 0,
         "json": [
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s), 2 link(s) and 1 named destination(s) lead to pages that --pages did not select.", "hint": "Select every page the navigation needs, or delete those bookmarks and links in a 'pdf edit' batch before converting." } }
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s), 2 link(s) and 1 named destination(s) lead to pages that --pages did not select.", "details": { "bookmarks": ["1", "2"] } } }
         ]
       }
     },
@@ -31,8 +31,8 @@
       "expect": {
         "exitCode": 0,
         "json": [
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 1 link(s) and 1 named destination(s) no longer lead to their page, although the merged document holds it: it carries no named destinations, so what led there through one leads nowhere.", "hint": "No operation re-creates links or named destinations: tell the user which no longer lead to their page.", "affectsCompleteness": true } },
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s) of the merged document open their page as a whole, not at the place in it they opened in the input.", "hint": "They still open their page. No operation sets the place in a page a bookmark opens at: tell the user if that place matters." } }
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 1 link(s) and 1 named destination(s) no longer lead to their page, although the merged document holds it: it carries no named destinations, so what led there through one leads nowhere.", "affectsCompleteness": true } },
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "2 bookmark(s) of the merged document open their page as a whole, not at the place in it they opened in the input." } }
         ]
       }
     },
@@ -42,7 +42,7 @@
         "exitCode": 0,
         "json": [
           { "path": "verification.ok", "equals": true },
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "1 bookmark(s), 1 link(s) and 1 named destination(s) lead to pages the edit deleted.", "hint": "The pages they led to were deleted as the batch asked. Bookmarks you no longer need can be removed with {\"op\":\"delete_bookmarks\",\"bookmarks\":[\"2\"]}. No operation deletes links or named destinations: tell the user they lead nowhere." } }
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "1 bookmark(s), 1 link(s) and 1 named destination(s) lead to pages the edit deleted.", "details": { "bookmarks": ["2"] } } }
         ]
       }
     },
@@ -51,7 +51,7 @@
       "expect": {
         "exitCode": 0,
         "json": [
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 2 link(s) and 0 named destination(s) lead nowhere: the importer gives a link to an element id or to a local file no target.", "hint": "Mark each place a link leads to with <a name=\"...\"></a>, which the importer links to, give a link to another document its https address, and create the PDF again.", "affectsCompleteness": true } }
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 2 link(s) and 0 named destination(s) lead nowhere: the importer gives a link to an element id or to a local file no target.", "affectsCompleteness": true } }
         ]
       }
     }

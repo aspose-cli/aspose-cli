@@ -69,15 +69,13 @@ public sealed class PathResolver
     {
         if (parameter is not null && string.IsNullOrWhiteSpace(path))
         {
-            throw CliErrors.OptionInvalid(parameter, "the value is empty",
-                "Pass the path of a file or directory; relative paths resolve against --workdir (or the current directory).");
+            throw CliErrors.OptionInvalid(parameter, "the value is empty");
         }
 
         ArgumentException.ThrowIfNullOrEmpty(path);
         // A device path is read as the plain path it spells, which the checks of local paths know.
         string plain = FilePaths.Plain(path) ?? (parameter is null ? path
-            : throw CliErrors.OptionInvalid(parameter, @"a device path that spells no plain path, such as \\.\PhysicalDrive0, is not accepted",
-                @"Pass the file or directory by its plain path, such as C:\work or \\server\share."));
+            : throw CliErrors.OptionInvalid(parameter, @"a device path that spells no plain path, such as \\.\PhysicalDrive0, is not accepted"));
         return Path.GetFullPath(plain, BaseDirectory);
     }
 }

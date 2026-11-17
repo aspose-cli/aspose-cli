@@ -32,7 +32,6 @@ internal static class PdfEngineFormats
                 Title = document.Info.Title ?? string.Empty,
             },
             Lossy = true,
-            LossyHint = "Open the HTML in a browser and compare it with the PDF before relying on exact pagination, forms or annotations.",
         },
         new("epub") { Write = PdfEngineWrite.Document, Save = SaveFormat.Epub, Lossy = true },
         new("md") { Write = PdfEngineWrite.Document, Save = SaveFormat.Markdown, Lossy = true, LeavesFormValues = true, LeavesPictures = true },
@@ -139,9 +138,6 @@ internal sealed record PdfEngineFormat(string Id)
 
     /// <summary>Whether the conversion may not preserve every layout or interactive feature.</summary>
     public bool Lossy { get; init; }
-
-    /// <summary>What to check before relying on a <see cref="Lossy"/> conversion; null for the general advice.</summary>
-    public string? LossyHint { get; init; }
 
     /// <summary>
     /// Whether a conversion to this format leaves out the values of form fields: the format

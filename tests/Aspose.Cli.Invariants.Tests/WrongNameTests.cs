@@ -63,7 +63,6 @@ public sealed class WrongNameTests
         string Wrong,
         string? Suggests,
         string? Because,
-        string? Hint,
         JsonNode? Fixed)
     {
         public static WrongName Of(JsonObject row) => new(
@@ -74,7 +73,6 @@ public sealed class WrongNameTests
             row["wrong"]!.GetValue<string>(),
             row["suggests"]?.GetValue<string>(),
             row["because"]?.GetValue<string>(),
-            row["hint"]?.GetValue<string>(),
             row["fixed"]);
 
         public string Id => Operations switch
@@ -144,12 +142,6 @@ public sealed class WrongNameTests
             else
             {
                 assertions.Add(new JsonAssertion { Path = "error.details.suggestions[0]", Value = Suggests });
-                assertions.Add(new JsonAssertion { Path = "error.hint", Contains = Suggests });
-            }
-
-            if (Hint is not null)
-            {
-                assertions.Add(new JsonAssertion { Path = "error.hint", Contains = Hint });
             }
 
             return assertions;

@@ -29,11 +29,10 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
 
     /// <summary>
     /// A find text that only a category holds replaces nothing and says where it is: the chart's
-    /// categories, at the chart's shape address, with a hint to read them and set them with
-    /// set_chart_data, which then changes the category.
+    /// categories, at the chart's shape address; set_chart_data then changes the category.
     /// </summary>
     [Fact]
-    public void ReplaceText_LeavesAMatchingCategoryAndPointsToSetChartData()
+    public void ReplaceText_LeavesAMatchingCategoryAndWarns()
     {
         using var fixture = new SlidesEngineFixture();
         long chartId = Deck(_workspace.File("deck.pptx"));
@@ -50,9 +49,6 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
         Assert.Equal(
             $"Operation q (replace_text) found a match in the categories of chart 'Sales' (shapeId {chartId}) on slide 2 and left them as they were: replace_text does not change chart titles or chart data.",
             warning["message"]!.GetValue<string>());
-        Assert.Equal(
-            $"To change them, read the chart's categories and series with 'slides read --slides 2 --content full', then apply set_chart_data to shapeId {chartId} on slide 2 with the categories, changed where they match.",
-            warning["hint"]!.GetValue<string>());
         Assert.Equal(["Q1", "Q2", "Q3"], Categories(_workspace.File("out.pptx")));
 
         CliResult set = _workspace.Run("slides", "edit", "out.pptx", "--out", "set.pptx", "--output-format", "json",
@@ -63,15 +59,14 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
     }
 
     /// <summary>
-    /// The warning names which data holds the match, the categories, the series names or both,
-    /// and its hint says what to give set_chart_data; the title does not match, so it is the only
-    /// warning about the chart.
+    /// The warning names which data holds the match, the categories, the series names or both;
+    /// the title does not match, so it is the only warning about the chart.
     /// </summary>
     [Theory]
-    [InlineData("Q2", "categories", "the categories, changed where they match")]
-    [InlineData("S2", "series names", "every series as read, values and all, renamed where its name matches")]
-    [InlineData("2", "categories and series names", "the categories and every series as read, each changed where it matches")]
-    public void ChartDataWarning_NamesTheDataThatHoldsTheMatch(string find, string data, string change)
+    [InlineData("Q2", "categories")]
+    [InlineData("S2", "series names")]
+    [InlineData("2", "categories and series names")]
+    public void ChartDataWarning_NamesTheDataThatHoldsTheMatch(string find, string data)
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("chart.pptx");
@@ -84,7 +79,6 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
         Assert.Equal(
             $"Operation d (replace_text) found a match in the {data} of chart 'Sales' (shapeId {chartId}) on slide 2 and left them as they were: replace_text does not change chart titles or chart data.",
             warning.Message);
-        Assert.EndsWith($"apply set_chart_data to shapeId {chartId} on slide 2 with {change}.", warning.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -129,15 +123,14 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
 
     /// <summary>
     /// The data of a chart set_chart_data refuses to update in place, a stock, surface or bubble
-    /// chart or one with multi-level categories, warns with a hint that rebuilds the chart as its
-    /// title's hint does, never one to set its data.
+    /// chart or one with multi-level categories, warns <c>chart-data</c>.
     /// </summary>
     [Theory]
     [InlineData(ChartType.OpenHighLowClose, false, "Q2", "categories")]
     [InlineData(ChartType.Surface3D, false, "Q2", "categories")]
     [InlineData(ChartType.Bubble, false, "S1", "series names")]
     [InlineData(ChartType.ClusteredColumn, true, "Q2", "categories")]
-    public void ChartDataWarning_OfAChartSetChartDataCannotUpdate_RebuildsIt(ChartType type, bool multiLevel, string find, string data)
+    public void ChartDataWarning_OfAChartSetChartDataCannotUpdate_NamesTheData(ChartType type, bool multiLevel, string find, string data)
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("chart.pptx");
@@ -155,19 +148,14 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
         Warning warning = Assert.Single(result.Warnings ?? [], static warning => warning.Code.Name == TextNotReplaced);
         Assert.Equal(ChartData, warning.Details?["part"]?.GetValue<string>());
         Assert.Contains($"found a match in the {data} of chart 'Sales'", warning.Message, StringComparison.Ordinal);
-        Assert.Equal(
-            $$"""To change them, rebuild the chart, since its data cannot be updated in place: read its kind, categories and series with 'slides read --slides 2 --content full', apply {"op":"delete_shape","slide":2,"shapeId":{{chartId}}}, then insert_chart on slide 2 with the changed data, its title and "rect":{"x":40,"y":120,"width":300,"height":200}. The new chart takes the automatic chart style.""",
-            warning.Hint);
-        Assert.DoesNotContain("set_chart_data", warning.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>
     /// A chart inside a group is checked too: its matching category stays as it was and warns at
-    /// the chart's own address, naming the slide's group that holds it, with a hint that no
-    /// operation addresses it rather than one to set its data.
+    /// the chart's own address, naming the slide's group that holds it.
     /// </summary>
     [Fact]
-    public void ChartInsideAGroup_WarnsThatNoOperationReachesItsData()
+    public void ChartInsideAGroup_WarnsAtTheChart()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("grouped.pptx");
@@ -181,14 +169,12 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
         Assert.Equal(
             $"Operation g (replace_text) found a match in the categories of chart 'Sales' (shapeId {chartId}) in group 'Pair' (shapeId {groupId}) on slide 1 and left them as they were: replace_text does not change chart titles or chart data.",
             warning.Message);
-        Assert.StartsWith("No operation addresses a shape inside a group", warning.Hint, StringComparison.Ordinal);
-        Assert.DoesNotContain("set_chart_data", warning.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>
     /// A series named by literal text is data too: a find text it holds warns <c>chart-data</c>
-    /// and names the series names, and the hint run as it says, reading the series and giving
-    /// set_chart_data every series with the name changed, renames it. A find text only other
+    /// and names the series names, and reading the series and giving set_chart_data every series
+    /// with the name changed renames it. A find text only other
     /// series names hold still warns; one no name holds does not.
     /// </summary>
     [Fact]
@@ -208,9 +194,6 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
         Assert.Equal(ChartData, warning["details"]!["part"]!.GetValue<string>());
         Assert.Equal($"slide/2/shape/{chartId}", warning["location"]!.GetValue<string>());
         Assert.Contains("found a match in the series names of chart 'Sales'", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Equal(
-            $"To change them, read the chart's categories and series with 'slides read --slides 2 --content full', then apply set_chart_data to shapeId {chartId} on slide 2 with every series as read, values and all, renamed where its name matches.",
-            warning["hint"]!.GetValue<string>());
 
         CliResult read = _workspace.Run("slides", "read", "out.pptx", "--slides", "2", "--content", "full", "--output-format", "json");
         Assert.True(read.ExitCode == 0, read.StdErr);
@@ -246,14 +229,14 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
     }
 
     /// <summary>
-    /// A chart whose point values are literal has no cells set_chart_data can write, so its data
-    /// warning rebuilds the chart as its title's hint does and never offers set_chart_data.
+    /// A chart whose point values are literal has no cells set_chart_data can write; a match in
+    /// its data warns <c>chart-data</c>.
     /// </summary>
     [Theory]
     [InlineData(ChartType.ClusteredColumn, "Q2", "categories")]
     [InlineData(ChartType.ClusteredColumn, "S1", "series names")]
     [InlineData(ChartType.ScatterWithMarkers, "S1", "series names")]
-    public void ChartDataWarning_OfAChartWithLiteralPointValues_RebuildsIt(ChartType type, string find, string data)
+    public void ChartDataWarning_OfAChartWithLiteralPointValues_NamesTheData(ChartType type, string find, string data)
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("chart.pptx");
@@ -265,10 +248,6 @@ public sealed class SlidesChartDataReplaceTests : IDisposable
         Warning warning = Assert.Single(result.Warnings ?? [], static warning => warning.Code.Name == TextNotReplaced);
         Assert.Equal(ChartData, warning.Details?["part"]?.GetValue<string>());
         Assert.Contains($"found a match in the {data} of chart 'Sales'", warning.Message, StringComparison.Ordinal);
-        Assert.Equal(
-            $$"""To change them, rebuild the chart, since its data cannot be updated in place: read its kind, categories and series with 'slides read --slides 2 --content full', apply {"op":"delete_shape","slide":2,"shapeId":{{chartId}}}, then insert_chart on slide 2 with the changed data, its title and "rect":{"x":40,"y":120,"width":300,"height":200}. The new chart takes the automatic chart style.""",
-            warning.Hint);
-        Assert.DoesNotContain("set_chart_data", warning.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>

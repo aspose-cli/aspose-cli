@@ -97,8 +97,7 @@ internal static class CreateCommand
         {
             throw CliErrors.OptionInvalid(
                 PdfOptionNames.AllowNetworkResources,
-                "it applies only to --from-html",
-                "The Markdown importer follows local file references inside fetched resources without any resource hook, so network resources stay refused for Markdown; convert the Markdown to HTML first.");
+                "it applies only to --from-html");
         }
 
         return source;
@@ -106,7 +105,7 @@ internal static class CreateCommand
 
     internal static PdfMargins ParseMargins(string text)
     {
-        double[] values = PdfNumberList.Parse(text, PdfOptionNames.Margins, "Use one value or top,right,bottom,left in points.");
+        double[] values = PdfNumberList.Parse(text, PdfOptionNames.Margins);
         if (values.Length == 1 && values[0] >= 0)
         {
             return new PdfMargins(values[0], values[0], values[0], values[0]);
@@ -119,7 +118,6 @@ internal static class CreateCommand
 
         throw CliErrors.OptionInvalid(
             PdfOptionNames.Margins,
-            $"'{text}' must contain one or four non-negative values",
-            "Use one value or top,right,bottom,left in points.");
+            $"'{text}' must contain one or four non-negative values");
     }
 }

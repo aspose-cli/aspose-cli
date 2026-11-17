@@ -1,8 +1,7 @@
 # Troubleshooting
 
-Errors are built for self-correction. Read `error.hint` first, then
-`error.details`; do not retry unchanged input in a loop. Product errors and
-their recovery are in the product Skill.
+Read `error.message` and `error.details`; do not retry unchanged input in a
+loop. Product errors and their recovery are in the product Skill.
 
 ## The error envelope
 
@@ -16,8 +15,7 @@ exits non-zero:
   "error": {
     "code": "SHEET_NOT_FOUND",
     "message": "No sheet 'Nope' was found. Must be one of: Data, Summary",
-    "details": { "subject": "sheet", "requested": "Nope", "availableCount": 2, "available": ["Data", "Summary"] },
-    "hint": "Use one of the names in details.available."
+    "details": { "subject": "sheet", "requested": "Nope", "availableCount": 2, "available": ["Data", "Summary"] }
   }
 }
 ```
@@ -32,12 +30,11 @@ exits non-zero:
   `details.reason`, when present, is a short kebab-case token such as
   `unknown-field`; branch on it, and read `message` for the explanation. An
   `OPS_INVALID` about one field names its path in `details.field`.
-- `hint` is the most likely next action; `docs`, when present, names a topic
-  for `aspose-cli docs <topic>`.
+- `docs`, when present, names a topic for `aspose-cli docs <topic>`.
 
 Warnings do not fail a command. They appear in the result's `warnings` array
-with a `code`, `message` and, when there is one, `hint` and `details`, and on
-stderr in human output. A warning with `affectsCompleteness: true` leaves the
+with a `code`, `message` and, when there are any, `details`, and on stderr in
+human output. A warning with `affectsCompleteness: true` leaves the
 output incomplete; report it.
 
 A `LOSSY_CONVERSION` that names what the output leaves out lists the kinds of
@@ -46,9 +43,8 @@ says the format may not keep every feature. A `TEXT_NOT_REPLACED` says that an
 operation found its text in a part of the document it does not change and left
 that text as it was, and that the output still holds it there; a later
 operation of the batch that changed or removed it leaves no warning.
-`details.part` names the kind of part, `location` the place and the hint how
-to change it. `aspose-cli schema v2/common/error-payload`
-gives the meaning of every value of both.
+`details.part` names the kind of part and `location` the place. `aspose-cli schema
+v2/common/error-payload` gives the meaning of every value of both.
 
 ## Exit codes
 
@@ -102,11 +98,10 @@ aspose-cli capabilities --output-format json
   parse, is `OPTION_INVALID`. Both name the option in `details.option`, or the
   positional argument in `details.argument`.
 - An unknown command, option, value, operation or field lists what exists in
-  `details.available` and the closest names in `details.suggestions`; the
-  hint names a command by its full path, such as `pdf inspect`. A command that
-  only groups others, run without one, is a `USAGE_ERROR` that lists its
-  commands in `details.available`; with human output it prints its help to
-  stderr instead.
+  `details.available` and the closest names in `details.suggestions`. A
+  command that only groups others, run without one, is a `USAGE_ERROR` that
+  lists its commands in `details.available`; with human output it prints its
+  help to stderr instead.
 - A token starting with `--` is never taken as a file argument; pass such a
   file name after a `--` token, which ends the options.
 - `-` names standard input only: `--out -` is refused, so name a file. An
@@ -116,10 +111,6 @@ aspose-cli capabilities --output-format json
   and, for a mistyped one such as `.docz`, the closest in
   `details.suggestions`. `convert` and `render` write the format their `--out`
   extension names when `--to` is absent; a `convert` with neither is refused.
-  An output that names another format, such as `--out report.pdf`, has a hint
-  naming the command that writes it: an `edit` or `create` writes its own
-  format first, to convert or render after; a `render` points to the
-  `convert` of the same input.
 - A selection such as `--pages` takes 1-based ranges such as `1-3,7,9-`, or
   `all`; a number past the end fails with the product's not-found code and
   `details.availableCount`.
@@ -133,19 +124,16 @@ aspose-cli capabilities --output-format json
 - A file that is not a readable document of its type (`FILE_CORRUPT`):
   renaming a file does not change its format. When the extension disagrees
   with the content (`FORMAT_MISMATCH`), `details.detected` names the products
-  the content looks like and the hint names its command: use it or rename the
-  file. Content no
-  product recognizes is `FILE_CORRUPT` when any product reads its extension,
-  even one shared by many kinds of file such as `.html` or `.xml`, and
-  `FORMAT_UNSUPPORTED` when none does or the CLI only writes its format, such
-  as `.xps`. Find out what the file really is. When several products fit
-  (`FORMAT_AMBIGUOUS`), pass what the hint names.
+  the content looks like. Content no product recognizes is `FILE_CORRUPT`
+  when any product reads its extension, even one shared by many kinds of file
+  such as `.html` or `.xml`, and `FORMAT_UNSUPPORTED` when none does or the
+  CLI only writes its format, such as `.xps`. Find out what the file really
+  is. Content several products recognize is `FORMAT_AMBIGUOUS`.
 - A password that is missing or wrong (`PASSWORD_REQUIRED`,
   `PASSWORD_INVALID`): ask the user; never guess. Pass it with
   `--password-env <VAR>` or `--password-stdin`. A command that reads two
-  documents, such as `compare`, names the argument in `details.argument` and
-  its own option in the hint; an operation that needs a password names its
-  `*Env` field in `details.field`.
+  documents, such as `compare`, names the argument in `details.argument`; an
+  operation that needs a password names its `*Env` field in `details.field`.
 - The file changed since you read it (`INPUT_CHANGED`): read it again, review
   what changed, and retry with the new `input.fingerprint.sha256`.
 - An input over a resource budget: the message and `details` give the limit.
@@ -203,8 +191,3 @@ and on `$PSNativeCommandArgumentPassing`:
   text into `?`.
 - Windows PowerShell 5.1's `>` redirection re-encodes stdout as UTF-16; parse
   stdout directly or use PowerShell 7.
-- A command in a hint or `window.next` runs as written in bash and in
-  PowerShell, except when a value holds `$` or a backtick: it is escaped for
-  bash (`\$`), and PowerShell still expands it, so the path reaches the CLI
-  changed, usually as `FILE_NOT_FOUND`. In PowerShell, put that value in
-  single quotes and remove the `\` before the character.

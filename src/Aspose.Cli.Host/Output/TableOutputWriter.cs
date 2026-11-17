@@ -84,7 +84,7 @@ internal sealed class TableOutputWriter : IOutputWriter
         output.WriteLine($"window: {window.Returned}{total} {window.Unit}(s), {state}");
         if (window.Next is { } next)
         {
-            output.WriteLine($"next: {next}");
+            output.WriteLine($"next: {string.Join(", ", next.Select(static option => $"{option.Key}={option.Value}"))}");
         }
     }
 
@@ -94,10 +94,6 @@ internal sealed class TableOutputWriter : IOutputWriter
 
         TextWriter output = _error ?? Console.Error;
         output.WriteLine($"error {error.Error.Code}: {error.Error.Message}");
-        if (error.Error.Hint is { } hint)
-        {
-            output.WriteLine($"  hint: {hint}");
-        }
 
         // The message lists the names a mistake could have been, as details.available does.
 
@@ -133,11 +129,6 @@ internal sealed class TableOutputWriter : IOutputWriter
         foreach (Warning warning in warnings)
         {
             output.WriteLine($"warning {warning.Code}: {warning.Message}");
-            // A warning's hint is its next step, as an error's is.
-            if (warning.Hint is { } hint)
-            {
-                output.WriteLine($"  hint: {hint}");
-            }
         }
     }
 }

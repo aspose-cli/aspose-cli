@@ -23,7 +23,7 @@ internal static class EditCommand
 
     public static CommandDefinition<WordsEditRequest, WordsEditResult> Create()
     {
-        var trackChanges = new Option<bool>(WordsOptionNames.TrackChanges) { Description = "Track this batch as revisions." };
+        var trackChanges = new Option<bool>(WordsOptionNames.TrackChanges) { Description = "Track this batch as revisions; only content insertions and deletions are tracked." };
         var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." }.WithInput(InputKind.None);
         return EditDefinition.Create<WordsOp, WordsOpsBatch, WordsEditRequest, WordsEditResult>(
             new BoundedEditCommand<WordsOp, WordsOpsBatch>(Definition),
@@ -47,8 +47,7 @@ internal static class EditCommand
                 {
                     throw CliErrors.OptionInvalid(
                         "--author",
-                        "--track-changes requires a non-empty author",
-                        "Pass --author with the person or agent responsible for the edit.");
+                        "--track-changes requires a non-empty author");
                 }
             },
             examples:
@@ -62,8 +61,7 @@ internal static class EditCommand
                 CommandHelpLink.Schema<WordsOp>("the exact edit-batch contract"),
             ],
             // Appending documents is the import_sections operation of an edit.
-            mistakenFor: ["merge"],
-            mistakenForHint: "To merge documents, run 'words edit' on the first with an import_sections operation for each other document.");
+            mistakenFor: ["merge"]);
     }
 
     internal static void Table(WordsEditResult result, TableSurface surface)
@@ -78,7 +76,7 @@ internal static class EditCommand
         int equals = value.IndexOf('=');
         if (!value.StartsWith(BookmarkPrefix, StringComparison.Ordinal) || equals <= BookmarkPrefix.Length)
         {
-            throw CliErrors.OptionInvalid("--set", $"invalid directive '{value}'", "Use bookmark:NAME=TEXT.");
+            throw CliErrors.OptionInvalid("--set", $"invalid directive '{value}'");
         }
 
         return new SetTextOp

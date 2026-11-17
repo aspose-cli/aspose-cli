@@ -27,9 +27,8 @@ refers to the list `words inspect --detail revisions` gives of the input.
 Act on each `OP_NO_EFFECT` warning: `details.id` and `details.op` name the
 operation and `details.reason` says why. When `accept_revisions`,
 `reject_revisions` or `delete_comments` found no revision or comment by its
-`author`, names match exactly and the hint lists the document's: do not
-report the decision as made; correct the name and run the batch again. When
-`replace_text` matched nothing in its `scope`, search with `words search`
+`author`, names match exactly: do not report the decision as made; correct
+the name and run the batch again. When `replace_text` matched nothing in its `scope`, search with `words search`
 and the same pattern; text in headers, footers, footnotes or comments needs
 its `scope`.
 

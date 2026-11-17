@@ -18,10 +18,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "--to pdf"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean '--to pdf'?"
           }
         ],
         "files": {
@@ -48,10 +44,6 @@
           {
             "path": "error.details.suggestions[0]",
             "equals": "--to pdf"
-          },
-          {
-            "path": "error.hint",
-            "startsWith": "Did you mean '--to pdf'?"
           }
         ],
         "files": {

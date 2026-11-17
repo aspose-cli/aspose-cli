@@ -48,7 +48,6 @@ public sealed class OperationCatalog<TOp>
         SchemaId = ResultEnvelope.SchemaUri(owner, schemaId);
         Contracts = contracts;
         SchemaCommandId = ResultSchemaSet.Id(owner, schemaId);
-        DefaultHint = $"Fix the named operation; '{DistributionInfo.CommandName} schema {SchemaCommandId}' documents every operation.";
         OperationDescriptor[] ordered = [.. operations.OrderBy(static operation => operation.Record.Name, StringComparer.Ordinal)];
         foreach (OperationDescriptor operation in ordered)
         {
@@ -96,8 +95,6 @@ public sealed class OperationCatalog<TOp>
     /// <summary>Wire names in published order.</summary>
     public IReadOnlyList<string> Names { get; }
 
-    internal string DefaultHint { get; }
-
     /// <summary>Source-generated JSON metadata for every operation record.</summary>
     internal IJsonTypeInfoResolver Contracts { get; }
 
@@ -122,13 +119,6 @@ public sealed class OperationCatalog<TOp>
             },
             _schema);
     }
-
-    /// <summary>Whether the vocabulary has an operation that encrypts the edited document (<see cref="EncryptsOutputAttribute"/>).</summary>
-    internal bool Encrypts => Encryptor is not null;
-
-    /// <summary>The operation that encrypts the edited document (<see cref="EncryptsOutputAttribute"/>), or null when the vocabulary has none.</summary>
-    internal OperationRecord? Encryptor =>
-        _byName.Values.Select(static operation => operation.Record).FirstOrDefault(static record => record.EncryptsOutput);
 
     /// <summary>Returns the wire name of an operation of this vocabulary.</summary>
     public string NameOf(TOp operation)
@@ -176,7 +166,7 @@ public sealed class OperationCatalog<TOp>
         ArgumentNullException.ThrowIfNull(contracts);
         if (string.IsNullOrWhiteSpace(json))
         {
-            throw OperationErrors.Invalid(OpsInvalidReasons.InvalidJson, "the document is empty", DefaultHint);
+            throw OperationErrors.Invalid(OpsInvalidReasons.InvalidJson, "the document is empty");
         }
 
         JsonDocument document = ParseJson(json, quotesContent);
@@ -223,7 +213,7 @@ public sealed class OperationCatalog<TOp>
         BoundedOperationValidation.ValidateEnvelope(batch, SchemaId, Invalid);
         if (batch.Ops.Count < 1 || batch.Ops.Count > MaximumOperationCount)
         {
-            throw OperationErrors.Invalid(OpsInvalidReasons.InvalidValue, $"the ops array must contain 1-{MaximumOperationCount} operations", DefaultHint, field: "ops");
+            throw OperationErrors.Invalid(OpsInvalidReasons.InvalidValue, $"the ops array must contain 1-{MaximumOperationCount} operations", field: "ops");
         }
 
         IReadOnlyList<TOp> identified = BoundedOperationIds.Assign(
@@ -292,12 +282,12 @@ public sealed class OperationCatalog<TOp>
         }
         catch (OperationInvalidException rejection)
         {
-            return OperationErrors.InvalidAt(id, record.Name, rejection, DefaultHint);
+            return OperationErrors.InvalidAt(id, record.Name, rejection);
         }
         catch (CliException failure) when (!failure.IsInvocationFailure)
         {
             // A shared value parser (a page range, an address) rejected a field.
-            return OperationErrors.InvalidAt(id, record.Name, OpsInvalidReasons.InvalidValue, failure.Message, failure.Hint ?? DefaultHint, cause: failure.Code);
+            return OperationErrors.InvalidAt(id, record.Name, OpsInvalidReasons.InvalidValue, failure.Message, cause: failure.Code);
         }
     }
 
@@ -338,22 +328,9 @@ public sealed class OperationCatalog<TOp>
         }
         catch (JsonException exception)
         {
-            throw OperationErrors.Invalid(OpsInvalidReasons.InvalidJson, $"the document is not valid JSON{SyntaxError(exception, quotesContent)}", SyntaxHint(exception));
+            throw OperationErrors.Invalid(OpsInvalidReasons.InvalidJson, $"the document is not valid JSON{SyntaxError(exception, quotesContent)}");
         }
     }
-
-    /// <summary>
-    /// The hint for a document that is not JSON, which names no operation: fix the syntax where
-    /// the reason says, and, where a string holds a backslash JSON cannot hold, as a regular
-    /// expression often does, write the backslash as two.
-    /// </summary>
-    private static string SyntaxHint(JsonException exception) =>
-        exception.Message.Contains("escap", StringComparison.OrdinalIgnoreCase)
-            ? "Fix the JSON syntax at the line and byte the reason names: inside a JSON string a backslash is written \\\\, "
-                + "so the regular expression \\d is written \"\\\\d\" and \\+ is written \"\\\\+\"."
-            : TrailingComma(exception)
-                ? $"Fix the JSON syntax at the line and byte the reason names: {DeleteTrailingComma}."
-                : "Fix the JSON syntax at the line and byte the reason names.";
 
     private const string DeleteTrailingComma = "delete the comma before the closing ']' or '}'";
 
@@ -442,7 +419,7 @@ public sealed class OperationCatalog<TOp>
         }
 
         JsonException reason = JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path);
-        return OperationErrors.Invalid(reason, DefaultHint);
+        return OperationErrors.Invalid(reason);
     }
 
     /// <summary>Whether the serializer rejected the document's content rather than failed itself.</summary>
@@ -466,10 +443,9 @@ public sealed class OperationCatalog<TOp>
     /// </summary>
     private CliException InvalidAt(JsonElement ops, IReadOnlyList<string> ids, int index, JsonException failure) =>
         NameAt(ops, index) is { } name && !_byName.ContainsKey(name)
-            ? OperationErrors.UnknownAt(ids[index], failure.Message, DefaultHint,
+            ? OperationErrors.UnknownAt(ids[index], failure.Message,
                 Mistake.Of(name, ByRelevance(name), meant: Closest(name, ops[index])))
-            : OperationErrors.InvalidAt(
-                ids[index], KnownNameAt(ops, index), failure, KindHint(KnownNameAt(ops, index), failure) ?? HintFor(KnownNameAt(ops, index)));
+            : OperationErrors.InvalidAt(ids[index], KnownNameAt(ops, index), failure);
 
     /// <summary>
     /// The operation names in the order an error for the unknown <paramref name="name"/> lists
@@ -484,48 +460,6 @@ public sealed class OperationCatalog<TOp>
             .Concat(Names.Where(candidate => candidate.Split('_').Intersect(words, StringComparer.OrdinalIgnoreCase).Any()))
             .Concat(Names)
             .Distinct(StringComparer.Ordinal);
-    }
-
-    /// <summary>
-    /// The hint of an entry the serializer could not read: the operation's own
-    /// (<see cref="OperationAttribute.Hint"/>) before the default.
-    /// </summary>
-    private string HintFor(string? name) =>
-        name is not null && _byName[name].Record.Type.GetCustomAttributes(typeof(OperationAttribute), inherit: false)
-            .OfType<OperationAttribute>().FirstOrDefault()?.Hint is { } hint
-            ? $"{hint} {DefaultHint}"
-            : DefaultHint;
-
-    /// <summary>
-    /// For a field of an operation whose value has the wrong kind, what the field is, from its
-    /// description and the schema's description of its kind of value, such as the form of a page
-    /// range, before the operation's hint (<see cref="HintFor"/>): an <c>at</c> that is a section
-    /// number in one operation and a block address in another is otherwise only "must be a whole
-    /// number", and a <c>slides</c> given as an array only "must be a string".
-    /// </summary>
-    private string? KindHint(string? name, JsonException failure)
-    {
-        if (failure is not ValueKindException { Field: var field } || name is null
-            || _byName[name].Record.Properties.FirstOrDefault(property => property.Name == field) is not { Description: { Length: > 0 } description } property)
-        {
-            return null;
-        }
-
-        string meaning = Article(description) ? $"'{field}' is {Lowered(description)}" : $"'{field}': {description}";
-        string? form = property.Constraints.Where(static constraint => constraint.Depth == 0).Select(static constraint =>
-        {
-            var schema = new JsonObject();
-            constraint.Describe(schema);
-            return schema["description"]?.GetValue<string>();
-        }).FirstOrDefault(static text => !string.IsNullOrEmpty(text));
-        return form is null
-            ? $"{meaning.TrimEnd('.')}. {HintFor(name)}"
-            : $"{meaning.TrimEnd('.')}: {(Article(form) ? Lowered(form) : form).TrimEnd('.')}. {HintFor(name)}";
-
-        static bool Article(string text) =>
-            text.StartsWith("The ", StringComparison.Ordinal) || text.StartsWith("A ", StringComparison.Ordinal) || text.StartsWith("An ", StringComparison.Ordinal);
-
-        static string Lowered(string text) => $"{char.ToLowerInvariant(text[0])}{text[1..]}";
     }
 
     private string? KnownNameAt(JsonElement ops, int index) =>
@@ -546,5 +480,5 @@ public sealed class OperationCatalog<TOp>
                 $"Operation type {operation.GetType().Name} is not an operation of its catalog.");
 
     /// <summary>Rejects a value of the document's envelope or of an operation id, such as a duplicated id.</summary>
-    private CliException Invalid(string explanation) => OperationErrors.Invalid(OpsInvalidReasons.InvalidValue, explanation, DefaultHint);
+    private CliException Invalid(string explanation) => OperationErrors.Invalid(OpsInvalidReasons.InvalidValue, explanation);
 }

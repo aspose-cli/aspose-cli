@@ -16,7 +16,7 @@ order, the operations whose every recorded effect was read back; every other
 operation is in `uncheckedOps`, even when part of its effect was read back.
 
 A warning of the edit with `affectsCompleteness: true` is an issue too, with the
-same code, message, location and hint: `REDACTION_NEARBY_TEXT_REMOVED` when a
+same code, message and location: `REDACTION_NEARBY_TEXT_REMOVED` when a
 cover removed characters beside what a redaction selected, `REDACTION_TEXT_MOVED`
 when a redaction moved the text after it on its line under its cover, and
 `NAVIGATION_DEGRADED` when bookmarks, links or named destinations no longer
@@ -24,8 +24,7 @@ lead to their page although it is still in the output, as when `move_pages`
 moves a page they open at a top that reads 0. With `--verify` such an
 edit exits 8; without it, it exits 0 with the warning alone. The
 `NAVIGATION_DEGRADED` of navigation that led to a page the batch deleted has no
-`affectsCompleteness` and is no issue; its hint names the bookmarks among them
-by their address, as a `delete_bookmarks` operation ([page changes](editing.md)).
+`affectsCompleteness` and is no issue ([page changes](editing.md)).
 
 | Operation | Read back |
 | --- | --- |
@@ -44,9 +43,8 @@ Every edit, with or without `--verify`, searches its output for the text of
 each `redact_text` before publishing, and writes nothing and exits 8 where it
 is still found, so a published `redact_text` is checked. A `redact_text` that
 matched nothing passes its check, and `REDACTION_TEXT_MOVED` follows only runs
-that keep their whole text; act on `OP_NO_EFFECT` as its hint says, and on `REDACTION_TEXT_MOVED`
-and `REDACTION_NEARBY_TEXT_REMOVED`
-([redaction](editing.md#redaction)).
+that keep their whole text; act on `OP_NO_EFFECT`, `REDACTION_TEXT_MOVED` and
+`REDACTION_NEARBY_TEXT_REMOVED` ([redaction](editing.md#redaction)).
 
 The batch is checked as a whole: only the last value set for a field, entry or
 attachment is checked, the value of a flattened field, of a field a `redact_area` covers or

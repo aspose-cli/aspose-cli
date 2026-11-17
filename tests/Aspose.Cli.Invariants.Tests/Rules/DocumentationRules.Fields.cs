@@ -474,7 +474,7 @@ internal static partial class ContractRules
     private sealed record WrittenMember(string Key, string? Value, List<WrittenObject> Objects);
 
     /// <summary>
-    /// A tolerant reading of the JSON a text writes inside prose, a hint or an example: an object
+    /// A tolerant reading of the JSON a text writes inside prose or an example: an object
     /// is read where a <c>{</c> starts one with string keys; a value it cannot read, such as a
     /// hole (<c>…</c>) or a placeholder, is skipped to the next <c>,</c> or closing bracket, and a
     /// <c>{</c> that starts no object (<c>{name}</c>) is not JSON. A member written as an ellipsis

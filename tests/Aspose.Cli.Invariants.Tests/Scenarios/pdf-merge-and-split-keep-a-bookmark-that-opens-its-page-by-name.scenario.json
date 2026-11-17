@@ -17,7 +17,7 @@
       "expect": {
         "exitCode": 0,
         "json": [
-          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 1 link(s) and 1 named destination(s) no longer lead to their page, although the merged document holds it: it carries no named destinations, so what led there through one leads nowhere.", "hint": "No operation re-creates links or named destinations: tell the user which no longer lead to their page.", "affectsCompleteness": true } }
+          { "path": "warnings", "contains": { "code": "NAVIGATION_DEGRADED", "message": "0 bookmark(s), 1 link(s) and 1 named destination(s) no longer lead to their page, although the merged document holds it: it carries no named destinations, so what led there through one leads nowhere.", "affectsCompleteness": true } }
         ]
       }
     },

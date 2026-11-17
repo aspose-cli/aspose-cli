@@ -41,8 +41,7 @@ public sealed partial record PageSizeInput
         double height = Height!.Value;
         OperationInvalidException.Require(
             Preset is null || PageSizePresets.Matching(width, height) == Preset,
-            string.Create(CultureInfo.InvariantCulture, $"pageSize names {Preset} but measures {width} by {height} points, which is not {Preset} in either orientation"),
-            "Give the preset alone, the width and height alone, or the three as a read reports them.");
+            string.Create(CultureInfo.InvariantCulture, $"pageSize names {Preset} but measures {width} by {height} points, which is not {Preset} in either orientation"));
         return (width, height);
     }
 }

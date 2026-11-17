@@ -54,7 +54,7 @@ A PDF batch, for example:
 
 - **Atomic (default).** If any operation fails, nothing is written. The error
   names the failing operation in `details.id` and `details.op`, and its
-  message and hint say why; a misspelled field, operation or value lists the valid
+  message says why; a misspelled field, operation or value lists the valid
   ones in `details.available` and the likely ones in `details.suggestions`.
   When several entries fail the same check, `details.errors` lists each of
   them. Fix those entries and run the whole batch again.
@@ -104,10 +104,10 @@ A product Skill says when its edits reopen the output before publishing it;
 where a product offers `--verify`, it adds a semantic check described in the
 product Skill. Any `verification.issues` entry makes `verification.ok` false
 and the command exit 8; each issue has a stable `code` and, when known, a
-`location` and `hint`. A warning with `affectsCompleteness: true` about content
-the edit lost is an issue too, with the warning's code, message, location and
-hint; the product Skill names those that are only reported, such as a link the
-output keeps. `verification.checkedOps` lists the operations the check read back,
+`location`. A warning with `affectsCompleteness: true` about content the edit
+lost is an issue too, with the warning's code, message and location; the
+product Skill names those that are only reported, such as a link the output
+keeps. `verification.checkedOps` lists the operations the check read back,
 and `verification.uncheckedOps` every other operation of the batch with the
 `reason`; it is absent when all were read back. `ok: true` says nothing about
 an operation in `uncheckedOps`: confirm it with a read of the output.
@@ -143,15 +143,7 @@ same rule: prefer the `-env` and `-stdin` forms, such as `--password-env`,
 `--encrypt-env` and `--password-stdin`; the plain forms are visible in the
 process list. A `-stdin` form reads the password as the first line of stdin,
 as UTF-8 text whatever the console's code page, and refuses other bytes with
-`OPTION_INVALID`. A command that a hint or a `next` names never repeats a
-password: an input's password given with `--password-env` is passed on by
-the variable's name, and one given another way shows as
-`--password-env "<password-env>"`, in which you put the name of an
-environment variable that holds it. Another password given another way than
-its `-env` option shows as a placeholder named after that option, such as
-`"<encrypt-env>"` for the output's password or
-`"<certificate-password-env>"` for a certificate's: put there the name of a
-variable that holds that password, not the input's.
+`OPTION_INVALID`.
 
 An output made from an encrypted input takes the password an `--encrypt-env`
 style option gives. Without one, an output in a format the product can
@@ -163,26 +155,6 @@ the product cannot encrypt is written unencrypted with an
 `ENCRYPTION_REMOVED` warning; tell the user before you deliver it. Images and
 the files `extract` writes never warn. The product Skill says which of its
 outputs can be encrypted.
-
-The warning's hint gives one step that protects the output, after the reason
-for it, as commands to run as written: the same command again with
-`--encrypt-env` and `--overwrite`, which replaces the unencrypted file; an
-edit that encrypts the file in place, such as `pdf edit` with an
-`encrypt_document` operation; or a conversion of the encrypted input itself
-with `--encrypt-env`. A step that writes an encrypted copy beside the
-unencrypted file ends by telling you to delete that file once the copy
-exists. In a command, `"<password-env>"` stands for the name of an
-environment variable: after `--password-env`, one that holds the input's
-password; after `--encrypt-env` or in an operation's `*Env` field, one that
-holds the password to set; a step that names it in both places means the
-same variable, so the output gets the input's password. `<file>` stands for
-each file the command wrote. When that step does not suit the task, the
-other ways are to write the output in a format the product can encrypt, to
-encrypt a PDF with
-`pdf edit` and `encrypt_document` passwords and permissions of your own, and
-to convert again from the encrypted input rather than from its unencrypted
-copy, since converting a file again can change it. A hint that says no command
-of this build can encrypt a format means that format cannot be protected.
 
 ## When a target is not found
 

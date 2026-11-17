@@ -103,7 +103,6 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Warning warning = Assert.Single(info.Warnings!, static warning => warning.Code == WarningCodes.ListTruncated);
         Assert.Equal("outline", warning.Details!["list"]!.GetValue<string>());
         Assert.Contains("first 1000 of 1001", warning.Message, StringComparison.Ordinal);
-        Assert.Contains("words read --content outline", warning.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -195,10 +194,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         Assert.Equal(WordsDiagnostics.BlockNotFound, read.Code);
         Assert.Equal("1", read.Details!["requested"]!.GetValue<string>());
-        Assert.Equal(second[^1], read.Details["availableCount"]!.GetValue<int>());
-        Assert.Equal(
-            $"Section 2 holds blocks {second[0]}-{second[^1]}; use a range inside it, or drop --blocks to read the whole section.",
-            read.Hint);
+        Assert.Equal(second.Select(static block => $"{block}"), read.Details["available"]!.AsArray().Select(static block => block!.GetValue<string>()));
         Assert.Equal("Second section", Assert.Single(overlapping.Blocks).Text);
     }
 
@@ -250,7 +246,6 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(["Summary"], Names(bookmark, "suggestions"));
         Assert.Equal(WordsDiagnostics.AnchorNotFound, heading.Code);
         Assert.Equal(["Quarterly report"], Names(heading, "available"));
-        Assert.Equal("Did you mean 'Quarterly report'?", heading.Hint);
         Assert.Equal(ErrorCodes.StyleNotFound, style.Code);
         Assert.Equal("heading 7x", style.Details!["requested"]!.GetValue<string>());
         Assert.Contains("Normal", Names(style, "available"));
@@ -276,39 +271,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         Assert.Equal(WordsDiagnostics.AnchorNotFound, find.Code);
         Assert.Equal("Operation op-0001 (set_text) failed: No text '第六条 合同解除' was found.", find.Message);
-        Assert.Equal("Block 2 holds the closest text: '第六条 合同的解除和终止'; address it with {\"block\": 2} or a \"find\" text it contains.", find.Hint);
         Assert.Equal(WordsDiagnostics.AnchorNotFound, heading.Code);
-        Assert.Equal("Block 2 holds the closest text: '第六条 合同的解除和终止', but it is not a heading; address it with {\"block\": 2} or a \"find\" text it contains.", heading.Hint);
-    }
-
-    [Fact]
-    public void MissingHeadingAnchors_PointToAHeadingThatHoldsPartOfTheTextBeforeBodyText()
-    {
-        string input = _fixture.Temp.File("clause-headings.docx");
-        var document = new Document();
-        var builder = new DocumentBuilder(document);
-        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
-        builder.Writeln("3. 保密 Confidentiality");
-        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
-        builder.Writeln("保密期限为合同终止后三年。");
-        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
-        builder.Writeln("4. 终止 Termination");
-        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
-        builder.Write("任何一方可提前三十日书面通知对方。");
-        document.Save(input);
-
-        CliException chinese = Assert.Throws<CliException>(() => Edit(input, "heading-chinese",
-            new SetTextOp { Target = new WordsTarget { Heading = "终止条款" }, Text = "x" }));
-        CliException misspelt = Assert.Throws<CliException>(() => Edit(input, "heading-misspelt",
-            new SetTextOp { Target = new WordsTarget { Heading = "Termintion" }, Text = "x" }));
-        CliException body = Assert.Throws<CliException>(() => Edit(input, "heading-body",
-            new SetTextOp { Target = new WordsTarget { Heading = "书面通知双方" }, Text = "x" }));
-
-        const string Expected = "Heading '4. 终止 Termination' holds the closest text; address it with {\"heading\": \"4. 终止 Termination\"}.";
-        Assert.Equal(WordsDiagnostics.AnchorNotFound, chinese.Code);
-        Assert.Equal(Expected, chinese.Hint);
-        Assert.Equal(Expected, misspelt.Hint);
-        Assert.StartsWith("Block 4 holds the closest text: '任何一方可提前三十日书面通知对方。', but it is not a heading;", body.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -542,29 +505,6 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(
             [("Arial", "SimSun"), ("SimHei", "SimSun")],
             full.Blocks.Where(static block => block.Text?.StartsWith('第') == true).Select(static block => (block.Runs![0].LatinFont, block.Runs![0].EastAsianFont)));
-    }
-
-    [Fact]
-    public void MissingTextAnchors_IgnoreSpacesAndPreferBodyTextOverContentsEntries()
-    {
-        string input = _fixture.Temp.File("contents.docx");
-        var document = new Document();
-        var builder = new DocumentBuilder(document);
-        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Toc2;
-        builder.Writeln("2.2 请假流程\t2");
-        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading2;
-        builder.Writeln("2.2 请假流程");
-        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
-        builder.Write("第三条　劳动报酬：乙方月基本工资为人民币28,000元。");
-        document.Save(input);
-
-        CliException contents = Assert.Throws<CliException>(() => Edit(input, "contents",
-            new SetTextOp { Target = new WordsTarget { Find = "请假流成" }, Text = "x" }));
-        CliException spaces = Assert.Throws<CliException>(() => Edit(input, "spaces",
-            new SetTextOp { Target = new WordsTarget { Find = "第三条 劳动报酬" }, Text = "x" }));
-
-        Assert.StartsWith("Block 2 holds the closest text: '2.2 请假流程';", contents.Hint, StringComparison.Ordinal);
-        Assert.StartsWith("Block 3 holds the closest text: '第三条　劳动报酬", spaces.Hint, StringComparison.Ordinal);
     }
 
     private WordsEditResult Edit(string input, string name, WordsOp op) => WordsEdit.Run(
@@ -809,7 +749,6 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         Assert.StartsWith("Input is not a valid PDF document: ", error.Message, StringComparison.Ordinal);
-        Assert.Contains("PDF reader", error.Hint, StringComparison.Ordinal);
         Assert.Equal(Path.GetFullPath(input), error.Details!["path"]!.GetValue<string>());
     }
 

@@ -103,8 +103,7 @@ internal sealed partial class WordsMutationHandlers
             {
                 string[] unused = items[index].Keys.Where(key => !keys.Contains(key, StringComparer.Ordinal)).ToArray();
                 throw new OperationInvalidException(
-                    $"item {index + 1} has no value for {string.Join(", ", missing.Select(key => "{{" + key + "}}" + WordsMergeGaps.Suggestion(key, unused, "its unused key")))} in the template row",
-                    "Give every item a value for each placeholder of the template row; an empty string leaves the cell text empty.");
+                    $"item {index + 1} has no value for {string.Join(", ", missing.Select(key => "{{" + key + "}}" + WordsMergeGaps.Suggestion(key, unused, "its unused key")))} in the template row");
             }
         }
 
@@ -163,8 +162,7 @@ internal sealed partial class WordsMutationHandlers
     private Table TargetTable(string op) => Nodes is [Table table] ? table : throw Invalid(
         Nodes.Count == 1
             ? $"{op} must target one table block, but its target is 1 block, a paragraph"
-            : string.Create(CultureInfo.InvariantCulture, $"{op} must target one table block, but its target is {Nodes.Count} blocks, {Nodes.Count(static node => node is Table)} of them table(s)"),
-        "Address the table by its block number, as {\"block\": n}, which 'words inspect --detail tables' lists for each table.");
+            : string.Create(CultureInfo.InvariantCulture, $"{op} must target one table block, but its target is {Nodes.Count} blocks, {Nodes.Count(static node => node is Table)} of them table(s)"));
 
     private static Row TemplateRow(Table table, int? number)
     {
@@ -182,11 +180,9 @@ internal sealed partial class WordsMutationHandlers
         {
             [int only] => table.Rows[only - 1],
             [] => throw new OperationInvalidException(
-                "the table has no row with a {{key}} placeholder",
-                "Pass row to name the 1-based template row."),
+                "the table has no row with a {{key}} placeholder"),
             _ => throw new OperationInvalidException(
-                $"rows {string.Join(", ", rows)} of the table contain {{{{key}}}} placeholders",
-                "Pass row to name the 1-based template row."),
+                $"rows {string.Join(", ", rows)} of the table contain {{{{key}}}} placeholders"),
         };
     }
 
