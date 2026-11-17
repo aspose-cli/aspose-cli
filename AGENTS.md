@@ -73,7 +73,7 @@ minimal SDK-only case.
 ## Version 2.0 is in progress
 
 `master` still holds what this direction removes, each part until the change that deletes it:
-hints and continuation commands; wrong-name recovery; `--verify`, `--dry-run`, `--best-effort`,
+`--verify`, `--dry-run`, `--best-effort`,
 `--if-match`, `--backup` and `--timeout`; publication recovery; per-operation snapshots,
 verifiers and warnings; operations that choose for the caller; workarounds for engine defects;
 the installer's `-Mcp` registration.

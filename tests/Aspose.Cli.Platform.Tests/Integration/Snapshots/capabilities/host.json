@@ -1279,9 +1279,6 @@
             "feature": {
               "description": "The feature the product or format does not support."
             },
-            "feed": {
-              "description": "The release feed the update read."
-            },
             "field": {
               "description": "The operation field the error is about."
             },
@@ -1376,9 +1373,6 @@
             },
             "pid": {
               "description": "The id of the process the error is about."
-            },
-            "port": {
-              "description": "The loopback port the error is about."
             },
             "problems": {
               "description": "The problems the engine reported."

@@ -59,6 +59,10 @@ public sealed class CellsFixture : IDisposable
     /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
     internal OutputPipeline<Workbook> Outputs(SafeFileWriter writer) => new(Gate, new CellsEvaluationProfile(), writer);
 
+    /// <summary>A loader over <paramref name="budgets"/> and a licensed write pipeline that publishes nothing.</summary>
+    internal static CellsWorkbookLoader Loader(ResourceBudgetLedger budgets) =>
+        new(budgets, new OutputPipeline<Workbook>(EvaluationLimits.Gate(LicenseState.Licensed), new CellsEvaluationProfile(), new SafeFileWriter(budgets)));
+
     /// <summary>
     /// Runs one handler as a command does: on its own session and write pipeline, whose
     /// evaluation disclosure the command adds to the result.

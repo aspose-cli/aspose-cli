@@ -24,6 +24,10 @@ public sealed class SlidesEngineFixture : IDisposable
     /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
     internal OutputPipeline<Presentation> Outputs(SafeFileWriter writer) => new(Gate, new SlidesEvaluationProfile(), writer);
 
+    /// <summary>A loader over <paramref name="budgets"/> and a licensed write pipeline that publishes nothing.</summary>
+    internal static Engine.Mapping.SlidesPresentationLoader Loader(Aspose.Cli.Sdk.IO.Budgets.ResourceBudgetLedger budgets) =>
+        new(budgets, new OutputPipeline<Presentation>(EvaluationLimits.Gate(LicenseState.Licensed), new SlidesEvaluationProfile(), new SafeFileWriter(budgets)));
+
     /// <summary>
     /// Runs one handler as a command does: on its own session and write pipeline, whose
     /// evaluation disclosure the SDK adds to the result.

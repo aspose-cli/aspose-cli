@@ -32,6 +32,10 @@ public sealed class WordsFixture : IDisposable
     /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
     internal OutputPipeline<Document> Outputs(SafeFileWriter writer) => new(Gate, new WordsEvaluationProfile(), writer);
 
+    /// <summary>A loader over <paramref name="budgets"/> and a licensed write pipeline that publishes nothing.</summary>
+    internal static WordsDocumentLoader Loader(Aspose.Cli.Sdk.IO.Budgets.ResourceBudgetLedger budgets) =>
+        new(budgets, new OutputPipeline<Document>(EvaluationLimits.Gate(LicenseState.Licensed), new WordsEvaluationProfile(), new SafeFileWriter(budgets)));
+
     /// <summary>
     /// Runs one handler call as a command does: on its own session and write pipeline, whose
     /// evaluation disclosure the command template adds to the result.

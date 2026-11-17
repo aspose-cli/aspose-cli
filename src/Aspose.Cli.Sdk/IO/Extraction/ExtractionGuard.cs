@@ -50,8 +50,6 @@ public sealed class ExtractionGuard : IDisposable
         int maxItems, long maxBytes, IPublicationFaultInjector faults)
     {
         ArgumentNullException.ThrowIfNull(resourceBudgets);
-        if (maxItems is < 1 or > PublicationLimits.MaximumEntries)
-        { throw CliErrors.OptionInvalid("--max-items", $"must be between 1 and {PublicationLimits.MaximumEntries}"); }
         _overwrite = overwrite;
         _budget = new ExtractionBudgetLedger(maxItems,
             Math.Min(maxBytes, resourceBudgets.Remaining(ResourceBudgetKinds.OutputBytes)));

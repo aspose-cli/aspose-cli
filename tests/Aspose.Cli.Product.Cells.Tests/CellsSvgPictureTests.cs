@@ -99,7 +99,7 @@ public sealed class CellsSvgPictureTests : IDisposable
             workbook.Save(input);
         }
 
-        using LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(input, null);
+        using LoadedWorkbook loaded = CellsFixture.Loader(ProductTestBudgets.Create<CellsModule>()).Open(input, null);
 
         Worksheet loadedSheet = loaded.Workbook.Worksheets[0];
         Assert.Empty(loadedSheet.Pictures);
@@ -223,7 +223,7 @@ public sealed class CellsSvgPictureTests : IDisposable
             workbook.Save(input);
         }
 
-        using LoadedWorkbook loaded = CellsWorkbookLoader.ForFontInspection(ProductTestBudgets.Create<CellsModule>()).Open(input, null);
+        using LoadedWorkbook loaded = CellsFixture.Loader(ProductTestBudgets.Create<CellsModule>()).Open(input, null);
 
         Aspose.Cells.Drawing.PictureCollection pictures = loaded.Workbook.Worksheets[0].Pictures;
         Assert.Equal(2, pictures.Count);

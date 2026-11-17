@@ -28,6 +28,10 @@ public sealed class PdfEngineFixture : IDisposable
     /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
     internal OutputPipeline<Document> Outputs(SafeFileWriter writer) => new(Gate, new PdfEvaluationProfile(), writer);
 
+    /// <summary>A loader over <paramref name="budgets"/> and a licensed write pipeline that publishes nothing.</summary>
+    internal static Engine.Mapping.PdfDocumentLoader Loader(Aspose.Cli.Sdk.IO.Budgets.ResourceBudgetLedger budgets) =>
+        new(budgets, new OutputPipeline<Document>(EvaluationLimits.Gate(LicenseState.Licensed), new PdfEvaluationProfile(), new SafeFileWriter(budgets)));
+
     /// <summary>
     /// Runs one handler as a command does: on its own session, whose write pipeline adds its
     /// evaluation disclosure to the result.

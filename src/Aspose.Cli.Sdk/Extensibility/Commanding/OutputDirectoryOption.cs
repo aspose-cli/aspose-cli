@@ -64,7 +64,7 @@ internal sealed class OutputDirectoryOption
 /// writes, such as <c>parts.html</c>, which is most likely a file name given where a directory
 /// belongs.
 /// </summary>
-public static class OutputDirectories
+internal static class OutputDirectories
 {
     /// <summary>
     /// Resolves the directory <paramref name="value"/> names against the invocation directory.

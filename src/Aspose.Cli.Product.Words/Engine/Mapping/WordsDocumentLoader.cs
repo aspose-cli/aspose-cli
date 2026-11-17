@@ -29,7 +29,7 @@ internal sealed class WordsDocumentLoader
         Classify);
 
     private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly OutputPipeline<Document>? _outputs;
+    private readonly OutputPipeline<Document> _outputs;
 
     /// <summary>
     /// Creates a loader. Loaded documents know whether evaluation mode altered them, and the
@@ -37,18 +37,10 @@ internal sealed class WordsDocumentLoader
     /// cut short, and whether it is encrypted.
     /// </summary>
     internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline<Document> outputs)
-        : this(resourceBudgets)
-    {
-        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
-    }
-
-    private WordsDocumentLoader(ResourceBudgetLedger resourceBudgets)
     {
         _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
     }
-
-    /// <summary>A loader for font inspection, which publishes nothing: no evaluation artifacts are reported.</summary>
-    internal static WordsDocumentLoader ForFontInspection(ResourceBudgetLedger resourceBudgets) => new(resourceBudgets);
 
     /// <summary>
     /// Opens the built-in A4 design that new documents use without a template. It is a
@@ -73,7 +65,7 @@ internal sealed class WordsDocumentLoader
     public LoadedDocument Open(string path, PasswordSource password, IWarningCallback? warnings = null)
     {
         LoadedDocument loaded = InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, warnings));
-        _outputs?.ReadInput(loaded.Document);
+        _outputs.ReadInput(loaded.Document);
         return loaded;
     }
 
@@ -133,7 +125,7 @@ internal sealed class WordsDocumentLoader
             // A stream carries no name; FILENAME fields name the file, as a path load does.
             document.FieldOptions.FileName = path;
             return new LoadedDocument(document, detected, id, resources,
-                _outputs?.IsEvaluation == true)
+                _outputs.IsEvaluation)
             {
                 FixedPageHtml = fixedPages,
                 Protection = protection,
@@ -219,8 +211,8 @@ internal sealed class WordsDocumentLoader
         Document document = Load(options => new Document(input, options),
             LoadFormat.Markdown, owner.Resources, "inline Markdown", password: default, Loading, warnings: null, onDisk: false);
         owner.Retain(document);
-        _outputs?.ReadInput(document);
-        _outputs?.Neutralize(document);
+        _outputs.ReadInput(document);
+        _outputs.Neutralize(document);
         return document;
     }
 

@@ -125,7 +125,7 @@ aspose-cli capabilities --output-format json
   is `FILE_CORRUPT` when any product reads its extension, even one shared by
   many kinds of file such as `.html` or `.xml`, and `FORMAT_UNSUPPORTED` when
   none does or the CLI only writes its format, such as `.xps`. Find out what
-  the file really is. Content several products recognize is `FORMAT_AMBIGUOUS`.
+  the file really is.
 - A password that is missing or wrong (`PASSWORD_REQUIRED`,
   `PASSWORD_INVALID`): ask the user; never guess. Pass it with
   `--password-env <VAR>` or `--password-stdin`. A command that reads two
