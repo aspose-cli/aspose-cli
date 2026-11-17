@@ -41,7 +41,7 @@ public sealed record ClearTabColorOp : CellsSheetOp;
 
 /// <summary>
 /// Changes a sheet's on-screen view: at least one of gridlines, zoomPercent and headings. These are
-/// view settings for Excel and the live preview, not for the printed page or rendered images;
+/// view settings for Excel, not for the printed page or rendered images;
 /// draw borders (set_borders) when a grid must appear in renders.
 /// </summary>
 [Operation("set_sheet_view")]

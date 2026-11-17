@@ -95,7 +95,6 @@ public sealed class StartupCatalogTests
             .Formats([FormatDescriptor.Input("alpha", 0, RouteOwnership.Explicit, ".alpha")])
             .Diagnostics([diagnostic])
             .Json(new Aspose.Cli.Sdk.Serialization.ProductJsonDefinition("alpha", new UnwritableSchemaSource()))
-            .View(new TestProductViewAdapter<IStartupSession>())
             .WithCommand<IStartupSession, StartupResult>()
             .Activator(static _ =>
                 throw new InvalidOperationException("Startup tests must not activate a product session."))

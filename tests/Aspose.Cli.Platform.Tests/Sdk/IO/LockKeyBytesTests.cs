@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk.IO.Paths;
 using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.Sdk.Licensing;
@@ -104,23 +103,6 @@ public sealed class LockKeyBytesTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Spellings))]
-    public void LocalServiceMarkerFiles_LockTheFileNamedForTheirFoldedSortedFullPaths(string spelling)
-    {
-        string directory = Spelled(spelling, create: true);
-        string marker = Path.Combine(directory, "marker.json");
-        string secrets = Path.Combine(directory, "Secrets.json");
-        string key = string.Join("\n", new[] { Folded(Path.GetFullPath(marker)), Folded(Path.GetFullPath(secrets)) }
-            .Order(StringComparer.Ordinal));
-        string lockFile = Path.Combine(UserStorage.TemporaryRoot(), "services", "marker-files", "locks",
-            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)).AsSpan(0, 16)).ToLowerInvariant() + ".lock");
-
-        new LocalServiceMarkerFiles<State, State>(marker, secrets, TypeInfo(), TypeInfo()).Write(new State(1), new State(1));
-
-        Assert.True(File.Exists(lockFile), $"No lock file {lockFile} for '{directory}'.");
-    }
-
-    [Theory]
-    [MemberData(nameof(Spellings))]
     [InlineData("drive-root")]
     public void LicenseGate_IdentityHashesTheSourceTheFoldedPathAndTheContent(string spelling)
     {
@@ -136,31 +118,6 @@ public sealed class LockKeyBytesTests : IDisposable
 
         Assert.Equal(LicenseState.Licensed, gate.EnsureApplied());
         Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(hashed)), gate.Identity);
-    }
-
-    [Theory]
-    [MemberData(nameof(Spellings))]
-    [InlineData("drive-root")]
-    public void UpdateStatus_NamesTheFileForTheUpperCasedTrimmedFullRootOnEveryPlatform(string spelling)
-    {
-        string root = spelling == "drive-root" ? Path.GetPathRoot(_temp.Path)! : Spelled(spelling, create: false);
-        // Unlike the locks, the status file name folds case on every platform.
-        string key = Sha256Hex(Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)).ToUpperInvariant()).ToLowerInvariant()[..16];
-
-        Assert.Equal(Path.Combine(UserStorage.TemporaryRoot(), "updates", "status-" + key + ".json"), UpdateStatus.PathFor(root));
-    }
-
-    // Pins the lock key rule of both platforms wherever the tests run: it folds only on Windows,
-    // while the update status key folds on every platform.
-    [Theory]
-    [InlineData(@"c:\Users\Ünï\work\", false, @"c:\Users\Ünï\work\", @"C:\USERS\ÜNÏ\WORK\")]
-    [InlineData(@"c:\Users\Ünï\work\", true, @"C:\USERS\ÜNÏ\WORK\", @"C:\USERS\ÜNÏ\WORK\")]
-    [InlineData("/home/user/ßıσς", false, "/home/user/ßıσς", "/HOME/USER/ßıΣΣ")]
-    [InlineData("/home/user/ßıσς", true, "/HOME/USER/ßıΣΣ", "/HOME/USER/ßıΣΣ")]
-    public void LockKey_FoldsOnlyOnWindows_AndFoldedKeyFoldsEverywhere(string path, bool windows, string lockKey, string foldedKey)
-    {
-        Assert.Equal(lockKey, FilePaths.LockKey(path, windows));
-        Assert.Equal(foldedKey, FilePaths.FoldedKey(path));
     }
 
     private static bool IsHeld(string path)

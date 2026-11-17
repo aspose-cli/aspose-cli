@@ -279,7 +279,7 @@ public sealed class ResultContractGeneratorTests
                 public Mode Mode { get; init; }
 
                 /// <summary>A record of another assembly that publishes no schema.</summary>
-                public Aspose.Cli.Sdk.Views.ProductView? View { get; init; }
+                public Aspose.Cli.Sdk.Extensibility.FileRouteRequest? Route { get; init; }
 
                 /// <summary>An open enumeration without its values.</summary>
                 [OpenEnum("^x$")]
@@ -368,7 +368,7 @@ public sealed class ResultContractGeneratorTests
             .Select(static diagnostic => (diagnostic.GetMessage(), diagnostic.Location.SourceTree!.GetText().ToString(diagnostic.Location.SourceSpan)))];
         Assert.Contains(reported, static item => item.Message.Contains("'BrokenResult.Undescribed': describe it with a documentation summary", StringComparison.Ordinal) && item.At == "Undescribed");
         Assert.Contains(reported, static item => item.Message.Contains("'BrokenResult.Mode': type 'Sample.Mode' is not a supported result type", StringComparison.Ordinal) && item.At == "Mode");
-        Assert.Contains(reported, static item => item.Message.Contains("'ProductView' of another assembly is not a published result schema", StringComparison.Ordinal) && item.At == "View");
+        Assert.Contains(reported, static item => item.Message.Contains("'FileRouteRequest' of another assembly is not a published result schema", StringComparison.Ordinal) && item.At == "Route");
         Assert.Contains(reported, static item => item.Message.Contains("Result record 'HiddenResult' must be accessible", StringComparison.Ordinal) && item.At == "HiddenResult");
         Assert.Contains(reported, static item => item.Message.Contains("'BrokenResult.Open': [OpenEnum] extends the [AllowedValues] of a string member", StringComparison.Ordinal) && item.At == "Open");
         Assert.Contains(reported, static item => item.Message.Contains("'BrokenResult.Text': [Minimum] applies to Integer or Number values", StringComparison.Ordinal) && item.At.StartsWith("Minimum", StringComparison.Ordinal));

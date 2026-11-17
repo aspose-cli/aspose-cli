@@ -34,7 +34,7 @@ internal sealed class CellsEvaluationProfile : IEvaluationProfile<Workbook>
 
     /// <summary>
     /// Evaluation mode refuses to open a file once its process has opened <see cref="OpenLimit"/>,
-    /// which only a long-lived process, such as a preview's render worker, reaches.
+    /// which only a long-lived process reaches.
     /// </summary>
     public EvaluationLimitFact? RecognizeLimit(Exception exception) => IsOpenLimit(exception)
         ? new EvaluationLimitFact($"opens at most {OpenLimit} files in one process", OpenLimit, "files", "run the command again in a new process")

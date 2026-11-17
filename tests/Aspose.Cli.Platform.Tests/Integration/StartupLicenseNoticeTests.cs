@@ -158,8 +158,6 @@ public sealed class StartupLicenseNoticeTests
 
     [Theory]
     [InlineData("mcp", "serve")]
-    [InlineData("__viewer-service")]
-    [InlineData("__render-worker")]
     public void InternalAndProtocolEntrypoints_DoNotAddStartupNoise(params string[] entrypoint)
     {
         using var workspace = new TempWorkspace();

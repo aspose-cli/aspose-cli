@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Viewer;
-using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Publication;
@@ -57,43 +55,6 @@ public sealed class OwnedProcessTests
         Assert.True(scope.Cancellation.IsCancellationRequested);
         Assert.Equal(2, scope.Press());
         scope.Cancellation.Dispose();
-    }
-
-    [Fact]
-    public async Task RenderWorker_ThatIgnoresItsClosedInput_IsKilledAndConfirmed()
-    {
-        Requires.Windows();
-        string root = Path.Combine(Path.GetTempPath(), $"aspose-render-worker-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(root);
-        string pidFile = Path.Combine(root, "worker.pid");
-        Process? worker = null;
-        try
-        {
-            using var supervisor = new RenderWorkerSupervisor(() => SleeperStartInfo(pidFile), TimeSpan.FromMinutes(1));
-            using var cancellation = new CancellationTokenSource();
-            Task<RenderWorkerResponse> render = Task.Run(() => supervisor.Render(new RenderWorkerRequest
-            {
-                Id = 1,
-                Source = Path.Combine(root, "missing.docx"),
-                Output = root,
-                MaxPartCount = 1,
-                TimeoutMs = 60_000,
-            }, cancellation.Token));
-            Assert.True(await WaitForFileAsync(pidFile, TimeSpan.FromSeconds(30)), "The worker did not start.");
-            worker = Process.GetProcessById(int.Parse((await File.ReadAllTextAsync(pidFile)).Trim()));
-
-            cancellation.Cancel();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => render);
-
-            Assert.True(worker.HasExited, $"The render worker {worker.Id} survived its retirement.");
-            Assert.Null(supervisor.ProcessId);
-        }
-        finally
-        {
-            if (worker is { HasExited: false }) { worker.Kill(entireProcessTree: true); }
-            worker?.Dispose();
-            Directory.Delete(root, recursive: true);
-        }
     }
 
     [Fact]

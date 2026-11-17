@@ -816,7 +816,6 @@ public sealed class ProductFileRouterTests
         builder
             .Diagnostics([])
             .Json(new ProductJsonDefinition(id, SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ITestSession>())
             .Activator(static _ =>
                 throw new InvalidOperationException(
                     "Routing tests must not activate a product session."));

@@ -15,10 +15,6 @@ namespace Aspose.Cli.Host.Contracts;
 [JsonSerializable(typeof(LicenseStatusResult))]
 [JsonSerializable(typeof(DoctorResult))]
 [JsonSerializable(typeof(SchemaListResult))]
-[JsonSerializable(typeof(UpdateResult))]
 [JsonSerializable(typeof(SkillInstallResult))]
 [JsonSerializable(typeof(SkillListResult))]
-[JsonSerializable(typeof(AppResult))]
-[JsonSerializable(typeof(ProductPreviewStartResult))]
-[JsonSerializable(typeof(ProductPreviewStatusResult))]
 internal sealed partial class HostResultJsonContext : JsonSerializerContext;

@@ -271,7 +271,6 @@ Examples:
 
 Learn more:
   aspose-cli docs cells/verification  the spreadsheet delivery verification protocol
-  aspose-cli docs cells/preview       previewing a workbook while it changes
 
 
 ## aspose-cli cells search --help

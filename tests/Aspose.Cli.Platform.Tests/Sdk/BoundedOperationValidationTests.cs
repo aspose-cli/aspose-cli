@@ -8,19 +8,6 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 
 public sealed class BoundedOperationValidationTests
 {
-    [Theory]
-    [InlineData("{\"ops\":[{\"op\":\"set\"}],\"ops\":[{\"op\":\"set\"}]}", "$ property 'ops' is duplicated")]
-    [InlineData("{\"ops\":[{\"op\":\"set\",\"value\":1,\"value\":2}]}", "$.ops[0] property 'value' is duplicated")]
-    [InlineData("{\"ops\":[{\"op\":\"set\",\"op\":\"set\"}]}", "$.ops[0] property 'op' is duplicated")]
-    [InlineData("{\"ops\":[{\"op\":\"set\",\"value\":{\"style\":{\"bold\":true,\"bold\":false}}}]}", "$.ops[0].value.style property 'bold' is duplicated")]
-    public void ValidateNoDuplicateProperties_RejectsDuplicateProperties(string json, string expected)
-    {
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(
-            () => Validate(json));
-
-        Assert.Contains(expected, error.Message, StringComparison.Ordinal);
-    }
-
     [Fact]
     public void ValidateEnvelope_AcceptsOnlyTheCurrentVersionAndSchema()
     {
@@ -87,14 +74,6 @@ public sealed class BoundedOperationValidationTests
 
         Assert.Contains("duplicated", duplicate.Message, StringComparison.Ordinal);
         Assert.Contains("must start with a letter", invalid.Message, StringComparison.Ordinal);
-    }
-
-    private static void Validate(string json)
-    {
-        using JsonDocument document = JsonDocument.Parse(json);
-        BoundedJsonValidation.ValidateNoDuplicateProperties(
-            document.RootElement,
-            static reason => new InvalidOperationException(reason));
     }
 
     private sealed record TestOperation(string? Id);

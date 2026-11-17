@@ -51,21 +51,6 @@ internal sealed class CommandExecutor
             detectPartial: true);
 
     /// <summary>
-    /// The handler owns its final deadline check and commits an external process handoff, so a
-    /// second Ctrl+C does not interrupt the commit.
-    /// </summary>
-    public int RunHandoff(ParseResult parseResult, GlobalOptions globalOptions,
-        Func<CommandContext, ResultEnvelope> handler) =>
-        ConsoleInterrupt.Run(cancellationToken =>
-            Execute(parseResult, globalOptions, admitInputs: true, cancellationToken, scope =>
-            {
-                scope.Deadline.ThrowIfExpired("handoff-start");
-                ResultEnvelope result = handler(CompositionRoot.Create(_host.Catalog, scope.Globals,
-                    resourceBudgets: scope.Budgets));
-                return scope.Complete(result, detectPartial: false);
-            }), SecondPress.Ignore);
-
-    /// <summary>
     /// Runs a command that answers with one result. Ctrl+C cancels it as the caller's own
     /// cancellation, with or without <c>--timeout</c>: the work stops at its next check, nothing
     /// is published, its staging is removed and the process exits 130. A second Ctrl+C ends the
@@ -137,64 +122,6 @@ internal sealed class CommandExecutor
 
         return Encoding.UTF8.GetString(buffer.ToArray());
     }
-
-    public int RunHosted(
-        ParseResult parseResult,
-        GlobalOptions globalOptions,
-        Func<GlobalValues, HostedCommandLifecycle> handler)
-    {
-        ArgumentNullException.ThrowIfNull(handler);
-        return RunService(
-            parseResult,
-            globalOptions,
-            scope => handler(scope.Globals));
-    }
-
-    private int RunService(
-        ParseResult parseResult,
-        GlobalOptions globalOptions,
-        Func<ExecutionScope, HostedCommandLifecycle> handler) =>
-        Execute(
-            parseResult,
-            globalOptions,
-            admitInputs: true,
-            cancellationToken: default,
-            scope =>
-            {
-                HostedCommandLifecycle? start = null;
-                try
-                {
-                    scope.Deadline.ThrowIfExpired("server-start");
-                    start = handler(scope);
-                    scope.Deadline.ThrowIfExpired("server-handshake");
-                    int exitCode = scope.Complete(start.Startup, detectPartial: false);
-                    Console.Out.Flush();
-
-                    // The shutdown below always runs, so a second Ctrl+C waits for it too.
-                    WaitOutcome outcome = ConsoleInterrupt.Run(
-                        cancellationToken => start.Wait(
-                            scope.Deadline.Remaining,
-                            cancellationToken),
-                        SecondPress.Ignore);
-                    if (outcome == WaitOutcome.DeadlineExpired
-                        && scope.Deadline.OriginalBudget is { } budget)
-                    {
-                        throw CliErrors.OperationTimeout(
-                            (int)budget.TotalSeconds);
-                    }
-                    if (outcome == WaitOutcome.IdleExpired
-                        && !scope.Globals.Quiet)
-                    {
-                        Console.Error.WriteLine(
-                            "preview: no clients and no render activity within the idle window; shutting down.");
-                    }
-                    return exitCode;
-                }
-                finally
-                {
-                    start?.Shutdown();
-                }
-            });
 
     private int Execute(
         ParseResult parseResult,

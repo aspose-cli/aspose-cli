@@ -114,7 +114,6 @@ internal static class TestProducts
             .Formats([])
             .Diagnostics([])
             .Json(new ProductJsonDefinition(Manifest.Id, SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<TSession>())
             .Activator(static _ => throw new InvalidOperationException("The tests bind through their runner."))
             .Build()
             .CreateCommand(runner.Run);

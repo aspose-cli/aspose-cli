@@ -69,9 +69,8 @@ aspose-cli cells render dashboard.xlsx --sheets 1 --out scratch/dash-2.png --ove
 sparklines showing the April dip the charts also show (also render `Data` —
 `--range A1:I12` — for the register's banded table, ISO dates, formatted
 money and data bars). A licensed save also keeps `Dashboard` as the active
-sheet, so both Excel and the Cells Preview open on the summary; an evaluation
-save activates its own warning sheet instead, and the preview then opens on
-the first sheet, `Dashboard`. Then the semantic
+sheet, so Excel opens on the summary; an evaluation save activates its own
+warning sheet instead. Then the semantic
 gate and the print delivery:
 
 ```powershell

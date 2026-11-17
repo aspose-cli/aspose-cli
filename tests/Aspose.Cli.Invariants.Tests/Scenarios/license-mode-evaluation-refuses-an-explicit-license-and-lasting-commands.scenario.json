@@ -30,15 +30,6 @@
         "json": [{ "path": "error.details.option", "equals": "--license-mode" }],
         "files": { "nothingWritten": true }
       }
-    },
-    {
-      "args": ["app", "open", "--no-open", "--license-mode", "evaluation"],
-      "expect": {
-        "exitCode": 2,
-        "error": "OPTION_INVALID",
-        "json": [{ "path": "error.details.option", "equals": "--license-mode" }],
-        "files": { "nothingWritten": true }
-      }
     }
   ]
 }

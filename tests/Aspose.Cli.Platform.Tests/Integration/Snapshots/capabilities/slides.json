@@ -89,13 +89,6 @@
     "availableEngines": [
       "aspose"
     ],
-    "preview": {
-      "defaultView": "slides",
-      "views": [
-        "slides"
-      ],
-      "background": true
-    },
     "formats": [
       {
         "id": "fodp",
@@ -107,11 +100,8 @@
           "input"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -206,11 +196,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -229,11 +216,8 @@
           "input"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -281,11 +265,8 @@
           "input"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -304,11 +285,8 @@
           "input"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -327,11 +305,8 @@
           "input"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -350,11 +325,8 @@
           "input"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -373,11 +345,8 @@
           "input"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -396,11 +365,8 @@
           "input"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -420,11 +386,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -444,11 +407,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -468,11 +428,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "slides",
@@ -2055,11 +2012,8 @@
       "extension": ".fodp",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2069,11 +2023,8 @@
       "extension": ".odp",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2083,11 +2034,8 @@
       "extension": ".otp",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2097,11 +2045,8 @@
       "extension": ".pot",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2111,11 +2056,8 @@
       "extension": ".potm",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2125,11 +2067,8 @@
       "extension": ".potx",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2139,11 +2078,8 @@
       "extension": ".pps",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2153,11 +2089,8 @@
       "extension": ".ppsm",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2167,11 +2100,8 @@
       "extension": ".ppsx",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2181,11 +2111,8 @@
       "extension": ".ppt",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2195,11 +2122,8 @@
       "extension": ".pptm",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2209,11 +2133,8 @@
       "extension": ".pptx",
       "product": "slides",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",

@@ -32,7 +32,6 @@ public abstract class OutputPipeline : ILicenseState
     private readonly List<string> _marked = [];
     private bool _watermarked;
     private Warning? _inputTruncated;
-    private Inspection? _view;
     private bool _encryptedInput;
     private bool _openPassword;
     private bool _decrypted;
@@ -71,34 +70,6 @@ public abstract class OutputPipeline : ILicenseState
             Committed = content == ExtractionContent.EmbeddedFiles ? null : () => Record(null),
             KeepsByteOrderMark = content == ExtractionContent.EmbeddedFiles || byteOrderMark,
         };
-
-    /// <summary>
-    /// Records the files the host is about to publish from this product's renders, such as
-    /// review evidence, which show what the engine draws, its evaluation watermark included, and
-    /// adds the disclosure to the result those files carry, so the files and the command's
-    /// output say the same. The disclosure names the marks of the pages the product's view
-    /// rendering showed (<see cref="OutputPipeline{TDocument}.ShowsInView"/>), as a render's does.
-    /// </summary>
-    public ResultEnvelope DiscloseRendered(ResultEnvelope result)
-    {
-        Inspection? view;
-        lock (_sync)
-        {
-            view = _view;
-        }
-
-        Record(view);
-        return Disclose(result);
-    }
-
-    /// <summary>Keeps the marks of the latest view rendering, which <see cref="DiscloseRendered"/> discloses if the host publishes it.</summary>
-    private protected void RecordView(Inspection inspection)
-    {
-        lock (_sync)
-        {
-            _view = inspection;
-        }
-    }
 
     /// <summary>
     /// Records that the command opened a document whose content its outputs keep: the input it
@@ -228,22 +199,6 @@ public abstract class OutputPipeline : ILicenseState
         };
         Warning[] disclosure = [.. new[] { output, truncated }.OfType<Warning>()];
         return disclosure.Length == 0 ? null : disclosure;
-    }
-
-    /// <summary>
-    /// The <c>EVALUATION_INPUT_TRUNCATED</c> warning for an input the invocation read so far
-    /// (<see cref="OutputPipeline{TDocument}.ReadInput"/>), or null; a view manifest carries it
-    /// as a command's result does.
-    /// </summary>
-    internal Warning? InputTruncation
-    {
-        get
-        {
-            lock (_sync)
-            {
-                return _inputTruncated;
-            }
-        }
     }
 
     /// <summary>
@@ -673,25 +628,6 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     }
 
     /// <summary>
-    /// Records that a view rendering, such as review evidence or a live preview, showed
-    /// <paramref name="document"/>: its pages <paramref name="pages"/> as <paramref name="format"/>
-    /// parts, or the whole document when null. The document is inspected now, while the product
-    /// holds it open; nothing is published until the host publishes the rendering
-    /// (<see cref="OutputPipeline.DiscloseRendered"/>).
-    /// </summary>
-    /// <param name="document">The document the view shows.</param>
-    /// <param name="format">The format of the view's parts, such as <c>png</c>.</param>
-    /// <param name="pages">The pages (or slides) the view shows, numbered from 1; null for all of them.</param>
-    public void ShowsInView(TDocument document, string format, IEnumerable<int>? pages = null)
-    {
-        ArgumentNullException.ThrowIfNull(document);
-        ArgumentException.ThrowIfNullOrWhiteSpace(format);
-        var inspector = new Inspector(_profile, document, format, rendering: true);
-        inspector.Shows(pages);
-        RecordView(inspector.InspectNow());
-    }
-
-    /// <summary>
     /// Inspects one document once, right after the first save that writes it to an output of
     /// one format, while the product still holds it open.
     /// </summary>
@@ -738,13 +674,6 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
             {
                 _pages.UnionWith(pages);
             }
-        }
-
-        /// <summary>The marks the document shows now, with no save, as a view rendering shows it.</summary>
-        internal Inspection InspectNow()
-        {
-            _saved = true;
-            return Result!;
         }
 
         internal Action<string> After(Action<string> write)

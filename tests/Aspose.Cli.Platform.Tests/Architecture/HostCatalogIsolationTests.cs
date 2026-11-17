@@ -68,7 +68,6 @@ public sealed class HostCatalogIsolationTests
             ])
             .Diagnostics([])
             .Json(new ProductJsonDefinition(id, SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ITestSession>())
             .WithCommand<ITestSession, TestResult>()
             .Activator(static _ =>
                 throw new InvalidOperationException(

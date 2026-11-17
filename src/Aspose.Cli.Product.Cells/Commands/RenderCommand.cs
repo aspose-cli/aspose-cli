@@ -73,7 +73,6 @@ internal static class RenderCommand
             Links =
             [
                 CommandHelpLink.Docs(CellsModule.Manifest, "verification", "the spreadsheet delivery verification protocol"),
-                CommandHelpLink.Docs(CellsModule.Manifest, "preview", "previewing a workbook while it changes"),
             ],
         };
     }

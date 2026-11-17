@@ -44,8 +44,6 @@ public sealed class McpCommandTests
     [InlineData("docs", "pdf/forms-security")]
     [InlineData("fonts", "list")]
     [InlineData("fonts", "check", "input.xlsx")]
-    [InlineData("preview", "status")]
-    [InlineData("app", "status")]
     [InlineData("license", "status")]
     [InlineData("skill", "list")]
     public void Execute_AllowsDocumentCommandsAndHostCommandsThatOnlyPublishOutputs(
@@ -61,13 +59,6 @@ public sealed class McpCommandTests
     [InlineData("license", "install")]
     [InlineData("license", "remove")]
     [InlineData("skill", "install")]
-    [InlineData("preview", "start")]
-    [InlineData("preview", "stop")]
-    [InlineData("app", "stop")]
-    [InlineData("update", "install")]
-    [InlineData("app", "open")]
-    [InlineData("preview", "open", "input.xlsx")]
-    [InlineData("update")]
     public void Execute_RejectsPrivilegedAndLifecycleCommands(
         params string[] args)
     {
@@ -82,13 +73,13 @@ public sealed class McpCommandTests
         string[] expected =
         [
             "doctor", "schema", "docs", "fonts list", "fonts check",
-            "license status", "skill list", "preview status", "app status",
+            "license status", "skill list",
         ];
         IReadOnlyList<string> allowed = ActualCommandTree.Host.Parser.McpHostCommands();
         Assert.Equal(expected.Order(StringComparer.Ordinal), allowed.Order(StringComparer.Ordinal));
 
         var runner = new McpCommandRunner(ActualCommandTree.Host);
-        McpCommandException rejected = Assert.Throws<McpCommandException>(() => runner.EnsureAllowed(["app", "stop"]));
+        McpCommandException rejected = Assert.Throws<McpCommandException>(() => runner.EnsureAllowed(["license", "install"]));
         Assert.All(expected, command => Assert.Contains(command, rejected.Message, StringComparison.Ordinal));
     }
 
@@ -96,7 +87,7 @@ public sealed class McpCommandTests
     public void Execute_NeverExpandsResponseFiles()
     {
         string responseFile = Path.Combine(Path.GetTempPath(), $"aspose-cli-{Guid.NewGuid():N}.rsp");
-        File.WriteAllLines(responseFile, ["update", "install"]);
+        File.WriteAllLines(responseFile, ["license", "install"]);
         try
         {
             ParsedInvocation invocation = ActualCommandTree.Parser.Parse(["@" + responseFile]);

@@ -416,12 +416,6 @@ A `=DATE()` cell reads back `t: "number"` until its `yyyy-mm-dd` format
 lands (section 7) — the serial is the real date either way, and `TEXT()`
 month keys compute from it immediately.
 
-## 11. Live demo protocol
-
-When the user wants to SEE the work happen, start the preview first, hand
-over its `url`, then build in 3-5 batches. Section 12 still applies.
-Details: `aspose-cli docs cells/preview`.
-
 ## 12. The finishing pass (the eyes loop)
 
 Mandatory before delivery, in this order — each step exists because a later

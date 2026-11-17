@@ -217,7 +217,7 @@ public sealed record FormatDescriptor
 internal static class StandardFileRouteOperations
 {
     internal static readonly IReadOnlyList<string> All =
-        ["app", "fonts", "open", "preview", "review"];
+        ["fonts", "open"];
 
     internal static bool Contains(string operation) =>
         All.Contains(operation, StringComparer.Ordinal);

@@ -7,14 +7,13 @@ using Xunit;
 namespace Aspose.Cli.Architecture.Tests;
 
 /// <summary>
-/// <c>CliErrors.FromRemote</c> restates an error another CLI process reported, and
-/// <c>CliErrors.Internal</c> reports a defect; both take free text and can carry any code, so only
-/// the Host, which owns process boundaries and the last-resort error, calls them. A product or the
+/// <c>CliErrors.Internal</c> reports a defect; it takes free text, so only the Host, which owns
+/// process boundaries and the last-resort error, calls it. A product or the
 /// SDK outside its <c>Errors</c> folder builds a shared code through its situation's factory.
 /// </summary>
 public sealed class FreeTextErrorFactoryTests
 {
-    private static readonly string[] FreeTextFactories = ["FromRemote", "Internal"];
+    private static readonly string[] FreeTextFactories = ["Internal"];
 
     private static readonly string SourceRoot = Path.Combine(RepositoryPaths.Root, "src");
     private static readonly string HostRoot = Path.Combine(SourceRoot, "Aspose.Cli.Host");
@@ -25,13 +24,13 @@ public sealed class FreeTextErrorFactoryTests
     {
         (string Path, string Use)[] uses = [.. SourceFiles().SelectMany(static path => FreeTextUses(path))];
 
-        Assert.Contains(uses, static use => IsUnder(use.Path, HostRoot) && use.Use.Contains("FromRemote", StringComparison.Ordinal));
+        Assert.Contains(uses, static use => IsUnder(use.Path, HostRoot) && use.Use.Contains("Internal", StringComparison.Ordinal));
         string[] violations = [.. uses
             .Where(static use => !IsUnder(use.Path, HostRoot) && !IsUnder(use.Path, SdkErrorsRoot))
             .Select(static use => $"{Path.GetRelativePath(SourceRoot, use.Path)}: {use.Use}")];
         Assert.True(
             violations.Length == 0,
-            "Only the Host calls CliErrors.FromRemote and CliErrors.Internal; build a shared code through its SDK factory:"
+            "Only the Host calls CliErrors.Internal; build a shared code through its SDK factory:"
                 + Environment.NewLine + string.Join(Environment.NewLine, violations));
     }
 

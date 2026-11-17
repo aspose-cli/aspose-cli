@@ -1,7 +1,6 @@
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Views;
 using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
@@ -19,60 +18,6 @@ public sealed class SlidesCoreWorkflowTests
             ErrorCodes.OpsInvalid,
             Assert.Throws<CliException>(() => ParseOps(
                 """{"schemaVersion":1,"ops":[{"op":"set_properties","title":"Briefing"}]}""")).Code);
-    }
-
-    [Fact]
-    public void View_WritesSlidePartsThroughSinkAndPreservesPassword()
-    {
-        const string password = "view-password";
-        using var fixture = new SlidesEngineFixture();
-        string input = fixture.CreatePresentation("view.pptx", slides: 2, password);
-        var artifacts = new MemoryArtifactSink();
-
-        // The SDK view definition renders through the product's adapter, as preview does,
-        // in evaluation mode as requested.
-        using var work = new TempDirectory();
-        ResourceBudgetLedger budgets = ProductTestBudgets.Create<SlidesModule>();
-        ProductBinding binding = SlidesActivation.Activate(new ProductActivationContext
-        {
-            WorkDirectory = work.Path,
-            LicensePath = null,
-            EvaluationRequested = true,
-            ConfigDirectory = work.Path,
-            EnvironmentVariable = static _ => null,
-            SafeFileWriter = new SafeFileWriter(budgets),
-            ResourceBudgets = budgets,
-        });
-        ViewManifest manifest = new SlidesModule().Define().View.Render(
-            binding,
-            input,
-            new ViewRenderRequest
-            {
-                View = SlidesViews.Slides,
-                MaxPartCount = 8,
-                Purpose = ViewPurpose.Display,
-                Password = new Secret(password),
-            },
-            artifacts);
-
-        Assert.Equal(SlidesViews.Slides, manifest.View);
-        Assert.Equal("pptx", manifest.SourceFormat);
-        Assert.Equal(new FileInfo(input).Length, manifest.SourceSizeBytes);
-        Assert.True(manifest.SourceEncrypted);
-        Assert.Equal(2, manifest.TotalPartCount);
-        // The text the view read was cut short where the engine runs in evaluation mode, and the
-        // SDK discloses it in the manifest a preview shows.
-        WarningCode[] expected = fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed
-            ? []
-            : [WarningCodes.EvaluationInputTruncated];
-        Assert.Equal(expected, manifest.Warnings?.Select(static warning => warning.Code) ?? []);
-        Assert.Equal(["slide-0001.png", "slide-0002.png"], artifacts.Paths);
-        Assert.Equal(
-            ["slide-0001.png", "slide-0002.png"],
-            manifest.Parts.Select(static part => part.File));
-        Assert.All(manifest.Parts, static part => Assert.Equal(ViewPartKinds.Image, part.Kind));
-        Assert.True(IsPng(artifacts.Bytes("slide-0001.png")));
-        Assert.True(IsPng(artifacts.Bytes("slide-0002.png")));
     }
 
     [Fact]

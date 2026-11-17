@@ -1,6 +1,6 @@
 ---
 name: aspose-cli-platform
-description: Start here for any document task with the local Aspose CLI (aspose-cli) - session checks, choosing the Cells, PDF, Slides or Words Skill, and the rules every product shares for reading, editing, verifying, previewing, licensing and recovering from errors.
+description: Start here for any document task with the local Aspose CLI (aspose-cli) - session checks, choosing the Cells, PDF, Slides or Words Skill, and the rules every product shares for reading, editing, verifying, licensing and recovering from errors.
 ---
 
 # Aspose CLI platform
@@ -40,8 +40,7 @@ aspose-cli capabilities --summary --output-format json
 | Word processing: DOCX, DOC, RTF, ODT, Markdown, HTML | `aspose-cli-words` | `aspose-cli docs words/overview` |
 
 Read the product overview before the first command on that document type.
-`preview open` and `fonts check` choose the product from the file's
-content; `preview open` takes `--product` to override it.
+`fonts check` chooses the product from the file's content.
 
 ## How to work
 
@@ -150,10 +149,8 @@ The CLI describes itself, and its answer is the truth about this build:
 | `aspose-cli docs reading` | Reading within budgets: windows, `window.next`, search paging, rendering |
 | `aspose-cli docs editing` | Editing with an ops batch: outcomes, outputs, backups, secrets, not-found recovery |
 | `aspose-cli docs verification` | Before delivery: the checklist, rendering to look, fonts |
-| `aspose-cli docs preview` | Showing a document to a person in the live viewer |
-| `aspose-cli docs app` | A person wants the browser App: welcome, files, preview, settings |
 | `aspose-cli docs licensing` | License sources, status, install, evaluation disclosure |
-| `aspose-cli docs troubleshooting` | An error: the envelope, exit codes, recovery, updates, PowerShell |
+| `aspose-cli docs troubleshooting` | An error: the envelope, exit codes, recovery, PowerShell |
 | `aspose-cli docs <product>/overview` | Product commands, operations, recipes and checks |
 
 `aspose-cli docs` lists every topic. Install a Skill for an agent host with

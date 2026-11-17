@@ -136,8 +136,8 @@ aspose-cli capabilities --output-format json
 - A file that is not a readable document of its type (`FILE_CORRUPT`):
   renaming a file does not change its format. When the extension disagrees
   with the content (`FORMAT_MISMATCH`), `details.detected` names the products
-  the content looks like and the hint names its command: use it, rename the
-  file, or pass `--product <id>` to `preview open`. Content no
+  the content looks like and the hint names its command: use it or rename the
+  file. Content no
   product recognizes is `FILE_CORRUPT` when any product reads its extension,
   even one shared by many kinds of file such as `.html` or `.xml`, and
   `FORMAT_UNSUPPORTED` when none does or the CLI only writes its format, such
@@ -186,19 +186,6 @@ aspose-cli capabilities --output-format json
   it or search a narrower part of the document.
 - Evaluation codes (`EVALUATION_LIMIT` and the `EVALUATION_*` warnings): see
   `aspose-cli docs licensing`.
-
-**Updating.** `update check` and `update install` read the latest published
-release.
-
-Nothing is checked or installed when the release cannot be read or does not
-match its manifest or is older than this build; the error's
-`details` and hint say which, such as whether the network or the address is the
-cause, and a failed verification is never to be worked around. A warning that
-an earlier `update install` is still running means wait, then check
-`aspose-cli --version`. A warning that it failed or stopped gives the reason
-and names the installer log: close the programs that use this installation,
-including agents running `aspose-cli mcp serve`, then run `update install`
-again.
 
 ## Windows PowerShell
 

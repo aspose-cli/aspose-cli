@@ -1,29 +1,12 @@
 using System.Diagnostics;
 using System.Reflection;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO.Publication;
 
 namespace Aspose.Cli.Host.LocalServices;
-
-internal sealed record LocalServiceChild(
-    OwnedProcess Owned,
-    string Nonce,
-    long StartTicksUtc)
-{
-    public Process Process => Owned.Process;
-}
 
 /// <summary>Launches this executable as a silent background child.</summary>
 internal static class SelfProcessLauncher
 {
-    /// <summary>
-    /// The process working directory of a long-lived service. A service that
-    /// kept the caller's directory would hold it open for hours, so the
-    /// caller could neither delete nor rename it; services therefore run in
-    /// the system directory and receive the caller's directory explicitly.
-    /// </summary>
-    public static string ServiceWorkingDirectory { get; } = Environment.SystemDirectory;
-
     public static ProcessStartInfo CreateBackground(
         string optionName,
         string missingExecutableHint)
@@ -100,28 +83,5 @@ internal static class SelfProcessLauncher
         }
 
         return Path.GetFullPath(path);
-    }
-
-    public static LocalServiceChild Start(
-        ProcessStartInfo start,
-        ServiceStartSecrets secrets)
-    {
-        ArgumentNullException.ThrowIfNull(start);
-        ArgumentNullException.ThrowIfNull(secrets);
-        OwnedProcess owned = ServiceStartSecretChannel.Start(
-            start,
-            secrets);
-        try
-        {
-            return new LocalServiceChild(
-                owned,
-                secrets.ServiceNonce,
-                ProcessIdentity.StartUtcTicksOf(owned.Process));
-        }
-        catch
-        {
-            using (owned) { owned.Stop(); }
-            throw;
-        }
     }
 }

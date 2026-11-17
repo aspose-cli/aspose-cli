@@ -84,13 +84,6 @@
     "availableEngines": [
       "aspose"
     ],
-    "preview": {
-      "defaultView": "pages",
-      "views": [
-        "pages"
-      ],
-      "background": true
-    },
     "formats": [
       {
         "id": "docx",
@@ -178,11 +171,8 @@
           "input"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "pdf",
@@ -2716,11 +2706,8 @@
       "extension": ".pdf",
       "product": "pdf",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",

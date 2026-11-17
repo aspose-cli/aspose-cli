@@ -19,7 +19,6 @@ public sealed class ProductDefinition
         FileRouteDefinition files,
         IReadOnlyList<FormatDescriptor> formats,
         ProductJsonDefinition json,
-        ProductViewDefinition view,
         Func<IReadOnlyList<ProductOutputDefinition>> outputs,
         Func<IReadOnlyList<ProductOperationCommand>> operations,
         IReadOnlyList<DiagnosticDescriptor> diagnostics,
@@ -33,7 +32,6 @@ public sealed class ProductDefinition
         Files = files;
         Formats = formats;
         Json = json ?? throw new ArgumentNullException(nameof(json));
-        View = view ?? throw new ArgumentNullException(nameof(view));
         _outputs = new Lazy<IReadOnlyList<ProductOutputDefinition>>(
             outputs ?? throw new ArgumentNullException(nameof(outputs)));
         _operations = new Lazy<IReadOnlyList<ProductOperationCommand>>(
@@ -59,9 +57,6 @@ public sealed class ProductDefinition
 
     /// <summary>Product-owned source-generated JSON metadata.</summary>
     public ProductJsonDefinition Json { get; }
-
-    /// <summary>Product-owned views shared by static review and live display.</summary>
-    public ProductViewDefinition View { get; }
 
     /// <summary>
     /// Human-readable result renderers owned by this product, one per result type; a menu's
@@ -141,7 +136,6 @@ public sealed class ProductDefinitionBuilder<TSession>
     private readonly ProductManifest _manifest;
     private readonly List<FormatDescriptor> _formats = [];
     private ProductJsonDefinition? _json;
-    private IProductViewAdapter<TSession>? _viewAdapter;
     private readonly List<DiagnosticDescriptor> _diagnostics = [];
     private readonly List<IMenuEntry<TSession>> _menu = [];
     private string? _description;
@@ -196,15 +190,6 @@ public sealed class ProductDefinitionBuilder<TSession>
         return this;
     }
 
-    /// <summary>Registers the product-owned view adapter used by review and live display.</summary>
-    public ProductDefinitionBuilder<TSession> View(
-        IProductViewAdapter<TSession> adapter)
-    {
-        EnsureMutable();
-        _viewAdapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
-        return this;
-    }
-
     /// <summary>Describes the product command of a menu: its help and, optionally, its examples and links.</summary>
     /// <param name="description">The product command help.</param>
     /// <param name="help">Creates the examples and links; called each time the command tree is built.</param>
@@ -219,7 +204,7 @@ public sealed class ProductDefinitionBuilder<TSession>
 
     /// <summary>
     /// Runs <paramref name="guard"/> around every handler call of the product's menu commands,
-    /// inside their font scope, and around every call of its view adapter.
+    /// inside their font scope.
     /// </summary>
     public ProductDefinitionBuilder<TSession> Guard(ProductGuard<TSession> guard)
     {
@@ -276,10 +261,6 @@ public sealed class ProductDefinitionBuilder<TSession>
         {
             throw Missing(nameof(Json));
         }
-        if (_viewAdapter is null)
-        {
-            throw Missing(nameof(View));
-        }
         if (!_diagnosticsDeclared)
         {
             throw Missing(nameof(Diagnostics));
@@ -292,11 +273,6 @@ public sealed class ProductDefinitionBuilder<TSession>
         {
             throw Missing("Command");
         }
-        ProductGuard<TSession>? guard = _guard;
-        ProductViewDefinition view = ProductViewDefinition.Create(
-            _viewAdapter,
-            _manifest.Id,
-            guard is null ? null : (session, run) => guard((TSession)session, run));
         _ = _bindingFactory ?? throw Missing(nameof(Activator));
         _built = true;
         IReadOnlyList<FormatDescriptor> formats = Array.AsReadOnly(
@@ -308,7 +284,6 @@ public sealed class ProductDefinitionBuilder<TSession>
             files,
             formats,
             _json,
-            view,
             Outputs,
             Operations,
             Array.AsReadOnly(_diagnostics.ToArray()),

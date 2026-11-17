@@ -2,7 +2,6 @@ using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
-using Aspose.Cli.Sdk.Views;
 using Aspose.Words;
 using Aspose.Words.Loading;
 using Xunit;
@@ -713,36 +712,6 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             evaluation,
             rendered.Warnings?.Any(warning => warning.Code == WarningCodes.EvaluationMode) == true);
         Assert.Contains("Quarterly report", File.ReadAllText(extracted.Outputs[0].Path), StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void View_WritesPagePartsThroughSinkAndPreservesPassword()
-    {
-        const string password = "view-password";
-        string input = _fixture.CreateEncryptedDocument(password);
-        var artifacts = new MemoryArtifactSink();
-
-        ViewManifest manifest = WordsRender.View(_fixture.Session, input,
-            new ViewRenderRequest
-            {
-                View = WordsViews.Pages,
-                MaxPartCount = 8,
-                Purpose = ViewPurpose.Display,
-                Password = new Secret(password),
-            },
-            artifacts);
-
-        Assert.Equal(WordsViews.Pages, manifest.View);
-        Assert.Equal("docx", manifest.SourceFormat);
-        Assert.True(manifest.SourceEncrypted);
-        Assert.Null(manifest.Warnings);
-        ViewPart first = manifest.Parts[0];
-        Assert.Equal("page-0001.png", first.File);
-        Assert.Equal(ViewPartKinds.Image, first.Kind);
-        Assert.True(first.Width > 0 && first.Height > 0);
-        Assert.True(HasHeader(
-            artifacts.Bytes("page-0001.png"),
-            [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]));
     }
 
     [Fact]

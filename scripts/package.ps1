@@ -6,7 +6,7 @@ Builds and verifies one installable Aspose CLI release.
 Publishes a clean build, writes the package's per-file SHA256SUMS, runs an install, update and
 uninstall smoke test, and writes the GitHub release assets to artifacts/release/<runtime>: the
 archive, install.ps1, RELEASE-MANIFEST.json (the archive's name, size and SHA-256, read by the
-one-line install and by the update command) and SHA256SUMS.
+one-line install) and SHA256SUMS.
 
   -PrepareOnly  Stages a local development package and stops after its checksum and launch
                 checks.

@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.CommandLine.Help;
-using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
@@ -167,7 +166,7 @@ internal sealed class GlobalOptions
                 "Choose a limit within the budget selected when the MCP server was started.");
         }
         long maxInputBytes = ResolveMaxInputBytes(requestedInputBytes ?? inherited?.MaxInputBytes);
-        var values = new GlobalValues(
+        return new GlobalValues(
             MapOutputFormat(parseResult.GetValue(OutputFormat)),
             parseResult.GetValue(Quiet),
             parseResult.GetValue(Verbose),
@@ -178,17 +177,6 @@ internal sealed class GlobalOptions
         {
             EvaluationRequested = evaluationRequested,
         };
-        ServiceStartSecrets? service =
-            ServiceStartSecretChannel.Current;
-        return service is null
-            ? values
-            : values with
-            {
-                WorkDir = service.WorkDirectory,
-                LicensePath = service.LicensePath,
-                // A service's own default is configured; each document carries its own request.
-                EvaluationRequested = false,
-            };
     }
 
     /// <summary>The refusal of <c>--license-mode evaluation</c> by a command whose effect outlives it.</summary>

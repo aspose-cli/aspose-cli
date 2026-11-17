@@ -69,26 +69,22 @@ a URL to fetch, and `aspose-cli schema <id>` prints that schema offline.
 
 The environment variables in the contract are the license variables `ASPOSE_LICENSE_B64`,
 `ASPOSE_LICENSE_PATH` and their per-product forms (`aspose-cli docs licensing`), named without the
-CLI prefix on purpose so that other Aspose tools can share them; `ASPOSE_CLI_CONFIG_DIR`; the
+CLI prefix on purpose so that other Aspose tools can share them; `ASPOSE_CLI_CONFIG_DIR`; and the
 variables that `capabilities` lists as the source of an option's value (now
-`ASPOSE_CLI_MAX_INPUT_BYTES`, for `--max-input-bytes`); and the App and Preview limits listed in
-`aspose-cli docs app` and `aspose-cli docs preview`. Any other `ASPOSE_CLI_*` variable is
+`ASPOSE_CLI_MAX_INPUT_BYTES`, for `--max-input-bytes`). Any other `ASPOSE_CLI_*` variable is
 internal.
 
 Evaluation mode changes output as the Aspose SDKs decide; the CLI reports each effect with an
 `EVALUATION_*` warning, but the evaluation output itself is not covered. 1.0 has no experimental
 features: everything it exposes is covered.
 
-## App, Preview and MCP
+## MCP
 
 ```powershell
-aspose-cli app open --welcome
-aspose-cli preview open document.pdf
 aspose-cli mcp serve
 ```
 
-App and Preview are browser views for a person, served only on `127.0.0.1`. The MCP server
-`aspose-cli` offers the tools `capabilities` and `execute`. [SECURITY.md](SECURITY.md) describes
+The MCP server `aspose-cli` offers the tools `capabilities` and `execute`. [SECURITY.md](SECURITY.md) describes
 what each may do.
 
 ## Licensing
@@ -146,10 +142,6 @@ Configuration lives in `%APPDATA%\aspose-cli`, or in the absolute directory name
 ```powershell
 powershell -NoProfile -ExecutionPolicy ByPass -File "$env:LOCALAPPDATA\Aspose\CLI\install.ps1" -Uninstall
 ```
-
-`aspose-cli update check` and `aspose-cli update install` read the latest release and verify it
-the same way. An update runs the release's installer after the CLI exits; a later `update`
-command reports a failed or unfinished run.
 
 ## Development
 

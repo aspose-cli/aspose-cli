@@ -306,8 +306,6 @@ internal sealed class DefinitionPurityWalker : OperationWalker
             SdkMetadataNames.WarningCode => IsDataMember(symbol),
             SdkMetadataNames.DiagnosticDescriptor =>
                 member is "Error" or "Warning" or "Verification" || IsDataMember(symbol),
-            SdkMetadataNames.ViewPartKinds =>
-                symbol is IFieldSymbol { IsConst: true },
             _ => IsDefinitionValue(typeName) && IsDataMember(symbol),
         };
     }
@@ -369,7 +367,6 @@ internal sealed class DefinitionPurityWalker : OperationWalker
         typeName is
             SdkMetadataNames.ProductManifest
             or SdkMetadataNames.RouteOwnership
-            or SdkMetadataNames.ProductView
             or SdkMetadataNames.ProductJsonDefinition;
 
     private static bool IsDataMember(ISymbol symbol) =>

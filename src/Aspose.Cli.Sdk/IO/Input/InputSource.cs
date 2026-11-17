@@ -14,20 +14,6 @@ public sealed class InputSource
     private static readonly Encoding MarkedStrictUtf8 =
         new UTF8Encoding(encoderShouldEmitUTF8Identifier: true, throwOnInvalidBytes: true);
     private readonly ResourceBudgetLedger _budgets;
-    private (string Snapshot, string Original)? _snapshotOrigin;
-
-    /// <summary>Preserves the resource origin of one host-owned document snapshot for this invocation.</summary>
-    public void SetSnapshotOrigin(string snapshot, string original)
-    {
-        if (_snapshotOrigin is not null) { throw new InvalidOperationException("The input snapshot origin is already set."); }
-        _snapshotOrigin = (Path.GetFullPath(snapshot), Path.GetFullPath(original));
-    }
-
-    internal string ResourceOriginFor(string documentPath)
-    {
-        string full = Path.GetFullPath(documentPath);
-        return _snapshotOrigin is { } origin && FilePaths.Same(full, origin.Snapshot) ? origin.Original : full;
-    }
 
     internal InputSource(ResourceBudgetLedger budgets)
     {

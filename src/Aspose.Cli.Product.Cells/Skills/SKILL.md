@@ -123,7 +123,6 @@ gives an operation's fields. A table in a Word, PDF or slide file is theirs.
 | `aspose-cli docs cells/design-system` | A designed workbook: dashboards, colors, charts, KPI cards |
 | `aspose-cli docs cells/financial-models` | Building a formula-driven model |
 | `aspose-cli docs cells/verification` | Verifying: the four tiers, render facts, `cells compare` |
-| `aspose-cli docs cells/preview` | Showing a workbook in the live viewer |
 | `aspose-cli docs cells/troubleshooting` | A Cells error or warning, CSV tables that do not start at row 1, evaluation-mode warning sheets |
 
 Examples: [report from CSV](examples/report-from-csv/README.md),

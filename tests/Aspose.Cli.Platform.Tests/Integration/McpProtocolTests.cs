@@ -67,7 +67,6 @@ public sealed class McpProtocolTests
             foreach (string[] args in new string[][]
             {
                 ["--quiet=false", "license", "install", "anything.lic"],
-                ["--max-input-bytes=1048576", "app", "stop"],
                 ["cells", "does-not-exist", "book.xlsx"],
                 ["--max-input-bytes=2097152", "cells", "inspect", "input.csv"],
             })

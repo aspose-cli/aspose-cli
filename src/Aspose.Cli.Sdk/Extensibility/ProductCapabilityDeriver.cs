@@ -48,17 +48,6 @@ internal static class ProductCapabilityDeriver
             };
         }
 
-        capabilities = capabilities with
-        {
-            Preview = new ProductPreviewCapabilities
-            {
-                DefaultView = product.View.LiveView,
-                Views = Array.AsReadOnly(
-                    product.View.Views.Select(static view => view.Id).ToArray()),
-                Background = capabilities.Preview?.Background ?? true,
-            },
-        };
-
         return capabilities;
     }
 

@@ -32,7 +32,6 @@ public sealed class WordsModule : IProductModule
             .Formats(WordsFormats.Definitions)
             .Diagnostics(WordsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
-            .View(new WordsViewAdapter())
             .DetectFormat(WordsDocumentLoader.DetectFormatId)
             .Describe("Word-processing document automation with layout fidelity.", Help)
             .Command(InspectCommand.Create, WordsInspect.Run)

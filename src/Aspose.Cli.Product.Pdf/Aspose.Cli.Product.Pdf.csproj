@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\Aspose.Cli.Sdk\build\Aspose.Cli.Sdk.props" />
   <PropertyGroup>
-    <Description>Autonomous PDF product module with contracts, commands, preview, resources and Aspose.PDF adapter.</Description>
+    <Description>Autonomous PDF product module with contracts, commands, resources and Aspose.PDF adapter.</Description>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>

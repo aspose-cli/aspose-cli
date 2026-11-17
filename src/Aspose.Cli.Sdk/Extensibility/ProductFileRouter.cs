@@ -35,7 +35,7 @@ public sealed record FileRouteRequest
     /// <summary>Input path.</summary>
     public string Path { get; }
 
-    /// <summary>Stable operation name, such as open, app, preview, or review.</summary>
+    /// <summary>Stable operation name, such as open.</summary>
     public string Operation { get; init; } = "open";
 
     /// <summary>Explicit product selection, which bypasses owner competition.</summary>

@@ -169,7 +169,7 @@ internal sealed partial class ParsedInvocation
     /// <summary>
     /// The command line that runs the command of the root <paramref name="token"/>, typed below a
     /// product, stands for, without the product's name: a command, or the command of a group, that
-    /// reads a file of any product, as <c>preview open</c> does, or the command
+    /// reads a file of any product, or the command
     /// of that group the next word names. A file the product written is not its default owner
     /// keeps that product with <c>--product</c>. Null for any other token.
     /// </summary>

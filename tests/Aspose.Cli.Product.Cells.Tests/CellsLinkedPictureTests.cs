@@ -3,7 +3,6 @@ using Aspose.Cells.Drawing;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Engine;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -15,7 +14,7 @@ public sealed class CellsLinkedPictureTests
     [InlineData("missing")]
     [InlineData("local")]
     [InlineData("http")]
-    public async Task CachedPicture_SurvivesConversionAndPreviewWithoutReadingItsSource(string source)
+    public async Task CachedPicture_SurvivesConversionWithoutReadingItsSource(string source)
     {
         using var fixture = new CellsFixture();
         using var workspace = new TempWorkspace();
@@ -47,19 +46,6 @@ public sealed class CellsLinkedPictureTests
         Assert.Equal(expected.Height, actual.Height);
         Assert.False(actual.IsLink);
         Assert.True(string.IsNullOrEmpty(actual.SourceFullName));
-
-        var sink = new MemoryArtifactSink();
-        CellsView.Render(fixture.Session, input,
-            new ViewRenderRequest
-            {
-                View = CellsViews.Workbook,
-                MaxPartCount = 8,
-                Purpose = ViewPurpose.Display,
-            },
-            sink);
-        string html = string.Concat(sink.Paths.Select(sink.Text));
-        Assert.Contains("data:image/png;base64,", html, StringComparison.Ordinal);
-        Assert.Contains(System.Convert.ToBase64String(ResourceHttpServer.Image), html, StringComparison.Ordinal);
         Assert.Equal(original, File.ReadAllBytes(input));
         Assert.Equal(0, server.RequestCount);
         if (source == "local")

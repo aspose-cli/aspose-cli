@@ -1,5 +1,4 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -38,31 +37,6 @@ public static class ContinuationInputExtensions
     {
         ArgumentNullException.ThrowIfNull(parse);
         return StandardInvocation.InputOf(StandardOptions.Of(parse.CommandResult.Command), parse, document);
-    }
-
-    /// <summary>
-    /// Starts the command at <paramref name="path"/> on the source of a view: as the invocation
-    /// that renders the view names it (<see cref="ViewRenderRequest.Continuation"/>), or as
-    /// <paramref name="filePath"/>, the file rendered, when the request names none.
-    /// </summary>
-    /// <param name="request">The view's render request.</param>
-    /// <param name="filePath">The file the view renders.</param>
-    /// <param name="path">The command path below the root.</param>
-    public static ContinuationCommand ContinuationAt(this ViewRenderRequest request, string filePath, params string[] path) =>
-        request.ContinuationSource(filePath).ContinuationAt(path);
-
-    /// <summary>
-    /// The source of a view as the invocation that renders the view names it
-    /// (<see cref="ViewRenderRequest.Continuation"/>), or as <paramref name="filePath"/>, the file
-    /// rendered, when the request names none: what the commands a view's hints name start from.
-    /// </summary>
-    /// <param name="request">The view's render request.</param>
-    /// <param name="filePath">The file the view renders.</param>
-    public static ContinuationInput ContinuationSource(this ViewRenderRequest request, string filePath)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentException.ThrowIfNullOrEmpty(filePath);
-        return request.Continuation ?? new ContinuationInput(filePath);
     }
 
     /// <summary>

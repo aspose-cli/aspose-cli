@@ -1,4 +1,3 @@
-using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Output;
@@ -6,7 +5,6 @@ using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Cli.Sdk.Views;
 using Aspose.Words;
 using Aspose.Words.Rendering;
 using Aspose.Words.Saving;
@@ -14,11 +12,9 @@ using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
-/// <summary>Serves <c>words render</c> and the page view of review and live display.</summary>
+/// <summary>Serves <c>words render</c>.</summary>
 internal static class WordsRender
 {
-    private const int CssDpi = 96;
-    private const int EvidenceDpi = 150;
     private const string RenderHint = "Render fewer or smaller pages, or lower --dpi.";
 
     /// <summary>Renders selected pages; a raster page stays within the pixel budget.</summary>
@@ -56,69 +52,4 @@ internal static class WordsRender
             Warnings = WrittenWarnings(loaded, request.Output.Format.Id, rendered: true),
         };
     }
-
-    /// <summary>Renders the fixed-layout pages of one view, opening the document once.</summary>
-    internal static ViewManifest View(
-        WordsSession session,
-        string filePath,
-        ViewRenderRequest request,
-        IViewArtifactSink artifacts)
-    {
-        ArgumentNullException.ThrowIfNull(artifacts);
-        _ = session.Outputs.License;
-        using LoadedDocument loaded = session.Loader.Open(filePath, request.Password);
-        Document document = loaded.Document;
-        int dpi = request.Purpose == ViewPurpose.Display ? RenderPixelGuard.DefaultDpi : EvidenceDpi;
-        int total = document.PageCount;
-        int count = Math.Min(total, request.MaxPartCount);
-        IReadOnlyList<IReadOnlyList<ViewElement>> layout = WordsViewLayout.Collect(document, loaded.Evaluation, count);
-        var parts = new List<ViewPart>(count);
-        for (int page = 1; page <= count; page++)
-        {
-            PageInfo info = document.GetPageInfo(page - 1);
-            RenderPixelGuard.EnsureFits(
-                session.Budgets,
-                Pixels(info.WidthInPoints, dpi),
-                Pixels(info.HeightInPoints, dpi),
-                dpi,
-                RenderHint);
-            string file = string.Create(CultureInfo.InvariantCulture, $"page-{page:0000}.png");
-            int pageNumber = page;
-            if (!artifacts.TryWritePart(
-                    file,
-                    stream => document.Save(
-                        stream,
-                        WordsSavePipeline.Options("png", pages: [pageNumber], dpi: dpi))))
-            {
-                // The snapshot has no room for the page: it and the pages after it are left out.
-                break;
-            }
-            parts.Add(new ViewPart
-            {
-                Id = WordsViews.PagePart(page),
-                Label = string.Create(CultureInfo.InvariantCulture, $"Page {page}"),
-                File = file,
-                Kind = ViewPartKinds.Image,
-                Width = Pixels(info.WidthInPoints, CssDpi),
-                Height = Pixels(info.HeightInPoints, CssDpi),
-                Elements = layout[page - 1].Count == 0 ? null : layout[page - 1],
-            });
-        }
-
-        loaded.Resources.ThrowIfFailed();
-        session.Outputs.ShowsInView(document, "png", Enumerable.Range(1, parts.Count));
-        return new ViewManifest
-        {
-            View = WordsViews.Pages,
-            SourceFormat = loaded.FormatId,
-            SourceSizeBytes = new FileInfo(filePath).Length,
-            SourceEncrypted = loaded.Protection.Encrypted,
-            TotalPartCount = total,
-            Parts = parts,
-            Warnings = InputWarnings(loaded),
-        };
-    }
-
-    private static int Pixels(double points, int dpi) =>
-        checked((int)Math.Ceiling(points / 72d * dpi));
 }

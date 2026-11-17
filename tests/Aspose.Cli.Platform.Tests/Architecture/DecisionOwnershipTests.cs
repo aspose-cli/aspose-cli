@@ -380,7 +380,6 @@ public sealed partial class DecisionOwnershipTests
 
         AssertNone(violations,
             "A command with subcommands takes no positional argument, so a mistyped subcommand is a usage error with suggestions:");
-        Assert.Contains("open", CliCatalog.Current.Command("app").Subcommands);
     }
 
     [Theory]

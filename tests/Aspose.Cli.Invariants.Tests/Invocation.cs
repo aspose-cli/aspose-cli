@@ -32,13 +32,12 @@ internal sealed class Invocation
     /// creates has the product's own extension, an option with allowed values takes the product's
     /// own format when it allows it (a convert keeps its format) and the first value otherwise,
     /// and the few required free-form options take a fixed valid value. An edit gets the
-    /// product's valid operation document and a create its source text. An <c>open</c> command,
-    /// which opens a browser by default, gets <see cref="NoOpen"/>.
+    /// product's valid operation document and a create its source text.
     /// </summary>
     /// <param name="command">The command to invoke.</param>
     /// <param name="omit">An option the caller supplies itself.</param>
     /// <exception cref="InvalidOperationException">
-    /// A required option has no value rule, or an <c>open</c> command has no <see cref="NoOpen"/>.
+    /// A required option has no value rule.
     /// </exception>
     public static Invocation For(CliCommand command, string? omit = null)
     {
@@ -66,14 +65,6 @@ internal sealed class Invocation
         foreach (CliOption option in command.Options.Where(option => option.Name != omit && (option.Required || IsImplied(command, option, omit))))
         {
             invocation.Fill(command, product, extension, option);
-        }
-        if (command.Verb == OpenVerb)
-        {
-            // A test never opens the user's browser; an open command without the option fails
-            // rather than opening one.
-            invocation.Args.Add(command.Has(NoOpen)
-                ? NoOpen
-                : throw new InvalidOperationException($"{command} opens a browser and has no {NoOpen}."));
         }
         return invocation;
     }
@@ -130,12 +121,6 @@ internal sealed class Invocation
             .FirstOrDefault();
     }
 
-    /// <summary>The verb of the commands that open a browser by default.</summary>
-    private const string OpenVerb = "open";
-
-    /// <summary>The flag of an <see cref="OpenVerb"/> command that keeps the browser closed.</summary>
-    internal const string NoOpen = "--no-open";
-
     /// <summary>The input kind of an option whose value is an operations document.</summary>
     private const string JsonSource = "json-source";
 
@@ -146,9 +131,8 @@ internal sealed class Invocation
             : null;
 
     /// <summary>
-    /// The rules of <see cref="ImpliedByVerb"/> that no command of the catalog matches, the
-    /// create commands with file sources none of them names, and the open commands without
-    /// <see cref="NoOpen"/>: each means an option was renamed.
+    /// The rules of <see cref="ImpliedByVerb"/> that no command of the catalog matches and the
+    /// create commands with file sources none of them names: each means an option was renamed.
     /// </summary>
     internal static IEnumerable<string> ImpliedRulesMatchTheCatalog(IReadOnlyList<CliCommand> commands)
     {
@@ -166,14 +150,6 @@ internal sealed class Invocation
             {
                 yield return $"{command} creates its argument from file options none of the invocation rules names";
             }
-        }
-        if (!commands.Any(static command => command.Verb == OpenVerb))
-        {
-            yield return $"no command has the verb {OpenVerb}, whose commands the invocation keeps from opening a browser";
-        }
-        foreach (CliCommand command in commands.Where(static command => command.Verb == OpenVerb && !command.Has(NoOpen)))
-        {
-            yield return $"{command} opens a browser and has no {NoOpen}";
         }
     }
 

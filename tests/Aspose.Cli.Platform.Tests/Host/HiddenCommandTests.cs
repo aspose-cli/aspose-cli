@@ -17,7 +17,6 @@ public sealed partial class HiddenCommandTests
     public void ACommandIsHiddenExactlyWhenItsNameStartsWithTwoUnderscores()
     {
         (string Path, Command Command)[] commands = [.. Walk(RootCommandFactory.Create(ActualCommandTree.Host, out _), string.Empty)];
-        Assert.Contains(commands, static entry => entry.Command.Hidden);
 
         string[] problems =
         [

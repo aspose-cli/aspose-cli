@@ -33,7 +33,6 @@ public sealed class SlidesModule : IProductModule
             .Formats(SlidesFormats.Definitions)
             .Diagnostics(SlidesDiagnostics.All)
             .Json(ProductJsonContext.Definition)
-            .View(new SlidesViewAdapter())
             // Aspose.Slides writes to standard output while it renders (known issue SLIDES-FALLBACK-STDOUT).
             .Guard(static (_, run) => SlidesStandardOutput.Muted(run))
             .Describe("Presentation automation with slide, layout and notes semantics.", Help)

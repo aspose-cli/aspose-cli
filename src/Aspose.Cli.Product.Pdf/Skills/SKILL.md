@@ -43,8 +43,7 @@ top-left origin against the visible, rotated page box.
 5. Sign only the final, verified file with `pdf sign`
    ([forms and security](references/forms-security.md)).
 6. Verify before delivery ([verification](references/verification.md)), then
-   follow the checklist in `aspose-cli docs verification`. `aspose-cli preview open report.pdf`
-   shows a person the `pages` view (`aspose-cli docs preview`).
+   follow the checklist in `aspose-cli docs verification`.
 
 ## Creating PDFs
 

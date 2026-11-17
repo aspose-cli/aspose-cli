@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Mcp;
-using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Host.Commands;
 
@@ -27,24 +26,6 @@ internal static class RootCommandFactory
         globals.AddTo(root);
         VersionOutput.Attach(root, executor, globals, catalog);
 
-        Lazy<CliCapabilitySnapshot>? capabilitySnapshot = null;
-        Func<CapabilitiesResult> capabilities = () =>
-            (capabilitySnapshot
-                ?? throw new InvalidOperationException(
-                    "The CLI capability snapshot is not initialized."))
-            .Value.Result;
-        root.Subcommands.Add(AppCommand.Create(
-            executor,
-            catalog,
-            capabilities,
-            globals));
-        root.Subcommands.Add(PreviewCommand.Create(executor, catalog, globals));
-        root.Subcommands.Add(RenderWorkerCommand.Create(catalog, globals));
-        root.Subcommands.Add(ViewerServiceCommand.Create(
-            executor,
-            catalog,
-            capabilities,
-            globals));
         GlobalOptions options = globals;
         foreach (ProductDefinition product in catalog.Products)
         {
@@ -59,7 +40,7 @@ internal static class RootCommandFactory
                 new CommandInvocationPolicy(ProductId: product.Manifest.Id)));
         }
         root.Subcommands.Add(LicenseCommandGroup.Create(executor, catalog, globals));
-        capabilitySnapshot = new Lazy<CliCapabilitySnapshot>(
+        var capabilitySnapshot = new Lazy<CliCapabilitySnapshot>(
             () => CliCapabilitySnapshot.Create(
                 root,
                 catalog,
@@ -77,7 +58,6 @@ internal static class RootCommandFactory
             .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
         root.Subcommands.Add(FontsCommandGroup.Create(executor, catalog, globals));
         root.Subcommands.Add(McpCommand.Create(host, globals));
-        root.Subcommands.Add(UpdateCommand.Create(host, executor, globals));
 
         root.ValidateParameters();
         HostHelpMetadata.Attach(root, catalog);

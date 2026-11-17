@@ -3,8 +3,8 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>
 /// Keeps Aspose.Slides from writing to standard output while the engine works. The SDK writes
 /// "Updating of Inner rules" there whenever it renders with font fallback rules (known issue
-/// SLIDES-FALLBACK-STDOUT in KNOWN-ISSUES.md), and standard output carries the CLI's result and the
-/// render worker's messages. Overlapping calls share one muted writer; the last one out restores
+/// SLIDES-FALLBACK-STDOUT in KNOWN-ISSUES.md), and standard output carries the CLI's result.
+/// Overlapping calls share one muted writer; the last one out restores
 /// the writer the first one found.
 /// </summary>
 internal static class SlidesStandardOutput

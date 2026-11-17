@@ -25,7 +25,7 @@ namespace Aspose.Cli.TestKit;
 /// workspace holds the same project license, or none. The command lines whose behavior a warm
 /// process could change run as child processes: any standard input, a license option, another
 /// working directory, a font directory (engines keep the fonts they load process-wide), a user or
-/// product license file, the license commands, and the commands that start services or a browser.
+/// product license file, the license commands, and the commands that start services.
 /// </remarks>
 public static class CliWorkers
 {
@@ -135,10 +135,10 @@ public static class CliWorkers
             : "evaluation";
     }
 
-    /// <summary>The first words of the command lines that run as child processes: license state, services, the App, a browser, updates and MCP.</summary>
+    /// <summary>The first words of the command lines that run as child processes: license state and MCP.</summary>
     private static readonly HashSet<string> ChildCommands = new(StringComparer.Ordinal)
     {
-        "license", "app", "preview", "update", "mcp", "__render-worker", "__viewer-service",
+        "license", "mcp",
     };
 
     /// <summary>
@@ -171,8 +171,7 @@ public static class CliWorkers
             // command line in a process of its own, the child process a worker stands in for,
             // never does. So this is no silent rerun of a crash: the worker answered, and the new
             // worker gives the command the fresh process a child would have. A limit the command
-            // reaches by itself it reaches there too, and that is the result; the product's
-            // preview render worker recycles itself by the same rule.
+            // reaches by itself it reaches there too, and that is the result.
             if (ranOthers && IsEvaluationLimit(result))
             {
                 answered = null;

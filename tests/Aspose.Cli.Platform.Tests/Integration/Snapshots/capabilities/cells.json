@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:192888c870ccc7ada9485d7ff5e0563924449ad586c2c21bac2798f91516c68c",
+        "contractFingerprint": "sha256:a550f628f574025ffa028f7c628cdec357dcda8e7ee51c1e84e11881677f40cb",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -127,14 +127,6 @@
     "availableEngines": [
       "aspose"
     ],
-    "preview": {
-      "defaultView": "workbook",
-      "views": [
-        "sheets",
-        "workbook"
-      ],
-      "background": true
-    },
     "formats": [
       {
         "id": "csv",
@@ -148,11 +140,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "cells",
@@ -246,11 +235,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "cells",
@@ -314,11 +300,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "cells",
@@ -338,11 +321,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "cells",
@@ -362,11 +342,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "cells",
@@ -386,11 +363,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "cells",
@@ -410,11 +384,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "cells",
@@ -434,11 +405,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "cells",
@@ -458,11 +426,8 @@
           "convert"
         ],
         "operations": [
-          "app",
           "fonts",
-          "open",
-          "preview",
-          "review"
+          "open"
         ],
         "declaredOwnership": "default",
         "finalOwner": "cells",
@@ -2133,11 +2098,8 @@
       "extension": ".csv",
       "product": "cells",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2147,11 +2109,8 @@
       "extension": ".ods",
       "product": "cells",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2161,11 +2120,8 @@
       "extension": ".tsv",
       "product": "cells",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2175,11 +2131,8 @@
       "extension": ".xls",
       "product": "cells",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2189,11 +2142,8 @@
       "extension": ".xlsb",
       "product": "cells",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2203,11 +2153,8 @@
       "extension": ".xlsm",
       "product": "cells",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2217,11 +2164,8 @@
       "extension": ".xlsx",
       "product": "cells",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2231,11 +2175,8 @@
       "extension": ".xltm",
       "product": "cells",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -2245,11 +2186,8 @@
       "extension": ".xltx",
       "product": "cells",
       "operations": [
-        "app",
         "fonts",
-        "open",
-        "preview",
-        "review"
+        "open"
       ],
       "requiresContentProbe": true,
       "recognizerStrategy": "standard-signature-v1",
@@ -4141,7 +4079,7 @@
               "minimum": 0
             },
             "visibility": {
-              "description": "visible, hidden (Excel's Unhide shows it) or very-hidden (hidden from Excel's Unhide too); review and preview show only visible sheets.",
+              "description": "visible, hidden (Excel's Unhide shows it) or very-hidden (hidden from Excel's Unhide too).",
               "type": "string",
               "enum": [
                 "visible",
@@ -6470,7 +6408,7 @@
           }
         },
         "set_active_sheet": {
-          "description": "Makes the visible sheet the operation's sheet field names the active sheet. The choice survives saving and is the initial tab of the HTML preview.",
+          "description": "Makes the visible sheet the operation's sheet field names the active sheet. The choice survives saving.",
           "type": "object",
           "required": [
             "op"
@@ -7097,7 +7035,7 @@
           }
         },
         "set_sheet_view": {
-          "description": "Changes a sheet's on-screen view: at least one of gridlines, zoomPercent and headings. These are view settings for Excel and the live preview, not for the printed page or rendered images; draw borders (set_borders) when a grid must appear in renders.",
+          "description": "Changes a sheet's on-screen view: at least one of gridlines, zoomPercent and headings. These are view settings for Excel, not for the printed page or rendered images; draw borders (set_borders) when a grid must appear in renders.",
           "type": "object",
           "required": [
             "op"

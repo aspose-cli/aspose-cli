@@ -11,9 +11,7 @@ namespace Aspose.Cli.Host.Licensing;
 
 /// <summary>
 /// Owns license status, installation and removal for the <c>license</c> and
-/// <c>doctor</c> commands and the startup notice. The App reaches the same
-/// operations through a CLI child process (<c>AppCliGateway</c>), so the
-/// long-lived service never applies a license itself.
+/// <c>doctor</c> commands and the startup notice.
 /// </summary>
 internal static class LicenseManager
 {
