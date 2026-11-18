@@ -11,8 +11,7 @@ namespace Aspose.Cli.Sdk.Tests.IO;
 
 /// <summary>
 /// Windows file names ignore case, so every place that compares local paths treats two
-/// spellings of one path as the same path: the publication journal and its recovery, the
-/// output set, the publication locks and the directory boundaries. The tests
+/// spellings of one path as the same path: the publication plan, the output set, the publication locks and the directory boundaries. The tests
 /// spell the second path in upper case, which every test directory under %TEMP% changes.
 /// </summary>
 public sealed class PathCaseTests : IDisposable
@@ -26,86 +25,26 @@ public sealed class PathCaseTests : IDisposable
     [Fact]
     public void PublicationPlan_TreatsACaseVariantOfItsDirectoryAndArtifactsAsItsOwn()
     {
-        string transaction = Directory.CreateDirectory(_temp.File(".aspose-publication-case")).FullName;
+        AtomicPublicationPlan plan = AtomicPublicationPlan.Create(_temp.Path, "case", NoPublicationFaultInjector.Instance, null);
         string target = _temp.File("report.txt");
-        string staged = AtomicPublicationPlan.StagedPath(transaction, target, index: 0);
+        string staged = AtomicPublicationPlan.StagedPath(plan.StagingDirectory, target, index: 0);
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         File.WriteAllText(staged, "staged");
-        var journal = new PublicationJournal
+        plan.Entries.Add(new PublicationEntry
         {
-            Operation = "case",
-            State = PublicationTransactionState.Staging,
-            Entries =
-            [
-                new PublicationJournalEntry
-                {
-                    Index = 0,
-                    Target = Upper(target),
-                    Staged = Upper(staged),
-                    Overwrite = false,
-                    Original = FilePublicationSnapshot.Capture(target),
-                    StagedSnapshot = FilePublicationSnapshot.Capture(staged),
-                },
-            ],
-        };
-        AtomicPublicationPlan plan = AtomicPublicationPlan.Open(transaction, journal);
+            Index = 0,
+            Target = Upper(target),
+            Staged = Upper(staged),
+            Overwrite = false,
+            Original = FilePublicationSnapshot.Capture(target),
+            StagedSnapshot = FilePublicationSnapshot.Capture(staged),
+        });
 
         plan.EnsureTarget(Upper(target));
         plan.EnsureNoUnknownArtifacts();
 
         File.WriteAllText(Path.Combine(Path.GetDirectoryName(staged)!, "unknown.txt"), "unknown");
         Assert.Throws<IOException>(plan.EnsureNoUnknownArtifacts);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Recovery_OfAJournalThatSpellsItsPathsInAnotherCase_RestoresAsTheSameSpellingDoes(bool upper)
-    {
-        Func<string, string> spell = upper ? Upper : static path => path;
-        string target = _temp.File("target.txt");
-        string transaction = Path.Combine(_temp.Path, ".aspose-publication-crashed-0001");
-        string backups = Path.Combine(transaction, "backups");
-        Directory.CreateDirectory(backups);
-        string staged = AtomicPublicationPlan.StagedPath(transaction, target, index: 0);
-        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        string displaced = Path.Combine(backups, "000001.displaced");
-        File.WriteAllText(target, "original");
-        FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
-        File.WriteAllText(staged, "replacement");
-        FilePublicationSnapshot stagedSnapshot = FilePublicationSnapshot.Capture(staged);
-        File.Replace(staged, target, displaced);
-        new PublicationJournal
-        {
-            Operation = "crashed",
-            OwnerProcessId = int.MaxValue,
-            OwnerProcessStartUtcTicks = 1,
-            State = PublicationTransactionState.Publishing,
-            Entries =
-            [
-                new PublicationJournalEntry
-                {
-                    Index = 0,
-                    Target = spell(target),
-                    Staged = spell(staged),
-                    Displaced = spell(displaced),
-                    DisplacedSnapshot = FilePublicationSnapshot.Capture(displaced),
-                    Overwrite = true,
-                    Original = original,
-                    StagedSnapshot = stagedSnapshot,
-                    TargetParentIdentity = OutputPathValidator.CaptureParentIdentity(target),
-                    PublishedSnapshot = FilePublicationSnapshot.Capture(target),
-                    State = PublicationEntryState.Published,
-                    Size = stagedSnapshot.Length,
-                },
-            ],
-        }.Write(Path.Combine(transaction, AtomicPublicationPlan.JournalName));
-
-        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(_temp.Path, lease: null);
-
-        Assert.Equal(1, recovered);
-        Assert.Equal("original", File.ReadAllText(target));
-        Assert.False(Directory.Exists(transaction));
     }
 
     [Fact]
@@ -136,25 +75,6 @@ public sealed class PathCaseTests : IDisposable
                 () => PublicationDirectoryLease.Acquire(Upper(directory), [Upper(directory)], deadline).Dispose());
             Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
         }
-
-        string journal = Path.Combine(directory, AtomicPublicationPlan.JournalName);
-        using (PublicationJournalLock.Acquire(journal))
-        {
-            // A named mutex is reentrant on its owning thread, so another thread asks.
-            bool siblingFree = false;
-            bool variantFree = true;
-            var other = new Thread(() =>
-            {
-                using (PublicationJournalLock? free = PublicationJournalLock.TryAcquire(Path.Combine(sibling, AtomicPublicationPlan.JournalName)))
-                { siblingFree = free is not null; }
-                using (PublicationJournalLock? variant = PublicationJournalLock.TryAcquire(Upper(journal)))
-                { variantFree = variant is not null; }
-            });
-            other.Start();
-            other.Join();
-            Assert.True(siblingFree);
-            Assert.False(variantFree);
-        }
     }
 
     /// <summary>
@@ -169,37 +89,12 @@ public sealed class PathCaseTests : IDisposable
     [InlineData("a", @"x", false)]
     public void Boundaries_ForAPublicationTarget(string directory, string target, bool inside)
     {
-        string transaction = Path.Combine(_temp.File(directory), ".aspose-publication-boundary");
-        AtomicPublicationPlan plan = AtomicPublicationPlan.Open(transaction, new PublicationJournal { Operation = "boundary" });
+        AtomicPublicationPlan plan = AtomicPublicationPlan.Create(_temp.File(directory), "boundary", NoPublicationFaultInjector.Instance, null);
 
         Exception? error = Record.Exception(() => plan.EnsureTarget(_temp.File(target)));
 
         Assert.Equal(inside, error is null);
     }
-
-    [Fact]
-    public void Boundaries_ForADriveRoot_HoldTheFilesBelowIt()
-    {
-        string drive = Path.GetPathRoot(_temp.Path)!;
-
-        // A publication into the drive root holds its own files.
-        AtomicPublicationPlan.Open(Path.Combine(drive, ".aspose-publication-boundary"), new PublicationJournal { Operation = "boundary" })
-            .EnsureTarget(Path.Combine(drive, "x.txt"));
-    }
-
-    [Theory]
-    [InlineData(@"C:\", @"C:\x", true)]
-    [InlineData(@"C:\", @"C:\", true)]
-    [InlineData(@"C:\a", @"C:\a", true)]
-    [InlineData(@"C:\a\", @"C:\a", true)]
-    [InlineData(@"C:\a", @"C:\a\", true)]
-    [InlineData(@"C:\a", @"C:\a\b", true)]
-    [InlineData(@"C:\a\", @"C:\a\b", true)]
-    [InlineData(@"C:\a", @"c:\A\b", true)]
-    [InlineData(@"C:\a", @"C:\ab", false)]
-    [InlineData(@"C:\a", @"C:\", false)]
-    public void Boundaries_ForARecoveryRoot(string root, string path, bool within) =>
-        Assert.Equal(within, AtomicPublicationRecovery.IsWithinRoot(root, path));
 
     /// <summary>
     /// The worker's private root and the license snapshot hold every path below them, also when

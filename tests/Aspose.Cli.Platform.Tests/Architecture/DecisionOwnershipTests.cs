@@ -500,28 +500,6 @@ public sealed partial class DecisionOwnershipTests
             "Local paths are compared, collected, folded into lock keys and checked for a UNC or device prefix only through the SDK's FilePaths:");
     }
 
-    [Fact]
-    public void D13_ProcessLiveness_HasOneSdkOwner()
-    {
-        string owner = Path.Combine(SdkRoot, "IO", "Publication", "ProcessIdentity.cs");
-        string[] violations = [.. Sources.Value
-            .Where(file => !string.Equals(file.Path, owner, StringComparison.OrdinalIgnoreCase))
-            .SelectMany(file => file.Root.DescendantNodes()
-                .Where(static node => node switch
-                {
-                    // process.StartTime, Process.GetProcessById(...), process?.StartTime
-                    MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText is "GetProcessById" or "StartTime",
-                    MemberBindingExpressionSyntax binding => binding.Name.Identifier.ValueText is "GetProcessById" or "StartTime",
-                    // GetProcessById(...) under using static System.Diagnostics.Process
-                    InvocationExpressionSyntax { Expression: IdentifierNameSyntax name } => name.Identifier.ValueText == "GetProcessById",
-                    _ => false,
-                })
-                .Select(node => file.At(node, node.ToString())))];
-
-        AssertNone(violations,
-            "A process is identified by its id and start time only in the SDK's ProcessIdentity, which also decides whether it still runs:");
-    }
-
     // -- Support -----------------------------------------------------------------------------
 
     /// <summary>

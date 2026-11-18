@@ -7,16 +7,15 @@ namespace Aspose.Cli.Sdk.IO.Publication;
 
 /// <summary>
 /// Stages a bounded output set, publishes each target with atomic visibility,
-/// and performs verified compensating recovery if publication does not finish.
-/// Multi-file visibility is not atomic: the transaction guarantee is explicit
-/// recovery with a machine-readable partial-state report.
+/// and puts the targets back, verified, if publication does not finish.
+/// Multi-file visibility is not atomic: the transaction guarantee is an explicit
+/// rollback with a machine-readable partial-state report.
 /// </summary>
 public sealed class AtomicOutputSetWriter : IDisposable
 {
     private readonly AtomicPublicationPlan _plan;
     private readonly AtomicPublicationStaging _staging;
     private readonly AtomicPublicationCommit _commit;
-    private readonly AtomicPublicationRecovery _recovery;
     private bool _disposed;
 
     /// <summary>Creates a staging area beneath the target directory.</summary>
@@ -50,7 +49,6 @@ public sealed class AtomicOutputSetWriter : IDisposable
             faults, writer.ResourceBudgets);
         _staging = new AtomicPublicationStaging(_plan, writer);
         _commit = new AtomicPublicationCommit(_plan);
-        _recovery = new AtomicPublicationRecovery(_plan);
     }
 
     /// <summary>Admits a directory and owns only directories this transaction actually creates.</summary>
@@ -73,7 +71,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
         string target = OutputPathValidator.NormalizeFile(targetPath);
         FilePublicationSnapshot expected = inputPrecondition?.Targets(target) is true
             ? inputPrecondition.Snapshot : FilePublicationSnapshot.Capture(target);
-        return _staging.StagePrepared(target, overwrite, requestedBackup: null, expected, write,
+        return _staging.StagePrepared(target, overwrite, expected, write,
             inputPrecondition, verify);
     }
 
@@ -138,7 +136,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
         return outputs;
     }
 
-    internal StagedOutput StagePrepared(string targetPath, bool overwrite, string? requestedBackup,
+    internal StagedOutput StagePrepared(string targetPath, bool overwrite,
         FilePublicationSnapshot expectedTarget, Action<string> write,
         FileWritePrecondition? inputPrecondition = null)
     {
@@ -149,7 +147,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
         {
             throw PublicationErrors.OutputConflict(target, expectedTarget, current);
         }
-        return _staging.StagePrepared(target, overwrite, requestedBackup, expectedTarget, write, inputPrecondition);
+        return _staging.StagePrepared(target, overwrite, expectedTarget, write, inputPrecondition);
     }
 
     internal void StageDeletionPrepared(
@@ -169,8 +167,8 @@ public sealed class AtomicOutputSetWriter : IDisposable
 
     /// <summary>
     /// Publishes all staged outputs and returns their sizes in stage order.
-    /// A failed commit is recovered and reported as a stable publication error;
-    /// incomplete recovery maps to exit code 8.
+    /// A failed commit is rolled back and reported as a stable publication error;
+    /// an incomplete rollback is OUTPUT_PUBLICATION_PARTIAL.
     /// </summary>
     public IReadOnlyList<long> Commit() => Commit(beforeCommit: null);
 
@@ -209,7 +207,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
     internal FilePublicationSnapshot PublishedSnapshot(string targetPath)
     {
         string target = Path.GetFullPath(targetPath);
-        PublicationJournalEntry entry = _plan.Journal.Entries.Single(
+        PublicationEntry entry = _plan.Entries.Single(
             candidate => FilePaths.Same(candidate.Target, target));
         return entry.PublishedSnapshot
             ?? throw new InvalidOperationException(
@@ -264,15 +262,14 @@ public sealed class AtomicOutputSetWriter : IDisposable
     {
         try
         {
-            return (_recovery.RollBack(), null);
+            return (_commit.RollBack(), null);
         }
         catch (Exception exception)
         {
-            _plan.Journal.State = PublicationTransactionState.Partial;
-            _plan.TryPersist();
-            PublicationRecoveryItem[] items = _plan.Journal.Entries
+            _plan.State = PublicationTransactionState.Partial;
+            PublicationRecoveryItem[] items = _plan.Entries
                 .OrderBy(static entry => entry.Index)
-                .Select(entry => new PublicationRecoveryItem(
+                .Select(entry => AtomicPublicationCommit.Located(new PublicationRecoveryItem(
                     entry.Target,
                     entry.Original.Exists,
                     Published: entry.State is PublicationEntryState.Publishing
@@ -280,7 +277,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
                     Status: "unknown",
                     ContentVerified: false,
                     MetadataVerified: false,
-                    Failure: exception.GetType().Name))
+                    Failure: exception.GetType().Name), entry))
                 .ToArray();
             return (new PublicationRecoveryReport(false, items), exception);
         }

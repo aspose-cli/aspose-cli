@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.IO.Files;
 
 namespace Aspose.Cli.Sdk.IO.Publication;
 
-/// <summary>The errors of output publication, which report its snapshots and recovery.</summary>
+/// <summary>The errors of output publication, which report its snapshots and rollback.</summary>
 internal static class PublicationErrors
 {
     internal static CliException OutputConflict(
@@ -44,6 +44,7 @@ internal static class PublicationErrors
                 ["contentVerified"] = item.ContentVerified,
                 ["metadataVerified"] = item.MetadataVerified,
                 ["failure"] = item.Failure,
+                ["originalPath"] = item.OriginalPath,
             });
         }
 

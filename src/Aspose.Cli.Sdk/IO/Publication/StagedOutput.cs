@@ -6,9 +6,9 @@ namespace Aspose.Cli.Sdk.IO.Publication;
 /// <summary>The exact staged file produced for one final output, before publication.</summary>
 public sealed class StagedOutput
 {
-    private readonly PublicationJournalEntry _entry;
+    private readonly PublicationEntry _entry;
 
-    internal StagedOutput(PublicationJournalEntry entry) => _entry = entry;
+    internal StagedOutput(PublicationEntry entry) => _entry = entry;
 
     public string Path => _entry.Staged;
     public string TargetPath => _entry.Target;

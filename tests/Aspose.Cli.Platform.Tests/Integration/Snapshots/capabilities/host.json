@@ -1276,6 +1276,9 @@
             "originalError": {
               "description": "The error that stopped a publication: its code and details."
             },
+            "originalPath": {
+              "description": "Where the original that a publication moved aside is now, when the publication could not move it back."
+            },
             "part": {
               "description": "The kind of part of a document that holds text an operation found and left as it was, one of these tokens.",
               "type": "string",
@@ -1371,7 +1374,7 @@
               "description": "The target the error is about."
             },
             "targets": {
-              "description": "The publication targets and their state."
+              "description": "The publication targets and their state; a target whose original was not moved back names where it is (originalPath)."
             },
             "timeoutSeconds": {
               "description": "The timeout that elapsed, in seconds."
@@ -2821,13 +2824,6 @@
       "maximum": 1000,
       "unit": "items",
       "enforcementStage": "output-set-admission"
-    },
-    {
-      "kind": "publication-metadata-bytes",
-      "default": 8388608,
-      "maximum": 8388608,
-      "unit": "bytes",
-      "enforcementStage": "publication-seal"
     },
     {
       "kind": "raster-pixels",

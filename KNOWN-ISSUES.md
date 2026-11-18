@@ -777,8 +777,7 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   `0xC00000FD`, with nothing on stdout and the runtime's `Stack overflow.` and stack trace on
   stderr. An output published before the check stays, as `pdf render`'s image does; one only
   staged, as the outputs of `pdf edit` and `pdf convert` are, is not published, but its
-  `.aspose-publication-*` staging stays in the output's directory until the next command that
-  writes there removes it.
+  `.aspose-publication-*` staging stays in the output's directory.
 
 ### PDF-MD-FIELD-REPEATS
 

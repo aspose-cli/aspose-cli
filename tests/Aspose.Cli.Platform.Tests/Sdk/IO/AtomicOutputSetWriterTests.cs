@@ -242,6 +242,8 @@ public sealed class AtomicOutputSetWriterTests
         JsonObject firstState = Assert.IsType<JsonObject>(targets[0]);
         Assert.Equal("unknown", firstState["status"]!.GetValue<string>());
         Assert.False(firstState["contentVerified"]!.GetValue<bool>());
+        Assert.Equal("original-one", File.ReadAllText(firstState["originalPath"]!.GetValue<string>()));
+        Assert.Null(Assert.IsType<JsonObject>(targets[1])["originalPath"]);
         Assert.Equal("replacement-one", File.ReadAllText(first));
         Assert.Equal("original-two", File.ReadAllText(second));
         Assert.Single(Directory.EnumerateDirectories(temp.Path, ".aspose-*"));
@@ -261,20 +263,84 @@ public sealed class AtomicOutputSetWriterTests
                 : point.Kind == PublicationFaultKind.Rollback && point.EntryIndex == 0
                     ? new IOException("rollback fault")
                     : null);
+        CliException error;
         using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults))
         {
             set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement-one"));
             set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
-            CliException error = Assert.Throws<CliException>(() => set.Commit());
+            error = Assert.Throws<CliException>(() => set.Commit());
             Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
         }
 
         string transaction = Assert.Single(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
         string displaced = Path.Combine(transaction, "backups", "000001.displaced");
+        Assert.Equal(displaced, error.Details!["targets"]![0]!["originalPath"]!.GetValue<string>());
         Assert.Equal("original-one", File.ReadAllText(displaced));
         Assert.Empty(Directory.EnumerateFiles(transaction, "*.backup", SearchOption.AllDirectories));
         File.Copy(displaced, first, overwrite: true);
         Assert.Equal("original-one", File.ReadAllText(first));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void RollbackKeepsATargetChangedAfterItsSwap(bool existed)
+    {
+        using var temp = new TempDirectory();
+        string first = temp.File("first.txt");
+        string second = temp.File("second.txt");
+        if (existed) { File.WriteAllText(first, "original-one"); }
+        File.WriteAllText(second, "original-two");
+        var faults = new SelectiveFaultInjector(point =>
+        {
+            if (point.Kind != PublicationFaultKind.Publish || point.EntryIndex != 1) { return null; }
+            File.WriteAllText(first, "changed by someone else");
+            return new IOException("publish fault");
+        });
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults);
+        set.Stage(first, overwrite: existed, staged => File.WriteAllText(staged, "replacement-one"));
+        set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
+
+        CliException error = Assert.Throws<CliException>(() => set.Commit());
+
+        Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
+        Assert.Equal("changed by someone else", File.ReadAllText(first));
+        Assert.Equal("original-two", File.ReadAllText(second));
+        JsonNode? originalPath = error.Details!["targets"]![0]!["originalPath"];
+        if (existed) { Assert.Equal("original-one", File.ReadAllText(originalPath!.GetValue<string>())); }
+        else { Assert.Null(originalPath); }
+    }
+
+    [Fact]
+    public void RollbackKeepsAnotherFileOfTheSameContentThatTookAPublishedTargetsPlace()
+    {
+        Requires.Windows();
+
+        using var temp = new TempDirectory();
+        string first = temp.File("first.txt");
+        string second = temp.File("second.txt");
+        File.WriteAllText(first, "original-one");
+        File.WriteAllText(second, "original-two");
+        FilePublicationSnapshot? replacement = null;
+        var faults = new SelectiveFaultInjector(point =>
+        {
+            if (point.Kind != PublicationFaultKind.Publish || point.EntryIndex != 1) { return null; }
+            string other = temp.File("other.txt");
+            File.WriteAllText(other, "replacement-one");
+            replacement = FilePublicationSnapshot.Capture(other);
+            File.Move(other, first, overwrite: true);
+            return new IOException("publish fault");
+        });
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults);
+        set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement-one"));
+        set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
+
+        CliException error = Assert.Throws<CliException>(() => set.Commit());
+
+        Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
+        Assert.True(replacement!.VersionEquals(FilePublicationSnapshot.Capture(first)));
+        Assert.Equal("original-one", File.ReadAllText(error.Details!["targets"]![0]!["originalPath"]!.GetValue<string>()));
+        Assert.Equal("original-two", File.ReadAllText(second));
     }
 
     [Fact]
@@ -333,6 +399,7 @@ public sealed class AtomicOutputSetWriterTests
 
         Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
         Assert.False(error.Details!["recoveryComplete"]!.GetValue<bool>());
+        Assert.Equal("original-one", File.ReadAllText(error.Details["targets"]![0]!["originalPath"]!.GetValue<string>()));
     }
 
     [Fact]
@@ -365,9 +432,9 @@ public sealed class AtomicOutputSetWriterTests
             Directory.EnumerateDirectories(
                 temp.Path,
                 ".aspose-publication-*"));
-        Assert.True(File.Exists(Path.Combine(
-            transaction,
-            AtomicPublicationPlan.JournalName)));
+        string original = error.Details!["targets"]![0]!["originalPath"]!.GetValue<string>();
+        Assert.StartsWith(transaction + Path.DirectorySeparatorChar, original, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("original-one", File.ReadAllText(original));
     }
 
     [Fact]
@@ -394,46 +461,6 @@ public sealed class AtomicOutputSetWriterTests
         Assert.Single(Directory.EnumerateFiles(temp.Path, "*", SearchOption.AllDirectories),
             path => File.ReadAllText(path) == "external");
         Assert.NotEqual("replacement", File.ReadAllText(target));
-    }
-
-    [Fact]
-    public void JournalFailureAfterPublicationStillTriggersVerifiedRecovery()
-    {
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        File.WriteAllText(target, "original");
-        bool publicationStarted = false;
-        bool injected = false;
-        var faults = new SelectiveFaultInjector(point =>
-        {
-            if (point.Kind == PublicationFaultKind.Publish)
-            {
-                publicationStarted = true;
-                return null;
-            }
-
-            if (publicationStarted
-                && !injected
-                && point.Kind == PublicationFaultKind.JournalWrite)
-            {
-                injected = true;
-                return new IOException("journal fault");
-            }
-
-            return null;
-        });
-        using var set = new AtomicOutputSetWriter(
-            TestBudgets.Writer(),
-            temp.Path,
-            "test",
-            faults);
-        set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
-
-        CliException error = Assert.Throws<CliException>(() => set.Commit());
-
-        Assert.Equal(ErrorCodes.OutputPublicationFailed, error.Code);
-        Assert.True(error.Details!["recoveryComplete"]!.GetValue<bool>());
-        Assert.Equal("original", File.ReadAllText(target));
     }
 
     [Fact]
@@ -533,399 +560,6 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
-    public void AbandonedPublishingJournalIsRecoveredAndRemoved()
-    {
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        string transaction = Path.Combine(
-            temp.Path,
-            ".aspose-publication-crashed-0001");
-        string backups = Path.Combine(transaction, "backups");
-        Directory.CreateDirectory(transaction);
-        Directory.CreateDirectory(backups);
-        string staged = AtomicPublicationPlan.StagedPath(
-            transaction,
-            target,
-            index: 0);
-        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        string displaced = Path.Combine(backups, "000001.displaced");
-        File.WriteAllText(target, "original");
-        FilePublicationSnapshot original =
-            FilePublicationSnapshot.Capture(target);
-        File.WriteAllText(staged, "replacement");
-        FilePublicationSnapshot stagedSnapshot =
-            FilePublicationSnapshot.Capture(staged);
-        File.Replace(staged, target, displaced);
-        var journal = new PublicationJournal
-        {
-            Operation = "crashed",
-            OwnerProcessId = int.MaxValue,
-            OwnerProcessStartUtcTicks = 1,
-            State = PublicationTransactionState.Publishing,
-            Entries =
-            [
-                new PublicationJournalEntry
-                {
-                    Index = 0,
-                    Target = target,
-                    Staged = staged,
-                    Displaced = displaced,
-                    DisplacedSnapshot =
-                        FilePublicationSnapshot.Capture(displaced),
-                    Overwrite = true,
-                    Original = original,
-                    StagedSnapshot = stagedSnapshot,
-                    TargetParentIdentity =
-                        OutputPathValidator.CaptureParentIdentity(target),
-                    PublishedSnapshot = FilePublicationSnapshot.Capture(target),
-                    State = PublicationEntryState.Published,
-                    Size = stagedSnapshot.Length,
-                },
-            ],
-        };
-        journal.Write(Path.Combine(transaction, AtomicPublicationPlan.JournalName));
-
-        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
-
-        Assert.Equal(1, recovered);
-        Assert.Equal("original", File.ReadAllText(target));
-        Assert.False(Directory.Exists(transaction));
-    }
-
-    [Fact]
-    public void InterruptedDeletionIsRecoveredWithoutAPublishedSnapshot()
-    {
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        string transaction = Path.Combine(
-            temp.Path,
-            ".aspose-publication-crashed-delete");
-        string backups = Path.Combine(transaction, "backups");
-        Directory.CreateDirectory(transaction);
-        Directory.CreateDirectory(backups);
-        string staged = AtomicPublicationPlan.StagedPath(
-            transaction,
-            target,
-            index: 0);
-        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        string displaced = Path.Combine(backups, "000001.displaced");
-        File.WriteAllText(target, "original");
-        FilePublicationSnapshot original =
-            FilePublicationSnapshot.Capture(target);
-        File.WriteAllBytes(staged, []);
-        File.Move(target, displaced);
-        var journal = new PublicationJournal
-        {
-            Operation = "crashed-delete",
-            OwnerProcessId = int.MaxValue,
-            OwnerProcessStartUtcTicks = 1,
-            State = PublicationTransactionState.Publishing,
-            Entries =
-            [
-                new PublicationJournalEntry
-                {
-                    Index = 0,
-                    Target = target,
-                    Staged = staged,
-                    Displaced = displaced,
-                    Overwrite = true,
-                    Original = original,
-                    StagedSnapshot = FilePublicationSnapshot.Capture(staged),
-                    TargetParentIdentity =
-                        OutputPathValidator.CaptureParentIdentity(target),
-                    State = PublicationEntryState.Publishing,
-                    DeleteTarget = true,
-                    Size = 0,
-                },
-            ],
-        };
-        journal.Write(Path.Combine(
-            transaction,
-            AtomicPublicationPlan.JournalName));
-
-        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
-
-        Assert.Equal(1, recovered);
-        Assert.Equal("original", File.ReadAllText(target));
-        Assert.False(Directory.Exists(transaction));
-    }
-
-    [Fact]
-    public void InterruptedReplacementIsRecoveredWithoutAPublishedSnapshot()
-    {
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        (string transaction, string staged, _) =
-            CreateInterruptedReplacementTransaction(temp.Path, target);
-
-        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
-
-        Assert.Equal(1, recovered);
-        Assert.Equal("original", File.ReadAllText(target));
-        Assert.False(Directory.Exists(transaction));
-        Assert.False(File.Exists(staged));
-    }
-
-    [Fact]
-    public void RecoveryRetryAcceptsTheOriginalPhysicalIdentity()
-    {
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        (string transaction, string staged, string displaced) =
-            CreateInterruptedReplacementTransaction(temp.Path, target);
-        File.Replace(displaced, target, staged);
-
-        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
-
-        Assert.Equal(1, recovered);
-        Assert.Equal("original", File.ReadAllText(target));
-        Assert.False(Directory.Exists(transaction));
-        Assert.False(File.Exists(staged));
-    }
-
-    [Fact]
-    public void InterruptedNewOutputIsRemovedWithoutAPublishedSnapshot()
-    {
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        string transaction = Path.Combine(
-            temp.Path,
-            ".aspose-publication-crashed-create");
-        Directory.CreateDirectory(transaction);
-        string staged = AtomicPublicationPlan.StagedPath(
-            transaction,
-            target,
-            index: 0);
-        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        File.WriteAllText(staged, "created");
-        FilePublicationSnapshot stagedSnapshot =
-            FilePublicationSnapshot.Capture(staged);
-        File.Move(staged, target);
-        var journal = new PublicationJournal
-        {
-            Operation = "crashed-create",
-            OwnerProcessId = int.MaxValue,
-            OwnerProcessStartUtcTicks = 1,
-            State = PublicationTransactionState.Publishing,
-            Entries =
-            [
-                new PublicationJournalEntry
-                {
-                    Index = 0,
-                    Target = target,
-                    Staged = staged,
-                    Overwrite = false,
-                    Original = FilePublicationSnapshot.Missing,
-                    StagedSnapshot = stagedSnapshot,
-                    TargetParentIdentity =
-                        OutputPathValidator.CaptureParentIdentity(target),
-                    State = PublicationEntryState.Publishing,
-                    Size = stagedSnapshot.Length,
-                },
-            ],
-        };
-        journal.Write(Path.Combine(
-            transaction,
-            AtomicPublicationPlan.JournalName));
-
-        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
-
-        Assert.Equal(1, recovered);
-        Assert.False(File.Exists(target));
-        Assert.False(Directory.Exists(transaction));
-    }
-
-    [Fact]
-    public void OrphanJournalTemporaryIsBoundedlyRemoved()
-    {
-        using var temp = new TempDirectory();
-        string transaction = Directory.CreateDirectory(Path.Combine(
-            temp.Path,
-            $".aspose-publication-crashed-{Guid.NewGuid():N}")).FullName;
-        string temporary = Path.Combine(
-            transaction,
-            $".{AtomicPublicationPlan.JournalName}.{Guid.NewGuid():N}.tmp");
-        File.WriteAllText(temporary, "partial journal");
-
-        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
-
-        Assert.Equal(1, recovered);
-        Assert.False(Directory.Exists(transaction));
-    }
-
-    [Fact]
-    public void NewPublicationAutomaticallyRecoversAnAbandonedTransaction()
-    {
-        using var temp = new TempDirectory();
-        string abandonedTarget = temp.File("abandoned.txt");
-        string transaction = CreateAbandonedPublishingTransaction(
-            temp.Path,
-            abandonedTarget,
-            original: "original",
-            published: "published");
-        string newTarget = temp.File("new.txt");
-
-        using (var set = new AtomicOutputSetWriter(
-                   TestBudgets.Writer(),
-                   temp.Path,
-                   "next"))
-        {
-            set.Stage(
-                newTarget,
-                overwrite: false,
-                staged => File.WriteAllText(staged, "new-output"));
-            set.Commit();
-        }
-
-        Assert.Equal("original", File.ReadAllText(abandonedTarget));
-        Assert.Equal("new-output", File.ReadAllText(newTarget));
-        Assert.False(Directory.Exists(transaction));
-        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-*"));
-    }
-
-    [Fact]
-    public void RecoveryRejectsAReplacedLeasedDirectoryBeforeScanning()
-    {
-        Requires.Windows();
-
-        using var temp = new TempDirectory();
-        string output = temp.File("output");
-        string displaced = temp.File("displaced");
-        Directory.CreateDirectory(output);
-        using PublicationDirectoryLease lease =
-            PublicationDirectoryLease.Acquire(output);
-        Directory.Move(output, displaced);
-        Directory.CreateDirectory(output);
-
-        CliException error = Assert.Throws<CliException>(() =>
-            AtomicPublicationRecovery.RecoverPendingUnderLease(
-                output,
-                lease));
-
-        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
-        Assert.Equal("path", error.Details!["phase"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void SingleFileWriteRecoversBeforeCapturingItsTargetSnapshot()
-    {
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        string transaction = CreateAbandonedPublishingTransaction(
-            temp.Path,
-            target,
-            original: "original",
-            published: "published");
-
-        TestBudgets.Writer().Write(
-            target,
-            overwrite: true,
-            staged => File.WriteAllText(staged, "next"));
-
-        Assert.Equal("next", File.ReadAllText(target));
-        Assert.False(Directory.Exists(transaction));
-    }
-
-    [Fact]
-    public void SingleFileWriteRecoversAnAncestorTransactionTargetingItsSubtreeFirst()
-    {
-        using var temp = new TempDirectory();
-        string abandonedTarget = temp.File(Path.Combine("a", "nested", "abandoned.txt"));
-        Directory.CreateDirectory(Path.GetDirectoryName(abandonedTarget)!);
-        string transaction = CreateAbandonedPublishingTransaction(
-            temp.Path,
-            abandonedTarget,
-            original: "original",
-            published: "published");
-        string childTarget = temp.File(Path.Combine("a", "nested", "new.txt"));
-
-        TestBudgets.Writer().Write(
-            childTarget,
-            overwrite: false,
-            staged => File.WriteAllText(staged, "new"));
-
-        Assert.Equal("original", File.ReadAllText(abandonedTarget));
-        Assert.Equal("new", File.ReadAllText(childTarget));
-        Assert.False(Directory.Exists(transaction));
-    }
-
-    [Fact]
-    public void AnAbandonedTransactionNeedingAWiderLeaseThatAppearsDuringProductionIsRecoveredFirst()
-    {
-        using var temp = new TempDirectory();
-        string output = Directory.CreateDirectory(temp.File("output")).FullName;
-        string other = Directory.CreateDirectory(temp.File("other")).FullName;
-        string inside = Path.Combine(output, "abandoned.txt");
-        string outside = Path.Combine(other, "abandoned.txt");
-        string newTarget = Path.Combine(output, "new.txt");
-        string? transaction = null;
-
-        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), output, "next"))
-        {
-            // The ancestor's transaction names a directory outside this publication's lease, so
-            // the scan under that lease cannot recover it.
-            set.Stage(newTarget, overwrite: false, staged =>
-            {
-                File.WriteAllText(staged, "new-output");
-                transaction = CreateAbandonedPublishingTransaction(temp.Path, [inside, outside]);
-            });
-            set.Commit();
-        }
-
-        Assert.Equal("original 0", File.ReadAllText(inside));
-        Assert.Equal("original 1", File.ReadAllText(outside));
-        Assert.Equal("new-output", File.ReadAllText(newTarget));
-        Assert.False(Directory.Exists(transaction));
-    }
-
-    [Fact]
-    public void AbandonedRecoveryPreservesAnExternalTargetChange()
-    {
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        string transaction = CreateAbandonedPublishingTransaction(
-            temp.Path,
-            target,
-            original: "original",
-            published: "published");
-        File.WriteAllText(target, "external-change");
-
-        CliException error = Assert.Throws<CliException>(
-            () => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
-
-        Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
-        Assert.Equal("external-change", File.ReadAllText(target));
-        Assert.True(Directory.Exists(transaction));
-    }
-
-    [Fact]
-    public void AbandonedRecoveryRejectsSameContentExternalReplacement()
-    {
-        Requires.Windows();
-
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        string transaction = CreateAbandonedPublishingTransaction(
-            temp.Path,
-            target,
-            original: "original",
-            published: "published");
-        string external = temp.File("external.txt");
-        File.WriteAllText(external, "published");
-        FilePublicationSnapshot expectedExternal =
-            FilePublicationSnapshot.Capture(external);
-        File.Move(external, target, overwrite: true);
-
-        CliException error = Assert.Throws<CliException>(
-            () => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
-
-        Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
-        Assert.True(expectedExternal.VersionEquals(
-            FilePublicationSnapshot.Capture(target)));
-        Assert.True(Directory.Exists(transaction));
-    }
-
-    [Fact]
     public void SealingRejectsAndPreservesUnknownTransactionArtifacts()
     {
         using var temp = new TempDirectory();
@@ -947,142 +581,6 @@ public sealed class AtomicOutputSetWriterTests
 
         Assert.False(File.Exists(target));
         Assert.Equal("external", File.ReadAllText(unknown));
-        Assert.False(File.Exists(Path.Combine(
-            transaction,
-            AtomicPublicationPlan.JournalName)));
-    }
-
-    [Fact]
-    public void PartialJournalIsNeverDeletedByLaterAutomaticRecovery()
-    {
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        string transaction = CreateAbandonedPublishingTransaction(
-            temp.Path,
-            target,
-            original: "original",
-            published: "published");
-        string journalPath = Path.Combine(
-            transaction,
-            AtomicPublicationPlan.JournalName);
-        PublicationJournal journal = PublicationJournal.Read(journalPath);
-        journal.State = PublicationTransactionState.Partial;
-        journal.Write(journalPath);
-        string displaced = Assert.Single(journal.Entries).Displaced!;
-
-        CliException error = Assert.Throws<CliException>(() =>
-            AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
-
-        Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
-        Assert.True(File.Exists(journalPath));
-        Assert.True(File.Exists(displaced));
-        Assert.True(Directory.Exists(transaction));
-    }
-
-    [Fact]
-    public void OversizedRecoveryJournalIsRejectedWithoutDeletion()
-    {
-        using var temp = new TempDirectory();
-        string transaction = Path.Combine(
-            temp.Path,
-            ".aspose-publication-invalid-large");
-        Directory.CreateDirectory(transaction);
-        string journal = Path.Combine(
-            transaction,
-            AtomicPublicationPlan.JournalName);
-        File.WriteAllBytes(
-            journal,
-            new byte[PublicationJournal.MaximumBytes + 1]);
-
-        CliException error = Assert.Throws<CliException>(
-            () => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
-
-        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
-        Assert.Equal("recovery", error.Details!["phase"]!.GetValue<string>());
-        Assert.True(File.Exists(journal));
-    }
-
-    [Fact]
-    public void DuplicateRecoveryJournalPropertiesAreRejected()
-    {
-        using var temp = new TempDirectory();
-        string transaction = Directory.CreateDirectory(Path.Combine(
-            temp.Path,
-            ".aspose-publication-invalid-duplicate")).FullName;
-        string journal = Path.Combine(
-            transaction,
-            AtomicPublicationPlan.JournalName);
-        File.WriteAllText(
-            journal,
-            """
-            {"version":1,"operation":"first","operation":"second","state":0,"entries":[]}
-            """);
-
-        CliException error = Assert.Throws<CliException>(
-            () => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
-
-        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
-        Assert.Equal("recovery", error.Details!["phase"]!.GetValue<string>());
-        Assert.True(File.Exists(journal));
-    }
-
-    [Fact]
-    public void NullRecoveryJournalEntriesAreRejected()
-    {
-        using var temp = new TempDirectory();
-        string transaction = Directory.CreateDirectory(Path.Combine(
-            temp.Path,
-            ".aspose-publication-invalid-null")).FullName;
-        string journal = Path.Combine(
-            transaction,
-            AtomicPublicationPlan.JournalName);
-        File.WriteAllText(
-            journal,
-            """
-            {"version":1,"operation":"invalid","ownerProcessId":1,"state":0,"entries":null}
-            """);
-
-        CliException error = Assert.Throws<CliException>(
-            () => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
-
-        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
-        Assert.Equal("recovery", error.Details!["phase"]!.GetValue<string>());
-        Assert.True(File.Exists(journal));
-    }
-
-    [Fact]
-    [SupportedOSPlatform("windows")]
-    public void ForeignTransactionDirectoriesNeitherBlockNorConsumeRecoveryBudget()
-    {
-        // Assigning another principal as owner needs the restore privilege of an elevated token.
-        Requires.ElevatedWindows();
-        using var temp = new TempDirectory();
-        string nested = Directory.CreateDirectory(temp.File("nested")).FullName;
-        var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
-        var planted = new List<string>();
-        foreach (string parent in new[] { temp.Path, nested })
-        {
-            for (int index = 0; index < 40; index++)
-            {
-                string foreign = Directory.CreateDirectory(
-                    Path.Combine(parent, $".aspose-publication-foreign-{index:000}")).FullName;
-                string journal = Path.Combine(foreign, AtomicPublicationPlan.JournalName);
-                File.WriteAllText(journal, "{\"state\":\"Partial\"}");
-                planted.Add(journal);
-            }
-            SetOwner(Path.Combine(parent, ".aspose-publication-foreign-*"), system);
-        }
-        Assert.All(planted, journal => Assert.Equal(system, OwnerOf(Path.GetDirectoryName(journal)!)));
-
-        string target = Path.Combine(nested, "target.txt");
-        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), nested, "foreign-state"))
-        {
-            set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "content"));
-            set.Commit();
-        }
-
-        Assert.Equal("content", File.ReadAllText(target));
-        Assert.All(planted, journal => Assert.True(File.Exists(journal)));
     }
 
     [Fact]
@@ -1117,31 +615,6 @@ public sealed class AtomicOutputSetWriterTests
         Assert.Equal(
             new HashSet<SecurityIdentifier> { user, new(WellKnownSidType.LocalSystemSid, null) },
             principals);
-    }
-
-    [Fact]
-    [SupportedOSPlatform("windows")]
-    public void TransactionOwnedByTheElevatedTokensDefaultOwnerIsRecovered()
-    {
-        Requires.ElevatedWindows();
-        var administrators = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-        Assert.SkipUnless(administrators == WindowsIdentity.GetCurrent().Owner,
-            "Requires a token whose default owner is the Administrators group.");
-        using var temp = new TempDirectory();
-        string target = temp.File("target.txt");
-        string transaction = CreateAbandonedPublishingTransaction(
-            temp.Path,
-            target,
-            original: "original",
-            published: "published");
-        Assert.Equal(administrators, OwnerOf(transaction));
-        Assert.NotEqual(WindowsIdentity.GetCurrent().User, OwnerOf(transaction));
-
-        int recovered = AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null);
-
-        Assert.Equal(1, recovered);
-        Assert.Equal("original", File.ReadAllText(target));
-        Assert.False(Directory.Exists(transaction));
     }
 
     [Fact]
@@ -1182,77 +655,6 @@ public sealed class AtomicOutputSetWriterTests
     private static string AccessSddl(string path) =>
         new FileInfo(path).GetAccessControl(AccessControlSections.Access)
             .GetSecurityDescriptorSddlForm(AccessControlSections.Access);
-
-    [SupportedOSPlatform("windows")]
-    private static IdentityReference? OwnerOf(string directory) =>
-        new DirectoryInfo(directory).GetAccessControl(AccessControlSections.Owner)
-            .GetOwner(typeof(SecurityIdentifier));
-
-    /// <summary>Uses icacls, which enables the restore privilege that assigning another owner needs.</summary>
-    [SupportedOSPlatform("windows")]
-    private static void SetOwner(string pattern, SecurityIdentifier owner)
-    {
-        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
-            Path.Combine(Environment.SystemDirectory, "icacls.exe"))
-        {
-            ArgumentList = { pattern, "/setowner", "*" + owner.Value, "/Q" },
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        })!;
-        string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
-        process.WaitForExit();
-        Assert.True(process.ExitCode == 0, output);
-    }
-
-    [Fact]
-    public void UnrelatedAncestorTransactionDoesNotBlockNestedPublication()
-    {
-        using var temp = new TempDirectory();
-        string transaction = Directory.CreateDirectory(temp.File(".aspose-publication-invalid-ancestor")).FullName;
-        string journal = Path.Combine(transaction, AtomicPublicationPlan.JournalName);
-        File.WriteAllText(journal, """{"version":1,"operation":"invalid","ownerProcessId":1,"state":0,"entries":null}""");
-        string nested = Directory.CreateDirectory(temp.File("nested")).FullName;
-        string target = Path.Combine(nested, "target.txt");
-
-        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), nested, "nested"))
-        {
-            set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "content"));
-            set.Commit();
-        }
-
-        Assert.Equal("content", File.ReadAllText(target));
-        Assert.True(File.Exists(journal));
-        Assert.Throws<CliException>(() => AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
-    }
-
-    [Fact]
-    public void UnrelatedAsposeDirectoriesDoNotConsumeRecoveryBudget()
-    {
-        using var temp = new TempDirectory();
-        for (int index = 0; index < 40; index++)
-        {
-            Directory.CreateDirectory(temp.File($".aspose-user-{index:000}"));
-        }
-        string target = temp.File("target.txt");
-
-        using (var set = new AtomicOutputSetWriter(
-                   TestBudgets.Writer(),
-                   temp.Path,
-                   "..\\..\\untrusted-operation"))
-        {
-            set.Stage(
-                target,
-                overwrite: false,
-                staged => File.WriteAllText(staged, "content"));
-            set.Commit();
-        }
-
-        Assert.Equal("content", File.ReadAllText(target));
-        Assert.Empty(Directory.EnumerateDirectories(
-            temp.Path,
-            ".aspose-publication-*"));
-    }
 
     [Fact]
     public async Task StagingDoesNotBlockAnIndependentDirectoryPublication()
@@ -1579,154 +981,4 @@ public sealed class AtomicOutputSetWriterTests
         }
     }
 
-    private static (string Transaction, string Staged, string Displaced)
-        CreateInterruptedReplacementTransaction(
-            string root,
-            string target)
-    {
-        string transaction = Path.Combine(
-            root,
-            $".aspose-publication-crashed-{Guid.NewGuid():N}");
-        string backups = Path.Combine(transaction, "backups");
-        Directory.CreateDirectory(transaction);
-        Directory.CreateDirectory(backups);
-        string staged = AtomicPublicationPlan.StagedPath(
-            transaction,
-            target,
-            index: 0);
-        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        string displaced = Path.Combine(backups, "000001.displaced");
-        File.WriteAllText(target, "original");
-        FilePublicationSnapshot original =
-            FilePublicationSnapshot.Capture(target);
-        File.WriteAllText(staged, "replacement");
-        FilePublicationSnapshot stagedSnapshot =
-            FilePublicationSnapshot.Capture(staged);
-        File.Replace(staged, target, displaced);
-        var journal = new PublicationJournal
-        {
-            Operation = "crashed-replace",
-            OwnerProcessId = int.MaxValue,
-            OwnerProcessStartUtcTicks = 1,
-            State = PublicationTransactionState.Publishing,
-            Entries =
-            [
-                new PublicationJournalEntry
-                {
-                    Index = 0,
-                    Target = target,
-                    Staged = staged,
-                    Displaced = displaced,
-                    Overwrite = true,
-                    Original = original,
-                    StagedSnapshot = stagedSnapshot,
-                    TargetParentIdentity =
-                        OutputPathValidator.CaptureParentIdentity(target),
-                    State = PublicationEntryState.Publishing,
-                    Size = stagedSnapshot.Length,
-                },
-            ],
-        };
-        journal.Write(Path.Combine(
-            transaction,
-            AtomicPublicationPlan.JournalName));
-        return (transaction, staged, displaced);
-    }
-
-    private static string CreateAbandonedPublishingTransaction(
-        string root,
-        string target,
-        string original,
-        string published)
-    {
-        string transaction = Path.Combine(
-            root,
-            $".aspose-publication-crashed-{Guid.NewGuid():N}");
-        string backups = Path.Combine(transaction, "backups");
-        Directory.CreateDirectory(transaction);
-        Directory.CreateDirectory(backups);
-        string staged = AtomicPublicationPlan.StagedPath(
-            transaction,
-            target,
-            index: 0);
-        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-        string displaced = Path.Combine(backups, "000001.displaced");
-        File.WriteAllText(target, original);
-        FilePublicationSnapshot originalSnapshot =
-            FilePublicationSnapshot.Capture(target);
-        File.WriteAllText(staged, published);
-        FilePublicationSnapshot stagedSnapshot =
-            FilePublicationSnapshot.Capture(staged);
-        File.Replace(staged, target, displaced);
-        var journal = new PublicationJournal
-        {
-            Operation = "crashed",
-            OwnerProcessId = int.MaxValue,
-            OwnerProcessStartUtcTicks = 1,
-            State = PublicationTransactionState.Publishing,
-            Entries =
-            [
-                new PublicationJournalEntry
-                {
-                    Index = 0,
-                    Target = target,
-                    Staged = staged,
-                    Displaced = displaced,
-                    DisplacedSnapshot =
-                        FilePublicationSnapshot.Capture(displaced),
-                    Overwrite = true,
-                    Original = originalSnapshot,
-                    StagedSnapshot = stagedSnapshot,
-                    TargetParentIdentity =
-                        OutputPathValidator.CaptureParentIdentity(target),
-                    PublishedSnapshot = FilePublicationSnapshot.Capture(target),
-                    State = PublicationEntryState.Published,
-                    Size = stagedSnapshot.Length,
-                },
-            ],
-        };
-        journal.Write(Path.Combine(
-            transaction,
-            AtomicPublicationPlan.JournalName));
-        return transaction;
-    }
-
-    /// <summary>
-    /// Leaves the transaction of a process that ended after replacing every target: target
-    /// <c>i</c> held "original i" and now holds "published i".
-    /// </summary>
-    private static string CreateAbandonedPublishingTransaction(string root, IReadOnlyList<string> targets)
-    {
-        string transaction = Directory.CreateDirectory(
-            Path.Combine(root, $".aspose-publication-crashed-{Guid.NewGuid():N}")).FullName;
-        string backups = Directory.CreateDirectory(Path.Combine(transaction, "backups")).FullName;
-        var entries = new List<PublicationJournalEntry>();
-        for (int index = 0; index < targets.Count; index++)
-        {
-            string target = targets[index];
-            string staged = AtomicPublicationPlan.StagedPath(transaction, target, index);
-            string displaced = Path.Combine(backups, $"{index + 1:000000}.displaced");
-            Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
-            File.WriteAllText(target, $"original {index}");
-            FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
-            File.WriteAllText(staged, $"published {index}");
-            FilePublicationSnapshot candidate = FilePublicationSnapshot.Capture(staged);
-            File.Replace(staged, target, displaced);
-            entries.Add(new PublicationJournalEntry
-            {
-                Index = index, Target = target, Staged = staged, Overwrite = true,
-                Displaced = displaced, DisplacedSnapshot = FilePublicationSnapshot.Capture(displaced),
-                Original = original, StagedSnapshot = candidate,
-                TargetParentIdentity = OutputPathValidator.CaptureParentIdentity(target),
-                PublishedSnapshot = FilePublicationSnapshot.Capture(target),
-                State = PublicationEntryState.Published, Size = candidate.Length,
-            });
-        }
-        new PublicationJournal
-        {
-            Operation = "crashed", OwnerProcessId = int.MaxValue, OwnerProcessStartUtcTicks = 1,
-            State = PublicationTransactionState.Publishing, Entries = entries,
-        }.Write(Path.Combine(transaction, AtomicPublicationPlan.JournalName));
-        return transaction;
-    }
 }

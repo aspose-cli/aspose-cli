@@ -107,7 +107,7 @@ public sealed class ExtractionGuard : IDisposable
             long reserved = Math.Max(0, sizeBytes);
             long limit = _budget.WriteLimit(reserved);
             FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
-            StagedOutput output = _transaction.StagePrepared(target, _overwrite, requestedBackup: null, original, staged =>
+            StagedOutput output = _transaction.StagePrepared(target, _overwrite, original, staged =>
             {
                 using var file = new FileStream(staged, FileMode.Truncate, FileAccess.ReadWrite, FileShare.None);
                 using Stream bounded = _budget.Bound(file, limit, name);

@@ -56,8 +56,8 @@ Branch on the exit code first, then on the code in the envelope:
   envelope ever comes with it.
 - 130: the command was cancelled with Ctrl+C. The work stops, nothing is
   published, its staging is removed and no error is written. A second Ctrl+C
-  ends the process at once; the next command that writes into the same
-  directory removes the staging it left.
+  ends the process at once, and the `.aspose-publication-*` staging directory
+  it was writing stays.
 - An exit code the CLI never uses (it uses 0 to 9 and 130), such as
   -1073741571 (`0xC00000FD`): the runtime ended the process, as a stack
   overflow in a document engine does. No error envelope is written, and what
@@ -67,7 +67,9 @@ Branch on the exit code first, then on the code in the envelope:
   on the command line, input errors (exit 3) in the input file or its
   password, and `OPERATION_TIMEOUT` (exit 9) by a smaller request. A
   publication that failed and could not be fully restored
-  (`OUTPUT_PUBLICATION_PARTIAL`) exits 5 like the other output errors.
+  (`OUTPUT_PUBLICATION_PARTIAL`) exits 5 like the other output errors; each
+  target it did not restore whose original it had moved aside gives that
+  original's path in `details.targets[].originalPath`.
 
 ## Diagnosis
 
