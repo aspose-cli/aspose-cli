@@ -44,7 +44,7 @@ Read the product overview before the first command on that document type.
    only the ranges, pages, slides or blocks you need, following `window.next`
    (`aspose-cli docs reading`). Never rebuild a document from a JSON dump.
 2. **Edit in one batch.** Put related changes in one `edit --ops` file; the
-   batch is atomic by default (`aspose-cli docs editing`).
+   batch is atomic (`aspose-cli docs editing`).
 3. **Protect the user's file.** Write to `--out`, or replace the input with
    `--in-place`. `--dry-run` checks a request without writing.
 4. **Read back, then look.** Report values from a read after the edit, render
