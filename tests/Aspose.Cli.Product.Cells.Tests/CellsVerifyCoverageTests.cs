@@ -75,22 +75,6 @@ public sealed class CellsVerifyCoverageTests : IDisposable
         Assert.Contains("1003 direct,", edited.StdOut, StringComparison.Ordinal);
     }
 
-    /// <summary>An operation a best-effort batch could not apply is unchecked because it failed.</summary>
-    [Fact]
-    public void Verify_NamesAFailedOperationAsFailed()
-    {
-        string input = _fixture.CreateSalesWorkbook();
-        CliResult edited = Cli("cells", "edit", input, "--best-effort", "--out", "out.xlsx", "--verify", "--output-format", "json",
-            "--ops", """{"ops":[{"id":"bad","op":"set_values","sheet":"Missing","range":"A1","values":[[1]]},{"id":"cell","op":"set_values","sheet":"Data","range":"A20","values":[[1]]}]}""");
-
-        Assert.True(edited.ExitCode == 8, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
-        JsonNode verification = Verification(edited);
-        Assert.Equal(["cell"], verification["checkedOps"]!.AsArray().Select(static id => id!.GetValue<string>()));
-        JsonNode item = Assert.Single(verification["uncheckedOps"]!.AsArray())!;
-        Assert.Equal("bad", item["id"]!.GetValue<string>());
-        Assert.Contains("failed", item["reason"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
     /// <summary>
     /// Unlike a Word or PowerPoint link, a linked picture the load cannot read is gone from the
     /// output: the warning about it is an issue, and the output has no picture.

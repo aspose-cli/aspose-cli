@@ -70,48 +70,6 @@ public sealed class WordsSnapshotOutcomeTests
     }
 
     [Fact]
-    public void BestEffort_ADeletionThatFailed_DoesNotRefuseALaterOperationOnWhatItWouldHaveDeleted()
-    {
-        using var fixture = new WordsFixture();
-
-        // The document's only section cannot be deleted, so its blocks remain to be edited.
-        WordsEditResult result = Edit(
-            fixture,
-            fixture.CreateReport(),
-            bestEffort: true,
-            new DeleteSectionOp { Section = 1 },
-            new SetTextOp { Target = new WordsTarget { Block = 2 }, Text = "Still here" });
-
-        Assert.Equal([OpStatuses.Failed, OpStatuses.Ok], result.Applied.Select(static outcome => outcome.Status));
-        Assert.DoesNotContain("deleted by an earlier operation", result.Applied[0].Error!.Message, StringComparison.Ordinal);
-        Assert.Contains("Still here", new Document(result.Output!.Path).GetText(), StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void BestEffort_AnOperationWhoseAddressFailed_DoesNotRefuseALaterNumberedRevisionDecision()
-    {
-        using var fixture = new WordsFixture();
-        string input = fixture.Temp.File("tracked.docx");
-        var document = new Document();
-        var builder = new DocumentBuilder(document);
-        builder.Writeln("Base text.");
-        document.StartTrackRevisions("Reviewer");
-        builder.Write("Added by the reviewer.");
-        document.StopTrackRevisions();
-        document.Save(input);
-
-        WordsEditResult result = Edit(
-            fixture,
-            input,
-            bestEffort: true,
-            new SetTextOp { Target = new WordsTarget { Block = 99 }, Text = "Nowhere" },
-            new AcceptRevisionsOp { Revisions = [1] });
-
-        Assert.Equal([OpStatuses.Failed, OpStatuses.Ok], result.Applied.Select(static outcome => outcome.Status));
-        Assert.Equal(0, new Document(result.Output!.Path).Revisions.Count);
-    }
-
-    [Fact]
     public void ProtectDocument_OnlyAddingAPassword_ChangesTheRestriction()
     {
         using var fixture = new WordsFixture();
@@ -329,15 +287,11 @@ public sealed class WordsSnapshotOutcomeTests
     }
 
     private static WordsEditResult Edit(WordsFixture fixture, string input, params WordsOp[] ops) =>
-        Edit(fixture, input, bestEffort: false, ops);
-
-    private static WordsEditResult Edit(WordsFixture fixture, string input, bool bestEffort, params WordsOp[] ops) =>
         fixture.Disclosed(session => WordsEdit.Run(session, new WordsEditRequest
         {
             Input = input,
             Batch = new WordsOpsBatch { Ops = ops },
             Output = TestOutput.At(fixture.Temp.File($"edited-{Guid.NewGuid():N}.docx")),
-            Options = new EditCommandOptions { BestEffort = bestEffort },
             OpSecrets = new Dictionary<string, Secret> { ["PROTECT"] = new("protect-secret") },
         }));
 }

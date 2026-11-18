@@ -37,10 +37,9 @@ public sealed record SlidesEditResult() : EngineResultEnvelope("edit-result"), I
     /// </summary>
     public SlidesEditVerification? Verification { get; init; }
 
-    /// <summary>Whether an operation failed or the read-back found a difference.</summary>
+    /// <summary>Whether the read-back found a difference.</summary>
     [JsonIgnore]
-    public bool HasFailures => Applied.Any(static op => op.Status == OpStatuses.Failed)
-        || Verification is { Ok: false };
+    public bool HasFailures => Verification is { Ok: false };
 }
 
 /// <summary>

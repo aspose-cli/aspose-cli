@@ -20,7 +20,7 @@ public sealed class WordsAddressNameTests
             [" lead "] = "x",
         };
 
-        WordsEditResult written = Edit(fixture, fixture.CreateReport(), bestEffort: false, new SetPropertiesOp { Custom = custom });
+        WordsEditResult written = Edit(fixture, fixture.CreateReport(), new SetPropertiesOp { Custom = custom });
         IReadOnlyDictionary<string, string?> read = WordsInspect.Run(fixture.Session, new WordsInspectRequest
         {
             Input = written.Output!.Path,
@@ -32,7 +32,7 @@ public sealed class WordsAddressNameTests
             Assert.Single(written.Applied).Targets.Order(StringComparer.Ordinal));
         Assert.Equal(custom, custom.Keys.ToDictionary(static key => key, key => read[key]));
 
-        WordsEditResult again = Edit(fixture, written.Output.Path, bestEffort: false, new SetPropertiesOp
+        WordsEditResult again = Edit(fixture, written.Output.Path, new SetPropertiesOp
         {
             Custom = custom.Keys.ToDictionary(static key => key, key => read[key]),
         });
@@ -75,30 +75,11 @@ public sealed class WordsAddressNameTests
         Assert.True(result.Verification!.Ok);
     }
 
-    [Fact]
-    public void FailedOperations_TargetTheBlocksAndSectionsTheyName()
-    {
-        using var fixture = new WordsFixture();
-
-        WordsEditResult result = Edit(fixture, fixture.CreateReport(), bestEffort: true,
-            new SetTextOp { Target = new WordsTarget { Block = 99 }, Text = "x" },
-            new DeleteBlocksOp { Target = new WordsTarget { Blocks = "2-99" } },
-            new DeleteSectionOp { Section = 9 },
-            new SetPageSetupOp { Section = 7, ColumnCount = 2 },
-            new DeleteBlocksOp { Target = new WordsTarget { Heading = "No such heading" } });
-
-        Assert.All(result.Applied, static outcome => Assert.Equal(OpStatuses.Failed, outcome.Status));
-        Assert.Equal(
-            [["block/99"], ["block/2-99"], ["section/9"], ["section/7"], ["block/all"]],
-            result.Applied.Select(static outcome => outcome.Targets.ToArray()));
-    }
-
-    private static WordsEditResult Edit(WordsFixture fixture, string input, bool bestEffort, params WordsOp[] ops) =>
+    private static WordsEditResult Edit(WordsFixture fixture, string input, params WordsOp[] ops) =>
         fixture.Disclosed(session => WordsEdit.Run(session, new WordsEditRequest
         {
             Input = input,
             Batch = new WordsOpsBatch { Ops = ops },
             Output = TestOutput.At(fixture.Temp.File($"edited-{Guid.NewGuid():N}.docx")),
-            Options = new EditCommandOptions { BestEffort = bestEffort },
         }));
 }

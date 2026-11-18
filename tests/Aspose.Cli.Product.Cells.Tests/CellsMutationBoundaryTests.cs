@@ -215,11 +215,9 @@ public sealed class CellsMutationBoundaryTests
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public void ImageInputBudgetAbortsPublicationEvenInBestEffort(bool bestEffort, bool supervised)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ImageInputBudgetAbortsPublication(bool supervised)
     {
         using var workspace = new TempWorkspace();
         Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheet-names", "Data").ExitCode);
@@ -230,7 +228,7 @@ public sealed class CellsMutationBoundaryTests
         { ops = new[] { new { op = "insert_image", sheet = "Data", at = "A1", path = workspace.File("large.png") } } });
         var args = new List<string> { "cells", "edit", "source.xlsx", "--ops", operations,
             "--out", "result.xlsx", "--max-input-bytes", "16384", "--output-format", "json" };
-        if (bestEffort) { args.Add("--best-effort"); }
+
         if (supervised) { args.AddRange(["--timeout", TestDeadline.CliTimeout]); }
         CliResult edited = workspace.Run(args.ToArray());
         Assert.NotEqual(0, edited.ExitCode);

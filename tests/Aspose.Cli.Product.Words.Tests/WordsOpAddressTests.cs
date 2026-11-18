@@ -8,10 +8,9 @@ namespace Aspose.Cli.Product.Words.Tests;
 
 /// <summary>
 /// What each Words operation addresses, one row per sample: the blocks and sections it resolves
-/// in the document before the batch, the targets a failed operation reports, whether
-/// <c>--track-changes</c> admits it, and whether the verification compares its effect without
-/// tracked changes. Every operation of the vocabulary has a row, so a new operation fails here
-/// until it is placed.
+/// in the document before the batch, whether <c>--track-changes</c> admits it, and whether the
+/// verification compares its effect without tracked changes. Every operation of the vocabulary
+/// has a row, so a new operation fails here until it is placed.
 /// </summary>
 public sealed class WordsOpAddressTests
 {
@@ -42,66 +41,65 @@ public sealed class WordsOpAddressTests
 
     /// <summary>
     /// Each row: the operation's name; the blocks and the section numbers it resolved, or the
-    /// error its address raised; the targets it reports when it fails; and the targets it reports
-    /// when its address resolved nothing.
+    /// error its address raised.
     /// </summary>
     private static readonly string[] ExpectedAddresses =
     [
-        "replace_text | - - | block/all | block/all",
-        "set_text | block/1 - | block/1 | block/1",
-        "insert_paragraphs | block/2,block/3 - | block/2,block/3 | block/2-3",
-        "insert_markdown | block/4 - | block/4 | block/all",
-        "delete_blocks | ANCHOR_NOT_FOUND | block/all | block/all",
-        "insert_break | block/8 - | block/8 | block/all",
-        "insert_image | block/2 - | block/2 | block/2",
-        "insert_table | block/3 - | block/3 | block/3",
-        "set_table_cell | block/4 - | block/4 | block/4",
-        "repeat_table_row | block/5 - | block/5 | block/all",
-        "set_table_pagination | block/4 - | block/4 | block/4",
-        "set_table_style | block/4 - | block/4 | block/4",
-        "insert_toc | block/1 - | block/1 | block/1",
-        "insert_bookmark | block/5 - | block/5 | block/5",
-        "insert_hyperlink | block/5 - | block/5 | block/5",
-        "insert_field | block/6 - | block/6 | block/6",
-        "insert_section | - section/1 | section/1 | section/1",
-        "delete_section | SECTION_NOT_FOUND | section/3 | section/3",
-        "set_page_setup | - section/1 | section/1 | section/1",
-        "set_header | - section/1 | section/1 | section/1",
-        "set_footer | - section/1 | section/1 | section/1",
-        "set_page_numbers | - section/1 | section/1 | section/1",
-        "format_text | block/1,block/2 - | block/1,block/2 | block/1-2",
-        "set_style | ANCHOR_NOT_FOUND | block/all | block/all",
-        "define_style | - - | style/Report Callout | style/Report Callout",
-        "set_list | block/7,block/8,block/9 - | block/7,block/8,block/9 | block/7-9",
-        "clear_list | block/7,block/8,block/9 - | block/7,block/8,block/9 | block/7-9",
-        "set_default_font | - - | style/all | style/all",
-        "set_properties | - - | property/all | property/all",
-        "set_watermark | - - | watermark/1 | watermark/1",
-        "delete_watermark | - - | watermark/1 | watermark/1",
-        "protect_document | - - | protection/document | protection/document",
-        "unprotect_document | - - | protection/document | protection/document",
-        "accept_revisions | - - | block/all | block/all",
-        "reject_revisions | - - | block/all | block/all",
-        "add_comment | block/2 - | block/2 | block/2",
-        "delete_comments | - - | block/all | block/all",
-        "import_sections | - - | block/all | block/all",
-        "mail_merge | - - | block/all | block/all",
-        "refresh_fields | - - | block/all | block/all",
-        "set_page_setup | - section/1,section/2 | section/1,section/2 | section/all",
-        "set_header | - section/1,section/2 | section/1,section/2 | section/all",
-        "set_footer | - section/1,section/2 | section/1,section/2 | section/all",
-        "set_page_numbers | - section/1,section/2 | section/1,section/2 | section/all",
-        "set_page_setup | SECTION_NOT_FOUND | section/9 | section/9",
-        "insert_section | SECTION_NOT_FOUND | section/9 | section/9",
-        "delete_section | SECTION_NOT_FOUND | section/9 | section/9",
-        "set_text | BLOCK_NOT_FOUND | block/99 | block/99",
-        "delete_blocks | BLOCK_NOT_FOUND | block/2-99 | block/2-99",
-        "set_style | BOOKMARK_NOT_FOUND | block/all | block/all",
-        "add_comment | ANCHOR_NOT_FOUND | block/all | block/all",
-        "format_text | ANCHOR_NOT_FOUND | block/all | block/all",
-        "insert_break | block/1 - | block/1 | block/1",
-        "accept_revisions | block/9 - | block/9 | block/all",
-        "reject_revisions | REVISION_NOT_FOUND | block/all | block/all",
+        "replace_text | - -",
+        "set_text | block/1 -",
+        "insert_paragraphs | block/2,block/3 -",
+        "insert_markdown | block/4 -",
+        "delete_blocks | ANCHOR_NOT_FOUND",
+        "insert_break | block/8 -",
+        "insert_image | block/2 -",
+        "insert_table | block/3 -",
+        "set_table_cell | block/4 -",
+        "repeat_table_row | block/5 -",
+        "set_table_pagination | block/4 -",
+        "set_table_style | block/4 -",
+        "insert_toc | block/1 -",
+        "insert_bookmark | block/5 -",
+        "insert_hyperlink | block/5 -",
+        "insert_field | block/6 -",
+        "insert_section | - section/1",
+        "delete_section | SECTION_NOT_FOUND",
+        "set_page_setup | - section/1",
+        "set_header | - section/1",
+        "set_footer | - section/1",
+        "set_page_numbers | - section/1",
+        "format_text | block/1,block/2 -",
+        "set_style | ANCHOR_NOT_FOUND",
+        "define_style | - -",
+        "set_list | block/7,block/8,block/9 -",
+        "clear_list | block/7,block/8,block/9 -",
+        "set_default_font | - -",
+        "set_properties | - -",
+        "set_watermark | - -",
+        "delete_watermark | - -",
+        "protect_document | - -",
+        "unprotect_document | - -",
+        "accept_revisions | - -",
+        "reject_revisions | - -",
+        "add_comment | block/2 -",
+        "delete_comments | - -",
+        "import_sections | - -",
+        "mail_merge | - -",
+        "refresh_fields | - -",
+        "set_page_setup | - section/1,section/2",
+        "set_header | - section/1,section/2",
+        "set_footer | - section/1,section/2",
+        "set_page_numbers | - section/1,section/2",
+        "set_page_setup | SECTION_NOT_FOUND",
+        "insert_section | SECTION_NOT_FOUND",
+        "delete_section | SECTION_NOT_FOUND",
+        "set_text | BLOCK_NOT_FOUND",
+        "delete_blocks | BLOCK_NOT_FOUND",
+        "set_style | BOOKMARK_NOT_FOUND",
+        "add_comment | ANCHOR_NOT_FOUND",
+        "format_text | ANCHOR_NOT_FOUND",
+        "insert_break | block/1 -",
+        "accept_revisions | block/9 -",
+        "reject_revisions | REVISION_NOT_FOUND",
     ];
 
     [Fact]
@@ -124,18 +122,13 @@ public sealed class WordsOpAddressTests
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         ResolvedWordsOp[] resolved = [.. Samples.Select(op =>
             WordsAnchorResolver.Resolve(loaded.Document, index, new WordsOpsBatch { Ops = [op] }).Single())];
-        var model = new WordsEditModel(loaded, resolved, static _ => throw new InvalidOperationException("no operation applies"));
-        var unresolved = new WordsEditModel(
-            loaded,
-            [.. Samples.Select(static op => new ResolvedWordsOp(op, [], [], []) { Failure = new OperationInvalidException("unresolved") })],
-            static _ => throw new InvalidOperationException("no operation applies"));
 
-        string[] actual = [.. resolved.Select(item => Row(loaded.Document, item, model, unresolved))];
+        string[] actual = [.. resolved.Select(item => Row(loaded.Document, item))];
 
         Assert.Equal(ExpectedAddresses, actual);
     }
 
-    private static string Row(Document document, ResolvedWordsOp item, WordsEditModel model, WordsEditModel unresolved)
+    private static string Row(Document document, ResolvedWordsOp item)
     {
         string resolution = item.Failure switch
         {
@@ -143,7 +136,7 @@ public sealed class WordsOpAddressTests
             OperationInvalidException => "OPERATION_INVALID",
             _ => $"{Listed(item.Targets)} {Listed([.. item.Sections.Select(section => $"section/{document.Sections.IndexOf(section) + 1}")])}",
         };
-        return $"{WordsOp.Catalog.NameOf(item.Op)} | {resolution} | {Listed(model.AttemptedTargets(item.Op))} | {Listed(unresolved.AttemptedTargets(item.Op))}";
+        return $"{WordsOp.Catalog.NameOf(item.Op)} | {resolution}";
     }
 
     private static string Listed(IReadOnlyList<string> items) => items.Count == 0 ? "-" : string.Join(",", items);
@@ -228,7 +221,7 @@ public sealed class WordsOpAddressTests
                 Input = input,
                 Batch = new WordsOpsBatch { Ops = [op] },
                 Output = TestOutput.At(fixture.Temp.File($"tracked-{Guid.NewGuid():N}.docx")),
-                Options = new EditCommandOptions { BestEffort = true, DryRun = true },
+                Options = new EditCommandOptions { DryRun = true },
                 TrackChanges = true,
                 Author = "Reviewer",
             });
@@ -237,6 +230,11 @@ public sealed class WordsOpAddressTests
         catch (CliException error) when (error.Code == ErrorCodes.OptionInvalid && error.Message.Contains("cannot be recorded as tracked changes", StringComparison.Ordinal))
         {
             return "refused";
+        }
+        catch (CliException)
+        {
+            // Admitted: the operation itself failed later, as a sample whose address the report lacks does.
+            return "tracked";
         }
     }
 
@@ -306,7 +304,6 @@ public sealed class WordsOpAddressTests
             Input = input,
             Batch = new WordsOpsBatch { Ops = [op with { Id = "it" }] },
             Output = TestOutput.At(fixture.Temp.File($"verified-{Guid.NewGuid():N}.docx")),
-            Options = new EditCommandOptions { BestEffort = true },
             Verify = true,
         }));
         string compared = result.Verification!.CheckedOps.Contains("it") ? "compared" : "not compared";

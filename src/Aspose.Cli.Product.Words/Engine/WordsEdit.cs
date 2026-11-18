@@ -151,7 +151,6 @@ internal static class WordsEdit
         AppliedBatch applied = BoundedOperationRunner.Run(
             WordsOp.Catalog,
             resolved.Select(static item => item.Op).ToArray(),
-            request.Options.BestEffort,
             deadline: null,
             model);
         warnings.AddRange(applied.Warnings);

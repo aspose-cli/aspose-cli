@@ -190,8 +190,8 @@ public static class ResultText
     }
 
     /// <summary>
-    /// Writes a bounded edit: the dry-run or produced-file headline, one line per operation
-    /// with the error of every failed one, and the backup.
+    /// Writes a bounded edit: the dry-run or produced-file headline, one line per operation,
+    /// and the backup.
     /// </summary>
     public static void Edit(
         TableSurface surface,
@@ -201,10 +201,9 @@ public static class ResultText
         BackupInfo? backup)
     {
         ArgumentNullException.ThrowIfNull(applied);
-        int failed = applied.Count(static op => op.Status == OpStatuses.Failed);
         string outcome = string.Create(
             CultureInfo.InvariantCulture,
-            $"{applied.Count - failed} of {applied.Count} op(s) applied{(failed == 0 ? string.Empty : $", {failed} failed")}");
+            $"{applied.Count} of {applied.Count} op(s) applied");
         if (dryRun)
         {
             surface.Out.WriteLine($"dry run: {outcome}; nothing was written");
@@ -223,10 +222,6 @@ public static class ResultText
             surface.Out.WriteLine(string.Create(
                 CultureInfo.InvariantCulture,
                 $"  [{op.Id}] {op.Op}: {op.Status} ({op.ItemsAffected} item(s))"));
-            if (op.Error is { } error)
-            {
-                surface.Out.WriteLine($"      {error.Code}: {error.Message}");
-            }
         }
 
         Backup(surface, backup);

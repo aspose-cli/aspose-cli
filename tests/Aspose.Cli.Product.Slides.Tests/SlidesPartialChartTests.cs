@@ -85,10 +85,8 @@ public sealed class SlidesPartialChartTests
         Assert.Equal([5d, 6d], XValues(chart.ChartData.Series[0]));
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ExplicitIncompleteScatterSeries_RemainsInvalid(bool bestEffort)
+    [Fact]
+    public void ExplicitIncompleteScatterSeries_RemainsInvalid()
     {
         using var fixture = new SlidesEngineFixture();
         string seed = CreateChart(fixture, "scatter");
@@ -105,20 +103,9 @@ public sealed class SlidesPartialChartTests
                 },
             ],
         };
-        var request = new SlidesEditRequest { Input = seed, Batch = batch, Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } };
-        if (bestEffort)
-        {
-            SlidesEditResult result = SlidesEdit.Run(fixture.Session, request);
-            Assert.Equal("failed", Assert.Single(result.Applied).Status);
-            using var reopened = new Presentation(output);
-            Assert.Equal([10d, 20d], Values(Chart(reopened).ChartData.Series[0], scatter: true));
-            Assert.Equal([1d, 2d], XValues(Chart(reopened).ChartData.Series[0]));
-        }
-        else
-        {
-            Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
-            Assert.False(File.Exists(output));
-        }
+        var request = new SlidesEditRequest { Input = seed, Batch = batch, Output = TestOutput.At(output) };
+        Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
+        Assert.False(File.Exists(output));
         Assert.Equal(original, File.ReadAllBytes(seed));
     }
 

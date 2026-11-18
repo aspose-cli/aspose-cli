@@ -183,29 +183,6 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Assert.Contains("'Second'", error.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void ImportSheet_BestEffortFailureLeavesNoSheetBehind()
-    {
-        string source = CreateSource("best-effort-source.xlsx");
-        CellsEditResult result = CellsEdit.Run(_fixture.Session,
-            new CellsEditRequest
-            {
-                Input = _fixture.CreateSalesWorkbook("best-effort.xlsx"),
-                Batch = Parse($$"""
-                { "ops": [
-                  { "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}}, "name": "Data" },
-                  { "op": "set_values", "sheet": "Second", "range": "A2", "values": [["after"]] }
-                ] }
-                """),
-                Output = TestOutput.At(_fixture.Temp.File("best-effort.out.xlsx"), overwrite: true),
-                Options = new EditCommandOptions { BestEffort = true },
-            });
-
-        Assert.Equal([OpStatuses.Failed, OpStatuses.Ok], result.Applied.Select(static outcome => outcome.Status));
-        using var workbook = new Workbook(result.Output!.Path);
-        Assert.Equal(["Data", "Second", "Backstage"], workbook.Worksheets.Cast<Worksheet>().Select(static sheet => sheet.Name));
-    }
-
     [Theory]
     [InlineData("""{ "op": "import_sheet", "sourceSheet": "Ghost", "path": "{source}" }""")]
     [InlineData("""{ "op": "import_range", "sheet": "Data", "path": "{source}", "from": "Ghost!A1:B2", "to": "E1" }""")]

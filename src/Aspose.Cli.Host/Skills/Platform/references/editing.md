@@ -50,27 +50,21 @@ A PDF batch, for example:
   varies (`aspose-cli docs troubleshooting`, Windows PowerShell), and only one
   option of a command reads stdin.
 
-## Atomic, best-effort and dry run
+## Atomic batches and dry run
 
-- **Atomic (default).** If any operation fails, nothing is written. The error
+- **Atomic.** If any operation fails, nothing is written. The error
   names the failing operation in `details.id` and `details.op`, and its
   message says why; a misspelled field, operation or value lists the valid
   ones in `details.available`.
   When several entries fail the same check, `details.errors` lists each of
   them. Fix those entries and run the whole batch again.
-- **`--best-effort`.** Successful operations are kept and saved; each failed
-  entry in `applied[]` has `status: "failed"` and an `error` that has the shape
-  of an error envelope's `error`. The command exits 8 when any operation
-  failed. An invalid document or an engine failure still writes nothing.
 - A file an operation reads, such as an image, that is missing or locked fails
-  only that operation, with `FILE_NOT_FOUND` or `FILE_LOCKED` and its
-  `details.id`, like any failed operation: an atomic batch writes nothing,
-  and `--best-effort` keeps the other operations.
+  that operation, with `FILE_NOT_FOUND` or `FILE_LOCKED` and its
+  `details.id`, like any failed operation, and nothing is written.
 - **`--dry-run`.** Checks the input, the output and the batch, applies the
   batch in memory and writes nothing. The result has `dryRun: true`, the
   `checked` list and the `applied[]` outcomes, with operation warnings such as
-  `OP_NO_EFFECT`; with `--best-effort` it reports every operation's outcome in
-  one pass. Warnings about a written output, such as `EVALUATION_MODE` or
+  `OP_NO_EFFECT`. Warnings about a written output, such as `EVALUATION_MODE` or
   `ENCRYPTION_REMOVED`, come only from the real run, so a clean dry run does
   not mean the real run is free of them.
 
@@ -92,10 +86,6 @@ both fields state what actually changed:
   it lists one coarser address per unit instead: a range such as
   `page/1-150`, or `<unit>/all` for objects named rather than numbered, such
   as cells or styles.
-- A failed operation (`status: "failed"`, kept by `--best-effort`) changed
-  nothing: its `itemsAffected` is 0 without an `OP_NO_EFFECT` warning, and
-  its `targets` are the addresses it attempted, which need not exist, such as
-  `page/2-99` in a three-page document.
 
 The outcome says what changed, not that it is what you meant: read the
 changed parts back before you report them (`aspose-cli docs verification`).
@@ -162,7 +152,6 @@ A not-found error (a `*_NOT_FOUND` code) states what exists, so you can
 correct the request without another inspection: `details.requested` echoes
 what you asked for and `details.available` lists the existing names;
 `aspose-cli schema v2/common/not-found-details` describes every field.
-Operation errors add `details.id` and `details.op`, and a best-effort failure
-keeps the same object in its `error.details`. A name that several targets share is refused
+Operation errors add `details.id` and `details.op`. A name that several targets share is refused
 with `OPS_INVALID` instead of picking one; address the target by its stable id
 or number.

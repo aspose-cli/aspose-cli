@@ -24,9 +24,6 @@ public interface IOperationModel<in TOp>
     /// <summary>Applies the operation to the document; it reports nothing.</summary>
     void Apply(TOp operation);
 
-    /// <summary>The addresses an operation that failed attempted to change, such as <c>page/2-4</c>.</summary>
-    IReadOnlyList<string> AttemptedTargets(TOp operation);
-
     /// <summary>
     /// Why an operation that applied changed nothing, when the product can say more than that
     /// what it addresses already had the state it sets: for example that its text matched
@@ -136,7 +133,6 @@ public sealed record VerifiedBatch(
 public sealed class AppliedBatch
 {
     private const string NotReadBack = "The verification did not read this operation's effect back from the output; read the output to confirm it.";
-    private const string OperationFailed = "The operation failed, so it left nothing to read back.";
 
     private readonly IReadOnlySet<string> _unrecorded;
 
@@ -188,7 +184,7 @@ public sealed class AppliedBatch
         string[] checkedOps =
         [
             .. Outcomes
-                .Where(outcome => outcome.Status == OpStatuses.Ok && facts.Checked.Contains(outcome.Id) && !_unrecorded.Contains(outcome.Id))
+                .Where(outcome => facts.Checked.Contains(outcome.Id) && !_unrecorded.Contains(outcome.Id))
                 .Select(static outcome => outcome.Id)
                 .Distinct(StringComparer.Ordinal),
         ];
@@ -203,6 +199,5 @@ public sealed class AppliedBatch
     }
 
     private static string ReasonFor(BoundedOperationOutcome outcome, VerificationFacts facts) =>
-        outcome.Status != OpStatuses.Ok ? OperationFailed
-            : facts.UncheckedReasons?.GetValueOrDefault(outcome.Id) ?? NotReadBack;
+        facts.UncheckedReasons?.GetValueOrDefault(outcome.Id) ?? NotReadBack;
 }

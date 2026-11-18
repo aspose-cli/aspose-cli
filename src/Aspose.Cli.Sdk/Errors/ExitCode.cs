@@ -34,8 +34,8 @@ public enum ExitCode
     LicenseError = 7,
 
     /// <summary>
-    /// The command printed its result, but the result did not pass: a failed operation under
-    /// --best-effort, a failed verification or check. No error envelope has this code.
+    /// The command printed its result, but the result did not pass: a failed verification or
+    /// check. No error envelope has this code.
     /// </summary>
     PartialFailure = 8,
 

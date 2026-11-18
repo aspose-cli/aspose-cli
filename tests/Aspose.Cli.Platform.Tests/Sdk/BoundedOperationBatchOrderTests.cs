@@ -45,7 +45,7 @@ public sealed class BoundedOperationBatchOrderTests
         };
 
         AppliedBatch applied = BoundedOperationRunner.Run(
-            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), bestEffort: false, deadline: null, model);
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), deadline: null, model);
 
         Assert.Equal(
             [("block/2", true), ("value/z", true), ("value/a", false), ("page/1", true), ("page/2", true), ("page/10", true), ("note/b", true)],
@@ -73,7 +73,7 @@ public sealed class BoundedOperationBatchOrderTests
 
         // Run apart, so a list that takes time in proportion to the square of its length, minutes
         // here where a linear one takes a fraction of a second, fails at the limit instead.
-        Task<AppliedBatch> run = Task.Run(() => BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model));
+        Task<AppliedBatch> run = Task.Run(() => BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), deadline: null, model));
 
         Assert.True(await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(10))) == run, "Listing 200,000 changed objects took more than 10 seconds.");
         AppliedBatch applied = await run;
@@ -102,8 +102,6 @@ public sealed class BoundedOperationBatchOrderTests
         }
 
         public void Apply(TestOp operation) => Edits[((SetOp)operation).Value](this);
-
-        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["value/all"];
 
         public IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() =>
             new Dictionary<string, IReadOnlyList<object>> { ["block"] = [.. Blocks] };

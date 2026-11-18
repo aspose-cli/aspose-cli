@@ -9,8 +9,7 @@ namespace Aspose.Cli.Architecture.Tests;
 /// its batches through the SDK snapshot runner, so <c>itemsAffected</c> is the number of objects that
 /// changed and is 0 exactly when the operation warns <c>OP_NO_EFFECT</c>
 /// (<c>OperationBehaviorRules</c> checks that on every operation sample); <c>targets</c> past the cap
-/// cover each unit with one range or <c>&lt;unit&gt;/all</c>, and a failed operation reports the
-/// targets it attempted (<c>BoundedOperationModelTests</c>).
+/// cover each unit with one range or <c>&lt;unit&gt;/all</c> (<c>BoundedOperationModelTests</c>).
 /// </summary>
 public sealed partial class EditOutcomeDocumentationTests
 {
@@ -34,11 +33,6 @@ public sealed partial class EditOutcomeDocumentationTests
                 && !item.Contains("root", StringComparison.OrdinalIgnoreCase)),
             $"The Reading the outcome section of {Path.GetRelativePath(RepositoryPaths.Root, Editing)} says that `targets` past "
             + "the cap names one range or `<unit>/all` per unit, not the document root.");
-        Assert.True(items.Any(static item => item.Contains("failed", StringComparison.Ordinal)
-                && item.Contains("`targets`", StringComparison.Ordinal)
-                && item.Contains("attempted", StringComparison.Ordinal)),
-            $"The Reading the outcome section of {Path.GetRelativePath(RepositoryPaths.Root, Editing)} says that a failed "
-            + "operation's `targets` are the addresses it attempted, not ones it changed.");
     }
 
     /// <summary>

@@ -20,7 +20,7 @@ public sealed class PdfTargetNameTests
     private const string Escaped = "%20Q3 100%25%2Fx.txt%20";
 
     [Fact]
-    public void Attachments_EscapeTheirNameInTheTargetsOfAppliedAndFailedOperations()
+    public void Attachments_EscapeTheirNameInTheTargetsOfAnAppliedOperation()
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("named.pdf", pages: 1);
@@ -32,19 +32,12 @@ public sealed class PdfTargetNameTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops =
-                [
-                    new AddAttachmentOp { Path = source, Name = Name },
-                    new DeleteAttachmentOp { Name = "missing 50%/y " },
-                ],
+                Ops = [new AddAttachmentOp { Path = source, Name = Name }],
             },
             Output = TestOutput.At(fixture.File("named.out.pdf")),
-            Options = new EditCommandOptions { BestEffort = true },
         });
 
-        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], result.Applied.Select(static item => item.Status));
         Assert.Equal([$"attachment/{Escaped}"], result.Applied[0].Targets);
-        Assert.Equal(["attachment/missing 50%25%2Fy%20"], result.Applied[1].Targets);
     }
 
     [Fact]
@@ -69,7 +62,7 @@ public sealed class PdfTargetNameTests
     }
 
     [Fact]
-    public void FormFields_EscapeTheirNameInTheTargetsOfAppliedAndFailedOperations()
+    public void FormFields_EscapeTheirNameInTheTargetsOfAnAppliedOperation()
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.File("named-form.pdf");
@@ -85,21 +78,12 @@ public sealed class PdfTargetNameTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops =
-                [
-                    new SetFormFieldOp { Name = Name, Value = "Contoso" },
-                    new SetFormFieldOp { Name = "missing 50%/y ", Value = "x" },
-                    new FlattenFormsOp { Fields = ["missing 50%/y "] },
-                ],
+                Ops = [new SetFormFieldOp { Name = Name, Value = "Contoso" }],
             },
             Output = TestOutput.At(fixture.File("named-form.out.pdf")),
-            Options = new EditCommandOptions { BestEffort = true },
         });
 
-        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed, OpStatuses.Failed], result.Applied.Select(static item => item.Status));
         Assert.Equal([$"field/{Escaped}"], result.Applied[0].Targets);
-        Assert.Equal(["field/missing 50%25%2Fy%20"], result.Applied[1].Targets);
-        Assert.Equal(["field/missing 50%25%2Fy%20"], result.Applied[2].Targets);
     }
 
     /// <summary>

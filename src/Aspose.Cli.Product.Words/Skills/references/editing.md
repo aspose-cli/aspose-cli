@@ -1,7 +1,7 @@
 # Editing
 
-`words edit --ops` applies one operation batch; batches, `--best-effort`,
-`--dry-run`, outputs and secrets work as `aspose-cli docs editing` describes.
+`words edit --ops` applies one operation batch; batches, `--dry-run`, outputs
+and secrets work as `aspose-cli docs editing` describes.
 Each operation's fields, types, defaults and allowed values come from the
 generated schema:
 

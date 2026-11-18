@@ -22,7 +22,7 @@ public sealed record BoundedOperationOutcome
     /// <summary>Product-owned operation id.</summary>
     public required string Op { get; init; }
 
-    /// <summary>Whether the operation applied (<c>ok</c>) or <c>failed</c>.</summary>
+    /// <summary>That the operation applied: <c>ok</c>.</summary>
     [AllowedValues(typeof(OpStatuses))]
     public required string Status { get; init; }
 
@@ -33,20 +33,13 @@ public sealed record BoundedOperationOutcome
     /// <summary>The most targets one outcome lists.</summary>
     public const int MaximumTargets = 100;
 
-    /// <summary>Product-owned stable addresses; failed outcomes identify attempted targets.</summary>
+    /// <summary>Product-owned stable addresses of the changed items.</summary>
     [MaxItems(MaximumTargets)]
     public IReadOnlyList<string> Targets { get; init; } = [];
-
-    /// <summary>
-    /// The error that stopped the operation, as an error envelope states it; present only when
-    /// <see cref="Status"/> is <c>failed</c>.
-    /// </summary>
-    public ErrorPayload? Error { get; init; }
 }
 
 /// <summary>Stable wire values used for per-operation status.</summary>
 public static class OpStatuses
 {
     public const string Ok = "ok";
-    public const string Failed = "failed";
 }

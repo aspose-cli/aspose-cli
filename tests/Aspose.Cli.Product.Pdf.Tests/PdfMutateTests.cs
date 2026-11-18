@@ -905,7 +905,7 @@ public sealed class PdfMutateTests
     }
 
     [Fact]
-    public void Edit_DryRunAtomicFailureAndContinueHaveExplicitOutcomes()
+    public void Edit_DryRunAndAtomicFailureHaveExplicitOutcomes()
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("atomic.pdf", pages: 1);
@@ -919,32 +919,16 @@ public sealed class PdfMutateTests
             ],
         };
 
-        Assert.ThrowsAny<Exception>(() => PdfEdit.Run(fixture.Session, new PdfEditRequest
+        CliException error = Assert.Throws<CliException>(() => PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
             Batch = batch,
             Output = TestOutput.At(output),
         }));
+        Assert.Equal("ATTACHMENT_NOT_FOUND", error.Code.Name);
+        Assert.Equal("missing.bin", error.Details!["requested"]!.GetValue<string>());
+        Assert.Equal(0, error.Details["availableCount"]!.GetValue<int>());
         Assert.False(File.Exists(output));
-
-        PdfEditResult partial = PdfEdit.Run(fixture.Session, new PdfEditRequest
-        {
-            Input = input,
-            Batch = batch,
-            Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
-        Assert.True(partial.HasFailures);
-        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], partial.Applied.Select(static item => item.Status));
-        Assert.Equal(["property/title"], partial.Applied[0].Targets);
-        Assert.Equal(["attachment/missing.bin"], partial.Applied[1].Targets);
-        Assert.Equal("ATTACHMENT_NOT_FOUND", partial.Applied[1].Error!.Code);
-        Assert.Equal("missing.bin", partial.Applied[1].Error!.Details!["requested"]!.GetValue<string>());
-        Assert.Equal(0, partial.Applied[1].Error!.Details!["availableCount"]!.GetValue<int>());
-        using (var reopened = new Document(output))
-        {
-            Assert.Equal("Changed", reopened.Info.Title);
-        }
 
         string dryOutput = fixture.File("dry.pdf");
         PdfEditResult dry = PdfEdit.Run(fixture.Session, new PdfEditRequest
@@ -1197,22 +1181,13 @@ public sealed class PdfMutateTests
             document.Outlines.Add(Bookmark(document, "Appendix", 3));
         });
 
-        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
-        {
-            Input = input,
-            Batch = new PdfOpsBatch
-            {
-                Ops =
-                [
-                    new DeleteBookmarksOp { Bookmarks = ["9"] },
-                    new DeleteBookmarksOp { Bookmarks = ["1/5"] },
-                    new DeleteBookmarksOp { Bookmarks = ["9/1"] },
-                    new AddBookmarkOp { Title = "Detail", Page = 1, Parent = "2/1" },
-                ],
-            },
-            Output = TestOutput.At(fixture.File("levels.failed.pdf")),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
+        PdfOp[] ops =
+        [
+            new DeleteBookmarksOp { Bookmarks = ["9"] },
+            new DeleteBookmarksOp { Bookmarks = ["1/5"] },
+            new DeleteBookmarksOp { Bookmarks = ["9/1"] },
+            new AddBookmarkOp { Title = "Detail", Page = 1, Parent = "2/1" },
+        ];
 
         Assert.Equal(
             [
@@ -1221,10 +1196,15 @@ public sealed class PdfMutateTests
                 "9/1 3",
                 "2/1 0",
             ],
-            result.Applied.Select(static applied =>
+            ops.Select(op =>
             {
-                ErrorPayload error = applied.Error!;
-                Assert.Equal("BOOKMARK_NOT_FOUND", error.Code);
+                CliException error = Assert.Throws<CliException>(() => PdfEdit.Run(fixture.Session, new PdfEditRequest
+                {
+                    Input = input,
+                    Batch = new PdfOpsBatch { Ops = [op] },
+                    Output = TestOutput.At(fixture.File("levels.failed.pdf")),
+                }));
+                Assert.Equal("BOOKMARK_NOT_FOUND", error.Code.Name);
                 return $"{error.Details!["requested"]!.GetValue<string>()} "
                     + $"{error.Details["availableCount"]!.GetValue<int>()}";
             }));
@@ -1604,30 +1584,6 @@ public sealed class PdfMutateTests
         }));
         Assert.Equal("BOOKMARK_NOT_FOUND", error.Code.Name);
         Assert.Equal("2/5", error.Details!["requested"]!.GetValue<string>());
-
-        string edited = fixture.File("partial.edited.pdf");
-        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
-        {
-            Input = input,
-            Batch = new PdfOpsBatch
-            {
-                Ops =
-                [
-                    new DeleteBookmarksOp { Bookmarks = ["1", "2/5"] },
-                    new AddBookmarkOp { Title = "Added", Page = 1, Parent = "1" },
-                ],
-            },
-            Output = TestOutput.At(edited),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
-
-        Assert.Equal("BOOKMARK_NOT_FOUND", result.Applied[0].Error!.Code);
-        Assert.Equal(["bookmark/1", "bookmark/2/5"], result.Applied[0].Targets);
-        Assert.Equal(OpStatuses.Ok, result.Applied[1].Status);
-        Assert.Equal(["bookmark/1/1"], result.Applied[1].Targets);
-        Assert.Equal(
-            ["1 First 1", "1/1 Added 1", "2 Second 2", "2/1 Second.A 2", "3 Third 3", "4 Fourth 1", "4/1 Fourth.A 2", "4/2 Fourth.B 3"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     /// <summary>Four top-level bookmarks; the second has one child and the fourth two.</summary>
@@ -1671,32 +1627,24 @@ public sealed class PdfMutateTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("short.pdf", pages: 2);
 
-        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
+        CliException Refused(PdfOp op) => Assert.Throws<CliException>(() => PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch
-            {
-                Ops =
-                [
-                    new AddHyperlinkOp
-                    {
-                        Page = 5,
-                        Rect = new PdfRectInput { X = 10, Y = 10, Width = 20, Height = 20 },
-                        Url = "https://example.com/",
-                    },
-                    new InsertPageOp { At = 5 },
-                ],
-            },
+            Batch = new PdfOpsBatch { Ops = [op] },
             Output = TestOutput.At(fixture.File("short.out.pdf")),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
+        }));
 
-        ErrorPayload page = result.Applied[0].Error!;
-        Assert.Equal("PAGE_NOT_FOUND", page.Code);
+        CliException page = Refused(new AddHyperlinkOp
+        {
+            Page = 5,
+            Rect = new PdfRectInput { X = 10, Y = 10, Width = 20, Height = 20 },
+            Url = "https://example.com/",
+        });
+        Assert.Equal("PAGE_NOT_FOUND", page.Code.Name);
         Assert.Equal("5", page.Details!["requested"]!.GetValue<string>());
         Assert.Equal(2, page.Details["availableCount"]!.GetValue<int>());
-        ErrorPayload position = result.Applied[1].Error!;
-        Assert.Equal("PAGE_NOT_FOUND", position.Code);
+        CliException position = Refused(new InsertPageOp { At = 5 });
+        Assert.Equal("PAGE_NOT_FOUND", position.Code.Name);
         Assert.Equal(3, position.Details!["availableCount"]!.GetValue<int>());
     }
 

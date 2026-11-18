@@ -43,25 +43,6 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void BestEffort_ReportsSuccessfulAndFailedAttemptedTargets()
-    {
-        string source = _fixture.CreateSalesWorkbook("attempted.xlsx");
-        CellsEditResult result = CellsEdit.Run(_fixture.Session,
-            new CellsEditRequest
-            {
-                Input = source,
-                Batch = ParseOps("{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[1]]},{\"op\":\"clear_range\",\"sheet\":\"Missing\",\"range\":\"A1:B1\"}]}"),
-                Output = TestOutput.At(_fixture.Temp.File("attempted.out.xlsx"), overwrite: true),
-                Options = new EditCommandOptions { BestEffort = true },
-            });
-
-        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], result.Applied.Select(static item => item.Status));
-        Assert.Equal(["cell/Data!A1"], result.Applied[0].Targets);
-        Assert.Equal(["cell/Missing!A1:B1"], result.Applied[1].Targets);
-        Assert.Equal("SHEET_NOT_FOUND", result.Applied[1].Error!.Code);
-    }
-
-    [Fact]
     public void CellBudget_RejectsAWholeSheetFormulaBeforeWriting()
     {
         string source = _fixture.CreateSalesWorkbook("budget.xlsx");

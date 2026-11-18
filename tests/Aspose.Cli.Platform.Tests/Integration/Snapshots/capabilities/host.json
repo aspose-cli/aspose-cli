@@ -665,7 +665,7 @@
           }
         },
         "productOperationDescriptor": {
-          "description": "One command that applies a bounded operation document, and the operations it accepts. Every such command is atomic unless --best-effort is given and supports --dry-run.",
+          "description": "One command that applies a bounded operation document, and the operations it accepts. Every such command is atomic and supports --dry-run.",
           "type": "object",
           "required": [
             "command",
@@ -1121,7 +1121,7 @@
     "v2/common/error-payload": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/error-payload.schema.json",
-      "description": "Error details: the message states the fact and details carries structured context, often including the valid alternatives. The error envelope and a failed operation of a best-effort batch carry the same object.",
+      "description": "Error details: the message states the fact and details carries structured context, often including the valid alternatives.",
       "type": "object",
       "required": [
         "code",
@@ -1783,11 +1783,10 @@
           "type": "string"
         },
         "status": {
-          "description": "Whether the operation applied (ok) or failed.",
+          "description": "That the operation applied: ok.",
           "type": "string",
           "enum": [
-            "ok",
-            "failed"
+            "ok"
           ]
         },
         "itemsAffected": {
@@ -1796,16 +1795,12 @@
           "minimum": 0
         },
         "targets": {
-          "description": "Product-owned stable addresses; failed outcomes identify attempted targets.",
+          "description": "Product-owned stable addresses of the changed items.",
           "type": "array",
           "maxItems": 100,
           "items": {
             "type": "string"
           }
-        },
-        "error": {
-          "description": "The error that stopped the operation, as an error envelope states it; present only when status is failed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/error-payload.schema.json"
         }
       }
     },

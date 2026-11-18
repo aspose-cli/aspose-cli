@@ -207,7 +207,7 @@ public sealed class OperationContractTests
         Assert.Equal("""[{"minProperties":1},{"dependentRequired":{"size":["font"]}}]""", Schema()["$defs"]!["style"]!["allOf"]!.ToJsonString());
         Assert.Equal("""{"type":"string","minLength":1,"pattern":"\\S","x-readBack":"not-state"}""", Schema()["$defs"]!["link"]!["properties"]!["path"]!.ToJsonString());
         string description = Schema()["description"]!.GetValue<string>();
-        Assert.StartsWith("Test operations. Operations apply in order. Without --best-effort the batch is atomic", description, StringComparison.Ordinal);
+        Assert.StartsWith("Test operations. Operations apply in order. The batch is atomic", description, StringComparison.Ordinal);
         Assert.Contains("The bare array of operations is accepted as the document with only its ops.", description, StringComparison.Ordinal);
         Assert.EndsWith("not-state for a selector, a source or a parameter of the action.", description, StringComparison.Ordinal);
     }

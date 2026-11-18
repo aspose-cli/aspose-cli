@@ -680,14 +680,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             new CellsEditRequest { Input = marked, Batch = ParseOps("""{"ops":[{"op":"set_values","range":"A2","values":[["edited"]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("marked-edited.xlsx"), overwrite: true) });
         CellsEditResult activated = CellsEdit.Run(Session(),
             new CellsEditRequest { Input = marked, Batch = ParseOps("""{"ops":[{"op":"set_active_sheet","sheet":"Data"}]}"""), Output = TestOutput.At(_fixture.Temp.File("marked-activated.xlsx"), overwrite: true) });
-        CellsEditResult notActivated = CellsEdit.Run(Session(),
-            new CellsEditRequest
-            {
-                Input = marked,
-                Batch = ParseOps("""{"ops":[{"op":"set_active_sheet","sheet":"Missing"},{"op":"set_values","range":"A2","values":[["edited"]]}]}"""),
-                Output = TestOutput.At(_fixture.Temp.File("marked-not-activated.xlsx"), overwrite: true),
-                Options = new EditCommandOptions { BestEffort = true },
-            });
         CellsEditResult editedCsv = CellsEdit.Run(Session(),
             new CellsEditRequest { Input = marked, Batch = ParseOps("""{"ops":[{"op":"set_values","range":"A2","values":[["edited"]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("marked-edited.csv"), overwrite: true) });
         CellsReadResult kept = CellsRead.Run(Session(), new CellsReadRequest { Input = lookalike });
@@ -713,8 +705,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Assert.Equal("edited", editedBook.Worksheets["Data"].Cells["A2"].StringValue);
         }
         Assert.Equal("Data", ActiveSheet(activated.Output!.Path));
-        Assert.Equal(OpStatuses.Failed, notActivated.Applied[0].Status);
-        Assert.Equal("Evaluation Warning", ActiveSheet(notActivated.Output!.Path));
         // A text output writes the one sheet the batch edited.
         Assert.StartsWith("data\r\nedited", File.ReadAllText(editedCsv.Output!.Path), StringComparison.Ordinal);
         Assert.Equal("Evaluation Warning", kept.Sheet!.Name);

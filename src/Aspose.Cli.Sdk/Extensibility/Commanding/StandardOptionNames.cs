@@ -22,7 +22,6 @@ internal static class StandardOptionNames
     public const string Backup = "--backup";
     public const string IfMatch = "--if-match";
     public const string DryRun = "--dry-run";
-    public const string BestEffort = "--best-effort";
     public const string Verify = "--verify";
 
     /// <summary>
@@ -49,6 +48,6 @@ internal static class StandardOptionNames
         Password, Password + EnvironmentSuffix, Password + StandardInputSuffix,
         Encrypt, Encrypt + EnvironmentSuffix, Encrypt + StandardInputSuffix,
         FontDir,
-        Ops, Set, InPlace, Backup, IfMatch, DryRun, BestEffort, Verify,
+        Ops, Set, InPlace, Backup, IfMatch, DryRun, Verify,
     ];
 }

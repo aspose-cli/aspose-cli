@@ -7,11 +7,9 @@ namespace Aspose.Cli.Product.Slides.Tests;
 public sealed class SlidesTargetLivenessTests
 {
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public void SlideNumberADeletionLeftPastTheEnd_FailsTheOperation(bool bestEffort, bool dryRun)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SlideNumberADeletionLeftPastTheEnd_FailsTheOperation(bool dryRun)
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
@@ -31,37 +29,20 @@ public sealed class SlidesTargetLivenessTests
             Input = input,
             Batch = batch,
             Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = bestEffort, DryRun = dryRun },
+            Options = new EditCommandOptions { DryRun = dryRun },
         };
-        if (bestEffort)
-        {
-            SlidesEditResult result = SlidesEdit.Run(fixture.Session, request);
-            Assert.Equal(["ok", "failed", "ok"], result.Applied.Select(operation => operation.Status));
-            Assert.Equal(0, result.Applied[1].ItemsAffected);
-            Assert.Equal(["slide/3"], result.Applied[1].Targets);
-            Assert.Equal(!dryRun, File.Exists(output));
-            if (!dryRun)
-            {
-                using var reopened = new Presentation(output);
-                Assert.Equal(2, reopened.Slides.Count);
-                Assert.Contains("Safe", reopened.Slides[1].NotesSlideManager.NotesSlide!.NotesTextFrame!.Text, StringComparison.Ordinal);
-            }
-        }
-        else
-        {
-            Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
-            Assert.False(File.Exists(output));
-        }
+        Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
+        Assert.False(File.Exists(output));
         Assert.Equal(original, File.ReadAllBytes(input));
     }
 
     [Fact]
-    public void MultiSlideOperation_ValidatesEveryTargetBeforeMutatingAnyTarget()
+    public void MultiSlideOperation_FailsWhenOneOfItsTargetsIsGone()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
         string output = fixture.File("mixed.pptx");
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -69,17 +50,13 @@ public sealed class SlidesTargetLivenessTests
                 Ops = [new DeleteSlidesOp { Slides = "2" }, new SetSlideHiddenOp { Slides = "1-3", Hidden = true }],
             },
             Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
-        Assert.Equal(["ok", "failed"], result.Applied.Select(operation => operation.Status));
-        using var reopened = new Presentation(output);
-        Assert.All(reopened.Slides, slide => Assert.False(slide.Hidden));
+        }));
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
+        Assert.False(File.Exists(output));
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void DeletedShape_CannotBeEditedThroughItsOriginalIdentity(bool bestEffort)
+    [Fact]
+    public void DeletedShape_CannotBeEditedThroughItsOriginalIdentity()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
@@ -98,18 +75,9 @@ public sealed class SlidesTargetLivenessTests
                 new SetNotesOp { Slide = 2, Text = "Safe" },
             ],
         };
-        var request = new SlidesEditRequest { Input = input, Batch = batch, Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } };
-        if (!bestEffort)
-        {
-            Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
-            Assert.False(File.Exists(output));
-            return;
-        }
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, request);
-        Assert.Equal(["ok", "failed", "ok"], result.Applied.Select(operation => operation.Status));
-        Assert.Equal(result.Applied[0].Targets, result.Applied[1].Targets);
-        using var reopened = new Presentation(output);
-        Assert.DoesNotContain(reopened.Slides[0].Shapes, shape => shape.OfficeInteropShapeId == shapeId);
+        var request = new SlidesEditRequest { Input = input, Batch = batch, Output = TestOutput.At(output) };
+        Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
+        Assert.False(File.Exists(output));
     }
 
     [Fact]

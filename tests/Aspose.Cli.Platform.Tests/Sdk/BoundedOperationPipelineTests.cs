@@ -260,49 +260,26 @@ public sealed class BoundedOperationPipelineTests
     }
 
     [Fact]
-    public void Run_BestEffortRecordsRejectionsAndContinues()
-    {
-        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), Note(), Set(2)] });
-
-        IReadOnlyList<BoundedOperationOutcome> outcomes = Run(batch, bestEffort: true, static op =>
-        {
-            if (op is NoteOp)
-            {
-                throw new OperationInvalidException("the note has no anchor");
-            }
-        });
-
-        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed, OpStatuses.Ok], outcomes.Select(static item => item.Status));
-        Assert.Equal(ErrorCodes.OpsInvalid.Name, outcomes[1].Error!.Code);
-        Assert.Equal(["test/attempted"], outcomes[1].Targets);
-    }
-
-    [Fact]
     public void Run_KeepsADomainFailureCodeAndDetailsAndAddsItsPosition()
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
         Action<TestOp> missingPage = static _ =>
             throw CliErrors.NotFoundAt(ErrorCodes.PageNotFound, "page", "4", 3);
 
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, missingPage));
-        ErrorPayload recorded = Run(batch, bestEffort: true, missingPage)[0].Error!;
+        CliException error = Assert.Throws<CliException>(() => Run(batch, missingPage));
 
         Assert.Equal(ErrorCodes.PageNotFound, error.Code);
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         Assert.Equal("note", error.Details["op"]!.GetValue<string>());
-        Assert.Equal(ErrorCodes.PageNotFound.Name, recorded.Code);
-        Assert.Equal(error.Details.ToJsonString(), recorded.Details!.ToJsonString());
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Run_StopsTheBatchWhenTheEngineFailsMidChange(bool bestEffort)
+    [Fact]
+    public void Run_StopsTheBatchWhenTheEngineFailsMidChange()
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] });
         int applied = 0;
 
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort, op =>
+        CliException error = Assert.Throws<CliException>(() => Run(batch, op =>
         {
             applied++;
             if (op is NoteOp)
@@ -335,15 +312,13 @@ public sealed class BoundedOperationPipelineTests
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
 
-        Exception thrown = Assert.ThrowsAny<Exception>(() => Run(batch, bestEffort: true, _ => throw cause));
+        Exception thrown = Assert.ThrowsAny<Exception>(() => Run(batch, _ => throw cause));
 
         Assert.Same(cause, thrown);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Run_ReportsAMissingFileTheOperationDeclaresAsThatFile(bool bestEffort)
+    [Fact]
+    public void Run_ReportsAMissingFileTheOperationDeclaresAsThatFile()
     {
         string missing = Path.Combine(Path.GetTempPath(), "missing-picture.png");
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), new LinkOp { Path = missing }] });
@@ -355,15 +330,7 @@ public sealed class BoundedOperationPipelineTests
             }
         }
 
-        if (bestEffort)
-        {
-            ErrorPayload recorded = Run(batch, bestEffort: true, Apply)[1].Error!;
-            Assert.Equal(ErrorCodes.FileNotFound.Name, recorded.Code);
-            Assert.Equal(missing, recorded.Details!["path"]!.GetValue<string>());
-            return;
-        }
-
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, Apply));
+        CliException error = Assert.Throws<CliException>(() => Run(batch, Apply));
         Assert.Equal(ErrorCodes.FileNotFound, error.Code);
         Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(missing, error.Details["path"]!.GetValue<string>());
@@ -402,19 +369,17 @@ public sealed class BoundedOperationPipelineTests
             }
         }
 
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, Apply));
-        ErrorPayload recorded = Run(batch, bestEffort: true, Apply)[1].Error!;
+        CliException error = Assert.Throws<CliException>(() => Run(batch, Apply));
 
         Assert.Equal(code, error.Code.Name);
         Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(declared, error.Details["path"]!.GetValue<string>());
-        Assert.Equal(code, recorded.Code);
     }
 
     /// <summary>
     /// A failure of another file than the one the operation declares, such as a temporary file
     /// the engine writes or a file whose name only ends like the declared one's, is not the
-    /// declared file's: the engine's stops the batch as an engine failure, in every mode.
+    /// declared file's: the engine's stops the batch as an engine failure.
     /// </summary>
     [Theory]
     [InlineData("locked")]
@@ -425,7 +390,7 @@ public sealed class BoundedOperationPipelineTests
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [new LinkOp { Path = declared }, Set(1)] });
         foreach (string other in new[] { Path.Combine(Path.GetTempPath(), "engine-scratch.tmp"), Path.Combine(Path.GetTempPath(), "ba.png") })
         {
-            CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: true, op =>
+            CliException error = Assert.Throws<CliException>(() => Run(batch, op =>
             {
                 if (op is LinkOp)
                 {
@@ -440,7 +405,7 @@ public sealed class BoundedOperationPipelineTests
 
     /// <summary>
     /// A missing file the operation does not declare, such as an assembly the runtime could not
-    /// load, is no rejection a best-effort batch could continue past.
+    /// load, is not reported as the operation's file: it propagates unchanged.
     /// </summary>
     [Fact]
     public void Run_NeverContinuesPastAMissingFileTheOperationDoesNotDeclare()
@@ -450,7 +415,7 @@ public sealed class BoundedOperationPipelineTests
         var missing = new FileNotFoundException("Could not load file or assembly 'Imaging'.", "Imaging, Version=1.0.0.0");
         int applied = 0;
 
-        Exception thrown = Assert.ThrowsAny<Exception>(() => Run(batch, bestEffort: true, op =>
+        Exception thrown = Assert.ThrowsAny<Exception>(() => Run(batch, op =>
         {
             applied++;
             if (op is LinkOp)
@@ -483,15 +448,13 @@ public sealed class BoundedOperationPipelineTests
         new DirectoryNotFoundException("Could not find a part of the path 'x\\a.csv'."),
     };
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Run_NamesTheOperationWhoseDeadlineExpiredInsideIt(bool bestEffort)
+    [Fact]
+    public void Run_NamesTheOperationWhoseDeadlineExpiredInsideIt()
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] });
         using OperationDeadline deadline = OperationDeadline.Start(TimeSpan.FromSeconds(1));
 
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort, deadline, op =>
+        CliException error = Assert.Throws<CliException>(() => Run(batch, deadline, op =>
         {
             if (op is NoteOp)
             {
@@ -512,7 +475,7 @@ public sealed class BoundedOperationPipelineTests
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
 
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: true, static _ =>
+        CliException error = Assert.Throws<CliException>(() => Run(batch, static _ =>
             throw new RegexMatchTimeoutException("aaaa!", "(a+)+$", TimeSpan.FromSeconds(1))));
 
         Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
@@ -528,7 +491,7 @@ public sealed class BoundedOperationPipelineTests
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] });
         using OperationDeadline deadline = OperationDeadline.Start(TimeSpan.FromMilliseconds(200));
 
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, deadline, op =>
+        CliException error = Assert.Throws<CliException>(() => Run(batch, deadline, op =>
         {
             if (op is SetOp)
             {
@@ -541,11 +504,11 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal("operations", error.Details["phase"]!.GetValue<string>());
     }
 
-    private static IReadOnlyList<BoundedOperationOutcome> Run(TestBatch batch, bool bestEffort, Action<TestOp> apply) =>
-        Run(batch, bestEffort, deadline: null, apply);
+    private static IReadOnlyList<BoundedOperationOutcome> Run(TestBatch batch, Action<TestOp> apply) =>
+        Run(batch, deadline: null, apply);
 
-    private static IReadOnlyList<BoundedOperationOutcome> Run(TestBatch batch, bool bestEffort, OperationDeadline? deadline, Action<TestOp> apply) =>
-        BoundedOperationRunner.Run(Catalog, batch.Ops, bestEffort, deadline, new Model(apply)).Outcomes;
+    private static IReadOnlyList<BoundedOperationOutcome> Run(TestBatch batch, OperationDeadline? deadline, Action<TestOp> apply) =>
+        BoundedOperationRunner.Run(Catalog, batch.Ops, deadline, new Model(apply)).Outcomes;
 
     /// <summary>A document of one value that each operation that applies changes.</summary>
     private sealed class Model(Action<TestOp> apply) : IOperationModel<TestOp>
@@ -560,7 +523,5 @@ public sealed class BoundedOperationPipelineTests
             apply(operation);
             _version++;
         }
-
-        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["test/attempted"];
     }
 }

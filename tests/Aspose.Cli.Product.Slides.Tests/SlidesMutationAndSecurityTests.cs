@@ -9,13 +9,10 @@ namespace Aspose.Cli.Product.Slides.Tests;
 public sealed class SlidesMutationAndSecurityTests
 {
     [Theory]
-    [InlineData(false, "1-3")]
-    [InlineData(true, "1-3")]
-    [InlineData(false, "3")]
-    [InlineData(true, "3")]
-    [InlineData(false, "2-3")]
-    [InlineData(true, "2-3")]
-    public void DeleteSlides_ValidatesEveryResolvedTargetBeforeMutating(bool bestEffort, string secondRange)
+    [InlineData("1-3")]
+    [InlineData("3")]
+    [InlineData("2-3")]
+    public void DeleteSlides_ValidatesEveryResolvedTargetBeforeMutating(string secondRange)
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("deletions.pptx", slides: 3);
@@ -30,21 +27,9 @@ public sealed class SlidesMutationAndSecurityTests
             Input = input,
             Batch = batch,
             Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = bestEffort },
         };
-        if (bestEffort)
-        {
-            SlidesEditResult result = SlidesEdit.Run(fixture.Session, request);
-            Assert.Equal(["ok", "failed"], result.Applied.Select(static outcome => outcome.Status));
-            Assert.Equal(1, result.Applied[0].ItemsAffected);
-            Assert.Equal(0, result.Applied[1].ItemsAffected);
-            Assert.Equal(2, SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = output }).Presentation.SlideCount);
-        }
-        else
-        {
-            Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
-            Assert.False(File.Exists(output));
-        }
+        Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
+        Assert.False(File.Exists(output));
         Assert.Equal(original, File.ReadAllBytes(input));
     }
     [Fact]
@@ -179,17 +164,11 @@ public sealed class SlidesMutationAndSecurityTests
     }
 
     [Fact]
-    public void ContinueOnError_PersistsSuccessesAndReportsTheFailure()
+    public void ADuplicateSectionName_IsRefusedAndNothingIsWritten()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
-        uint[] slideIds;
-        using (var baseline = new Presentation(input))
-        {
-            slideIds = baseline.Slides.Select(static slide => slide.SlideId).ToArray();
-        }
         string atomicOutput = fixture.File("atomic.pptx");
-        string output = fixture.File("partial.pptx");
         var batch = new SlidesOpsBatch
         {
             Ops =
@@ -200,35 +179,15 @@ public sealed class SlidesMutationAndSecurityTests
             ],
         };
 
-        Assert.ThrowsAny<Exception>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = batch,
             Output = TestOutput.At(atomicOutput),
         }));
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
         Assert.False(File.Exists(atomicOutput));
-
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
-        {
-            Input = input,
-            Batch = batch,
-            Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
-
-        Assert.Equal(["ok", "failed", "ok"],
-            result.Applied.Select(static operation => operation.Status));
-        Assert.Equal(ErrorCodes.OpsInvalid.Name, result.Applied[1].Error!.Code);
-        Assert.Equal(["section/Results"], result.Applied[0].Targets);
-        Assert.Equal(["section/Results"], result.Applied[1].Targets);
-        Assert.Equal(["slide/1/notes"], result.Applied[2].Targets);
-        Assert.True(File.Exists(output));
-        using var reopened = new Presentation(output);
-        Assert.Contains(reopened.Sections, static section => section.Name == "Results");
-        Assert.Contains(
-            "Saved",
-            reopened.Slides[0].NotesSlideManager.NotesSlide!.NotesTextFrame!.Text,
-            StringComparison.Ordinal);
     }
 
     [Fact]

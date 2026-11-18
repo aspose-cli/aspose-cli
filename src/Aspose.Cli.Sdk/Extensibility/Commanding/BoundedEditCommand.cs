@@ -53,7 +53,7 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 /// <param name="Input">The edited document.</param>
 /// <param name="Batch">The validated, identified and path-normalized operation document.</param>
 /// <param name="Output">Where, how and in which format the result is published.</param>
-/// <param name="Options">Precondition, dry-run and best-effort semantics.</param>
+/// <param name="Options">Precondition and dry-run semantics.</param>
 /// <param name="Verify">Whether staged verification was requested.</param>
 /// <param name="Secrets">
 /// The operations' secrets by environment variable name; a missing or empty variable is absent,
@@ -77,8 +77,7 @@ public sealed record BoundedEditInvocation<TBatch>(
 /// <summary>
 /// The one command skeleton of every bounded, atomic product edit. It owns the operation
 /// document (<c>--ops</c>) and its composition with <c>--set</c> directives and the
-/// execution semantics (<c>--if-match</c>, <c>--dry-run</c>, <c>--best-effort</c>,
-/// <c>--verify</c>), so every product accepts and rejects the same combinations. Its
+/// execution semantics (<c>--if-match</c>, <c>--dry-run</c>, <c>--verify</c>), so every product accepts and rejects the same combinations. Its
 /// command, defined through <see cref="EditDefinition"/>, publishes the edited document as a
 /// mutation output (<c>--out</c>, <c>--overwrite</c>, <c>--in-place</c>, <c>--backup</c>).
 /// <c>--ops</c> is optional only together with <c>--set</c>: an edit needs one of them.
@@ -97,7 +96,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     private readonly Option<string?> _ops;
     private readonly Option<string[]>? _set;
     private readonly Option<string?> _ifMatch;
-    private readonly Option<bool> _bestEffort;
     private readonly Option<bool>? _verify;
     private readonly IReadOnlyList<Option> _options;
 
@@ -130,10 +128,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         {
             Description = "Require the current input SHA-256 fingerprint before editing.",
         }.WithInput(InputKind.None);
-        _bestEffort = new Option<bool>(StandardOptionNames.BestEffort)
-        {
-            Description = "Keep successful operations, report failures, and exit 8.",
-        };
         if (definition.VerifyDescription is { } verify)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(verify);
@@ -145,7 +139,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             _ops,
             .. _set is null ? [] : new Option[] { _set },
             _ifMatch,
-            _bestEffort,
             .. _verify is null ? [] : new Option[] { _verify },
         ];
     }
@@ -214,7 +207,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         TBatch batch = Compose(source is null ? null : ParseDocument(source, paths, standard.Inputs), compiled);
         // Every [InputPath] member resolves against the invocation directory; the edit never
         // publishes over a file an operation reads. A file that does not exist fails the
-        // operation that reads it, which the runner numbers and --best-effort skips.
+        // operation that reads it, which the runner numbers.
         var read = new List<string>();
         string ResolveInput(string path)
         {
@@ -238,7 +231,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         {
             IfMatch = ReconcileIfMatch(parse.GetValue(_ifMatch), batch.IfMatch),
             DryRun = dryRun,
-            BestEffort = parse.GetValue(_bestEffort),
         };
         IReadOnlyDictionary<string, Secret> secrets = ResolveSecrets(batch, standard.ReadEnvironment);
         Secret? encryptPassword = encrypts ? standard.EncryptPassword() : null;

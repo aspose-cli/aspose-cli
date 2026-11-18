@@ -74,7 +74,7 @@ open the output and no restrictions, `create`, `edit`, `merge` and `split` take
 `--encrypt-env` (or `--encrypt-stdin`); on `edit` it applies after the
 operations and replaces the input's encryption. An edit refuses `--encrypt-env`
 together with an `encrypt_document` operation with `OPTION_INVALID` before
-any operation runs, also with `--best-effort`: choose one.
+any operation runs: choose one.
 
 ```bash
 aspose-cli pdf merge a.pdf b.pdf --out merged.pdf --encrypt-env PDF_PASSWORD --output-format json

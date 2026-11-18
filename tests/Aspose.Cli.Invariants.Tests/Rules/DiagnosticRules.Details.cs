@@ -36,10 +36,7 @@ internal static partial class ContractRules
     /// <summary>The <c>OPS_INVALID</c> reasons about one field, which name it in <c>details.field</c>.</summary>
     private static readonly string[] FieldReasons = ["unknown-field", "missing-field", "wrong-type"];
 
-    /// <summary>
-    /// The schema of the error envelope's <c>error</c> object, which a failed operation of a
-    /// best-effort batch carries too.
-    /// </summary>
+    /// <summary>The schema of the error envelope's <c>error</c> object.</summary>
     private static (string SchemaId, JsonObject Node) ErrorPayload() =>
         PublishedSchema.Resolve(ErrorSchema, PublishedSchema.Document(ErrorSchema)["properties"]!["error"]!.AsObject());
 

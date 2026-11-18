@@ -5,8 +5,7 @@ namespace Aspose.Cli.Sdk.Operations;
 /// <summary>
 /// The one rule for secrets that operations name by environment variable. The edit command
 /// reads each named variable once and passes only the values it found; an operation that
-/// needs a missing or empty one fails alone, naming the variable, so a best-effort batch keeps
-/// its other operations and a dry run still reports every outcome.
+/// needs a missing or empty one fails, naming the variable.
 /// </summary>
 public static class OperationSecrets
 {

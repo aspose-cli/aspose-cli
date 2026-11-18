@@ -135,49 +135,38 @@ internal static class ChartPivotOps
 
         int pivotIndex = sheet.PivotTables.Add(source, op.At, name);
         PivotTable pivot = sheet.PivotTables[pivotIndex];
-        try
+        foreach (string row in op.Rows ?? [])
         {
-            foreach (string row in op.Rows ?? [])
-            {
-                AddField(pivot, PivotFieldType.Row, row);
-            }
-
-            foreach (string column in op.Columns ?? [])
-            {
-                AddField(pivot, PivotFieldType.Column, column);
-            }
-
-            var dataFields = new List<PivotField>(op.Values.Count);
-            foreach (CellsPivotValueField value in op.Values)
-            {
-                int fieldIndex = AddField(pivot, PivotFieldType.Data, value.Field);
-                pivot.DataFields[fieldIndex].Function = ToFunction(value.Function);
-                if (value.NumberFormat is { } numberFormat)
-                {
-                    pivot.DataFields[fieldIndex].NumberFormat = numberFormat;
-                }
-
-                dataFields.Add(pivot.DataFields[fieldIndex]);
-            }
-
-            // Like Excel, several value fields are columns, after any column fields. With a column
-            // field, each value field's grand-total column keeps the engine's English
-            // "Total <caption>" (known issue CELLS-PIVOT-TOTAL-CAPTION, KNOWN-ISSUES.md).
-            if (dataFields.Count > 1)
-            {
-                pivot.AddFieldToArea(PivotFieldType.Column, pivot.ValuesField);
-            }
-
-            ApplyCaptions(pivot, op, dataFields);
+            AddField(pivot, PivotFieldType.Row, row);
         }
-        catch (OperationInvalidException)
+
+        foreach (string column in op.Columns ?? [])
         {
-            // Field names are known only once the engine has read the source
-            // headers; a rejected op must not leave a half-built pivot behind
-            // for --best-effort to publish.
-            sheet.PivotTables.RemoveAt(pivotIndex, keepData: false);
-            throw;
+            AddField(pivot, PivotFieldType.Column, column);
         }
+
+        var dataFields = new List<PivotField>(op.Values.Count);
+        foreach (CellsPivotValueField value in op.Values)
+        {
+            int fieldIndex = AddField(pivot, PivotFieldType.Data, value.Field);
+            pivot.DataFields[fieldIndex].Function = ToFunction(value.Function);
+            if (value.NumberFormat is { } numberFormat)
+            {
+                pivot.DataFields[fieldIndex].NumberFormat = numberFormat;
+            }
+
+            dataFields.Add(pivot.DataFields[fieldIndex]);
+        }
+
+        // Like Excel, several value fields are columns, after any column fields. With a column
+        // field, each value field's grand-total column keeps the engine's English
+        // "Total <caption>" (known issue CELLS-PIVOT-TOTAL-CAPTION, KNOWN-ISSUES.md).
+        if (dataFields.Count > 1)
+        {
+            pivot.AddFieldToArea(PivotFieldType.Column, pivot.ValuesField);
+        }
+
+        ApplyCaptions(pivot, op, dataFields);
 
         pivot.CalculateData();
     }

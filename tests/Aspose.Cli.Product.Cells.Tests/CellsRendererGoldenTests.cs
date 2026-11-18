@@ -245,11 +245,7 @@ public sealed class CellsRendererGoldenTests
             Applied =
             [
                 new BoundedOperationOutcome { Id = "op-0001", Op = "set_values", Status = OpStatuses.Ok, ItemsAffected = 3 },
-                new BoundedOperationOutcome
-                {
-                    Id = "total", Op = "set_formula", Status = OpStatuses.Failed, ItemsAffected = 0,
-                    Error = new ErrorPayload { Code = "OPS_INVALID", Message = "sheet 'Missing' does not exist"},
-                },
+                new BoundedOperationOutcome { Id = "total", Op = "set_formula", Status = OpStatuses.Ok, ItemsAffected = 0 },
             ],
             Backup = new BackupInfo
             {
@@ -278,10 +274,9 @@ public sealed class CellsRendererGoldenTests
 
         RenderedText.Equal(
             """
-            wrote out.xlsx (xlsx, 4,096 bytes, 1 of 2 op(s) applied, 1 failed)
+            wrote out.xlsx (xlsx, 4,096 bytes, 2 of 2 op(s) applied)
               [op-0001] set_values: ok (3 item(s))
-              [total] set_formula: failed (0 item(s))
-                  OPS_INVALID: sheet 'Missing' does not exist
+              [total] set_formula: ok (0 item(s))
             backup: book.backup.xlsx (created)
             verification: needs attention; checked ops: op-0001; 1 direct, 0 formula-result, 1 formula error(s)
               FORMULA_ERRORS [Data!C7]: C7 evaluates to #REF!

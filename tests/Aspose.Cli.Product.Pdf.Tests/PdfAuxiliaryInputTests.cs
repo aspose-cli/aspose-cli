@@ -12,7 +12,7 @@ public sealed class PdfAuxiliaryInputTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void OversizedAttachmentAbortsTheEntireEdit(bool bestEffort)
+    public void OversizedAttachmentAbortsTheEntireEdit(bool supervised)
     {
         using var workspace = new TempWorkspace();
         using (var document = new Document())
@@ -27,7 +27,7 @@ public sealed class PdfAuxiliaryInputTests
         { op = "add_attachment", path = workspace.File("attachment.bin") } } });
         var args = new List<string> { "pdf", "edit", "source.pdf", "--ops", ops, "--out", "result.pdf",
             "--max-input-bytes", limit.ToString(CultureInfo.InvariantCulture), "--output-format", "json" };
-        if (bestEffort) { args.AddRange(["--best-effort", "--timeout", TestDeadline.CliTimeout]); }
+        if (supervised) { args.AddRange(["--timeout", TestDeadline.CliTimeout]); }
         CliResult result = workspace.Run(args.ToArray());
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains("FILE_TOO_LARGE", result.StdErr, StringComparison.Ordinal);
