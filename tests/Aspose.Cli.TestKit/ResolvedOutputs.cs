@@ -11,13 +11,12 @@ public static class ResolvedOutputs
     /// <paramref name="format"/>, or otherwise in the first one whose extension the path carries.
     /// </summary>
     public static ResolvedOutput At(
-        IEnumerable<FormatDescriptor> formats, string path, string? format = null, bool overwrite = false, string? backup = null) =>
+        IEnumerable<FormatDescriptor> formats, string path, string? format = null, bool overwrite = false, bool inPlace = false) =>
         new(
             formats.First(candidate => format is null
                 ? candidate.Extensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase)
                 : candidate.Id == format),
             path,
             overwrite,
-            inPlace: backup is not null,
-            backup);
+            inPlace);
 }

@@ -14,23 +14,6 @@ namespace Aspose.Cli.Product.Slides.Tests;
 public sealed class SlidesEditVerificationTests
 {
     [Fact]
-    public void Edit_InPlaceBackupTwice_WarnsBackupPredatesEdit()
-    {
-        using var fixture = new SlidesEngineFixture();
-        string input = fixture.CreatePresentation("backup-twice.pptx");
-        string backup = fixture.File("backup-twice.backup.pptx");
-        SlidesEditResult Edit(string notes) => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
-        {
-            Input = input,
-            Batch = new SlidesOpsBatch { Ops = [new SetNotesOp { Slide = 1, Text = notes }] },
-            Output = TestOutput.At(input, overwrite: true, backup: backup),
-        });
-
-        Assert.DoesNotContain(Edit("First").Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
-        Assert.Contains(Edit("Second").Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
-    }
-
-    [Fact]
     public void Verify_ChecksEachTitleOnTheSlideAtItsPositionAfterAMove()
     {
         using var fixture = new SlidesEngineFixture();
@@ -94,7 +77,7 @@ public sealed class SlidesEditVerificationTests
         Assert.Contains("title", facts.Checked);
         SlidesEditResult failed = new()
         {
-            Input = new InputInfo { Path = input, Format = "pptx", SizeBytes = 1, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = input, Format = "pptx", SizeBytes = 1, Encrypted = false },
             DryRun = false,
             Applied = [],
             Verification = new SlidesEditVerification { Ok = false, Issues = facts.Issues, CheckedOps = [] },

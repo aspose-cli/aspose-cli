@@ -92,9 +92,6 @@ public static class WarningCodes
     /// <summary>A list inside a result was capped; <c>details.list</c> names the list.</summary>
     public static readonly WarningCode ListTruncated = new("LIST_TRUNCATED");
 
-    /// <summary>An in-place edit kept an existing backup that holds an earlier version than the file it replaced.</summary>
-    public static readonly WarningCode BackupPredatesEdit = new("BACKUP_PREDATES_EDIT");
-
     /// <summary>An edit went through restrictions the input declares but the engine does not enforce.</summary>
     public static readonly WarningCode ProtectionNotEnforced = new("PROTECTION_NOT_ENFORCED");
 
@@ -123,7 +120,6 @@ public static class WarningCodes
         EvaluationInputMarked,
         EncryptionRemoved,
         ListTruncated,
-        BackupPredatesEdit,
         ProtectionNotEnforced,
         OpNoEffect,
         TextNotReplaced,

@@ -26,9 +26,6 @@ public sealed record PdfEditResult() : EngineResultEnvelope("edit-result"), IPar
     /// <summary>The outcome of each operation, in batch order.</summary>
     public required IReadOnlyList<BoundedOperationOutcome> Applied { get; init; }
 
-    /// <summary>The copy of the input kept before it was replaced in place; absent otherwise.</summary>
-    public BackupInfo? Backup { get; init; }
-
     /// <summary>The 1-based pages the operations changed; absent when they changed none.</summary>
     [Minimum(1)]
     public IReadOnlyList<int>? PagesTouched { get; init; }

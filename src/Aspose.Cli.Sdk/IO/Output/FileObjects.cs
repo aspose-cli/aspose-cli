@@ -1,6 +1,5 @@
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Formats;
-using Aspose.Cli.Sdk.IO.Files;
 
 namespace Aspose.Cli.Sdk.IO.Output;
 
@@ -24,13 +23,11 @@ public static class FileObjects
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentException.ThrowIfNullOrWhiteSpace(format);
         string fullPath = Path.GetFullPath(path);
-        FileFingerprint fingerprint = FileFingerprints.Capture(fullPath);
         return new InputInfo
         {
             Path = fullPath,
             Format = format,
             SizeBytes = new FileInfo(fullPath).Length,
-            Fingerprint = fingerprint,
             Encrypted = encrypted,
         };
     }
@@ -55,7 +52,6 @@ public static class FileObjects
                     Path = input.Path,
                     Format = input.Format,
                     SizeBytes = input.SizeBytes,
-                    Fingerprint = input.Fingerprint,
                     Encrypted = input.Encrypted,
                     Option = source.File.Option,
                 };

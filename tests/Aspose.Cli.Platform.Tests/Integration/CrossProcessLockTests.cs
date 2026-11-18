@@ -41,30 +41,6 @@ public sealed class CrossProcessLockTests
         Assert.Equal(["book.xlsx"], Entries(workspace.Path));
     }
 
-    [Fact]
-    public async Task ConcurrentConditionalEdits_FromTwoProcesses_PublishExactlyOne()
-    {
-        using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
-        string fingerprint = JsonNode.Parse(workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json").StdOut)!
-            ["input"]!["fingerprint"]!["sha256"]!.GetValue<string>();
-
-        CliResult[] results = await Task.WhenAll(new[] { "first", "second" }.Select(value => Task.Run(() =>
-            workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--if-match", fingerprint,
-                "--set", $"Data!A1={value}", "--output-format", "json"))));
-
-        CliResult winner = Assert.Single(results, static result => result.ExitCode == 0);
-        CliResult loser = Assert.Single(results, static result => result.ExitCode != 0);
-        Assert.Empty(loser.StdOut);
-        Assert.Equal("INPUT_CHANGED", ErrorCode(loser));
-        string written = JsonNode.Parse(winner.StdOut)!["output"]!["fingerprint"]!["sha256"]!.GetValue<string>();
-        Assert.Equal(written, FileHashes.Sha256(workspace.File("book.xlsx")));
-        // Under load the system can refuse to delete a finished transaction's directory at once;
-        // the next publication into the directory recovers it, so only the documents count here.
-        Assert.Equal(["book.xlsx"], Entries(workspace.Path)
-            .Where(static entry => !entry.StartsWith(".aspose-publication-", StringComparison.Ordinal)));
-    }
-
     // Windows file names ignore case: a lock held under one spelling of the target holds every spelling.
     [Theory]
     [InlineData(false, false)]

@@ -1,6 +1,6 @@
 # Slides editing
 
-Batch semantics (atomic, `--dry-run`, output and backups) and field
+Batch semantics (atomic, `--dry-run`, output) and field
 discovery are shared: see `aspose-cli docs editing`. Each operation's fields, types, defaults
 and allowed values come from its generated schema:
 

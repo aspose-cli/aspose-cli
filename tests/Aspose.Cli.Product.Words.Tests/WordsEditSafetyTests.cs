@@ -61,12 +61,11 @@ public sealed class WordsEditSafetyTests
         string input = fixture.CreateEncryptedDocument(OriginalPassword);
         byte[] original = File.ReadAllBytes(input);
         string output = inPlace ? input : fixture.Temp.File($"edited.{format}");
-        string backup = fixture.Temp.File("original.backup.docx");
         WordsEditResult result = fixture.Disclosed(session => WordsEdit.Run(session, new WordsEditRequest
         {
             Input = input,
             Batch = TextBatch(),
-            Output = TestOutput.At(output, overwrite: inPlace, backup: inPlace ? backup : null),
+            Output = TestOutput.At(output, overwrite: inPlace, inPlace: inPlace),
             Password = new Secret(OriginalPassword),
             Verify = verify,
         }));
@@ -78,7 +77,10 @@ public sealed class WordsEditSafetyTests
             WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output, Password = new Secret("wrong") })).Code);
         var reopened = new Document(output, new LoadOptions { Password = OriginalPassword });
         Assert.Contains("Safe", reopened.GetText(), StringComparison.Ordinal);
-        Assert.Equal(original, File.ReadAllBytes(inPlace ? backup : input));
+        if (!inPlace)
+        {
+            Assert.Equal(original, File.ReadAllBytes(input));
+        }
         Assert.DoesNotContain(result.Warnings ?? [], warning => warning.Code == WarningCodes.EncryptionRemoved);
         if (verify) { Assert.NotNull(result.Verification); }
     }
@@ -200,41 +202,22 @@ public sealed class WordsEditSafetyTests
     }
 
     [Fact]
-    public void Edit_InPlaceBackupTwice_WarnsBackupPredatesEdit()
-    {
-        using var fixture = new WordsFixture();
-        string input = fixture.CreateReport();
-        string backup = fixture.Temp.File("report.backup.docx");
-        WordsEditResult Edit(string text) => WordsEdit.Run(fixture.Session, new WordsEditRequest
-        {
-            Input = input,
-            Batch = new WordsOpsBatch { Ops = [new SetTextOp { Target = new WordsTarget { Block = 1 }, Text = text }] },
-            Output = TestOutput.At(input, overwrite: true, backup: backup),
-        });
-
-        Assert.DoesNotContain(Edit("First").Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
-        Assert.Contains(Edit("Second").Warnings ?? [], static warning => warning.Code == WarningCodes.BackupPredatesEdit);
-    }
-
-    [Fact]
-    public void EncryptedDryRun_CreatesNeitherOutputNorBackup()
+    public void EncryptedDryRun_CreatesNoOutput()
     {
         using var fixture = new WordsFixture();
         string input = fixture.CreateEncryptedDocument(OriginalPassword);
         byte[] original = File.ReadAllBytes(input);
-        string backup = fixture.Temp.File("unused.backup.docx");
         WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
             Batch = TextBatch(),
-            Output = TestOutput.At(input, overwrite: true, backup: backup),
+            Output = TestOutput.At(input, overwrite: true, inPlace: true),
             Password = new Secret(OriginalPassword),
             Options = new EditCommandOptions { DryRun = true },
         });
         Assert.True(result.DryRun);
         Assert.Null(result.Output);
         Assert.Equal(original, File.ReadAllBytes(input));
-        Assert.False(File.Exists(backup));
     }
 
     [Fact]
@@ -246,11 +229,9 @@ public sealed class WordsEditSafetyTests
         var environment = new Dictionary<string, string?> { ["WORDS_EDIT_SECRET"] = OriginalPassword };
         CliResult created = workspace.RunWithEnv(environment, "words", "create", "secret.docx", "--from-text", "source.txt", "--encrypt-env", "WORDS_EDIT_SECRET", "--output-format", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
-        byte[] original = File.ReadAllBytes(workspace.File("secret.docx"));
-        CliResult edited = workspace.RunWithEnv(environment, "words", "edit", "secret.docx", "--ops", "ops.json", "--password-env", "WORDS_EDIT_SECRET", "--in-place", "--backup", "--verify", "--output-format", "json");
+        CliResult edited = workspace.RunWithEnv(environment, "words", "edit", "secret.docx", "--ops", "ops.json", "--password-env", "WORDS_EDIT_SECRET", "--in-place", "--verify", "--output-format", "json");
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         Assert.True(FileFormatUtil.DetectFileFormat(workspace.File("secret.docx")).IsEncrypted);
-        Assert.Equal(original, File.ReadAllBytes(workspace.File("secret.backup.docx")));
         Assert.NotNull(JsonNode.Parse(edited.StdOut)!["verification"]);
         Assert.DoesNotContain(OriginalPassword, created.StdOut + created.StdErr + edited.StdOut + edited.StdErr, StringComparison.Ordinal);
         CliResult missing = workspace.Run("words", "inspect", "secret.docx", "--output-format", "json");

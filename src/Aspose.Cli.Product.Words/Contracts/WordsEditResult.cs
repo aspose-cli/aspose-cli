@@ -26,9 +26,6 @@ public sealed record WordsEditResult() : EngineResultEnvelope("edit-result"), IP
     /// <summary>The outcome of each operation, in batch order.</summary>
     public required IReadOnlyList<BoundedOperationOutcome> Applied { get; init; }
 
-    /// <summary>The backup of the replaced file, when the edit wrote over an existing file.</summary>
-    public BackupInfo? Backup { get; init; }
-
     /// <summary>
     /// The output pages that hold what the batch changed: the pages of each changed block, and
     /// for a removed block the page of the content that took its place; every page of a section

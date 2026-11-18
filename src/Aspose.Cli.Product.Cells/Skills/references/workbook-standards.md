@@ -9,7 +9,7 @@ dashboards — is `aspose-cli docs cells/design-system`.
 Recipes below assume a report book (`Sales` summary, `Config` assumptions,
 `Data` dataset); adjust names and ranges. Each is one atomic `edit` batch —
 fold them into a larger batch. In-place edits to a user-supplied file take
-`--backup --verify` on the first edit (`aspose-cli docs cells/editing`).
+`--verify` on the first edit (`aspose-cli docs cells/editing`).
 
 Recipes pass their ops inline (`--ops '{...}'`) for brevity, as a POSIX shell
 takes them. In PowerShell, save each batch to a file and pass its path

@@ -27,7 +27,7 @@ internal static class EditCommand
             examples:
             [
                 "slides edit deck.pptx --ops deck-ops.json --out revised.pptx --verify",
-                "slides edit deck.pptx --in-place --backup --ops deck-ops.json",
+                "slides edit deck.pptx --in-place --ops deck-ops.json",
             ],
             links:
             [
@@ -38,7 +38,7 @@ internal static class EditCommand
 
     internal static void Table(SlidesEditResult result, TableSurface surface)
     {
-        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
+        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied);
         ResultText.Touched(surface, "slides", result.SlidesTouched);
         ResultText.Verification(surface, result.Verification);
     }

@@ -270,7 +270,6 @@ aspose-cli words convert contract.docx --to pdf --out contract.pdf --output-form
 
 then encrypt `contract.pdf` with an `encrypt_document` operation of
 `aspose-cli pdf edit` (the PDF Skill, `aspose-cli docs pdf/forms-security`).
-Use `--in-place` without `--backup`, which would keep the unencrypted PDF.
 
 ## Save and verify
 

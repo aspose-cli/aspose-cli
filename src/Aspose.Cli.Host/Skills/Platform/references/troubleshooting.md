@@ -130,8 +130,8 @@ aspose-cli capabilities --output-format json
   `--password-env <VAR>` or `--password-stdin`. A command that reads two
   documents, such as `compare`, names the argument in `details.argument`; an
   operation that needs a password names its `*Env` field in `details.field`.
-- The file changed since you read it (`INPUT_CHANGED`): read it again, review
-  what changed, and retry with the new `input.fingerprint.sha256`.
+- The file changed while the edit read it (`INPUT_CHANGED`): read it again,
+  review what changed, and retry.
 - An input over a resource budget: the message and `details` give the limit.
   An input larger than `--max-input-bytes`, by its size or by the bytes read
   of it, is `FILE_TOO_LARGE`: raise the option up to its hard maximum. Any
@@ -145,7 +145,7 @@ aspose-cli capabilities --output-format json
   when one exists; `--overwrite` replaces only the files the command writes.
 - A write the operating system refused (`OUTPUT_UNWRITABLE`): a file open in
   another application usually reads fine but fails the final in-place
-  replace; ask the user to close it. The input and any backup are untouched.
+  replace; ask the user to close it. The input is untouched.
 - An output over a resource budget (`OUTPUT_BUDGET_EXCEEDED`), such as too
   many files in one output set: write less, such as a narrower selection;
   `details.resource` and `details.limit` name the budget.

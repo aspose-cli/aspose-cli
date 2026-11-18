@@ -6,7 +6,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// </summary>
 /// <remarks>
 /// Products build it only with <c>FileObjects.Sources</c>, which makes the path absolute, reads
-/// the size and fingerprint from the file itself and keeps the order of the command line.
+/// the size from the file itself and keeps the order of the command line.
 /// </remarks>
 [SchemaId("source-input")]
 public sealed record SourceInput
@@ -20,9 +20,6 @@ public sealed record SourceInput
     /// <summary>File size in bytes.</summary>
     [Minimum(0)]
     public required long SizeBytes { get; init; }
-
-    /// <summary>SHA-256 identity of the file as it was read.</summary>
-    public required FileFingerprint Fingerprint { get; init; }
 
     /// <summary><c>true</c> when the file is encrypted and opens only with its password.</summary>
     public required bool Encrypted { get; init; }

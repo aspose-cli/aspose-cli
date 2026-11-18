@@ -36,7 +36,7 @@ internal static class PdfEdit
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = session.Budgets.Inputs.CreateScope();
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
-        InputInfo input = precondition.Admit("pdf", loaded.Protection, request.Options.IfMatch);
+        InputInfo input = precondition.Admit("pdf", loaded.Protection);
         // The signatures intact in the input, which the output is read back for.
         IReadOnlySet<string> intact = PdfInfoProjection.IntactSignatures(loaded.Document);
         IReadOnlySet<string>? intactAfter = null;
@@ -82,7 +82,7 @@ internal static class PdfEdit
         catch (RedactedTextLeft left)
         {
             // The output was searched for the text of every redact_text the batch applied.
-            publication = new EditPublication<PdfEditVerification>(null, null, Verification(applied.Verified(new VerificationFacts(left.Issues, model.Redactions)
+            publication = new EditPublication<PdfEditVerification>(null, Verification(applied.Verified(new VerificationFacts(left.Issues, model.Redactions)
             {
                 UncheckedReasons = batch.Ops.ToDictionary(static op => op.Id!, static _ => StoppedAtRedaction, StringComparer.Ordinal),
             })));
@@ -96,8 +96,6 @@ internal static class PdfEdit
             warnings.Insert(0, invalidated);
         }
 
-        warnings.AddRange(publication.BackupWarnings ?? []);
-
         return new PdfEditResult
         {
             Input = input,
@@ -105,7 +103,6 @@ internal static class PdfEdit
             DryRun = request.Options.DryRun,
             Checked = request.Options.Checked,
             Applied = applied.Outcomes,
-            Backup = publication.Backup,
             PagesTouched = applied.Pages.Count == 0 ? null : [.. applied.Pages],
             Verification = publication.Verification,
             License = EnvelopeParts.License(state),
@@ -294,8 +291,8 @@ internal static class PdfEdit
 
     /// <summary>
     /// The warnings about what the batch did to the document, in the order the result lists them,
-    /// before those that only the publication knows: the navigation it left leading to no page,
-    /// the signatures it invalidated and the backup.
+    /// before those that only the publication knows: the navigation it left leading to no page
+    /// and the signatures it invalidated.
     /// </summary>
     private static List<Warning> BatchWarnings(
         PdfOpsBatch batch,

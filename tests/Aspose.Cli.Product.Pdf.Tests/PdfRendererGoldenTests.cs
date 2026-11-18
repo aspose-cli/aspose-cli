@@ -195,7 +195,7 @@ public sealed class PdfRendererGoldenTests
     {
         var result = new PdfEditResult
         {
-            Input = new InputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000, Encrypted = false },
             Output = new OutputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 21_500, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } },
             DryRun = false,
             Applied =
@@ -203,11 +203,7 @@ public sealed class PdfRendererGoldenTests
                 new BoundedOperationOutcome { Id = "stamp", Op = "add_text", Status = OpStatuses.Ok, ItemsAffected = 1 },
                 new BoundedOperationOutcome { Id = "op-0002", Op = "redact", Status = OpStatuses.Ok, ItemsAffected = 4 },
             ],
-            Backup = new BackupInfo
-            {
-                Path = "in.backup.pdf", Created = false, SizeBytes = 20_000,
-                LastWriteUtc = new DateTimeOffset(2026, 9, 28, 8, 30, 0, TimeSpan.Zero), HoldsReplacedVersion = true,
-            },
+
             PagesTouched = [2],
             Verification = new PdfEditVerification
             {
@@ -228,7 +224,6 @@ public sealed class PdfRendererGoldenTests
             wrote in.pdf (pdf, 21,500 bytes, 2 of 2 op(s) applied)
               [stamp] add_text: ok (1 item(s))
               [op-0002] redact: ok (4 item(s))
-            backup: in.backup.pdf (kept existing)
             pages touched: 2
             verification: needs attention; checked ops: stamp
               TEXT_NOT_FOUND [page/2]: the stamp text was not read back
@@ -242,7 +237,7 @@ public sealed class PdfRendererGoldenTests
     {
         var result = new PdfEditResult
         {
-            Input = new InputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000, Encrypted = false },
             DryRun = true,
             Applied = [new BoundedOperationOutcome { Id = "op-0001", Op = "rotate_pages", Status = OpStatuses.Ok, ItemsAffected = 2 }],
             Verification = new PdfEditVerification { Ok = true, CheckedOps = [], Issues = [] },
@@ -261,7 +256,7 @@ public sealed class PdfRendererGoldenTests
 
     private static PdfInspectResult Info() => new()
     {
-        Input = new InputInfo { Path = @"C:\docs\in.pdf", Format = "pdf", SizeBytes = 20_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+        Input = new InputInfo { Path = @"C:\docs\in.pdf", Format = "pdf", SizeBytes = 20_000, Encrypted = false },
         Pdf = new PdfSummary
         {
             PageCount = 3,

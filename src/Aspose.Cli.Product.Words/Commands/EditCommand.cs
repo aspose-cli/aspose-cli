@@ -52,8 +52,8 @@ internal static class EditCommand
             },
             examples:
             [
-                "words edit contract.docx --in-place --backup --verify --set \"bookmark:Client=Contoso\"",
-                "words edit contract.docx --in-place --backup --ops ops.json --verify",
+                "words edit contract.docx --in-place --verify --set \"bookmark:Client=Contoso\"",
+                "words edit contract.docx --in-place --ops ops.json --verify",
             ],
             links:
             [
@@ -64,7 +64,7 @@ internal static class EditCommand
 
     internal static void Table(WordsEditResult result, TableSurface surface)
     {
-        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
+        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied);
         ResultText.Touched(surface, "pages", result.PagesTouched);
         ResultText.Verification(surface, result.Verification);
     }

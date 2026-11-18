@@ -26,7 +26,7 @@ internal static class EditCommand
             examples:
             [
                 "pdf edit report.pdf --ops ops.json --out reviewed.pdf --verify",
-                "pdf edit report.pdf --in-place --backup --ops ops.json",
+                "pdf edit report.pdf --in-place --ops ops.json",
             ],
             links:
             [
@@ -37,7 +37,7 @@ internal static class EditCommand
 
     internal static void Table(PdfEditResult result, TableSurface surface)
     {
-        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
+        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied);
         ResultText.Touched(surface, "pages", result.PagesTouched);
         ResultText.Verification(surface, result.Verification);
     }

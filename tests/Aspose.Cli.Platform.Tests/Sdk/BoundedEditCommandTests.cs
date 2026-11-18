@@ -91,16 +91,11 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Fact]
-    public void Read_MakesABackupOnlyWhenRequested()
+    public void Read_ReplacesTheInputInPlace()
     {
         ResolvedOutput inPlace = Read(Plain(), "--ops", Document, "--in-place").Output;
-        ResolvedOutput backedUp = Read(Plain(), "--ops", Document, "--in-place", "--backup").Output;
 
         Assert.True(inPlace.InPlace);
-        Assert.Null(inPlace.BackupPath);
-        Assert.Equal(_temp.File("book.backup.test"), backedUp.BackupPath);
-        Assert.Equal(ErrorCodes.OptionInvalid, Assert.Throws<CliException>(
-            () => Read(Plain(), "--ops", Document, "--backup")).Code);
     }
 
     [Fact]
@@ -115,19 +110,11 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Fact]
-    public void Read_CombinesExecutionFlagsAndRejectsAConflictingFingerprint()
+    public void Read_ReadsTheDryRunFlag()
     {
-        EditCommandOptions options = Read(
-            Plain(),
-            "--ops", """{"ifMatch":"abcdef","ops":[{"op":"set","value":1}]}""",
-            "--if-match", "ABCDEF", "--dry-run").Options;
+        EditCommandOptions options = Read(Plain(), "--ops", Document, "--dry-run").Options;
 
-        Assert.Equal("ABCDEF", options.IfMatch);
         Assert.True(options.DryRun);
-        Assert.Equal(ErrorCodes.OptionInvalid, Assert.Throws<CliException>(() => Read(
-            Plain(),
-            "--ops", """{"ifMatch":"stale","ops":[{"op":"set","value":1}]}""",
-            "--if-match", "current")).Code);
     }
 
     [Fact]
@@ -366,8 +353,8 @@ public sealed class BoundedEditCommandTests : IDisposable
 
         Assert.Equal(
             [
-                "--ops", "--if-match", "--verify", "--fast",
-                "--out", "--overwrite", "--in-place", "--backup", "--dry-run",
+                "--ops", "--verify", "--fast",
+                "--out", "--overwrite", "--in-place", "--dry-run",
                 "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--encrypt-stdin", "--font-dir",
             ],
             command.Options.Select(static option => option.Name));

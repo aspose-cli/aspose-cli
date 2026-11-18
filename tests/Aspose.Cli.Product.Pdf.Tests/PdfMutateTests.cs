@@ -365,7 +365,6 @@ public sealed class PdfMutateTests
             Output = TestOutput.At(output),
         });
 
-        Assert.NotNull(result.Input.Fingerprint);
         Assert.NotNull(result.Output?.Fingerprint);
         Assert.All(result.Applied, static operation =>
             Assert.Equal(OpStatuses.Ok, operation.Status));
@@ -519,7 +518,6 @@ public sealed class PdfMutateTests
             Output = TestOutput.At(filled),
         });
         Assert.Equal(["field/Customer"], Assert.Single(filledResult.Applied).Targets);
-        Assert.NotNull(filledResult.Input.Fingerprint);
         Assert.NotNull(filledResult.Output?.Fingerprint);
         Assert.Equal("Contoso", fixture.Forms(filled).Fields.Single().Value);
 

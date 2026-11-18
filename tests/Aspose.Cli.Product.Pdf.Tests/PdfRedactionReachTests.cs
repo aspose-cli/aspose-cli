@@ -395,30 +395,6 @@ public sealed class PdfRedactionReachTests
         Assert.Equal(files, Directory.GetFiles(Path.GetDirectoryName(input)!));
     }
 
-    /// <summary>A redaction whose text is left in the output writes no backup of an input edited in place.</summary>
-    [Fact]
-    public void RedactText_LeavingItsText_WritesNoBackup()
-    {
-        using var fixture = new PdfEngineFixture();
-        string input = Leaky(fixture);
-        string backup = fixture.File("leaky.backup.pdf");
-        byte[] before = File.ReadAllBytes(input);
-        string[] files = Directory.GetFiles(Path.GetDirectoryName(input)!);
-
-        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
-        {
-            Input = input,
-            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Find = Secret }] },
-            Output = TestOutput.At(input, overwrite: true, backup: backup),
-        });
-
-        Assert.Null(result.Output);
-        Assert.Null(result.Backup);
-        Assert.False(File.Exists(backup));
-        Assert.Equal(before, File.ReadAllBytes(input));
-        Assert.Equal(files, Directory.GetFiles(Path.GetDirectoryName(input)!));
-    }
-
     /// <summary>The command exits 8 and writes nothing, whether it runs in its own process or under a supervised worker.</summary>
     [Category(TestCategory.Slow)]
     [Theory]

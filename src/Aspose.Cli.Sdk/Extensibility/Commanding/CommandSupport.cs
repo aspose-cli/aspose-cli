@@ -259,7 +259,7 @@ internal sealed class OutputFileOption
     /// <summary>
     /// Resolves an output file the caller names, such as a create command's file argument,
     /// and rejects one that names any of the command's inputs: replacing an input is the
-    /// in-place mode's job alone, with its backup and fingerprint precondition.
+    /// in-place mode's job alone.
     /// </summary>
     /// <param name="paths">The invocation path resolver.</param>
     /// <param name="output">The output path as given.</param>

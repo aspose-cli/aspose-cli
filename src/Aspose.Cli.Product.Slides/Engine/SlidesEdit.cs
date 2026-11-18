@@ -22,7 +22,7 @@ internal static class SlidesEdit
         LicenseState state = session.Outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using LoadedPresentation loaded = session.Loader.OpenToWrite(filePath, request.Password);
-        InputInfo input = precondition.Admit(loaded.FormatId, loaded.Protection, request.Options.IfMatch);
+        InputInfo input = precondition.Admit(loaded.FormatId, loaded.Protection);
         Presentation presentation = loaded.Presentation;
         bool evaluation = state == LicenseState.Evaluation;
         var model = new SlidesEditModel(
@@ -46,13 +46,12 @@ internal static class SlidesEdit
             DryRun = request.Options.DryRun,
             Checked = request.Options.Checked,
             Applied = applied.Outcomes,
-            Backup = publication.Backup,
             SlidesTouched = applied.Pages.Count == 0 ? null : [.. applied.Pages],
             Verification = publication.Verification,
             License = EnvelopeParts.License(state),
             Warnings = request.Options.DryRun
                 ? EnvelopeParts.CombineWarnings(InputWarnings(loaded), warnings)
-                : EnvelopeParts.CombineWarnings(WrittenWarnings(loaded), warnings, publication.BackupWarnings),
+                : EnvelopeParts.CombineWarnings(WrittenWarnings(loaded), warnings),
         };
     }
 

@@ -6,6 +6,6 @@ namespace Aspose.Cli.Product.Cells.Tests;
 internal static class TestOutput
 {
     /// <inheritdoc cref="ResolvedOutputs.At"/>
-    public static ResolvedOutput At(string path, string? format = null, bool overwrite = false, string? backup = null) =>
-        ResolvedOutputs.At(CellsFormats.Definitions, path, format, overwrite, backup);
+    public static ResolvedOutput At(string path, string? format = null, bool overwrite = false, bool inPlace = false) =>
+        ResolvedOutputs.At(CellsFormats.Definitions, path, format, overwrite, inPlace);
 }

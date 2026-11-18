@@ -14,7 +14,6 @@ internal static partial class ContractRules
     private const string CommonInput = "v2/common/input";
     private const string CommonOutput = "v2/common/output";
     private const string CommonSourceInput = "v2/common/source-input";
-    private const string CommonBackup = "v2/common/backup";
     private const string CommonFingerprint = "v2/common/file-fingerprint";
 
     private static IEnumerable<InvariantCase> R40(CliCatalog catalog)
@@ -116,9 +115,6 @@ internal static partial class ContractRules
         /// <summary>The SDK output object of the file the command wrote.</summary>
         Output,
 
-        /// <summary>The SDK backup object of an in-place edit.</summary>
-        Backup,
-
         /// <summary>A list of objects with a path, of a product's own type.</summary>
         Files,
 
@@ -133,7 +129,6 @@ internal static partial class ContractRules
             case CommonInput: return FileKind.Read;
             case CommonOutput: return FileKind.Output;
             case CommonSourceInput: return FileKind.Source;
-            case CommonBackup: return FileKind.Backup;
         }
         (string resolvedId, JsonObject node) = ResolveIn(documents, id, schema);
         if (node["items"] is JsonObject items)

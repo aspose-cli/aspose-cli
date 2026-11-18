@@ -41,7 +41,7 @@ internal static class WordsEdit
         string format = written.Id;
         OutputProtection protection = OutputProtection.For(written, request.EncryptPassword, loaded.Protection, request.Password);
         SaveOptions saveOptions = WordsSavePipeline.Options(format, protection.Password);
-        InputInfo input = precondition.Admit(loaded.FormatId, loaded.Protection, request.Options.IfMatch);
+        InputInfo input = precondition.Admit(loaded.FormatId, loaded.Protection);
         Node[] blocksBefore = BodyBlocks(loaded.Document).ToArray();
         Section[] sectionsBefore = [.. loaded.Document.Sections.Cast<Section>()];
         // The references the input held that loading left out: the output keeps them as the input
@@ -104,11 +104,10 @@ internal static class WordsEdit
             DryRun = request.Options.DryRun,
             Checked = request.Options.Checked,
             Applied = outcomes,
-            Backup = publication.Backup,
             PagesTouched = pagesTouched.Count == 0 ? null : pagesTouched,
             Verification = publication.Verification,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, publication.BackupWarnings, operationWarnings, PdfInputWarnings(loaded), Mutation(),
+            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, operationWarnings, PdfInputWarnings(loaded), Mutation(),
                 Omitted(loaded.OmittedResources)),
         };
     }
@@ -177,7 +176,7 @@ internal static class WordsEdit
     {
         ResolvedOutput output = request.Output;
         return session.Outputs.PublishEdit<WordsEditVerification>(
-            new ResolvedOutput(written, output.Path, output.Overwrite, output.InPlace, output.BackupPath),
+            new ResolvedOutput(written, output.Path, output.Overwrite, output.InPlace),
             document,
             precondition,
             request.Options.DryRun,

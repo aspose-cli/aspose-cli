@@ -41,17 +41,17 @@ gives an operation's fields. A table in a Word, PDF or slide file is theirs.
    ```
 
    ```
-   aspose-cli cells edit book.xlsx --ops ops.json --in-place --backup --verify --output-format json
+   aspose-cli cells edit book.xlsx --ops ops.json --in-place --verify --output-format json
    aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==E2*F2"
    ```
 
    The engine recalculates the workbook after the batch. `--verify` checks
    the written result for cell changes and formula errors; on findings it
    exits 8 with the output already published (`--in-place` has replaced the
-   input, and `--backup` keeps the original to restore). Add it to the first
-   edit of a file you did not create, and report the totals
-   `verification.formulaResultChanges` lists. To leave the original untouched
-   until the check passes, edit to a new file and deliver it only on exit 0:
+   input). Add it to the first edit of a file you did not create, and report
+   the totals `verification.formulaResultChanges` lists. To leave the original
+   untouched until the check passes, edit to a new file and deliver it only on
+   exit 0:
 
    ```
    aspose-cli cells edit book.xlsx --ops ops.json --out book.edited.xlsx --verify --output-format json
@@ -67,7 +67,6 @@ gives an operation's fields. A table in a Word, PDF or slide file is theirs.
    | values | `cells read` every changed range |
    | visual | `aspose-cli cells render book.xlsx --sheets all --out <image> --output-format json`, then look at every sheet image yourself; judge widths from `cells render --range Sales!A1:G20` |
    | semantic | `cells inspect --detail errors` reports no formula errors; `cells search` finds no placeholders |
-   | session | `cells compare book.backup.xlsx book.xlsx` lists only intended value and formula changes |
 
 4. **Convert and render.**
 
@@ -122,7 +121,7 @@ gives an operation's fields. A table in a Word, PDF or slide file is theirs.
 | `aspose-cli docs cells/workbook-standards` | Delivering any workbook: widths, number formats, validation, print |
 | `aspose-cli docs cells/design-system` | A designed workbook: dashboards, colors, charts, KPI cards |
 | `aspose-cli docs cells/financial-models` | Building a formula-driven model |
-| `aspose-cli docs cells/verification` | Verifying: the four tiers, render facts, `cells compare` |
+| `aspose-cli docs cells/verification` | Verifying: the three tiers, render facts, `cells compare` |
 | `aspose-cli docs cells/troubleshooting` | A Cells error or warning, CSV tables that do not start at row 1, evaluation-mode warning sheets |
 
 Examples: [report from CSV](examples/report-from-csv/README.md),

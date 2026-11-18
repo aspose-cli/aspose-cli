@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Licensing;
@@ -60,20 +59,6 @@ public static class EnvelopeParts
             },
         };
     }
-
-    /// <summary>
-    /// Discloses a kept backup that holds an earlier version than the file the edit replaced,
-    /// so a caller never mistakes it for a copy of the version just overwritten; otherwise none.
-    /// </summary>
-    public static IReadOnlyList<Warning>? BackupWarnings(BackupInfo? backup) =>
-        backup is { HoldsReplacedVersion: false }
-            ? [new Warning(WarningCodes.BackupPredatesEdit, $"The existing backup '{backup.Path}' was kept, not replaced: it holds the file as last written at "
-                    + $"{backup.LastWriteUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} UTC, "
-                    + "an earlier version than the one this edit replaced.")
-            {
-                Details = new JsonObject { ["path"] = backup.Path },
-            }]
-            : null;
 
     /// <summary>Combines optional warning collections without emitting an empty list.</summary>
     public static IReadOnlyList<Warning>? CombineWarnings(

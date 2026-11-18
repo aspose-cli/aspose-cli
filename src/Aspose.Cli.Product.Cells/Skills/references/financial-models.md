@@ -243,8 +243,6 @@ aspose-cli cells render model.xlsx --range Summary!A1:G20 --out summary-check.pn
 5. LOOK at the render with your image tool (truncation, layout, checks
    visibly OK), windowed with `--range` (`aspose-cli docs cells/verification`,
    Tier 2).
-6. Editing a user's model? The backup diff shows only intended changes — a
-   formula replaced by a hardcode is visible as left-`f` / right-value-only.
 
 ## Limits
 

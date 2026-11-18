@@ -39,7 +39,7 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:780416a198da6af85c1f0cd465a4821504bfde55585029167dd03e0e1f619d2f",
+        "contractFingerprint": "sha256:7c9d74e2dae53ad644a7d1b319607c7b7a431d90d1798670e08f72f7b96f49c2",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
@@ -779,25 +779,6 @@
         "description": "Apply one validated, atomic PDF operation batch.",
         "options": [
           {
-            "name": "--backup",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Create a non-overwriting backup before an in-place write."
-          },
-          {
             "name": "--dry-run",
             "aliases": [],
             "type": "boolean",
@@ -878,21 +859,6 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--if-match",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Require the current input SHA-256 fingerprint before editing."
           },
           {
             "name": "--in-place",
@@ -3085,10 +3051,6 @@
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/operation-outcome.schema.json"
           }
         },
-        "backup": {
-          "description": "The copy of the input kept before it was replaced in place; absent otherwise.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json"
-        },
         "pagesTouched": {
           "description": "The 1-based pages the operations changed; absent when they changed none.",
           "type": "array",
@@ -3971,11 +3933,6 @@
         },
         "schemaVersion": {
           "const": 2
-        },
-        "ifMatch": {
-          "description": "The SHA-256 fingerprint the input must still have; the edit fails when it changed.",
-          "type": "string",
-          "pattern": "^[0-9A-Fa-f]{64}$"
         },
         "ops": {
           "description": "Operations applied in order.",

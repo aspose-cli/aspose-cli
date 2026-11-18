@@ -84,92 +84,6 @@ public sealed class SafeFileWriterTests : IDisposable
     }
 
     [Fact]
-    public void Write_WithBackup_CreatesItBeforeReplacingTarget()
-    {
-        string target = _temp.File("out.txt");
-        string backup = _temp.File("out.backup.txt");
-        File.WriteAllText(target, "original");
-
-        SafeWriteResult result = _writer.Write(
-            target,
-            overwrite: true,
-            backup,
-            temp => File.WriteAllText(temp, "new"));
-
-        Assert.Equal("new", File.ReadAllText(target));
-        Assert.Equal("original", File.ReadAllText(backup));
-        Assert.NotNull(result.Backup);
-        Assert.True(result.Backup.Created);
-        Assert.True(result.Backup.HoldsReplacedVersion);
-        Assert.Null(EnvelopeParts.BackupWarnings(result.Backup));
-    }
-
-    [Fact]
-    public void Write_WithExistingBackup_NeverOverwritesIt()
-    {
-        string target = _temp.File("out.txt");
-        string backup = _temp.File("out.backup.txt");
-        File.WriteAllText(target, "current");
-        File.WriteAllText(backup, "first-session");
-
-        SafeWriteResult result = _writer.Write(
-            target,
-            overwrite: true,
-            backup,
-            temp => File.WriteAllText(temp, "new"));
-
-        Assert.Equal("new", File.ReadAllText(target));
-        Assert.Equal("first-session", File.ReadAllText(backup));
-        Assert.False(result.Backup!.Created);
-        Assert.False(result.Backup.HoldsReplacedVersion);
-        Assert.Equal(File.GetLastWriteTimeUtc(backup), result.Backup.LastWriteUtc.UtcDateTime);
-        Warning warning = Assert.Single(EnvelopeParts.BackupWarnings(result.Backup)!);
-        Assert.Equal(WarningCodes.BackupPredatesEdit, warning.Code);
-        Assert.Contains(backup, warning.Message, StringComparison.Ordinal);
-        // A file is no target address: the backup is named by details.path, not by location.
-        Assert.Null(warning.Location);
-        Assert.Equal(result.Backup.Path, warning.Details!["path"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void Write_WithExistingBackupOfTheReplacedVersion_KeepsItWithoutAWarning()
-    {
-        string target = _temp.File("out.txt");
-        string backup = _temp.File("out.backup.txt");
-        File.WriteAllText(target, "current");
-        File.WriteAllText(backup, "current");
-
-        SafeWriteResult result = _writer.Write(
-            target,
-            overwrite: true,
-            backup,
-            temp => File.WriteAllText(temp, "new"));
-
-        Assert.False(result.Backup!.Created);
-        Assert.True(result.Backup.HoldsReplacedVersion);
-        Assert.Null(EnvelopeParts.BackupWarnings(result.Backup));
-    }
-
-    [Fact]
-    public void Write_WhenBackupFails_DoesNotReplaceTheTarget()
-    {
-        string target = _temp.File("out.txt");
-        string backup = _temp.File("backup-target");
-        File.WriteAllText(target, "original");
-        Directory.CreateDirectory(backup);
-
-        CliException exception = Assert.Throws<CliException>(() => _writer.Write(
-            target,
-            overwrite: true,
-            backup,
-            temp => File.WriteAllText(temp, "new")));
-
-        Assert.Equal(ErrorCodes.OutputUnwritable, exception.Code);
-        Assert.Equal("backup", exception.Details!["phase"]!.GetValue<string>());
-        Assert.Equal("original", File.ReadAllText(target));
-    }
-
-    [Fact]
     public void Write_CallbackFailure_LeavesNoTargetAndNoTempFiles()
     {
         string target = _temp.File("out.txt");
@@ -378,7 +292,7 @@ public sealed class SafeFileWriterTests : IDisposable
         FileWritePrecondition precondition = FileWritePrecondition.Capture(input);
 
         CliException error = Assert.Throws<CliException>(() =>
-            _writer.Write(target, overwrite: false, backupPath: null, precondition, temp =>
+            _writer.Write(target, overwrite: false, precondition, temp =>
             {
                 File.WriteAllText(temp, "derived-output");
                 File.WriteAllText(input, "external-update");
@@ -398,7 +312,7 @@ public sealed class SafeFileWriterTests : IDisposable
         File.WriteAllText(input, "external-update");
 
         CliException error = Assert.Throws<CliException>(() =>
-            _writer.Write(input, overwrite: true, backupPath: null, precondition, temp =>
+            _writer.Write(input, overwrite: true, precondition, temp =>
                 File.WriteAllText(temp, "derived-output")));
 
         Assert.Equal(ErrorCodes.InputChanged, error.Code);
@@ -413,7 +327,7 @@ public sealed class SafeFileWriterTests : IDisposable
         FileWritePrecondition precondition = FileWritePrecondition.Capture(input);
 
         CliException error = Assert.Throws<CliException>(() =>
-            _writer.Write(input, overwrite: true, backupPath: null, precondition, temp =>
+            _writer.Write(input, overwrite: true, precondition, temp =>
             {
                 File.WriteAllText(temp, "derived-output");
                 File.WriteAllText(input, "external-update");
@@ -431,7 +345,7 @@ public sealed class SafeFileWriterTests : IDisposable
         FileWritePrecondition precondition = FileWritePrecondition.Capture(input);
 
         CliException error = Assert.Throws<CliException>(() =>
-            _writer.Write(input, overwrite: true, backupPath: null, precondition, temp =>
+            _writer.Write(input, overwrite: true, precondition, temp =>
             {
                 File.WriteAllText(temp, "derived-output");
                 File.Delete(input);

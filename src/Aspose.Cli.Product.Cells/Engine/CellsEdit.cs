@@ -29,7 +29,7 @@ internal static class CellsEdit
         using LoadedWorkbook loaded = session.Loader.Open(filePath, request.Password, calculateOnOpen: false);
         Workbook workbook = loaded.Workbook;
         InputInfo input = precondition.Admit(
-            CellsEngineFormats.IdOf(loaded.SourceFormat), loaded.Protection, request.Options.IfMatch);
+            CellsEngineFormats.IdOf(loaded.SourceFormat), loaded.Protection);
 
         using CellsEditBaseline? baseline = request.Verify
             ? CellsEditBaseline.Capture(filePath, precondition, session.Budgets) : null;
@@ -96,7 +96,7 @@ internal static class CellsEdit
             savePlan.ByteOrderMark);
         IReadOnlyList<Warning>? warnings = request.Options.DryRun
             ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())
-            : EnvelopeParts.CombineWarnings(WrittenWarnings(), publication.BackupWarnings);
+            : WrittenWarnings();
 
         return new CellsEditResult
         {
@@ -106,7 +106,6 @@ internal static class CellsEdit
             Checked = request.Options.Checked,
             Recalculated = request.Recalculate,
             Applied = applied,
-            Backup = publication.Backup,
             Verification = publication.Verification,
             License = EnvelopeParts.License(licenseState),
             Warnings = warnings,

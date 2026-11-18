@@ -5,7 +5,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Output;
 
 /// <summary>
 /// Human-readable lines for the result parts every product shares: input titles, produced
-/// files, detail sections, safety backups, bounded-edit outcomes, the pages they touched and
+/// files, detail sections, bounded-edit outcomes, the pages they touched and
 /// their verification. Products add only their own evidence. A value or list that is absent or
 /// empty is written as <see cref="TableText.Missing"/>.
 /// </summary>
@@ -129,17 +129,6 @@ public static class ResultText
         Table(surface, title, rows, ["name", "value"], static property => [property.Key, property.Value]);
     }
 
-    /// <summary>Writes the backup line when an in-place edit made or kept one.</summary>
-    public static void Backup(TableSurface surface, BackupInfo? backup)
-    {
-        if (backup is not null)
-        {
-            string state = backup.Created ? "created"
-                : backup.HoldsReplacedVersion ? "kept existing"
-                : $"kept existing, an earlier version last written {backup.LastWriteUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} UTC";
-            surface.Out.WriteLine($"backup: {backup.Path} ({state})");
-        }
-    }
 
     /// <summary>
     /// Writes <c>UNITS touched: A, B</c>, such as <c>pages touched: 1, 3</c>, when an edit reports
@@ -190,15 +179,13 @@ public static class ResultText
     }
 
     /// <summary>
-    /// Writes a bounded edit: the dry-run or produced-file headline, one line per operation,
-    /// and the backup.
+    /// Writes a bounded edit: the dry-run or produced-file headline and one line per operation.
     /// </summary>
     public static void Edit(
         TableSurface surface,
         bool dryRun,
         OutputInfo? output,
-        IReadOnlyList<BoundedOperationOutcome> applied,
-        BackupInfo? backup)
+        IReadOnlyList<BoundedOperationOutcome> applied)
     {
         ArgumentNullException.ThrowIfNull(applied);
         string outcome = string.Create(
@@ -223,8 +210,6 @@ public static class ResultText
                 CultureInfo.InvariantCulture,
                 $"  [{op.Id}] {op.Op}: {op.Status} ({op.ItemsAffected} item(s))"));
         }
-
-        Backup(surface, backup);
     }
 
     private static string FileFacts(string path, string? format, long sizeBytes, string? detail)

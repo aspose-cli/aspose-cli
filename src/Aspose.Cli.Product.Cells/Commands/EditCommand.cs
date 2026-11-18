@@ -57,7 +57,7 @@ internal static class EditCommand
             [
                 "cells edit book.xlsx --in-place --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\"",
                 "cells edit book.xlsx --in-place --ops '{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sales\",\"range\":\"A1\",\"values\":[[1]]}]}'",
-                "cells edit book.xlsx --in-place --backup --verify --ops ops.json",
+                "cells edit book.xlsx --in-place --verify --ops ops.json",
             ],
             links:
             [
@@ -69,7 +69,7 @@ internal static class EditCommand
 
     internal static void Table(CellsEditResult edit, TableSurface surface)
     {
-        ResultText.Edit(surface, edit.DryRun, edit.Output, edit.Applied, edit.Backup);
+        ResultText.Edit(surface, edit.DryRun, edit.Output, edit.Applied);
         ResultText.Verification(
             surface,
             edit.Verification,

@@ -1,6 +1,4 @@
 using System.Runtime.InteropServices;
-using System.Security.AccessControl;
-using System.Security.Principal;
 using System.Text;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
@@ -50,7 +48,7 @@ public sealed class PublicationOwnershipTests
         ResourceBudgetLedger budgets = TestBudgets.Create();
         budgets.AdmitFile(input);
 
-        new SafeFileWriter(budgets).Write(input, overwrite: true, backupPath: null,
+        new SafeFileWriter(budgets).Write(input, overwrite: true,
             FileWritePrecondition.Capture(input), path => File.WriteAllText(path, "edited"));
 
         Assert.Equal("edited", File.ReadAllText(input));
@@ -72,7 +70,7 @@ public sealed class PublicationOwnershipTests
         budgets.AdmitFile(source);
 
         CliException error = Assert.Throws<CliException>(() => new SafeFileWriter(budgets).Write(alias, overwrite: true,
-            backupPath: null, FileWritePrecondition.Capture(edited), path => File.WriteAllText(path, "replaced")));
+            FileWritePrecondition.Capture(edited), path => File.WriteAllText(path, "replaced")));
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
         Assert.Equal("input", File.ReadAllText(source));
@@ -124,76 +122,6 @@ public sealed class PublicationOwnershipTests
         {
             Directory.Delete(junction);
         }
-    }
-
-    [Fact]
-    public void ABackup_CarriesTheAccessRulesOfTheFileItCopies()
-    {
-        Requires.Windows();
-        using var temp = new TempDirectory();
-        string input = temp.File("book.xlsx");
-        File.WriteAllText(input, "input");
-        var restricted = new FileSecurity();
-        restricted.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-        restricted.AddAccessRule(new FileSystemAccessRule(
-            WindowsIdentity.GetCurrent().User!, FileSystemRights.FullControl, AccessControlType.Allow));
-        new FileInfo(input).SetAccessControl(restricted);
-        string backup = temp.File("book.backup.xlsx");
-        ResourceBudgetLedger budgets = TestBudgets.Create();
-        budgets.AdmitFile(input);
-
-        new SafeFileWriter(budgets).Write(input, overwrite: true, backup,
-            FileWritePrecondition.Capture(input), path => File.WriteAllText(path, "edited"));
-
-        Assert.Equal("input", File.ReadAllText(backup));
-        Assert.Equal(Rules(input), Rules(backup));
-    }
-
-    [Fact]
-    public void ABackupThatCannotTakeTheOriginalsAccessRules_IsNotWrittenAndTheOriginalKept()
-    {
-        Requires.Windows();
-        using var temp = new TempDirectory();
-        string input = temp.File("book.xlsx");
-        File.WriteAllText(input, "input");
-        string backup = temp.File("book.backup.xlsx");
-        ResourceBudgetLedger budgets = TestBudgets.Create();
-        budgets.AdmitFile(input);
-        // The rules cannot be given to the backup once it holds the copy.
-        var faults = new Faults(point =>
-        {
-            if (point.Kind == PublicationFaultKind.Access && point.Path == backup)
-            {
-                throw new UnauthorizedAccessException("Injected access-rule failure.");
-            }
-        });
-
-        using (var transaction = new AtomicOutputSetWriter(new SafeFileWriter(budgets), temp.Path, "test", faults))
-        {
-            transaction.Stage(input, overwrite: true, backup, FileWritePrecondition.Capture(input),
-                path => File.WriteAllText(path, "edited"));
-            Assert.Throws<CliException>(() => transaction.Commit());
-        }
-
-        Assert.False(File.Exists(backup));
-        Assert.Equal("input", File.ReadAllText(input));
-    }
-
-    private sealed class Faults(Action<PublicationFaultPoint> action) : IPublicationFaultInjector
-    {
-        public void Hit(PublicationFaultPoint point) => action(point);
-    }
-
-    // The protection and the explicit and inherited rules of a file's access list.
-    private static string Rules(string path)
-    {
-        FileSecurity security = new FileInfo(path).GetAccessControl(AccessControlSections.Access);
-        var rules = new StringBuilder(security.AreAccessRulesProtected ? "protected" : "inherits");
-        foreach (FileSystemAccessRule rule in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
-        {
-            rules.Append($";{rule.IdentityReference}:{rule.AccessControlType}:{rule.FileSystemRights}");
-        }
-        return rules.ToString();
     }
 
     // The input as the invocation admitted it and the same file as the target names it.

@@ -28,8 +28,7 @@ project by default or for the user with `--user`.
 ## What you can rely on
 
 - **Atomic edits.** `edit` applies one batch of operations: the result is staged, validated and
-  published, or nothing changes. `--in-place` replaces the input (`--backup` keeps a copy first),
-  `--if-match` refuses a file that changed since it was read, and `--dry-run` writes nothing.
+  published, or nothing changes. `--in-place` replaces the input, and `--dry-run` writes nothing.
   No other command writes over one of its inputs.
 - **Verification.** `edit --verify` reads the staged output back and reports semantic evidence
   before publication.

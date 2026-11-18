@@ -223,8 +223,8 @@ public sealed class OutputTarget
 
     /// <summary>
     /// The edited input document, published to <c>--out</c> (by default beside the input) or
-    /// atomically in place with <c>--in-place</c> and an optional <c>--backup</c>, in the format
-    /// among <paramref name="writes"/> the output's extension declares.
+    /// atomically in place with <c>--in-place</c>, in the format among <paramref name="writes"/>
+    /// the output's extension declares.
     /// </summary>
     internal static OutputTarget Mutation(IReadOnlyList<FormatDescriptor> writes) => new(
         OutputKind.Mutation,
@@ -359,10 +359,6 @@ public sealed class StandardOptions
                 {
                     Description = "Modify the input file itself atomically.",
                 };
-                Backup = new Option<bool>(StandardOptionNames.Backup)
-                {
-                    Description = "Create a non-overwriting backup before an in-place write.",
-                };
             }
         }
 
@@ -405,8 +401,6 @@ public sealed class StandardOptions
     internal Option<bool>? Overwrite { get; }
 
     internal Option<bool>? InPlace { get; }
-
-    internal Option<bool>? Backup { get; }
 
     internal Option<bool>? DryRun { get; }
 
@@ -459,7 +453,6 @@ public sealed class StandardOptions
         OutputFile?.AddTo(command);
         AddOption(command, Overwrite);
         AddOption(command, InPlace);
-        AddOption(command, Backup);
         AddOption(command, DryRun);
         InputPassword?.AddTo(command);
         OtherPassword?.AddTo(command);
@@ -804,8 +797,8 @@ public partial class StandardInvocation
 
     /// <summary>
     /// The output of a mutation in <paramref name="format"/>: <c>--in-place</c> replaces
-    /// <see cref="Input"/>, with a backup only when <c>--backup</c> is given; otherwise the output
-    /// is <c>--out</c> or the input path with '.out' inserted before its extension.
+    /// <see cref="Input"/>; otherwise the output is <c>--out</c> or the input path with '.out'
+    /// inserted before its extension.
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a contradictory combination or an output that names an input.</exception>
     private ResolvedOutput Mutated(FormatDescriptor format, IReadOnlyList<FormatDescriptor> alternatives)
@@ -813,7 +806,6 @@ public partial class StandardInvocation
         Option<bool> inPlaceOption = Declared(_options.InPlace, "mutation output");
         string? requested = _parse.GetValue(_options.OutputFile!.Option);
         bool inPlace = _parse.GetValue(inPlaceOption);
-        bool backup = _parse.GetValue(_options.Backup!);
         if (requested is not null && inPlace)
         {
             throw CliErrors.OptionInvalid(
@@ -821,22 +813,15 @@ public partial class StandardInvocation
                 $"cannot be combined with {StandardOptionNames.Out}");
         }
 
-        if (backup && !inPlace)
-        {
-            throw CliErrors.OptionInvalid(
-                StandardOptionNames.Backup,
-                $"a backup is only meaningful with {StandardOptionNames.InPlace}");
-        }
-
         if (inPlace)
         {
-            return new ResolvedOutput(format, Input, overwrite: true, inPlace: true, backup ? BackupPath(Input) : null, alternatives);
+            return new ResolvedOutput(format, Input, overwrite: true, inPlace: true, alternatives);
         }
 
         string output = requested is null
             ? Derived(OutputFileOption.DerivePath(Input, Path.GetExtension(Input)))
             : OutputFileOption.ResolveExplicit(Paths, requested, StandardOptionNames.Out, DeclaredInputs());
-        return new ResolvedOutput(format, output, Overwrite, inPlace: false, backupPath: null, alternatives);
+        return new ResolvedOutput(format, output, Overwrite, inPlace: false, alternatives);
     }
 
     // A derived output is refused like a named one: the caller moves it with --out.
@@ -845,11 +830,6 @@ public partial class StandardInvocation
         OutputFileOption.EnsureNotInput(output, StandardOptionNames.Out, DeclaredInputs());
         return output;
     }
-
-    private static string BackupPath(string inputPath) =>
-        Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? string.Empty,
-            $"{Path.GetFileNameWithoutExtension(inputPath)}.backup{Path.GetExtension(inputPath)}");
 
     private string ResolveDocument(Argument<string> argument)
     {

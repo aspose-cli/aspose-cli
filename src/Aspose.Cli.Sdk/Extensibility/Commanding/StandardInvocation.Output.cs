@@ -223,7 +223,7 @@ public partial class StandardInvocation
             : _options.OutputFile!.Required
                 ? _options.OutputFile.ResolveRequired(_parse, Paths, DeclaredInputs())
                 : RequestedOutputPath() ?? Derived(OutputFileOption.DerivePath(Input, target.DerivedMarker + format.PreferredExtension));
-        return new ResolvedOutput(format, path, Overwrite, inPlace: false, backupPath: null, alternatives);
+        return new ResolvedOutput(format, path, Overwrite, inPlace: false, alternatives);
     }
 
     // The command template refuses an output file that has neither --to nor declared formats.

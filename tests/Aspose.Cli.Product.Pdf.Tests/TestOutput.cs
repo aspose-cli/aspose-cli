@@ -6,6 +6,6 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 internal static class TestOutput
 {
     /// <inheritdoc cref="ResolvedOutputs.At"/>
-    public static ResolvedOutput At(string path, string? format = null, bool overwrite = false, string? backup = null) =>
-        ResolvedOutputs.At(PdfFormats.Definitions.Concat(PdfFormats.FormData), path, format, overwrite, backup);
+    public static ResolvedOutput At(string path, string? format = null, bool overwrite = false, bool inPlace = false) =>
+        ResolvedOutputs.At(PdfFormats.Definitions.Concat(PdfFormats.FormData), path, format, overwrite, inPlace);
 }

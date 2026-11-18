@@ -1,8 +1,8 @@
 # PDF editing
 
-`pdf edit` applies one ops batch; atomicity, `--dry-run`,
-`--if-match`, `--verify`, output and backups work as `aspose-cli docs editing`
-describes; [verification](verification.md) lists what `--verify` checks.
+`pdf edit` applies one ops batch; atomicity, `--dry-run`, `--verify` and the
+output work as `aspose-cli docs editing` describes;
+[verification](verification.md) lists what `--verify` checks.
 PDF operations address fixed pages, rectangles, annotations, form fields,
 metadata and security, never paragraphs, worksheets or formulas. Print one
 operation's fields, types, defaults and allowed values with

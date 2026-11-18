@@ -34,9 +34,6 @@ public sealed record CellsEditResult() : EngineResultEnvelope("edit-result"), IP
     /// <summary>Per-op outcomes, in batch order.</summary>
     public required IReadOnlyList<BoundedOperationOutcome> Applied { get; init; }
 
-    /// <summary>Stable safety backup used for an in-place mutation, when requested.</summary>
-    public BackupInfo? Backup { get; init; }
-
     /// <summary>
     /// Present with <c>--verify</c>: the staged workbook compared cell by cell with the input, and
     /// scanned for formula errors.

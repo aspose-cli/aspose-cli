@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
 using Xunit;
@@ -7,12 +6,12 @@ namespace Aspose.Cli.IntegrationTests;
 
 /// <summary>
 /// Every product's <c>create</c> reports the files it read as <c>inputs[]</c>, in command-line
-/// order: <c>{path, format, sizeBytes, fingerprint, encrypted, option}</c>, one item per file,
+/// order: <c>{path, format, sizeBytes, encrypted, option}</c>, one item per file,
 /// and an empty list when it read none.
 /// </summary>
 public sealed class CreateInputsContractTests : IDisposable
 {
-    private static readonly string[] SourceFields = ["path", "format", "sizeBytes", "fingerprint", "encrypted", "option"];
+    private static readonly string[] SourceFields = ["path", "format", "sizeBytes", "encrypted", "option"];
     private readonly TempWorkspace _workspace = new();
 
     public CreateInputsContractTests()
@@ -63,7 +62,6 @@ public sealed class CreateInputsContractTests : IDisposable
             Assert.Equal(SourceFields, source.Select(static pair => pair.Key));
             Assert.True(Path.IsPathFullyQualified(path), path);
             Assert.Equal(new FileInfo(path).Length, source["sizeBytes"]!.GetValue<long>());
-            Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(path))), source["fingerprint"]!["sha256"]!.GetValue<string>());
             Assert.False(source["encrypted"]!.GetValue<bool>());
         });
     }

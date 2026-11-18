@@ -18,8 +18,7 @@ aspose-cli schema v2/pdf/ops
   schema command.
 - `schema v2/<product>/ops --operation <op>` prints one operation's fields,
   types, defaults, allowed values and descriptions.
-- The whole schema states the optional top-level fields of the document, such
-  as `ifMatch`, and its `description` says how the product resolves addresses
+- The whole schema's `description` says how the product resolves addresses
   across a batch (against the original document or as the earlier operations
   left it) and what each field's `x-readBack` value means.
 - A field's `x-readBack` names the read result property that reports what
@@ -102,7 +101,7 @@ and `verification.uncheckedOps` every other operation of the batch with the
 `reason`; it is absent when all were read back. `ok: true` says nothing about
 an operation in `uncheckedOps`: confirm it with a read of the output.
 
-## Output, in-place and backups
+## Output and in-place
 
 | Option | Effect |
 |--------|--------|
@@ -110,19 +109,6 @@ an operation in `uncheckedOps`: confirm it with a read of the output.
 | `--out <path>` | Writes there; to replace the input use `--in-place` |
 | `--overwrite` | Replaces an existing output; without it the edit fails with `OUTPUT_EXISTS` |
 | `--in-place` | Replaces the input atomically |
-| `--backup` | With `--in-place`: copies the input beside it first |
-| `--if-match <sha256>` | Fails with `INPUT_CHANGED` unless the input still has that fingerprint |
-
-Before the first in-place edit of a file you did not create, use
-`--in-place --backup --if-match <sha256>` with the fingerprint from your last
-read.
-
-`--backup` creates the backup once and never overwrites it, so it stays the
-pre-session state for a final comparison; the result's `backup` says whether
-this run created it. When the kept backup is older than the file an edit
-replaced, a `BACKUP_PREDATES_EDIT` warning says so; copy the file first if
-that intermediate version must survive. Tell the user the backup's path and
-which version it holds.
 
 ## Secrets and encryption
 

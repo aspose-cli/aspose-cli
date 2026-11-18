@@ -32,11 +32,6 @@ Fields a read returns use the edit vocabulary: a value read under a name is
 written back by the operation field of the same name
 (`aspose-cli docs editing`).
 
-Every result that reads a file reports its `input`, with
-`input.fingerprint.sha256`. Pass that fingerprint to the next edit as
-`--if-match` so the edit fails with `INPUT_CHANGED` if the file changed in
-between.
-
 ## Windows
 
 Every bounded read and search reports `window` after its payload

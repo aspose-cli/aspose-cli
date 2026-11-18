@@ -204,7 +204,7 @@ public sealed class CellsRendererGoldenTests
     {
         var result = new CellsReadResult
         {
-            Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Encrypted = false },
             Window = new ResultWindow { Unit = "cell", Returned = 4, Truncated = false },
             Content = CellsReadContents.Values,
             Sheet = new CellsSheetProjection
@@ -234,11 +234,11 @@ public sealed class CellsRendererGoldenTests
     }
 
     [Fact]
-    public void Edit_WithVerification_PrintsOutcomesIssuesAndBackup()
+    public void Edit_WithVerification_PrintsOutcomesAndIssues()
     {
         var result = new CellsEditResult
         {
-            Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Encrypted = false },
             Output = new OutputInfo { Path = "out.xlsx", Format = "xlsx", SizeBytes = 4_096, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } },
             DryRun = false,
             Recalculated = true,
@@ -247,11 +247,7 @@ public sealed class CellsRendererGoldenTests
                 new BoundedOperationOutcome { Id = "op-0001", Op = "set_values", Status = OpStatuses.Ok, ItemsAffected = 3 },
                 new BoundedOperationOutcome { Id = "total", Op = "set_formula", Status = OpStatuses.Ok, ItemsAffected = 0 },
             ],
-            Backup = new BackupInfo
-            {
-                Path = "book.backup.xlsx", Created = true, SizeBytes = 2_048,
-                LastWriteUtc = DateTimeOffset.UnixEpoch, HoldsReplacedVersion = true,
-            },
+
             Verification = new CellsEditVerification
             {
                 Ok = false,
@@ -277,7 +273,6 @@ public sealed class CellsRendererGoldenTests
             wrote out.xlsx (xlsx, 4,096 bytes, 2 of 2 op(s) applied)
               [op-0001] set_values: ok (3 item(s))
               [total] set_formula: ok (0 item(s))
-            backup: book.backup.xlsx (created)
             verification: needs attention; checked ops: op-0001; 1 direct, 0 formula-result, 1 formula error(s)
               FORMULA_ERRORS [Data!C7]: C7 evaluates to #REF!
               RENDER_SKIPPED: no render was requested
@@ -290,7 +285,7 @@ public sealed class CellsRendererGoldenTests
     {
         var result = new CellsEditResult
         {
-            Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Encrypted = false },
             DryRun = true,
             Recalculated = false,
             Applied = [new BoundedOperationOutcome { Id = "op-0001", Op = "set_values", Status = OpStatuses.Ok, ItemsAffected = 1 }],
@@ -308,7 +303,7 @@ public sealed class CellsRendererGoldenTests
 
     private static CellsInspectResult Info() => new()
     {
-        Input = new InputInfo { Path = @"C:\data\report.xlsx", Format = "xlsx", SizeBytes = 1_234_567, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+        Input = new InputInfo { Path = @"C:\data\report.xlsx", Format = "xlsx", SizeBytes = 1_234_567, Encrypted = false },
         Workbook = new CellsWorkbookSummary
         {
             Name = "report.xlsx",

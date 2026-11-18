@@ -27,7 +27,7 @@ public sealed class InPlaceReadSharingTests
         using Stream open = reader.Inputs.OpenFile(target);
         using (var set = new AtomicOutputSetWriter(new SafeFileWriter(editor), temp.Path, "edit"))
         {
-            set.Stage(target, overwrite: true, backupPath: null, precondition,
+            set.Stage(target, overwrite: true, precondition,
                 staged => File.WriteAllText(staged, "edited"));
             set.Commit();
         }
