@@ -108,22 +108,7 @@ public sealed class PublicationConcurrencyTests
     }
 
     [Fact]
-    public void LockWaitUsesTheOriginalDeadlineWithoutPublishing()
-    {
-        using var temp = new TempDirectory();
-        using PublicationDirectoryLease held = PublicationDirectoryLease.Acquire(temp.Path);
-        using var deadline = OperationDeadline.Start(TimeSpan.FromSeconds(2));
-        var writer = new SafeFileWriter(new ResourceBudgetLedger(deadline));
-        string target = temp.File("late.txt");
-        using var transaction = new AtomicOutputSetWriter(writer, temp.Path, "deadline");
-        transaction.Stage(target, false, path => File.WriteAllText(path, "late"));
-        CliException error = Assert.Throws<CliException>(() => transaction.Commit());
-        Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
-        Assert.False(File.Exists(target));
-    }
-
-    [Fact]
-    public void CancellationBeforeTheDurableCommitRecordRestoresPublishedData()
+    public void CancellationBeforeTheCommitRestoresPublishedData()
     {
         using var temp = new TempDirectory();
         using var cancelled = new CancellationTokenSource();

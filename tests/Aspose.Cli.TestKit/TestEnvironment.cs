@@ -21,7 +21,7 @@ namespace Aspose.Cli.TestKit;
 /// Test processes of one account, from any checkout, run at the same time: the CLI keeps its
 /// per-user state (configuration, viewer and App markers, licenses) in the configuration
 /// directory, which is private to each test process, and its shared per-user temporary root
-/// holds only entries named per process or guarded by the CLI's own interprocess locks.
+/// holds only entries named per process.
 /// </remarks>
 public sealed class TestEnvironment : IDisposable
 {

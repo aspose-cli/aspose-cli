@@ -1,6 +1,3 @@
-using System.Security.Cryptography;
-using System.Security.Principal;
-using System.Text;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Files;
 
@@ -48,7 +45,7 @@ public static class UserStorage
     /// <summary>
     /// Returns the current user's Aspose CLI local state root, <c>%LOCALAPPDATA%\aspose-cli</c>,
     /// creating it when absent, as the path the file system reaches what is created in it by.
-    /// Scratch directories, local service locks and update staging all live below it.
+    /// The scratch directories of commands live below it.
     /// </summary>
     /// <remarks>
     /// The CLI compares a file it opened with the path it named (<c>VerifiedFileBoundary</c>,
@@ -130,25 +127,6 @@ public static class UserStorage
             throw new IOException("The current user has no local application data folder.");
         }
         return Path.GetFullPath(folder);
-    }
-
-    /// <summary>
-    /// Neutral per-user namespace for cross-application document publication locks. Other Aspose
-    /// CLI distributions take the same lock files, so this root keeps its temporary-directory
-    /// location and name.
-    /// </summary>
-    // Not in %LOCALAPPDATA% like the rest: moving it would split the locks from those of the
-    // other distributions. The lock files are empty and only held open, so another account
-    // that shares a temporary directory and creates this root first can at worst delay or fail
-    // a publication; it never reads or changes a document.
-    internal static string PublicationLockRoot() =>
-        Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "aspose-document-publication-" + CurrentUserSuffix())).FullName;
-
-    private static string CurrentUserSuffix()
-    {
-        using WindowsIdentity current = WindowsIdentity.GetCurrent();
-        string identity = current.User!.Value;
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity)).AsSpan(0, 8)).ToLowerInvariant();
     }
 
     /// <summary>

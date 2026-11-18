@@ -105,8 +105,8 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     /// </summary>
     /// <param name="admitPrevious">
     /// Decides, given the target path, whether the publication may take the place of what the
-    /// target holds, and throws to refuse it. It runs under the publication's lease after the
-    /// directory to replace is captured, so the tree it admits is the one replaced.
+    /// target holds, and throws to refuse it. It runs after the directory to replace is captured,
+    /// so the tree it admits is the one replaced.
     /// </param>
     public void Commit(Action<string> admitPrevious) =>
         CommitAdmitting(admitPrevious ?? throw new ArgumentNullException(nameof(admitPrevious)));
@@ -124,10 +124,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         _budgets.Consume(ResourceBudgetKinds.OutputSetEntries, 1, "items", "directory-seal");
         _budgets.Consume(ResourceBudgetKinds.OutputSetDirectories, tree.Directories.Count + _parents.Declared.Count(), "items", "directory-seal");
         _budgets.Consume(ResourceBudgetKinds.OutputBytes, tree.Files.Sum(file => file.Snapshot.Length), "bytes", "directory-seal");
-        using PublicationDirectoryLease lease = PublicationDirectoryLease.Acquire(
-            Path.GetDirectoryName(TargetDirectory)!, [Path.GetDirectoryName(TargetDirectory)!], _budgets.Deadline);
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
-        lease.EnsureDirectoryUnchanged();
         DirectoryTreeSnapshot? previous = Admit(admitPrevious);
         NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Deadline);
         if (previous is not null)
@@ -139,7 +136,6 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         _faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Publish, 0, TargetDirectory));
         _budgets.Deadline.ThrowIfExpired("directory-rename");
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
-        lease.EnsureDirectoryUnchanged();
         if (previous is null) { NewDirectoryPublication.EnsureAbsent(TargetDirectory); }
         else { NewDirectoryPublication.ValidateTree(TargetDirectory, previous, _budgets.Deadline); }
         NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Deadline);

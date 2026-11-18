@@ -222,7 +222,7 @@ internal sealed record BundledSkill(
                 resourceBudgets, target, "skill-install", replace: true, transactionParent);
             files = ExtractTo(publication.StagingDirectory);
             ValidateManagedTarget(publication.StagingDirectory);
-            // Admitted under the publication's lease, after it captures the tree it replaces.
+            // Admitted after the publication captures the tree it replaces.
             publication.Commit(ValidateExistingTarget);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)

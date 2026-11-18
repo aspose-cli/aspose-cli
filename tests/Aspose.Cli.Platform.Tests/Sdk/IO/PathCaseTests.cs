@@ -11,8 +11,9 @@ namespace Aspose.Cli.Sdk.Tests.IO;
 
 /// <summary>
 /// Windows file names ignore case, so every place that compares local paths treats two
-/// spellings of one path as the same path: the publication plan, the output set, the publication locks and the directory boundaries. The tests
-/// spell the second path in upper case, which every test directory under %TEMP% changes.
+/// spellings of one path as the same path: the publication plan, the output set and the
+/// directory boundaries. The tests spell the second path in upper case, which every test
+/// directory under %TEMP% changes.
 /// </summary>
 public sealed class PathCaseTests : IDisposable
 {
@@ -59,22 +60,6 @@ public sealed class PathCaseTests : IDisposable
 
         Assert.Equal(2, directories.Declared.Count());
         Assert.True(Directory.Exists(Path.Combine(lower, "new")));
-    }
-
-    [Fact]
-    public void PublicationLocks_HeldUnderOneSpelling_ExcludeAnother()
-    {
-        string directory = Directory.CreateDirectory(_temp.File("locked")).FullName;
-        string sibling = Directory.CreateDirectory(_temp.File("free")).FullName;
-
-        using (PublicationDirectoryLease.Acquire(directory))
-        {
-            using (PublicationDirectoryLease.Acquire(sibling, [sibling], OperationDeadline.Start(TimeSpan.FromSeconds(5)))) { }
-            using OperationDeadline deadline = OperationDeadline.Start(TimeSpan.FromMilliseconds(300));
-            CliException error = Assert.Throws<CliException>(
-                () => PublicationDirectoryLease.Acquire(Upper(directory), [Upper(directory)], deadline).Dispose());
-            Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
-        }
     }
 
     /// <summary>
