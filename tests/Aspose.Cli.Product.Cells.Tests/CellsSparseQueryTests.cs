@@ -1,6 +1,5 @@
 using Aspose.Cells;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Xunit;
 
@@ -79,7 +78,7 @@ public sealed class CellsSparseQueryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Queries_StopForCancellationAndExpiredDeadline(bool inspect)
+    public void Queries_StopForCancellation(bool inspect)
     {
         using var workbook = new Workbook();
         workbook.Worksheets[0].Cells["XFD1048576"].PutValue("needle");
@@ -87,8 +86,6 @@ public sealed class CellsSparseQueryTests
         cancelled.Cancel();
         using var deadline = OperationDeadline.Start(null, cancelled.Token);
         Assert.ThrowsAny<OperationCanceledException>(() => Query(inspect, Budgets(deadline, 1), workbook));
-        using var expired = OperationDeadline.FromAbsoluteTick(TimeSpan.FromSeconds(1), Environment.TickCount64 - 1);
-        Assert.Equal(ErrorCodes.OperationTimeout, Assert.Throws<CliException>(() => Query(inspect, Budgets(expired, 1), workbook)).Code);
     }
 
     [Fact]
@@ -111,10 +108,10 @@ public sealed class CellsSparseQueryTests
         using var workbook = new Workbook();
         workbook.Worksheets[0].Cells["XFD1048576"].PutValue("needle");
         workbook.Save(workspace.File("sparse.xlsx"));
-        var search = workspace.Run("cells", "search", "sparse.xlsx", "--pattern", "needle", "--max-hits", "1", "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
+        var search = workspace.Run("cells", "search", "sparse.xlsx", "--pattern", "needle", "--max-hits", "1", "--output-format", "json");
         Assert.True(search.ExitCode == 0, search.StdErr);
         Assert.Contains("XFD1048576", search.StdOut);
-        var inspect = workspace.Run("cells", "inspect", "sparse.xlsx", "--detail", "errors", "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
+        var inspect = workspace.Run("cells", "inspect", "sparse.xlsx", "--detail", "errors", "--output-format", "json");
         Assert.True(inspect.ExitCode == 0, inspect.StdErr);
     }
 

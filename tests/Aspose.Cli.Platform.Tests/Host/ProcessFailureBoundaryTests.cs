@@ -292,8 +292,8 @@ public sealed class ProcessFailureBoundaryTests
     }
 
     [Theory]
-    [InlineData("cells --timeout=30 inspect input.xlsx", "cells inspect")]
-    public void TimeoutSupervisor_ResolvesCommandPathAroundGlobalOptions(
+    [InlineData("cells --max-input-bytes=30 inspect input.xlsx", "cells inspect")]
+    public void Parser_ResolvesCommandPathAroundGlobalOptions(
         string commandLine,
         string expected)
     {

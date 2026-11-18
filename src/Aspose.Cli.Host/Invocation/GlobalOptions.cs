@@ -62,12 +62,6 @@ internal sealed class GlobalOptions
             Recursive = true,
         }.WithInput(InputKind.None);
 
-        Timeout = new Option<int?>(GlobalOptionNames.Timeout)
-        {
-            Description = "Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.",
-            Recursive = true,
-        };
-
         MaxInputBytes = new Option<long?>(GlobalOptionNames.MaxInputBytes)
         {
             Description =
@@ -85,8 +79,6 @@ internal sealed class GlobalOptions
     public Option<string?> LicenseMode { get; }
 
     public Option<string?> WorkDir { get; }
-
-    public Option<int?> Timeout { get; }
 
     public Option<long?> MaxInputBytes { get; }
 
@@ -107,17 +99,15 @@ internal sealed class GlobalOptions
         root.Options.Add(License);
         root.Options.Add(LicenseMode);
         root.Options.Add(WorkDir);
-        root.Options.Add(Timeout);
         root.Options.Add(MaxInputBytes);
     }
 
     /// <summary>Reads the global option values from a parse result.</summary>
-    public GlobalValues Resolve(ParseResult parseResult, GlobalValues? inherited = null)
+    public GlobalValues Resolve(ParseResult parseResult)
     {
         ArgumentNullException.ThrowIfNull(parseResult);
 
-        inherited ??= InvocationInputs.Current?.Inherited;
-        string baseDirectory = inherited?.WorkDir ?? Directory.GetCurrentDirectory();
+        string baseDirectory = Directory.GetCurrentDirectory();
         // An empty value names no directory, so it is refused as every empty path is (PathResolver).
         string workDirectory = parseResult.GetValue(WorkDir) is { } workDir
             ? new PathResolver(baseDirectory).ResolveOutput(workDir, GlobalOptionNames.WorkDir)
@@ -135,22 +125,17 @@ internal sealed class GlobalOptions
             throw CliErrors.OptionInvalid(GlobalOptionNames.LicenseMode,
                 "evaluation mode reads no license, so it cannot be combined with --license");
         }
-        // A value given on this command replaces the inherited one, as --license does.
-        bool evaluationRequested = requestedMode is null
-            ? explicitLicense is null && inherited?.EvaluationRequested == true
-            : requestedMode == EvaluationLicenseMode;
-        string? licensePath = evaluationRequested ? null
-            : explicitLicense is null ? inherited?.LicensePath
+        bool evaluationRequested = requestedMode == EvaluationLicenseMode;
+        string? licensePath = evaluationRequested || explicitLicense is null ? null
             : Path.GetFullPath(explicitLicense, workDirectory);
         long? requestedInputBytes = parseResult.GetInRange(
             MaxInputBytes);
-        long maxInputBytes = ResolveMaxInputBytes(requestedInputBytes ?? inherited?.MaxInputBytes);
+        long maxInputBytes = ResolveMaxInputBytes(requestedInputBytes);
         return new GlobalValues(
             MapOutputFormat(parseResult.GetValue(OutputFormat)),
             parseResult.GetValue(Verbose),
             licensePath,
             workDirectory,
-            parseResult.GetValue(Timeout),
             maxInputBytes)
         {
             EvaluationRequested = evaluationRequested,
@@ -237,7 +222,6 @@ internal sealed record GlobalValues(
     bool Verbose,
     string? LicensePath,
     string? WorkDir,
-    int? TimeoutSeconds,
     long MaxInputBytes)
 {
     /// <summary>

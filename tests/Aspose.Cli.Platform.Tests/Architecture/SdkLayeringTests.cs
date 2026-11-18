@@ -44,12 +44,11 @@ public sealed class SdkLayeringTests
     /// the resources a document references.</item>
     /// <item>IO.Output: what an output is (path, format, parts, protection, the write
     /// precondition) and the file objects a result reports.</item>
-    /// <item>IO.Publication: staging, atomic publication, its journal and recovery, the
-    /// process identity that recovery checks, and the worker output session and manifest store
-    /// that record a worker's outputs.</item>
+    /// <item>IO.Publication: staging, atomic publication, its journal and recovery, and the
+    /// process identity that recovery checks.</item>
     /// <item>IO.Extraction: the guard and budgets of an extraction's output files.</item>
-    /// <item>Execution (worker output publication, built on IO), Rendering (font profiles
-    /// and pixel budgets) and Serialization: the shared JSON contexts and converters, and the
+    /// <item>Rendering (font profiles and pixel budgets) and Serialization: the shared JSON
+    /// contexts and converters, and the
     /// result schemas written from the contract descriptors. Converters for the operation
     /// vocabulary belong to Operations.</item>
     /// <item>Operations: the operation vocabulary, its catalog and its runner; and the
@@ -75,7 +74,7 @@ public sealed class SdkLayeringTests
         [$"{Root}.IO.Output"],
         [$"{Root}.IO.Publication"],
         [$"{Root}.IO.Extraction"],
-        [$"{Root}.Execution", $"{Root}.Rendering", $"{Root}.Serialization"],
+        [$"{Root}.Rendering", $"{Root}.Serialization"],
         [$"{Root}.Operations", $"{Root}.Licensing", $"{Root}.Diagnostics"],
         [$"{Root}.Results"],
         [$"{Root}.Extensibility"],
@@ -93,10 +92,6 @@ public sealed class SdkLayeringTests
             $"{Root}.IO.Budgets.ResourceBudgetLedger",
             $"{Root}.IO.Input",
             "The ledger owns the bounded input reads of its invocation (Inputs), which charge it."),
-        (
-            $"{Root}.IO.Budgets.ResourceBudgetLedger",
-            $"{Root}.IO.Publication",
-            "The ledger carries the worker output session its invocation publishes into (OutputSession)."),
     ];
     // rule-exemptions: end
 

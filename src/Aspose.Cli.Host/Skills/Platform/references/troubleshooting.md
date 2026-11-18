@@ -54,25 +54,20 @@ Branch on the exit code first, then on the code in the envelope:
   or is incomplete: a failed verification.
   Read the result; it says what failed. Exit 8 means only this: no error
   envelope ever comes with it.
-- 130: the command was cancelled with Ctrl+C, with or without --timeout. The
-  work stops, nothing is published, its staging is removed and no error is
-  written. A second Ctrl+C ends the process at once; the next command that
-  writes into the same directory removes the staging it left.
+- 130: the command was cancelled with Ctrl+C. The work stops, nothing is
+  published, its staging is removed and no error is written. A second Ctrl+C
+  ends the process at once; the next command that writes into the same
+  directory removes the staging it left.
 - An exit code the CLI never uses (it uses 0 to 9 and 130), such as
   -1073741571 (`0xC00000FD`): the runtime ended the process, as a stack
   overflow in a document engine does. No error envelope is written, and what
-  the command wrote before can remain. Run it with `--timeout` so that it runs
-  in a worker, which then publishes nothing and reports `INTERNAL_ERROR`
-  (exit 1) with the worker's exit code.
+  the command wrote before can remain.
 - Any other non-zero exit comes with an error envelope; its code's category
   and exit code are listed in `capabilities`. Usage errors (exit 2) are fixed
   on the command line, input errors (exit 3) in the input file or its
-  password, and `OPERATION_TIMEOUT` (exit 9) by a longer `--timeout` or a
-  smaller request. A publication that failed and could not be fully restored
-  (`OUTPUT_PUBLICATION_PARTIAL`) exits 5 like the other output errors; a
-  worker that timed out and could not be confirmed stopped
-  (`WORKER_TERMINATION_FAILED`) exits 9: stop the process `details.pid`
-  names before retrying.
+  password, and `OPERATION_TIMEOUT` (exit 9) by a smaller request. A
+  publication that failed and could not be fully restored
+  (`OUTPUT_PUBLICATION_PARTIAL`) exits 5 like the other output errors.
 
 ## Diagnosis
 
@@ -160,8 +155,8 @@ aspose-cli capabilities --output-format json
   need its native drawing library fail. Ask the user to install it from
   https://aka.ms/vs/17/release/vc_redist.x64.exe.
 - `OPERATION_TIMEOUT` with `details.phase` `regex`: a regular expression you
-  supplied exceeded its own budget, which `--timeout` does not raise; simplify
-  it or search a narrower part of the document.
+  supplied exceeded its own budget; simplify it or search a narrower part of
+  the document.
 - Evaluation codes (`EVALUATION_LIMIT` and the `EVALUATION_*` warnings): see
   `aspose-cli docs licensing`.
 

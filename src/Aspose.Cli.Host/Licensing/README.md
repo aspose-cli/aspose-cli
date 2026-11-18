@@ -17,8 +17,8 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
 - Installation admits one bounded snapshot before validation, then publishes the
   validated bytes for compatible products in one transaction. Removal uses the same
   publication locks and rollback, including shared and product-specific locations.
-- Installation/removal results come from explicit validated configuration changes. Only
-  the supervisor publishes worker outputs; ordinary file reads always address physical files.
+- Installation/removal results come from explicit validated configuration changes.
+  Ordinary file reads always address physical files.
   Existing license targets must be regular files reached without links or reparse points.
 
 The public status contract is `LicenseStatusResult.Products`; `Identity` is an opaque

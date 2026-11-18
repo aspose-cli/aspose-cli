@@ -140,11 +140,8 @@ public static partial class ErrorCodes
 
     // -- Timeout (exit 9) ----------------------------------------------------
 
-    /// <summary>The operation exceeded the configured <c>--timeout</c>.</summary>
+    /// <summary>The operation exceeded a time budget.</summary>
     public static readonly ErrorCode OperationTimeout = new("OPERATION_TIMEOUT", ExitCode.OperationTimeout);
-
-    /// <summary>A timed-out worker process tree could not be confirmed stopped.</summary>
-    public static readonly ErrorCode WorkerTerminationFailed = new("WORKER_TERMINATION_FAILED", ExitCode.OperationTimeout);
 
     // No error exits 8: it means only that a printed result did not pass.
 
@@ -192,7 +189,6 @@ public static partial class ErrorCodes
         LicenseInvalid,
         EvaluationLimit,
         OperationTimeout,
-        WorkerTerminationFailed,
         Internal,
     ];
 

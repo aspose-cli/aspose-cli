@@ -202,8 +202,8 @@ internal sealed record BundledSkill(
 
     /// <summary>
     /// Publishes the Skill at <paramref name="directory"/>, replacing a Skill this CLI installed
-    /// there, as one directory publication: under <c>--timeout</c> the worker only stages it, and
-    /// a replacement that fails or is interrupted puts the installed Skill back.
+    /// there, as one directory publication: a replacement that fails or is interrupted puts the
+    /// installed Skill back.
     /// </summary>
     public SkillInstallResult InstallInto(
         ResourceBudgetLedger resourceBudgets,

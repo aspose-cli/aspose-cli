@@ -18,7 +18,6 @@ static class GlobalOptionNames
     public const string License = "--license";
     public const string LicenseMode = "--license-mode";
     public const string WorkDir = "--workdir";
-    public const string Timeout = "--timeout";
     public const string MaxInputBytes = "--max-input-bytes";
     public const string Help = "--help";
     public const string HelpAlias = "-h";
@@ -28,7 +27,7 @@ static class GlobalOptionNames
     public static readonly string[] Reserved =
     [
         OutputFormat, Verbose, VerboseAlias,
-        License, LicenseMode, WorkDir, Timeout, MaxInputBytes,
+        License, LicenseMode, WorkDir, MaxInputBytes,
         Help, HelpAlias, Version,
     ];
 }

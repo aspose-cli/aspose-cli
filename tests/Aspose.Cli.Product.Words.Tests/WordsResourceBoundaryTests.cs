@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.TestKit;
@@ -14,10 +13,8 @@ namespace Aspose.Cli.Product.Words.Tests;
 
 public sealed class WordsResourceBoundaryTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task InsertMarkdown_UsesTheDocumentDirectoryAndNeverFetchesRemoteResources(bool supervised)
+    [Fact]
+    public async Task InsertMarkdown_UsesTheDocumentDirectoryAndNeverFetchesRemoteResources()
     {
         using var workspace = new TempWorkspace();
         await using var server = new ResourceHttpServer();
@@ -35,8 +32,7 @@ public sealed class WordsResourceBoundaryTests
             schemaVersion = 2,
             ops = new[] { new { op = "insert_markdown", at = new { find = "Resource anchor" }, position = "after", markdown } },
         });
-        string[] args = ["words", "edit", input, "--ops", ops, "--out", workspace.File("edited.docx"), "--output-format", "json",
-            .. supervised ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>()];
+        string[] args = ["words", "edit", input, "--ops", ops, "--out", workspace.File("edited.docx"), "--output-format", "json"];
         CliResult result = workspace.Run(args);
 
         Assert.True(result.ExitCode == 0, result.StdErr);
@@ -81,15 +77,14 @@ public sealed class WordsResourceBoundaryTests
         Assert.False(File.Exists(output));
     }
 
-    // Supervised runs publish from a worker whose staging directory is removed afterwards;
-    // direct runs save with the same options and have no such cleanup to survive. Markdown
-    // holds the text alone and leaves the picture out, naming it.
+    // A single-file export holds its images, so the output directory holds only the file.
+    // Markdown holds the text alone and leaves the picture out, naming it.
     [Theory]
     [InlineData("html")]
     [InlineData("html-fixed")]
     [InlineData("md")]
     [InlineData("svg")]
-    public void SingleFileExports_KeepImagesAfterWorkerCleanup(string format)
+    public void SingleFileExports_KeepTheirImagesInTheOneFile(string format)
     {
         using var workspace = new TempWorkspace();
         File.WriteAllBytes(workspace.File("local.png"), ResourceHttpServer.Image);
@@ -98,7 +93,7 @@ public sealed class WordsResourceBoundaryTests
         string extension = format == "html-fixed" ? "html" : format;
         string output = workspace.File($"export/result.{extension}");
         string[] args = ["words", format == "svg" ? "render" : "convert", workspace.File("source.html"),
-            "--to", format, "--out", output, "--output-format", "json", "--timeout", TestDeadline.CliTimeout];
+            "--to", format, "--out", output, "--output-format", "json"];
         CliResult result = workspace.Run(args);
 
         Assert.True(result.ExitCode == 0, result.StdErr);

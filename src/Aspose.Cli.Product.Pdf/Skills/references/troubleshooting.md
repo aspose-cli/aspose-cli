@@ -14,9 +14,8 @@ URIs: every other reference is removed and listed the same way. Copy the resourc
 into the input's folder or a folder below it and reference it by relative path. For trusted HTML,
 `--allow-network-resources` lets the import fetch http and https addresses, and the
 result lists them as `NETWORK_RESOURCES_REQUESTED`; review what they returned.
-Combine the option with `--timeout`, since each unanswered request can hold the
-import for up to 100 seconds. `aspose-cli words convert page.html --to pdf`
-converts without any request.
+Each unanswered request can hold the import for up to 100 seconds.
+`aspose-cli words convert page.html --to pdf` converts without any request.
 
 Every image, stylesheet and SVG file Markdown could load, and those they reference,
 must be an existing ordinary file beneath the Markdown file's directory: network

@@ -3,7 +3,6 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Input;
-using Aspose.Cli.Sdk.IO.Publication;
 
 namespace Aspose.Cli.Sdk.IO.Budgets;
 
@@ -90,8 +89,7 @@ public sealed class ResourceBudgetLedger
 
     public ResourceBudgetLedger(
         OperationDeadline deadline,
-        IReadOnlyDictionary<string, long>? limits = null,
-        WorkerOutputSession? outputSession = null)
+        IReadOnlyDictionary<string, long>? limits = null)
     {
         Deadline = deadline ?? throw new ArgumentNullException(nameof(deadline));
         _limits = NormalizeLimits(limits);
@@ -99,14 +97,10 @@ public sealed class ResourceBudgetLedger
             StringComparer.Ordinal);
         _admitted = new ConcurrentDictionary<string, AdmittedFile>(FilePaths.Comparer);
         Inputs = new InputSource(this);
-        OutputSession = outputSession;
     }
 
     /// <summary>Absolute invocation deadline shared with all budget checks.</summary>
     public OperationDeadline Deadline { get; }
-
-    /// <summary>Explicit deferred publication selected by the owning host, if any.</summary>
-    public WorkerOutputSession? OutputSession { get; }
 
     /// <summary>Whether this invocation has durably committed a final output set.</summary>
     public bool HasCommittedOutputs { get; private set; }

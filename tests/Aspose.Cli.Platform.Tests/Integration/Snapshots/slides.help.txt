@@ -16,7 +16,7 @@ Commands:
   extract <file>  Extract bounded presentation media, notes or text.
 
 Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx
@@ -55,7 +55,7 @@ Options:
   --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli slides convert deck.pptx --out deck.pdf
@@ -88,7 +88,7 @@ Options:
   --font-dir <font-dir>            Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx
@@ -125,7 +125,7 @@ Options:
   --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli slides edit deck.pptx --ops deck-ops.json --out revised.pptx --verify
@@ -158,7 +158,7 @@ Options:
   --password-stdin                      Read the password for the presentation from the first line of stdin.
 
 Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli slides extract deck.pptx --what notes --out-dir notes
@@ -186,7 +186,7 @@ Options:
   --password-stdin               Read the password for the presentation from the first line of stdin.
 
 Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli slides inspect deck.pptx --output-format json
@@ -217,7 +217,7 @@ Options:
   --password-stdin               Read the password for the presentation from the first line of stdin.
 
 Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli slides read deck.pptx --slides 1-5 --output-format json
@@ -252,7 +252,7 @@ Options:
   --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli slides render deck.pptx --slides 1-3 --out slide.png
@@ -284,7 +284,7 @@ Options:
   --password-stdin                Read the password for the presentation from the first line of stdin.
 
 Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli slides search deck.pptx --pattern TODO --output-format json

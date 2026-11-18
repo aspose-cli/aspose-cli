@@ -648,22 +648,6 @@ public sealed class CliContractTests : IDisposable
             Assert.Equal("evaluation", product!["mode"]!.GetValue<string>()));
     }
 
-    [Fact]
-    public void TimeoutOption_RejectsNonPositiveValues()
-    {
-        CliResult result = _workspace.Run(
-            "schema",
-            "--timeout",
-            "0",
-            "--output-format",
-            "json");
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains("--timeout", error["message"]!.GetValue<string>());
-    }
-
     /// <summary>Set to 1 to rewrite the snapshots under Integration/Snapshots from the current build.</summary>
     private const string UpdateSnapshotsVariable = Aspose.Cli.Sdk.DistributionInfo.EnvironmentVariablePrefix + "TEST_UPDATE_SNAPSHOTS";
 

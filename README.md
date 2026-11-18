@@ -35,7 +35,7 @@ project by default or for the user with `--user`.
 - **A stable contract.** A command writes one JSON result to stdout or one JSON error to stderr,
   with a stable code and exit code; [Compatibility](#compatibility) says what stays stable.
 - **Bounded work.** Inputs, rendering and extraction are held to the budgets that `capabilities`
-  lists; `--timeout` sets a deadline for the whole command.
+  lists.
 - **No network access.** A document never causes a network request unless you opt in, and each
   omitted resource is reported ([SECURITY.md](SECURITY.md#boundaries)).
 - **Your fonts.** Commands whose output depends on fonts accept `--font-dir` to add local font

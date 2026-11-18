@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Paths;
@@ -267,81 +266,6 @@ public sealed class LicenseInstallerTests
         string absentDirectory = temp.File("absent");
         Assert.Empty(LicenseInstaller.RemoveMany(TestBudgets.Create(), [Path.Combine(absentDirectory, "none.lic")]));
         Assert.False(Directory.Exists(absentDirectory));
-    }
-
-    [Fact]
-    public void WorkerStagesInstallAndDeletionBeforeTheParentCommits()
-    {
-        using var temp = new TempDirectory();
-        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
-        string installed = Path.Combine(directory, "installed.lic");
-        string deleted = Path.Combine(temp.Path, "license.lic");
-        WriteFile(deleted, "old license");
-        string workerRoot = WorkerOutputSession.CreateRoot();
-        string manifestPath = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
-        var worker = new WorkerOutputSession(workerRoot, manifestPath);
-        using var deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(deadline, outputSession: worker);
-        try
-        {
-            string source = temp.File("source.lic");
-            File.WriteAllText(source, "new license");
-            LicenseInstaller.InstallMany(budgets, source, snapshot =>
-            {
-                Assert.StartsWith(workerRoot + Path.DirectorySeparatorChar, snapshot);
-                return [installed];
-            });
-            LicenseInstaller.RemoveMany(budgets, [deleted]);
-            Assert.False(File.Exists(installed));
-            Assert.Equal("old license", File.ReadAllText(deleted));
-            worker.SealForPublication();
-            WorkerOutputManifest manifest = WorkerManifestStore.ReadAndValidate(manifestPath);
-            Assert.Equal(2, manifest.Entries.Count);
-            Assert.Equal("new license", File.ReadAllText(Assert.Single(manifest.Entries, entry => entry.Target == installed).Staged));
-            Assert.True(Assert.Single(manifest.Entries, entry => entry.Target == deleted).DeleteTarget);
-            WorkerOutputPublisher.Publish(manifestPath, TestBudgets.Create());
-            Assert.Equal("new license", File.ReadAllText(installed));
-            Assert.False(File.Exists(deleted));
-        }
-        finally { UserStorage.TryDeleteTree(workerRoot); }
-    }
-
-    /// <summary>
-    /// A license a worker stages is still readable only by the current user once its parent
-    /// publishes it, as a new file and as the replacement of an existing one, whatever its folder
-    /// lets others read.
-    /// </summary>
-    [Fact]
-    [SupportedOSPlatform("windows")]
-    public void WorkerStagedLicense_InASharedFolder_IsReadableOnlyByTheCurrentUser()
-    {
-        Requires.Windows();
-        using var temp = new TempDirectory();
-        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
-        AccessRules.ShareForReading(directory);
-        string created = Path.Combine(directory, "alpha.lic");
-        string replaced = Path.Combine(directory, "beta.lic");
-        WriteFile(replaced, "existing license");
-        string workerRoot = WorkerOutputSession.CreateRoot();
-        string manifestPath = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
-        var worker = new WorkerOutputSession(workerRoot, manifestPath);
-        using var deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(deadline, outputSession: worker);
-        try
-        {
-            string source = temp.File("source.lic");
-            File.WriteAllText(source, "new license");
-            LicenseInstaller.InstallMany(budgets, source, _ => [created, replaced]);
-            worker.SealForPublication();
-
-            WorkerOutputPublisher.Publish(manifestPath, TestBudgets.Create());
-
-            Assert.Equal("new license", File.ReadAllText(created));
-            Assert.Equal("new license", File.ReadAllText(replaced));
-            AccessRules.AssertCurrentUserOnly(created);
-            AccessRules.AssertCurrentUserOnly(replaced);
-        }
-        finally { UserStorage.TryDeleteTree(workerRoot); }
     }
 
     [Fact]

@@ -33,7 +33,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     private bool _disposed;
 
     /// <summary>Starts the publication of a directory at <paramref name="targetDirectory"/>.</summary>
-    /// <param name="budgets">The invocation's budgets; in a worker, its output session retains the candidate for the parent.</param>
+    /// <param name="budgets">The invocation's budgets.</param>
     /// <param name="targetDirectory">The directory to publish.</param>
     /// <param name="operation">The operation the journal names.</param>
     /// <param name="replace">
@@ -70,18 +70,14 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         while (!Directory.Exists(_anchor)) { _anchor = Path.GetDirectoryName(_anchor)!; }
         _anchorIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(_anchor);
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
-        _parents = new OwnedOutputDirectories(budgets.OutputSession is not null);
+        _parents = new OwnedOutputDirectories();
         _journal = new PublicationJournal { Operation = operation, State = PublicationTransactionState.Staging };
-        if (budgets.OutputSession is null)
-        {
-            AtomicPublicationRecovery.RecoverPendingHierarchy(parent, budgets.Deadline);
-            if (_transactionParent is not null && !FilePaths.Same(_transactionParent, parent))
-            { AtomicPublicationRecovery.RemoveAbandonedCandidatesIn(_transactionParent, budgets.Deadline); }
-        }
+        AtomicPublicationRecovery.RecoverPendingHierarchy(parent, budgets.Deadline);
+        if (_transactionParent is not null && !FilePaths.Same(_transactionParent, parent))
+        { AtomicPublicationRecovery.RemoveAbandonedCandidatesIn(_transactionParent, budgets.Deadline); }
         _parents.Ensure(parent);
-        _transaction = budgets.OutputSession?.CreateDirectory("directory")
-            ?? PublicationTransactionDirectory.Create(Path.Combine(_transactionParent ?? parent,
-                $".aspose-publication-{Environment.ProcessId}-{ProcessIdentity.CurrentStartUtcTicks}-{Guid.NewGuid():N}"));
+        _transaction = PublicationTransactionDirectory.Create(Path.Combine(_transactionParent ?? parent,
+            $".aspose-publication-{Environment.ProcessId}-{ProcessIdentity.CurrentStartUtcTicks}-{Guid.NewGuid():N}"));
         _transactionIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(_transaction);
         StagingDirectory = Directory.CreateDirectory(Path.Combine(_transaction, "directory")).FullName;
         _candidateIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(StagingDirectory);
@@ -107,25 +103,22 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     // Where a replaced directory waits, inside the transaction, until the replacement commits.
     private string PreviousDirectory => NewDirectoryPublication.PreviousPath(_transaction);
 
-    /// <summary>Seals the candidate and either retains it for the parent or publishes it once.</summary>
-    public void Commit() => Commit(admitPrevious: null, admitted: null);
+    /// <summary>Seals the candidate and publishes it once.</summary>
+    public void Commit() => CommitAdmitting(admitPrevious: null);
 
     /// <summary>
-    /// Seals the candidate and either retains it for the parent or publishes it once, over a
-    /// target that <paramref name="admitPrevious"/> admits.
+    /// Seals the candidate and publishes it once, over a target that
+    /// <paramref name="admitPrevious"/> admits.
     /// </summary>
     /// <param name="admitPrevious">
     /// Decides, given the target path, whether the publication may take the place of what the
     /// target holds, and throws to refuse it. It runs under the publication's lease after the
-    /// directory to replace is captured, so the tree it admits is the one replaced. In a worker it
-    /// runs there, and the parent that publishes refuses a target that no longer holds the tree
-    /// it admitted.
+    /// directory to replace is captured, so the tree it admits is the one replaced.
     /// </param>
     public void Commit(Action<string> admitPrevious) =>
-        Commit(admitPrevious ?? throw new ArgumentNullException(nameof(admitPrevious)), admitted: null);
+        CommitAdmitting(admitPrevious ?? throw new ArgumentNullException(nameof(admitPrevious)));
 
-    // The parent publishing a worker's candidate passes what the worker admitted.
-    internal void Commit(Action<string>? admitPrevious, AdmittedDirectoryPrevious? admitted)
+    private void CommitAdmitting(Action<string>? admitPrevious)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_completed) { throw new InvalidOperationException("The directory output is already committed."); }
@@ -141,24 +134,12 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         _journal.DirectoryOutput = _output;
         _budgets.EnsureWithin(ResourceBudgetKinds.PublicationMetadataBytes,
             _journal.EnsureLifecycleCapacity(JournalPath), "bytes", "directory-seal");
-        if (_budgets.OutputSession is { } worker)
-        {
-            // The worker, which knows the invocation's inputs, admits the target as it is now;
-            // the parent publishes only over that tree.
-            AdmittedDirectoryPrevious? admittedHere = admitPrevious is null && !_replace
-                ? null : new AdmittedDirectoryPrevious(Admit(admitPrevious));
-            worker.RegisterDirectory(_output, _transactionParent, admittedHere, _budgets.Deadline);
-            _completed = true;
-            return;
-        }
-
         Persist(PublicationTransactionState.Prepared);
         using PublicationDirectoryLease lease = PublicationDirectoryLease.Acquire(
             Path.GetDirectoryName(TargetDirectory)!, [Path.GetDirectoryName(TargetDirectory)!], _budgets.Deadline);
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
         lease.EnsureDirectoryUnchanged();
         DirectoryTreeSnapshot? previous = Admit(admitPrevious);
-        if (admitted is not null) { EnsureAdmitted(admitted, previous); }
         NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Deadline);
         if (previous is not null)
         {
@@ -221,20 +202,6 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         return previous;
     }
 
-    // The target still holds what the worker admitted: the same tree, or still nothing.
-    private void EnsureAdmitted(AdmittedDirectoryPrevious admitted, DirectoryTreeSnapshot? previous)
-    {
-        try
-        {
-            if ((admitted.Tree is null) != (previous is null)) { throw new IOException("The target directory appeared or disappeared."); }
-            if (admitted.Tree is not null) { NewDirectoryPublication.ValidateTree(TargetDirectory, admitted.Tree, _budgets.Deadline); }
-        }
-        catch (IOException error)
-        {
-            throw new IOException("The target directory changed after the worker admitted it.", error);
-        }
-    }
-
     // The directory the candidate replaces, or null when the target does not exist.
     private DirectoryTreeSnapshot? CapturePrevious()
     {
@@ -274,7 +241,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     {
         if (_disposed) { return; }
         _disposed = true;
-        if (!_completed || _budgets.OutputSession is null) { CleanUp(); }
+        CleanUp();
         if (!_completed) { _parents.CleanUp(); }
     }
 
@@ -317,13 +284,7 @@ internal sealed record NewDirectoryOutput(string Target, string Staged, string P
     FilePhysicalIdentity? ParentIdentity, FilePhysicalIdentity? TransactionIdentity, DirectoryTreeSnapshot Tree,
     bool Replace = false, DirectoryTreeSnapshot? Previous = null);
 
-/// <summary>
-/// What a worker admitted at the target of a directory replacement: the tree it held
-/// (<see cref="Tree"/>), or nothing when <see cref="Tree"/> is null.
-/// </summary>
-internal sealed record AdmittedDirectoryPrevious(DirectoryTreeSnapshot? Tree);
-
-/// <summary>Bounded tree validation shared by directory production, worker transport and recovery.</summary>
+/// <summary>Bounded tree validation shared by directory production and recovery.</summary>
 internal static class NewDirectoryPublication
 {
     internal const int MaximumFiles = PublicationLimits.MaximumDirectoryFiles;

@@ -23,17 +23,15 @@ public static class CliHost
         try
         {
             ProductCatalog catalog = catalogFactory();
-            using InvocationInputs? inputs = InvocationInputs.Receive();
-            var host = new HostContext(catalog, TimeoutWorkerSupervisor.ReceiveOutputSession());
+            var host = new HostContext(catalog);
             ConfigureConsole();
             return ProcessFailureBoundary.Run(host, args, arguments =>
             {
                 ParsedInvocation invocation = host.Parser.Parse(arguments);
                 invocation.EnsureValid();
-                // Every process that runs a command, a worker included, gets here first.
+                // Every command gets here first.
                 NetworkGate.Admit(invocation.NetworkAccess);
-                return TimeoutWorkerSupervisor.Run(host, arguments, invocation,
-                    () => RunInProcess(invocation));
+                return RunInProcess(invocation);
             });
         }
         catch (Exception exception)

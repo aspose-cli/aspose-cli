@@ -25,8 +25,8 @@ public sealed class WarningCode : IEquatable<WarningCode>
     public string Name { get; }
 
     /// <summary>
-    /// A code read back from a result another CLI process wrote, such as a worker's or a child
-    /// service's; it names a code that process declared.
+    /// A code read back from a result another CLI process wrote; it names a code that process
+    /// declared.
     /// </summary>
     internal static WarningCode Received(string name) => new(name);
 

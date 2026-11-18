@@ -2,7 +2,6 @@ using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Paths;
 using Aspose.Cli.Sdk.IO.Publication;
@@ -112,76 +111,6 @@ public sealed class AtomicNewDirectoryWriterTests
     }
 
     [Fact]
-    public void Worker_RetainsCandidateUntilParentPublishesAndThenReclaimsItsStorage()
-    {
-        using var temp = new TempDirectory();
-        string workerRoot = WorkerOutputSession.CreateRoot();
-        try
-        {
-            string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
-            var worker = new WorkerOutputSession(workerRoot, manifest);
-            using OperationDeadline deadline = OperationDeadline.Start(null);
-            string target = temp.File(Path.Combine("new-parent", "result"));
-            using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(deadline, outputSession: worker), target, "test"))
-            {
-                Assert.StartsWith(workerRoot + Path.DirectorySeparatorChar, output.StagingDirectory, StringComparison.OrdinalIgnoreCase);
-                Write(output, Path.Combine("parts", "data.txt"), "complete");
-                output.Commit();
-            }
-            worker.SealForPublication();
-            Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
-            WorkerOutputPublisher.Publish(manifest, TestBudgets.Create());
-            Assert.Equal("complete", File.ReadAllText(Path.Combine(target, "parts", "data.txt")));
-            Assert.True(UserStorage.TryDeleteTree(workerRoot));
-        }
-        finally { UserStorage.TryDeleteTree(workerRoot); }
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Worker_RejectsChangedOrExtraCandidateFiles(bool extra)
-    {
-        using var temp = new TempDirectory();
-        string workerRoot = WorkerOutputSession.CreateRoot();
-        try
-        {
-            string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
-            var worker = new WorkerOutputSession(workerRoot, manifest);
-            using OperationDeadline deadline = OperationDeadline.Start(null);
-            string target = temp.File("result");
-            using var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(deadline, outputSession: worker), target, "test");
-            Write(output, "data.txt", "original");
-            output.Commit();
-            worker.SealForPublication();
-            Write(output, extra ? "unknown.txt" : "data.txt", "changed");
-            Assert.Throws<CliException>(() => WorkerOutputPublisher.Publish(manifest, TestBudgets.Create()));
-            Assert.False(Directory.Exists(target));
-        }
-        finally { UserStorage.TryDeleteTree(workerRoot); }
-    }
-
-    [Fact]
-    public void Worker_RejectsMixedDirectoryAndFileOutputSets()
-    {
-        using var temp = new TempDirectory();
-        string workerRoot = WorkerOutputSession.CreateRoot();
-        try
-        {
-            var worker = new WorkerOutputSession(workerRoot, Path.Combine(workerRoot, WorkerOutputSession.ManifestName));
-            using OperationDeadline deadline = OperationDeadline.Start(null);
-            var budgets = new ResourceBudgetLedger(deadline, outputSession: worker);
-            new SafeFileWriter(budgets).Write(temp.File("file.txt"), false, path => File.WriteAllText(path, "file"));
-            using var output = new AtomicNewDirectoryWriter(budgets, temp.File("directory"), "test");
-            Write(output, "data.txt", "candidate");
-            Assert.Throws<IOException>(output.Commit);
-            Assert.False(File.Exists(temp.File("file.txt")));
-            Assert.False(Directory.Exists(temp.File("directory")));
-        }
-        finally { UserStorage.TryDeleteTree(workerRoot); }
-    }
-
-    [Fact]
     public void Commit_UnknownFileAddedAfterSealingIsPreservedInsteadOfPublishedOrDeleted()
     {
         using var temp = new TempDirectory();
@@ -220,34 +149,6 @@ public sealed class AtomicNewDirectoryWriterTests
         Assert.Equal(1, AtomicPublicationRecovery.RecoverPendingUnderLease(temp.Path, lease: null));
         Assert.False(Directory.Exists(transaction));
         Assert.False(Directory.Exists(output.TargetDirectory));
-    }
-
-    [Fact]
-    public void Worker_RejectsAReplacedOutputParentAndPreservesTheNewOwnersFiles()
-    {
-        using var temp = new TempDirectory();
-        string parent = temp.File("parent");
-        Directory.CreateDirectory(parent);
-        string workerRoot = WorkerOutputSession.CreateRoot();
-        try
-        {
-            string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
-            var worker = new WorkerOutputSession(workerRoot, manifest);
-            using OperationDeadline deadline = OperationDeadline.Start(null);
-            using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(deadline, outputSession: worker), Path.Combine(parent, "result"), "test"))
-            { Write(output, "data.txt", "candidate"); output.Commit(); }
-            worker.SealForPublication();
-            Directory.Move(parent, temp.File("original-parent"));
-            Directory.CreateDirectory(parent);
-            File.WriteAllText(Path.Combine(parent, "owner.txt"), "preserve");
-            if (OperatingSystem.IsWindows())
-            {
-                Assert.Throws<CliException>(() => WorkerOutputPublisher.Publish(manifest, TestBudgets.Create()));
-                Assert.False(Directory.Exists(Path.Combine(parent, "result")));
-            }
-            Assert.Equal("preserve", File.ReadAllText(Path.Combine(parent, "owner.txt")));
-        }
-        finally { UserStorage.TryDeleteTree(workerRoot); }
     }
 
     [Fact]
@@ -412,32 +313,6 @@ public sealed class AtomicNewDirectoryWriterTests
     }
 
     [Fact]
-    public void Worker_ReplaceIsCarriedOutByTheParentThatPublishes()
-    {
-        using var temp = new TempDirectory();
-        string target = Existing(temp);
-        string workerRoot = WorkerOutputSession.CreateRoot();
-        try
-        {
-            string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
-            var worker = new WorkerOutputSession(workerRoot, manifest);
-            using OperationDeadline deadline = OperationDeadline.Start(null);
-            using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(deadline, outputSession: worker), target, "test", replace: true))
-            {
-                Write(output, "data.txt", "replacement");
-                output.Commit();
-            }
-            worker.SealForPublication();
-            AssertPrevious(target);
-            WorkerOutputPublisher.Publish(manifest, TestBudgets.Create());
-            Assert.Equal("replacement", File.ReadAllText(Path.Combine(target, "data.txt")));
-            Assert.False(File.Exists(Path.Combine(target, "old.txt")));
-            Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
-        }
-        finally { UserStorage.TryDeleteTree(workerRoot); }
-    }
-
-    [Fact]
     public void Commit_WithATransactionParentStagesNothingInTheTargetsParent()
     {
         using var temp = new TempDirectory();
@@ -574,42 +449,6 @@ public sealed class AtomicNewDirectoryWriterTests
         Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(root).Select(Path.GetFileName));
     }
 
-    [Fact]
-    public void Worker_ReplaceThroughATransactionParentIsCarriedOutThereByTheParent()
-    {
-        using var temp = new TempDirectory();
-        string root = temp.File("root");
-        string target = Existing(Path.Combine(root, "result"));
-        string workerRoot = WorkerOutputSession.CreateRoot();
-        try
-        {
-            string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
-            var worker = new WorkerOutputSession(workerRoot, manifest);
-            using OperationDeadline deadline = OperationDeadline.Start(null);
-            using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(deadline, outputSession: worker), target, "test",
-                replace: true, transactionParent: temp.Path))
-            {
-                Write(output, "data.txt", "replacement");
-                output.Commit();
-            }
-            worker.SealForPublication();
-            AssertPrevious(target);
-            var faults = new Faults(point =>
-            {
-                if (point is { Kind: PublicationFaultKind.Publish, EntryIndex: 0 })
-                {
-                    Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(root).Select(Path.GetFileName));
-                    Assert.Single(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
-                }
-            });
-            WorkerOutputPublisher.Publish(WorkerManifestStore.ReadAndValidate(manifest), TestBudgets.Create(), faults);
-            Assert.Equal("replacement", File.ReadAllText(Path.Combine(target, "data.txt")));
-            Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(root).Select(Path.GetFileName));
-            Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
-        }
-        finally { UserStorage.TryDeleteTree(workerRoot); }
-    }
-
     // A directory an earlier publication left at the target: a file and a nested one.
     private static string Existing(TempDirectory temp) => Existing(temp.File("result"));
 
@@ -654,11 +493,6 @@ public sealed class AtomicNewDirectoryWriterTests
         Assert.False(Directory.Exists(output.TargetDirectory));
         Assert.Equal("preserve", File.ReadAllText(source));
     }
-
-    [Fact]
-    public void WorkerCleanup_EntryCapCoversTheLargestDirectoryOutputTree() =>
-        Assert.True(UserStorage.MaximumCleanupEntries
-            >= NewDirectoryPublication.MaximumFiles + PublicationLimits.MaximumDirectories);
 
     [Fact]
     [SupportedOSPlatform("windows")]

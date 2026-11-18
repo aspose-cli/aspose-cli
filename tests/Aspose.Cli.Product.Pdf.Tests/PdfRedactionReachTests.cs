@@ -395,20 +395,17 @@ public sealed class PdfRedactionReachTests
         Assert.Equal(files, Directory.GetFiles(Path.GetDirectoryName(input)!));
     }
 
-    /// <summary>The command exits 8 and writes nothing, whether it runs in its own process or under a supervised worker.</summary>
+    /// <summary>The command exits 8 and writes nothing.</summary>
     [Category(TestCategory.Slow)]
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void RedactText_LeavingItsText_ExitsEightAndWritesNothing(bool supervised)
+    [Fact]
+    public void RedactText_LeavingItsText_ExitsEightAndWritesNothing()
     {
         using var fixture = new PdfEngineFixture();
         using var workspace = new TempWorkspace();
         File.Copy(Leaky(fixture), workspace.File("leaky.pdf"));
 
         CliResult run = workspace.Run(
-            ["pdf", "edit", "leaky.pdf", "--ops", $$"""[{"op":"redact_text","find":"{{Secret}}"}]""", "--out", "out.pdf", "--output-format", "json",
-             .. (supervised ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>())]);
+            ["pdf", "edit", "leaky.pdf", "--ops", $$"""[{"op":"redact_text","find":"{{Secret}}"}]""", "--out", "out.pdf", "--output-format", "json"]);
 
         Assert.Equal(8, run.ExitCode);
         JsonNode result = JsonNode.Parse(run.StdOut)!;

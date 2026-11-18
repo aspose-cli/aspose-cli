@@ -61,17 +61,14 @@ internal sealed class AtomicPublicationStaging(
         writer.ConsumeOutput(stagedSnapshot.Length, "output-set-stage");
 
         long size = stagedSnapshot.Length;
-        if (!plan.WorkerStagingOnly)
+        OutputPathValidator.EnsureParentUnchanged(
+            target,
+            targetParentIdentity);
+        if (requestedBackup is not null)
         {
             OutputPathValidator.EnsureParentUnchanged(
-                target,
-                targetParentIdentity);
-            if (requestedBackup is not null)
-            {
-                OutputPathValidator.EnsureParentUnchanged(
-                    requestedBackup,
-                    requestedBackupParentIdentity);
-            }
+                requestedBackup,
+                requestedBackupParentIdentity);
         }
         plan.Journal.Entries.Add(new PublicationJournalEntry
         {
@@ -87,7 +84,7 @@ internal sealed class AtomicPublicationStaging(
             StagedSnapshot = stagedSnapshot,
             TargetParentIdentity = targetParentIdentity,
             RequestedBackupParentIdentity = requestedBackupParentIdentity,
-            Displaced = original.Exists && !plan.WorkerStagingOnly
+            Displaced = original.Exists
                 ? plan.DisplacedPath(index)
                 : null,
             Size = size,
@@ -126,12 +123,9 @@ internal sealed class AtomicPublicationStaging(
         temporary.BindAndVerify(verify: null);
         temporary.FlushBound();
         FilePublicationSnapshot stagedSnapshot = temporary.CaptureBoundSnapshot();
-        if (!plan.WorkerStagingOnly)
-        {
-            OutputPathValidator.EnsureParentUnchanged(
-                target,
-                targetParentIdentity);
-        }
+        OutputPathValidator.EnsureParentUnchanged(
+            target,
+            targetParentIdentity);
 
         plan.Journal.Entries.Add(new PublicationJournalEntry
         {

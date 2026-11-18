@@ -360,7 +360,7 @@ public sealed class ProductFileRouterTests
         InvalidOperationException error = Assert.Throws<InvalidOperationException>(
             () => ProductCatalog.Build([new StaticModule(definition)]));
         Assert.Contains(
-            "terminable worker boundary",
+            "is not approved for cooperative in-process cancellation",
             error.Message,
             StringComparison.Ordinal);
     }

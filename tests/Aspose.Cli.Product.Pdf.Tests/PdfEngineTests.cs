@@ -294,8 +294,7 @@ public sealed class PdfEngineTests
 
     /// <summary>
     /// An image that fills its margin box in one dimension, such as a scan with the exact
-    /// proportions of its page, stays on its one page, centred in the margin box; the CLI's
-    /// --timeout stops the command if the layout keeps moving the image to a new page. Without
+    /// proportions of its page, stays on its one page, centred in the margin box. Without
     /// margins the room for the image equals the image.
     /// </summary>
     [Theory]
@@ -320,7 +319,7 @@ public sealed class PdfEngineTests
 
         CliResult created = workspace.Run(
             ["pdf", "create", output, "--from-images", image, "--page-size", pageSize, "--margins", margins,
-                "--timeout", TestDeadline.CliTimeout, "--output-format", "json"]);
+                "--output-format", "json"]);
 
         Assert.True(created.ExitCode == 0, created.StdOut + created.StdErr);
         double[] sides = margins.Split(',').Select(static side => double.Parse(side, System.Globalization.CultureInfo.InvariantCulture)).ToArray();

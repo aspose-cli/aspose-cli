@@ -54,9 +54,7 @@ public static class LicenseInstaller
         string? snapshotDirectory = null;
         try
         {
-            snapshotDirectory = resourceBudgets.OutputSession is { } worker
-                ? worker.CreateDirectory("license-snapshot")
-                : UserStorage.CreateTemporaryDirectory("license-install");
+            snapshotDirectory = UserStorage.CreateTemporaryDirectory("license-install");
             string snapshot = Path.Combine(snapshotDirectory, "source.lic");
             // A license is a secret: only the current user may read any copy of it.
             CurrentUserFileAccess.Write(snapshot, contents);
@@ -107,8 +105,7 @@ public static class LicenseInstaller
 
     /// <summary>
     /// Removes existing licenses as one recoverable output set and
-    /// returns their paths. Missing files are a no-op. A supervised worker only
-    /// stages the deletions; the parent uses the same publication transaction.
+    /// returns their paths. Missing files are a no-op.
     /// </summary>
     public static IReadOnlyList<string> RemoveMany(
         ResourceBudgetLedger resourceBudgets,

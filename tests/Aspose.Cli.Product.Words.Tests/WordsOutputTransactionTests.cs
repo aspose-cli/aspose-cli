@@ -5,18 +5,15 @@ namespace Aspose.Cli.Product.Words.Tests;
 
 public sealed class WordsOutputTransactionTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void LaterPageConflictKeepsEarlierOutputsUnpublished(bool supervised)
+    [Fact]
+    public void LaterPageConflictKeepsEarlierOutputsUnpublished()
     {
         using var fixture = new WordsFixture();
         using var workspace = new TempWorkspace();
         string input = fixture.CreateTwoSectionDocument();
         string output = workspace.File("page.png");
         File.WriteAllText(workspace.File("page.2.png"), "existing second page");
-        CliResult result = workspace.Run(["words", "render", input, "--pages", "1-2", "--out", output, "--dpi", "36", "--output-format", "json",
-            .. (supervised ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>())]);
+        CliResult result = workspace.Run(["words", "render", input, "--pages", "1-2", "--out", output, "--dpi", "36", "--output-format", "json"]);
         Assert.Equal(5, result.ExitCode);
         Assert.Equal(string.Empty, result.StdOut);
         Assert.False(File.Exists(workspace.File("page.1.png")));

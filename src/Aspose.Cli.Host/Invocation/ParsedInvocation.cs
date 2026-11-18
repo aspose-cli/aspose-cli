@@ -11,10 +11,10 @@ namespace Aspose.Cli.Host.Invocation;
 /// <summary>The actual parsed command, resolved globals and declared execution ownership.</summary>
 internal sealed class ParsedInvocation
 {
-    internal ParsedInvocation(ParseResult parse, GlobalOptions globals, GlobalValues? inherited = null)
+    internal ParsedInvocation(ParseResult parse, GlobalOptions globals)
     {
         ParseResult = parse;
-        GlobalValues = parse.Errors.Count == 0 ? Globals(parse, globals, inherited) : null;
+        GlobalValues = parse.Errors.Count == 0 ? Globals(parse, globals) : null;
         var path = new List<Command>();
         for (CommandResult? current = parse.CommandResult; current?.Parent is not null;
             current = current.Parent as CommandResult)
@@ -30,11 +30,11 @@ internal sealed class ParsedInvocation
     /// The global values. Help stops the parser before it checks values, so beside --help a
     /// global value that does not parse leaves them unread, and help prints as the parser gives it.
     /// </summary>
-    private static GlobalValues? Globals(ParseResult parse, GlobalOptions globals, GlobalValues? inherited)
+    private static GlobalValues? Globals(ParseResult parse, GlobalOptions globals)
     {
         try
         {
-            return globals.Resolve(parse, inherited);
+            return globals.Resolve(parse);
         }
         catch (InvalidOperationException) when (AsksForHelp(parse))
         {
@@ -474,19 +474,17 @@ internal sealed class ParsedInvocation
     }
 }
 
-/// <summary>One command tree for CLI execution and supervision.</summary>
+/// <summary>One command tree for CLI execution.</summary>
 /// <param name="root">The command tree.</param>
 /// <param name="globals">The global options of the tree.</param>
 internal sealed class InvocationParser(RootCommand root, GlobalOptions globals)
 {
-    // Tokens are always literal. Response-file expansion would read a file relative to
-    // whichever process parses, so a supervisor or worker could each resolve
-    // a different command from the same arguments, and '@'-prefixed file names would
-    // be unusable.
+    // Tokens are always literal: response-file expansion would make '@'-prefixed file names
+    // unusable.
     internal static readonly ParserConfiguration Configuration = new() { ResponseFileTokenReplacer = null };
 
-    internal ParsedInvocation Parse(string[] args, GlobalValues? inherited = null) =>
-        new(root.Parse(args, Configuration), globals, inherited);
+    internal ParsedInvocation Parse(string[] args) =>
+        new(root.Parse(args, Configuration), globals);
 
     internal OutputMode ResolveErrorOutput(IReadOnlyList<string> args) =>
         globals.ResolveForErrorReporting(root.Parse(args, Configuration));

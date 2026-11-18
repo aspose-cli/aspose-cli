@@ -23,7 +23,6 @@ internal sealed class AtomicPublicationPlan
         string stagingDirectory,
         PublicationJournal journal,
         IPublicationFaultInjector faults,
-        WorkerOutputSession? worker,
         PublicationDirectoryLease? lease,
         string targetDirectory,
         OwnedOutputDirectories? outputDirectories = null)
@@ -32,8 +31,7 @@ internal sealed class AtomicPublicationPlan
         JournalPath = Path.Combine(stagingDirectory, JournalName);
         Journal = journal;
         _faults = faults;
-        Worker = worker;
-        _outputDirectories = outputDirectories ?? new OwnedOutputDirectories(worker is not null);
+        _outputDirectories = outputDirectories ?? new OwnedOutputDirectories();
         _lease = lease;
         TargetDirectory = targetDirectory;
         _initialDirectoryIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(targetDirectory);
@@ -48,9 +46,6 @@ internal sealed class AtomicPublicationPlan
     public PublicationJournal Journal { get; }
 
     public IPublicationFaultInjector Faults => _faults;
-
-    public WorkerOutputSession? Worker { get; }
-    public bool WorkerStagingOnly => Worker is not null;
 
     public PublicationDirectoryLease? Lease => _lease;
 
@@ -68,7 +63,7 @@ internal sealed class AtomicPublicationPlan
 
     public bool CanCleanUp =>
         Journal.State is PublicationTransactionState.Committed or PublicationTransactionState.RolledBack
-        && (!_sealed || WorkerStagingOnly || _durableState == Journal.State);
+        && (!_sealed || _durableState == Journal.State);
 
     public static AtomicPublicationPlan Create(
         string targetDirectory,
@@ -78,16 +73,13 @@ internal sealed class AtomicPublicationPlan
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
         ArgumentException.ThrowIfNullOrEmpty(operation);
         string root = Path.GetFullPath(targetDirectory);
-        WorkerOutputSession? worker = resourceBudgets?.OutputSession;
         PublicationDirectoryLease? lease = null;
-        if (worker is null) { AtomicPublicationRecovery.RecoverPendingHierarchy(root, resourceBudgets?.Deadline); }
-        var directories = new OwnedOutputDirectories(worker is not null);
+        AtomicPublicationRecovery.RecoverPendingHierarchy(root, resourceBudgets?.Deadline);
+        var directories = new OwnedOutputDirectories();
         try
         {
             directories.Ensure(root);
-            string stagingDirectory = worker is not null
-                ? worker.CreateDirectory(operation)
-                : CreateLocalStagingDirectory(root);
+            string stagingDirectory = CreateLocalStagingDirectory(root);
             var journal = new PublicationJournal
             {
                 Operation = operation,
@@ -97,7 +89,6 @@ internal sealed class AtomicPublicationPlan
                 stagingDirectory,
                 journal,
                 faults,
-                worker,
                 lease,
                 root,
                 directories);
@@ -124,7 +115,6 @@ internal sealed class AtomicPublicationPlan
             stagingDirectory,
             journal,
             NoPublicationFaultInjector.Instance,
-            worker: null,
             lease: null,
             targetDirectory: Path.GetDirectoryName(stagingDirectory)!)
         {
@@ -190,7 +180,6 @@ internal sealed class AtomicPublicationPlan
     internal void BeginCommit()
     {
         ResourceBudgets?.Deadline.ThrowIfExpired("publication-start");
-        if (WorkerStagingOnly) { return; }
         for (int attempt = 0; attempt < 3; attempt++)
         {
             // Create already recovered without a lease. A transaction that appeared since is
@@ -231,7 +220,7 @@ internal sealed class AtomicPublicationPlan
 
     public void Persist(OperationDeadline? deadline = null)
     {
-        if (!_sealed || WorkerStagingOnly) { return; }
+        if (!_sealed) { return; }
         _faults.Hit(new PublicationFaultPoint(
             PublicationFaultKind.JournalWrite,
             -1,

@@ -3,7 +3,6 @@ using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Xunit;
 
@@ -171,7 +170,7 @@ public sealed class CellsComparisonTests
     }
 
     [Fact]
-    public void CancellationAndDeadline_AbortTheComparison()
+    public void Cancellation_AbortsTheComparison()
     {
         using var left = new Workbook();
         using var right = new Workbook();
@@ -180,9 +179,6 @@ public sealed class CellsComparisonTests
         cancellation.Cancel();
         Assert.Throws<OperationCanceledException>(() =>
             DiffComparer.Compare(new ResourceBudgetLedger(deadline), left, right, true, 1));
-        using var expired = OperationDeadline.FromAbsoluteTick(TimeSpan.FromSeconds(1), Environment.TickCount64 - 1);
-        Assert.Equal(ErrorCodes.OperationTimeout, Assert.Throws<CliException>(() =>
-            DiffComparer.Compare(new ResourceBudgetLedger(expired), left, right, true, 1)).Code);
     }
 
     [Fact]
