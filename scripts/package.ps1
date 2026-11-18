@@ -187,10 +187,10 @@ try {
     }
     $markerPath = Join-Path $smokeInstall $layout.Names.MarkerName
     $marker = Get-Content -LiteralPath $markerPath -Raw | ConvertFrom-Json
-    if ($marker.schemaVersion -ne 3 -or
+    if ($marker.schemaVersion -ne 4 -or
         $marker.productId -cne [string]$layout.Identity.id -or
         $marker.payloadManifest -cne $layout.Names.PayloadManifestName -or
-        $marker.choices.path -or $marker.choices.mcp -or
+        $marker.choices.path -or
         $marker.choices.skills -cne 'custom' -or $marker.choices.skillsRoot -cne $smokeSkills) {
         throw 'Customer installer did not publish a valid ownership marker with the recorded choices.'
     }

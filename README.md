@@ -117,7 +117,7 @@ Switches apply to `install.ps1` run from an extracted archive, or to the downloa
 | `-LicensePath <file>`, `-LicenseProduct <id>` | Install a license, optionally for one product. |
 | `-SkipLicensePrompt` | Do not ask for a license. |
 | `-Update` | Replace an installation, keeping the choices it was made with. |
-| `-Uninstall` [`-RemoveConfiguration`] | Remove the installation, its PATH entry, Skills and MCP registrations, and optionally the configuration. |
+| `-Uninstall` [`-RemoveConfiguration`] | Remove the installation, its PATH entry and Skills, and optionally the configuration. |
 | `-PackageRoot <path>` | Install from an extracted package elsewhere. |
 
 Configuration lives in `%APPDATA%\aspose-cli`, or in the absolute directory named by
