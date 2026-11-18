@@ -161,7 +161,7 @@ internal static class TimeoutWorkerSupervisor
     internal static InvocationProcessResult RenderError(HostContext host, IReadOnlyList<string> args, Exception exception)
     {
         CliException error = exception as CliException ?? CliErrors.Internal(exception, HostDiagnosticIds.WorkerUnhandled);
-        (OutputMode mode, _) = host.Parser.ResolveErrorOutput(args);
+        OutputMode mode = host.Parser.ResolveErrorOutput(args);
         using var output = new StringWriter(CultureInfo.InvariantCulture);
         using var diagnostic = new StringWriter(CultureInfo.InvariantCulture);
         IOutputWriter writer = OutputWriterFactory.Create(mode, host.ContractJson, output, diagnostic);

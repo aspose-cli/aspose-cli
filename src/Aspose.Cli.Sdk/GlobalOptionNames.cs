@@ -13,8 +13,6 @@ public
 static class GlobalOptionNames
 {
     public const string OutputFormat = "--output-format";
-    public const string Quiet = "--quiet";
-    public const string QuietAlias = "-q";
     public const string Verbose = "--verbose";
     public const string VerboseAlias = "-v";
     public const string License = "--license";
@@ -29,7 +27,7 @@ static class GlobalOptionNames
     /// <summary>Every name and alias a product option must not declare.</summary>
     public static readonly string[] Reserved =
     [
-        OutputFormat, Quiet, QuietAlias, Verbose, VerboseAlias,
+        OutputFormat, Verbose, VerboseAlias,
         License, LicenseMode, WorkDir, Timeout, MaxInputBytes,
         Help, HelpAlias, Version,
     ];

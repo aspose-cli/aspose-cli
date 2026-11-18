@@ -4403,10 +4403,10 @@ C-R36 | slides render --to
 C-R36 | words convert --to
 C-R36 | words formats
 C-R36 | words render --to
-C-R37 | cells inspect --quiet and --verbose in json mode
-C-R37 | pdf inspect --quiet and --verbose in json mode
-C-R37 | slides inspect --quiet and --verbose in json mode
-C-R37 | words inspect --quiet and --verbose in json mode
+C-R37 | cells inspect --verbose in json mode
+C-R37 | pdf inspect --verbose in json mode
+C-R37 | slides inspect --verbose in json mode
+C-R37 | words inspect --verbose in json mode
 C-R38 | KNOWN-ISSUES.md
 C-R38 | README.md
 C-R38 | src reading
@@ -5639,7 +5639,6 @@ unknown-option | aspose-cli --license as --lciense
 unknown-option | aspose-cli --license-mode as --lciense-mode
 unknown-option | aspose-cli --max-input-bytes as --mxa-input-bytes
 unknown-option | aspose-cli --output-format as --otuput-format
-unknown-option | aspose-cli --quiet as --quiett
 unknown-option | aspose-cli --timeout as --tmieout
 unknown-option | aspose-cli --verbose as --vrebose
 unknown-option | aspose-cli --version as --vresion

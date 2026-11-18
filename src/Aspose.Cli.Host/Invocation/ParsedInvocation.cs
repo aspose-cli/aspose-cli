@@ -134,7 +134,7 @@ internal sealed class ParsedInvocation
         }
 
         // The parser does not check a list for a value it takes for a name it knows there, such
-        // as --quiet written where the value of --content belongs; the same table of names picks
+        // as --verbose written where the value of --content belongs; the same table of names picks
         // those values here, and no other value is touched. Beside --help nothing is checked,
         // as the parser checks nothing there.
         HashSet<string> names = KnownNames();
@@ -488,7 +488,7 @@ internal sealed class InvocationParser(RootCommand root, GlobalOptions globals)
     internal ParsedInvocation Parse(string[] args, GlobalValues? inherited = null) =>
         new(root.Parse(args, Configuration), globals, inherited);
 
-    internal (OutputMode OutputFormat, bool Quiet) ResolveErrorOutput(IReadOnlyList<string> args) =>
+    internal OutputMode ResolveErrorOutput(IReadOnlyList<string> args) =>
         globals.ResolveForErrorReporting(root.Parse(args, Configuration));
 
     /// <summary>Writes the help of the command <paramref name="args"/> name to <paramref name="output"/>, as <c>--help</c> prints it.</summary>

@@ -7,7 +7,6 @@ Usage:
 
 Options:
   --output-format <compact|json>       How results print: the contract envelope, indented or on one line. Default: json.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                  Path to an Aspose license file; overrides every other license source.
   --license-mode <auto|evaluation>     evaluation reads no license source and runs this command in evaluation mode; by default the license sources are resolved in order. Cannot be combined with --license.
@@ -54,7 +53,7 @@ Options:
   --summary  List only each product's commands, formats and edit operation names.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli capabilities --summary
@@ -77,7 +76,7 @@ Arguments:
   <topic>  Doc topic to print; omit to list the available topics.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli docs
@@ -98,7 +97,7 @@ Commands:
   list  List each engine's font sources and its default fallback font.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli fonts list --output-format json
@@ -118,7 +117,7 @@ Options:
   --product <cells|pdf|slides|words>  Product whose font engine to list; every product's when omitted.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli fonts list
@@ -141,7 +140,7 @@ Commands:
   remove          Remove saved user licenses; env and project sources are left untouched.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli license status --output-format json
@@ -166,7 +165,7 @@ Options:
   --dry-run                           Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli license install Aspose.Total.lic
@@ -188,7 +187,7 @@ Options:
   --dry-run                           Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli license remove --dry-run
@@ -209,7 +208,7 @@ Options:
   --product <cells|pdf|slides|words>  Inspect only this product.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli license status
@@ -233,7 +232,7 @@ Options:
   --operation <operation>  Narrow an ops schema to one exact operation id.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli schema
@@ -255,7 +254,7 @@ Commands:
   install <skill>  Install a bundled Agent Skill for Codex, Claude Code, or OpenCode.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli skill list
@@ -284,7 +283,7 @@ Options:
   --dry-run                            Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli skill install aspose-cli-platform --host codex
@@ -302,7 +301,7 @@ Usage:
   aspose-cli skill list
 
 Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli skill list

@@ -74,8 +74,8 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData("--version", "--quiet")]
-    [InlineData("--version", "--output-format", "json", "--quiet")]
+    [InlineData("--version", "--verbose")]
+    [InlineData("--version", "--output-format", "json", "--verbose")]
     [InlineData("--version", "--output-format", "text")]
     [InlineData("--version", "--output-format", "json", "--workdir", ".")]
     [InlineData("--version", "--output-format", "json", "schema")]

@@ -218,7 +218,7 @@ internal sealed class CommandExecutor
         {
             writer.WriteError(error.ToEnvelope());
         }
-        else if (!globals.Quiet)
+        else
         {
             Console.Error.WriteLine($"aspose-cli: {error.Code.Name}: {error.Message}");
         }

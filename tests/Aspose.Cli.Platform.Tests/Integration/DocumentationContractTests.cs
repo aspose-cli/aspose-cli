@@ -29,7 +29,7 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
     [Theory]
     [InlineData("aspose-cli cells missing-command")]
     [InlineData("aspose-cli cells query missing-command")]
-    [InlineData("aspose-cli --quiet cells missing-command")]
+    [InlineData("aspose-cli --verbose cells missing-command")]
     [InlineData("aspose-cli --timeout=30 words missing-command")]
     [InlineData("aspose-cli cells query range book.xlsx")]
     [InlineData("aspose-cli docs cells/commands")]
@@ -58,7 +58,7 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
     public void MarkdownExtraction_ChecksInlineAndContinuedCommands()
     {
         string markdown = "Use \u0060aspose-cli\n docs missing-inline-topic\u0060.\n"
-            + "\u0060\u0060\u0060powershell\naspose-cli --quiet \u0060\n  cells missing-command\n\u0060\u0060\u0060\n";
+            + "\u0060\u0060\u0060powershell\naspose-cli --verbose \u0060\n  cells missing-command\n\u0060\u0060\u0060\n";
         string[] commands = DocumentationCommandValidator.CommandsInMarkdown(markdown).ToArray();
         Assert.Equal(2, commands.Length);
         Assert.All(commands, command => Assert.NotNull(fixture.Validator.ValidateCommand(command)));

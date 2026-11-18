@@ -34,7 +34,7 @@ internal sealed class InvocationInputs : IDisposable
             throw new InvalidDataException("The inherited invocation values are invalid.");
         }
         Inherited = message.WorkDirectory is null ? null : new GlobalValues(
-            OutputMode.Json, false, false, message.LicensePath, message.WorkDirectory, null,
+            OutputMode.Json, false, message.LicensePath, message.WorkDirectory, null,
             message.MaxInputBytes ?? InputSizeGuard.DefaultMaxBytes)
         {
             EvaluationRequested = message.EvaluationRequested,

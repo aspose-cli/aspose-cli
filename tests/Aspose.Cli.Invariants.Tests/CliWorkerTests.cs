@@ -451,8 +451,8 @@ public sealed class CliWorkerTests
 
     /// <summary>
     /// A real child process that succeeds writes its one result document to stdout and only
-    /// diagnostics to stderr: nothing with <c>--quiet</c>, and JSON lines of diagnostics with
-    /// <c>--verbose</c>.
+    /// diagnostics to stderr: nothing without <c>--verbose</c>, and JSON lines of diagnostics with
+    /// it.
     /// </summary>
     [Fact]
     public void ASucceededChildProcess_WritesTheResultToStdoutAndOnlyDiagnosticsToStderr()
@@ -463,15 +463,15 @@ public sealed class CliWorkerTests
         using (CliWorkers.ChildProcesses())
         {
             int before = CliWorkers.ThreadRuns;
-            CliResult quiet = workspace.Run("cells", "inspect", "book.xlsx", "--quiet", "--output-format", "json");
+            CliResult plain = workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json");
             CliResult verbose = workspace.Run("cells", "inspect", "book.xlsx", "--verbose", "--output-format", "json");
 
             Assert.Equal(before, CliWorkers.ThreadRuns);
-            Assert.Equal(0, quiet.ExitCode);
-            Assert.NotNull(JsonNode.Parse(quiet.StdOut)!["schema"]);
-            Assert.Equal(string.Empty, quiet.StdErr);
+            Assert.Equal(0, plain.ExitCode);
+            Assert.NotNull(JsonNode.Parse(plain.StdOut)!["schema"]);
+            Assert.Equal(string.Empty, plain.StdErr);
             Assert.Equal(0, verbose.ExitCode);
-            Assert.Equal(JsonNode.Parse(quiet.StdOut)!["schema"]!.GetValue<string>(), JsonNode.Parse(verbose.StdOut)!["schema"]!.GetValue<string>());
+            Assert.Equal(JsonNode.Parse(plain.StdOut)!["schema"]!.GetValue<string>(), JsonNode.Parse(verbose.StdOut)!["schema"]!.GetValue<string>());
             string[] diagnostics = verbose.StdErr.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             Assert.NotEmpty(diagnostics);
             Assert.All(diagnostics, static line => Assert.Null(JsonNode.Parse(line)!["schema"]));

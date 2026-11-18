@@ -20,7 +20,7 @@ internal static class ProcessFailureBoundary
 
     private static int _unhandledHandlerInstalled;
 
-    private static (OutputMode OutputFormat, bool Quiet) ResolveErrorOutput(
+    private static OutputMode ResolveErrorOutput(
         HostContext host, IReadOnlyList<string> args)
     {
         try { return host.Parser.ResolveErrorOutput(args); }
@@ -130,8 +130,7 @@ internal static class ProcessFailureBoundary
                 HostDiagnosticIds.ProcessUnhandled);
         try
         {
-            (OutputMode output, _) =
-                ResolveErrorOutput(host, args);
+            OutputMode output = ResolveErrorOutput(host, args);
             IOutputWriter writer = OutputWriterFactory.Create(
                 output,
                 host.ContractJson,

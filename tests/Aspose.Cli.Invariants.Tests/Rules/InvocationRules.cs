@@ -756,16 +756,15 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// <c>--quiet</c> and <c>--verbose</c> leave stdout and the exit code as they are:
-    /// <c>--quiet</c> leaves a successful run's stderr without warnings or notices, so empty, and
-    /// every line <c>--verbose</c> adds to stderr is a JSON object.
+    /// <c>--verbose</c> leaves stdout and the exit code as they are, and every line it adds to
+    /// stderr is a JSON object.
     /// </summary>
     private static IEnumerable<InvariantCase> R37(CliCatalog catalog)
     {
         string output = OutputOption(catalog);
         foreach ((string shard, CliCommand command) in R23Samples(catalog))
         {
-            yield return Runs("C-R37", $"{command} --quiet and --verbose in json mode", shard, slow: false, Invocation.For(command),
+            yield return Runs("C-R37", $"{command} --verbose in json mode", shard, slow: false, Invocation.For(command),
                 session => R37Problems(session, output, "json"));
         }
     }
@@ -773,20 +772,11 @@ internal static partial class ContractRules
     private static IEnumerable<string> R37Problems(RuleWorkspace session, string output, string format)
     {
         CliResult plain = session.Run(output, format);
-        CliResult quiet = session.Run(output, format, "--quiet");
         CliResult verbose = session.Run(output, format, "--verbose");
         if (plain.ExitCode != 0)
         {
             yield return $"the plain run exits {plain.ExitCode}: {Excerpt(plain.StdErr)}";
             yield break;
-        }
-        if (quiet.ExitCode != plain.ExitCode || quiet.StdOut != plain.StdOut)
-        {
-            yield return $"--quiet changes stdout or the exit code: exit {quiet.ExitCode}, stdout {Excerpt(quiet.StdOut)}";
-        }
-        if (quiet.StdErr.Trim().Length > 0)
-        {
-            yield return $"--quiet leaves stderr: {Excerpt(quiet.StdErr)}";
         }
         if (verbose.ExitCode != plain.ExitCode || verbose.StdOut != plain.StdOut)
         {
