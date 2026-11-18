@@ -285,18 +285,14 @@ public sealed class PdfOutputEncryptionTests : IDisposable
 
     /// <summary>
     /// <c>--encrypt-env</c> would replace the passwords and permissions an <c>encrypt_document</c>
-    /// sets, so the two together are refused before the batch starts, also with
-    /// <c>--best-effort</c>, and nothing is written.
+    /// sets, so the two together are refused before the batch starts, and nothing is written.
     /// </summary>
     [Category(TestCategory.Slow)]
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void EditWithEncryptDocumentAndEncryptEnv_IsRefused(bool bestEffort)
+    [Fact]
+    public void EditWithEncryptDocumentAndEncryptEnv_IsRefused()
     {
         CliResult run = Run(["pdf", "edit", "plain.pdf", "--out", "both.pdf", "--encrypt-env", "PDF_NEW", "--ops",
-            """[{"op":"set_properties","title":"Edited"},{"op":"encrypt_document","userPasswordEnv":"PDF_USER","ownerPasswordEnv":"PDF_OWNER","permissions":{"print":true}}]""",
-            .. (bestEffort ? new[] { "--best-effort" } : [])]);
+            """[{"op":"set_properties","title":"Edited"},{"op":"encrypt_document","userPasswordEnv":"PDF_USER","ownerPasswordEnv":"PDF_OWNER","permissions":{"print":true}}]"""]);
 
         Assert.Equal(2, run.ExitCode);
         JsonNode error = JsonNode.Parse(run.StdErr)!["error"]!;

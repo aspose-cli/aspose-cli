@@ -128,21 +128,6 @@ public sealed class CellsCliTests : IDisposable
         Assert.Null(thirdPayload["window"]!["next"]);
     }
 
-    [Fact]
-    public void Edit_BestEffortTablePrintsTheFailedOperationError()
-    {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
-
-        CliResult edited = _workspace.Run(
-            "cells", "edit", "book.xlsx", "--set", "Data!A1=1", "--set", "Missing!A1=2",
-            "--best-effort", "--out", "edited.xlsx", "--output-format", "table");
-
-        Assert.Equal(8, edited.ExitCode);
-        Assert.Contains("1 of 2 op(s) applied, 1 failed", edited.StdOut, StringComparison.Ordinal);
-        Assert.Contains("[op-0002] set_values: failed", edited.StdOut, StringComparison.Ordinal);
-        Assert.Contains("      SHEET_NOT_FOUND: ", edited.StdOut, StringComparison.Ordinal);
-    }
-
     [Theory]
     [InlineData("""{"ops":[{"op":"insert_sheet","name":"rates"}]}""")]
     [InlineData("""{"ops":[{"op":"rename_sheet","sheet":"Data","name":"RATES"}]}""")]
@@ -747,22 +732,19 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Fact]
-    public void Edit_FailsOnlyTheOperationWhoseFileIsMissing()
+    public void Edit_FailsTheOperationWhoseFileIsMissing()
     {
         Assert.Equal(0, _workspace.Run("cells", "create", "images.xlsx", "--sheet-names", "Data").ExitCode);
 
         CliResult missing = _workspace.Run(
-            "cells", "edit", "images.xlsx", "--out", "images.out.xlsx", "--best-effort", "--output-format", "json",
+            "cells", "edit", "images.xlsx", "--out", "images.out.xlsx", "--output-format", "json",
             "--ops", """{"ops":[{"op":"insert_image","sheet":"Data","at":"B2","path":"missing.png"},{"op":"set_values","sheet":"Data","range":"A1","values":[[1]]}]}""");
 
-        JsonArray applied = JsonNode.Parse(missing.StdOut)!["applied"]!.AsArray();
-        Assert.Equal("failed", applied[0]!["status"]!.GetValue<string>());
-        JsonNode error = applied[0]!["error"]!;
+        JsonNode error = JsonNode.Parse(missing.StdErr)!["error"]!;
         Assert.Equal("FILE_NOT_FOUND", error["code"]!.GetValue<string>());
         Assert.Equal("op-0001", error["details"]!["id"]!.GetValue<string>());
         Assert.EndsWith("missing.png", error["details"]!["path"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
-        Assert.Equal("ok", applied[1]!["status"]!.GetValue<string>());
-        Assert.True(File.Exists(_workspace.File("images.out.xlsx")));
+        Assert.False(File.Exists(_workspace.File("images.out.xlsx")));
     }
 
     public void Dispose()

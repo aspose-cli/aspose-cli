@@ -52,8 +52,7 @@ Branch on the exit code first, then on the code in the envelope:
 
 - 0: the command succeeded. Its warnings can still need action.
 - 8: the command finished and printed its result, but the result did not pass
-  or is incomplete: a failed operation under `--best-effort` or failed
-  verification.
+  or is incomplete: a failed verification.
   Read the result; it says what failed. Exit 8 means only this: no error
   envelope ever comes with it.
 - 130: the command was cancelled with Ctrl+C, with or without --timeout. The

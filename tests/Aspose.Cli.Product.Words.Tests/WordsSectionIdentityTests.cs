@@ -7,11 +7,9 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsSectionIdentityTests
 {
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public void DeletingASection_InvalidatesItsOriginalBlockForLaterOperations(bool bestEffort, bool dryRun)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DeletingASection_InvalidatesItsOriginalBlockForLaterOperations(bool dryRun)
     {
         using var fixture = new WordsFixture();
         string input = CreateSections(fixture);
@@ -30,36 +28,22 @@ public sealed class WordsSectionIdentityTests
             Input = input,
             Batch = batch,
             Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = bestEffort, DryRun = dryRun },
+            Options = new EditCommandOptions { DryRun = dryRun },
         });
 
         Assert.Equal(original, File.ReadAllBytes(input));
-        if (!bestEffort)
-        {
-            CliException error = Assert.Throws<CliException>(Run);
-            Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-            Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
-            Assert.False(File.Exists(output));
-            return;
-        }
-
-        // Best effort keeps the deletion and reports the operation that addressed what it deleted.
-        WordsEditResult result = Run();
-        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], result.Applied.Select(static applied => applied.Status));
-        Assert.Equal(ErrorCodes.OpsInvalid.Name, result.Applied[1].Error!.Code);
-        Assert.Equal(!dryRun, File.Exists(output));
-        Assert.Equal(original, File.ReadAllBytes(input));
+        CliException error = Assert.Throws<CliException>(Run);
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
+        Assert.False(File.Exists(output));
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void RepeatedSectionDeletion_DoesNotShiftToAnotherOriginalSection(bool bestEffort)
+    [Fact]
+    public void RepeatedSectionDeletion_DoesNotShiftToAnotherOriginalSection()
     {
         using var fixture = new WordsFixture();
         string input = CreateSections(fixture);
         string output = fixture.Temp.File("repeated.docx");
-        int sections = new Document(input).Sections.Count;
         WordsEditResult Run() => WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
@@ -68,20 +52,11 @@ public sealed class WordsSectionIdentityTests
                 Ops = [new DeleteSectionOp { Section = 1 }, new DeleteSectionOp { Section = 1 }],
             },
             Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = bestEffort },
         });
 
-        if (!bestEffort)
-        {
-            Assert.Throws<CliException>(Run);
-            Assert.False(File.Exists(output));
-            return;
-        }
-
         // The second deletion names the section the first deleted, never the next one.
-        WordsEditResult result = Run();
-        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], result.Applied.Select(static applied => applied.Status));
-        Assert.Equal(sections - 1, new Document(output).Sections.Count);
+        Assert.Throws<CliException>(Run);
+        Assert.False(File.Exists(output));
     }
 
     [Fact]
@@ -188,12 +163,12 @@ public sealed class WordsSectionIdentityTests
     }
 
     [Fact]
-    public void BestEffort_LastSectionFailureCanBeFollowedByAnIndependentSuccess()
+    public void DeletingTheOnlyRemainingSection_IsRefused()
     {
         using var fixture = new WordsFixture();
         string input = CreateSections(fixture);
         string output = fixture.Temp.File("partial.docx");
-        WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
             Batch = new WordsOpsBatch
@@ -205,13 +180,9 @@ public sealed class WordsSectionIdentityTests
                 ],
             },
             Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
-        Assert.Equal(["ok", "ok", "failed", "ok"], result.Applied.Select(operation => operation.Status));
-        var reopened = new Document(output);
-        Assert.Single(reopened.Sections.Cast<Section>());
-        Assert.Contains("Third", reopened.GetText(), StringComparison.Ordinal);
-        Assert.Equal("Kept", reopened.BuiltInDocumentProperties.Title);
+        }));
+        Assert.Equal("op-0003", error.Details!["id"]!.GetValue<string>());
+        Assert.False(File.Exists(output));
     }
 
     private static string CreateSections(WordsFixture fixture)

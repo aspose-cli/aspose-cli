@@ -48,8 +48,6 @@ public sealed class BoundedOperationModelTests
 
         public void Apply(TestOp operation) => apply(operation, this);
 
-        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["page/all"];
-
         public NoEffect? Explain(TestOp operation) => Explanation?.Invoke(operation);
     }
 
@@ -74,7 +72,7 @@ public sealed class BoundedOperationModelTests
         });
 
         AppliedBatch applied = BoundedOperationRunner.Run(
-            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), bestEffort: false, deadline: null, model, pageUnit: "page");
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), deadline: null, model, pageUnit: "page");
 
         Assert.Equal([2L, 1L, 1L], applied.Outcomes.Select(static outcome => outcome.ItemsAffected));
         Assert.Equal(["value/x", "page/2"], applied.Outcomes[0].Targets);
@@ -90,7 +88,7 @@ public sealed class BoundedOperationModelTests
     {
         var model = new Model(static (_, document) => document.Values["value/x"] = "1");
 
-        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model);
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), deadline: null, model);
 
         BoundedOperationOutcome outcome = Assert.Single(applied.Outcomes);
         Assert.Equal(OpStatuses.Ok, outcome.Status);
@@ -112,38 +110,16 @@ public sealed class BoundedOperationModelTests
             Explanation = static op => new NoEffect(NoEffectReasons.NoMatch, $"Operation {op.Id} (note) found no anchor.") { },
         };
 
-        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new NoteOp { Text = "n" }), bestEffort: false, deadline: null, model);
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new NoteOp { Text = "n" }), deadline: null, model);
 
         Warning warning = Assert.Single(applied.Warnings);
         Assert.Equal(NoEffectReasons.NoMatch, warning.Details!["reason"]!.GetValue<string>());
         Assert.Equal("Operation op-0001 (note) found no anchor.", warning.Message);
     }
 
-    [Fact]
-    public void Run_ReportsTheAttemptedTargetsOfAFailedOperation()
-    {
-        var model = new Model(static (op, document) =>
-        {
-            if (op is NoteOp)
-            {
-                throw new OperationInvalidException("the note has no anchor");
-            }
-
-            document.Pages[0] = "A";
-        });
-
-        AppliedBatch applied = BoundedOperationRunner.Run(
-            Catalog, Batch(new NoteOp { Text = "n" }, new SetOp { Value = 1 }), bestEffort: true, deadline: null, model);
-
-        Assert.Equal([OpStatuses.Failed, OpStatuses.Ok], applied.Outcomes.Select(static outcome => outcome.Status));
-        Assert.Equal(["page/all"], applied.Outcomes[0].Targets);
-        Assert.Equal(0, applied.Outcomes[0].ItemsAffected);
-        Assert.Empty(applied.Warnings);
-    }
-
     /// <summary>
-    /// An operation that applied but whose result cannot be read is neither reported failed, which
-    /// would deny a change the document holds, nor counted: the batch stops and nothing is written.
+    /// An operation that applied but whose result cannot be read is not counted: the batch stops
+    /// and nothing is written.
     /// </summary>
     [Fact]
     public void Run_StopsTheBatchWhenWhatAnAppliedOperationChangedCannotBeRead()
@@ -151,7 +127,7 @@ public sealed class BoundedOperationModelTests
         var model = new Model(static (_, document) => document.Pages[0] = "A") { FailingSnapshot = 2 };
 
         CliException error = Assert.Throws<CliException>(() => BoundedOperationRunner.Run(
-            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }), bestEffort: true, deadline: null, model));
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }), deadline: null, model));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
@@ -176,7 +152,7 @@ public sealed class BoundedOperationModelTests
         });
         model.Pages.AddRange(Enumerable.Range(4, 147).Select(static page => $"p{page}"));
 
-        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model, pageUnit: "page");
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), deadline: null, model, pageUnit: "page");
 
         BoundedOperationOutcome outcome = Assert.Single(applied.Outcomes);
         Assert.Equal(251, outcome.ItemsAffected);
@@ -191,7 +167,7 @@ public sealed class BoundedOperationModelTests
         var verifier = new Verifier();
 
         AppliedBatch applied = BoundedOperationRunner.Run(
-            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), bestEffort: false, deadline: null, model, verifier);
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), deadline: null, model, verifier);
         VerifiedBatch verified = applied.Verified(new VerificationFacts([], ["op-0003", "op-0002", "op-0001"]));
 
         Assert.Equal([1L, 1L, 1L], verifier.Affected);
@@ -206,7 +182,7 @@ public sealed class BoundedOperationModelTests
         VerificationIssue issue = VerificationIssues.Of(
             DiagnosticDescriptor.Verification("TEST_MISMATCH", "test"), "Operation op-0001 (set): page 1 reads 'a'.", "page/1");
 
-        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model, new Verifier());
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), deadline: null, model, new Verifier());
         VerifiedBatch verified = applied.Verified(new VerificationFacts([issue], ["op-0001"]));
 
         Assert.False(verified.Ok);
@@ -220,7 +196,7 @@ public sealed class BoundedOperationModelTests
     {
         var model = new Model(static (op, document) => document.Pages[0] = ((SetOp)op).Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
-        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }), bestEffort: false, deadline: null, model);
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }), deadline: null, model);
         VerifiedBatch verified = applied.Verified(new VerificationFacts([], ["op-0002"]));
 
         Assert.True(verified.Ok);
@@ -241,7 +217,7 @@ public sealed class BoundedOperationModelTests
         var facts = new VerificationFacts([], ["op-0001"]);
         typeof(VerificationFacts).GetProperty("Warnings")!.SetValue(facts, new[] { lost, informational });
 
-        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model);
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), deadline: null, model);
         VerifiedBatch verified = applied.Verified(facts);
         VerifiedBatch both = applied.Verified(facts with { Issues = [mismatch] });
 
@@ -261,8 +237,6 @@ public sealed class BoundedOperationModelTests
             new OperationSnapshot().AddObjects("block", Blocks.Select(static block => ((object)block, block.Text)));
 
         public void Apply(TestOp operation) => apply(operation, Blocks);
-
-        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["block/all"];
 
         public IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() =>
             new Dictionary<string, IReadOnlyList<object>> { ["block"] = [.. Blocks] };
@@ -292,7 +266,7 @@ public sealed class BoundedOperationModelTests
         });
 
         AppliedBatch applied = BoundedOperationRunner.Run(
-            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }), bestEffort: false, deadline: null, model);
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }), deadline: null, model);
 
         // c is block 3 of the output, after the later insertion; b, removed, keeps its number in the input.
         Assert.Equal(2L, applied.Outcomes[0].ItemsAffected);
@@ -333,8 +307,6 @@ public sealed class BoundedOperationModelTests
 
         public void Apply(TestOp operation) => apply(operation, Pages);
 
-        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["page/all"];
-
         public IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() =>
             new Dictionary<string, IReadOnlyList<object>> { ["page"] = [.. Pages] };
     }
@@ -370,7 +342,7 @@ public sealed class BoundedOperationModelTests
         });
 
         AppliedBatch applied = BoundedOperationRunner.Run(
-            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), bestEffort: false, deadline: null, model, pageUnit: "page");
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), deadline: null, model, pageUnit: "page");
 
         // A page that only moved still counts: the order is compared by state.
         Assert.Equal([1L, 1L, 1L], applied.Outcomes.Select(static outcome => outcome.ItemsAffected));
@@ -399,8 +371,6 @@ public sealed class BoundedOperationModelTests
         }
 
         public void Apply(TestOp operation) => apply(operation, Sheets);
-
-        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["sheet/all"];
 
         public NamedScopes Scopes() => new(["sheet", "cell"], [.. Sheets.Select(static sheet => ((object)sheet, sheet.Name))]);
     }
@@ -439,7 +409,7 @@ public sealed class BoundedOperationModelTests
         });
 
         AppliedBatch applied = BoundedOperationRunner.Run(
-            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), bestEffort: false, deadline: null, model);
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), deadline: null, model);
 
         Assert.Equal(["cell/New!A1"], applied.Outcomes[0].Targets);
         Assert.Contains("sheet/New", applied.Outcomes[1].Targets);
@@ -464,7 +434,7 @@ public sealed class BoundedOperationModelTests
         });
 
         AppliedBatch applied = BoundedOperationRunner.Run(
-            Catalog, Batch(new SetOp { Value = 2 }, new SetOp { Value = 4 }), bestEffort: false, deadline: null, model);
+            Catalog, Batch(new SetOp { Value = 2 }, new SetOp { Value = 4 }), deadline: null, model);
 
         Assert.All(applied.Outcomes.SelectMany(static outcome => outcome.Targets), target => Assert.DoesNotContain("New", target, StringComparison.Ordinal));
         Assert.Equal(["sheet/Old", "cell/Old!A1"], applied.Outcomes[1].Targets);
@@ -475,7 +445,7 @@ public sealed class BoundedOperationModelTests
     {
         var model = new BlockModel(static (_, blocks) => blocks[1] = new Block(blocks[1].Text));
 
-        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model);
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), deadline: null, model);
 
         BoundedOperationOutcome outcome = Assert.Single(applied.Outcomes);
         Assert.Equal(0L, outcome.ItemsAffected);
@@ -516,7 +486,7 @@ public sealed class BoundedOperationModelTests
         });
         model.Pages.AddRange(Enumerable.Range(4, BoundedOperationOutcome.MaximumTargets - 3).Select(static page => $"p{page}"));
 
-        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model);
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), deadline: null, model);
 
         Assert.Equal(100, BoundedOperationOutcome.MaximumTargets);
         Assert.Equal(Enumerable.Range(1, 100).Select(static page => $"page/{page}"), Assert.Single(applied.Outcomes).Targets);

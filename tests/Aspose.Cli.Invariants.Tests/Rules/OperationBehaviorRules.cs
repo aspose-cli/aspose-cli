@@ -650,7 +650,7 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// Checks the applied entries of one best-effort edit of the product's fixture with every
+    /// Checks the applied entries of one edit of the product's fixture with every
     /// <c>set_</c>, <c>add_</c> and <c>format_</c> sample that needs no setup: operations that
     /// neither remove nor restructure what a later one addresses. The edit runs once per test
     /// process and the product's batch cases share it.
@@ -665,8 +665,8 @@ internal static partial class ContractRules
                 .Where(sample => sample.Product == key && sample.OnFixture && sample.Label is null
                     && sample.Op.Split('_')[0] is "set" or "add" or "format")
                 .Select(static sample => (JsonNode)OperationRuns.Operation(sample, sample.Op))];
-            RuleRun run = OperationRuns.Edit(workspace, key, input, "batch." + OperationRuns.Extension(key), operations, "--best-effort");
-            return run.Document?["applied"] is JsonArray entries && run.ExitCode is 0 or 8
+            RuleRun run = OperationRuns.Edit(workspace, key, input, "batch." + OperationRuns.Extension(key), operations);
+            return run.Document?["applied"] is JsonArray entries && run.ExitCode == 0
                 ? ((JsonArray)entries.DeepClone(), null)
                 : ([], "the batch edit failed: " + run.Describe());
         })).Value;

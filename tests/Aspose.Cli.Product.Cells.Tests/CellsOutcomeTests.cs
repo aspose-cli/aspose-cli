@@ -773,23 +773,20 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
     [Theory]
     [InlineData("""{"op":"set_values","sheet":"Data","range":"A1048576","values":[[1]]},{"op":"insert_rows","sheet":"Data","at":3,"count":2}""", "push the data in row 1048576 past")]
     [InlineData("""{"op":"set_values","sheet":"Data","range":"XFD1","values":[[1]]},{"op":"insert_columns","sheet":"Data","at":"B"}""", "push the data in column XFD past")]
-    public void InsertingLinesThatPushDataOffTheSheet_IsAnInvalidOperationTheBatchCanSkip(string operations, string reason)
+    public void InsertingLinesThatPushDataOffTheSheet_IsAnInvalidOperation(string operations, string reason)
     {
         string path = _fixture.CreateSalesWorkbook($"push-off-{Guid.NewGuid():N}.xlsx");
 
-        CellsEditResult result = CellsEdit.Run(_fixture.Session, new CellsEditRequest
+        CliException error = Assert.Throws<CliException>(() => CellsEdit.Run(_fixture.Session, new CellsEditRequest
         {
             Input = path,
             Batch = CellsOp.Catalog.Parse<CellsOpsBatch>($$"""{"ops":[{{operations}}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition),
             Output = TestOutput.At(_fixture.Temp.File($"push-off-{Guid.NewGuid():N}.xlsx")),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
+        }));
 
-        BoundedOperationOutcome refused = result.Applied[1];
-        Assert.Equal(OpStatuses.Failed, refused.Status);
-        Assert.Equal("OPS_INVALID", refused.Error!.Code);
-        Assert.Contains(reason, refused.Error.Message, StringComparison.Ordinal);
-        Assert.Equal(OpStatuses.Ok, result.Applied[0].Status);
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
+        Assert.Contains(reason, error.Message, StringComparison.Ordinal);
     }
 
     [Fact]

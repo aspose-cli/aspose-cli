@@ -75,21 +75,6 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
         CellsAddresses.SheetUnits,
         [.. _workbook.Worksheets.Select(static sheet => ((object)sheet, sheet.Name))]);
 
-    /// <summary>What a failed operation addressed: its range or cell, its sheet, or the part of the workbook it changes.</summary>
-    public IReadOnlyList<string> AttemptedTargets(CellsOp operation)
-    {
-        CellsOpTraits traits = CellsOpFootprints.Of(operation);
-        string? sheet = traits.Target?.Sheet ?? (operation is CellsSheetOp ? _workbook.Worksheets[_workbook.Worksheets.ActiveSheetIndex].Name : null);
-        return (sheet, traits.Target?.Range) switch
-        {
-            ({ } name, { } range) => [CellsAddresses.At("cell", name, range)],
-            ({ } name, null) => [CellsAddresses.OfSheet("sheet", name)],
-            // Every other operation names a sheet, so only a workbook-level one gets here.
-            _ => [traits.WorkbookAddress ?? throw new System.Diagnostics.UnreachableException(
-                $"{operation.GetType().Name} names no sheet and has no workbook address.")],
-        };
-    }
-
     public NoEffect? Explain(CellsOp operation) => operation switch
     {
         ClearRangeOp or ClearValidationOp or ClearConditionalFormatsOp => new NoEffect(NoEffectReasons.NoChange,

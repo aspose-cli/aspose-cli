@@ -35,7 +35,7 @@ internal static class SlidesEdit
         SlidesEditVerifier? verifier = request.Verify ? new SlidesEditVerifier(presentation, model.Target, evaluation) : null;
         model.Before = verifier is null ? null : verifier.Before;
         AppliedBatch applied = BoundedOperationRunner.Run(
-            SlidesOp.Catalog, batch.Ops, request.Options.BestEffort, deadline: null, model, verifier, SlidesStateProjection.SlideUnit);
+            SlidesOp.Catalog, batch.Ops, deadline: null, model, verifier, SlidesStateProjection.SlideUnit);
         IReadOnlyList<Warning> warnings = [.. model.Warnings, .. applied.Warnings];
         EditPublication<SlidesEditVerification> publication = Publish(session, loaded, request, format, precondition, verifier, applied, warnings);
 

@@ -76,7 +76,6 @@ public sealed class WordsResourceBoundaryTests
                 At = new WordsTarget { Find = "Quarterly report" }, Position = "after", Markdown = new string('a', 9),
             }] },
             Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = true },
         }));
         Assert.Equal(ErrorCodes.InputBudgetExceeded, batchError.Code);
         Assert.False(File.Exists(output));

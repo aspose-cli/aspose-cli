@@ -34,8 +34,7 @@ public sealed record ErrorEnvelope
 
 /// <summary>
 /// Error details: the <see cref="Message"/> states the fact and <see cref="Details"/> carries
-/// structured context, often including the valid alternatives. The error envelope and a failed
-/// operation of a best-effort batch carry the same object.
+/// structured context, often including the valid alternatives.
 /// </summary>
 [SchemaId(Id)]
 public sealed record ErrorPayload

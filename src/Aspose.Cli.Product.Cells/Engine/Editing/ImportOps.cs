@@ -101,26 +101,16 @@ internal static class ImportOps
         sources.Budgets.Consume(CellsBudgetDomains.Objects, origin.Shapes.Count, "items", "edit");
 
         Worksheet sheet = workbook.Worksheets[workbook.Worksheets.Add()];
-        try
+        sheet.Name = name;
+        using (new SourceLinks(workbook, source))
         {
-            sheet.Name = name;
-            using (new SourceLinks(workbook, source))
-            {
-                sheet.Copy(origin, new CopyOptions());
-            }
-
-            WarnUncachedLinks(source, origin.Cells, sheet, 0, 0, sources);
-            if (op.At is { } at)
-            {
-                sheet.MoveTo(at - 1);
-            }
+            sheet.Copy(origin, new CopyOptions());
         }
-        catch
+
+        WarnUncachedLinks(source, origin.Cells, sheet, 0, 0, sources);
+        if (op.At is { } at)
         {
-            // A failed import leaves no partial sheet behind, so a best-effort batch goes on
-            // with the workbook as it was.
-            workbook.Worksheets.RemoveAt(sheet.Index);
-            throw;
+            sheet.MoveTo(at - 1);
         }
 
         // The one sheet it adds.

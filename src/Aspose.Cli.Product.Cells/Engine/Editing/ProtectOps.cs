@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
 /// <summary>
 /// Sheet protection using command-resolved secret values. Missing values are
-/// reported when their operation runs, preserving indexed best-effort outcomes.
+/// reported when their operation runs.
 /// </summary>
 internal static class ProtectOps
 {

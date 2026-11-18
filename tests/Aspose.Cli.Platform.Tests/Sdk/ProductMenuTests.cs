@@ -74,8 +74,8 @@ public sealed class ProductMenuTests : IDisposable
         Assert.True(product.Subcommands[0].TryGetHelpMetadata(out CommandHelpMetadata? info));
         Assert.Equal(["aspose-cli menu inspect doc.test --font-dir fonts"], info!.Examples);
         Assert.Equal(
-            ["--ops", "--if-match", "--best-effort", "--strict", "--out", "--overwrite", "--in-place", "--backup", "--dry-run"],
-            product.Subcommands[3].Options.Select(static option => option.Name).Take(9));
+            ["--ops", "--if-match", "--strict", "--out", "--overwrite", "--in-place", "--backup", "--dry-run"],
+            product.Subcommands[3].Options.Select(static option => option.Name).Take(8));
     }
 
     [Fact]

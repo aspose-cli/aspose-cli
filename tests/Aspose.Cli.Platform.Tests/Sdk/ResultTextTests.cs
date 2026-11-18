@@ -7,7 +7,7 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 public sealed class ResultTextTests
 {
     [Fact]
-    public void Edit_PrintsEveryBestEffortFailureAndTheBackup()
+    public void Edit_PrintsEveryOperationAndTheBackup()
     {
         var output = new OutputInfo { Path = "out.docx", Format = "docx", SizeBytes = 1_024, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } };
         BoundedOperationOutcome[] applied =
@@ -17,9 +17,8 @@ public sealed class ResultTextTests
             {
                 Id = "title",
                 Op = "delete_block",
-                Status = OpStatuses.Failed,
+                Status = OpStatuses.Ok,
                 ItemsAffected = 0,
-                Error = new ErrorPayload { Code = "OPS_INVALID", Message = "block 9 does not exist"},
             },
         ];
 
@@ -36,10 +35,9 @@ public sealed class ResultTextTests
 
         Assert.Equal(
             [
-                "wrote out.docx (docx, 1,024 bytes, 1 of 2 op(s) applied, 1 failed)",
+                "wrote out.docx (docx, 1,024 bytes, 2 of 2 op(s) applied)",
                 "  [op-0001] set_text: ok (2 item(s))",
-                "  [title] delete_block: failed (0 item(s))",
-                "      OPS_INVALID: block 9 does not exist",
+                "  [title] delete_block: ok (0 item(s))",
                 "backup: in.backup.docx (created)",
             ],
             Lines(text));

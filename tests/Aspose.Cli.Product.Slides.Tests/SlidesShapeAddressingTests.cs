@@ -122,12 +122,12 @@ public sealed class SlidesShapeAddressingTests
     }
 
     [Fact]
-    public void MissingLayout_FailsOnlyItsOperationInABestEffortBatch()
+    public void MissingLayout_FailsItsOperation()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -135,13 +135,11 @@ public sealed class SlidesShapeAddressingTests
                 Ops = [new InsertSlideOp { Layout = "Title Onyl" }, new SetNotesOp { Slide = 1, Text = "Kept" }],
             },
             Output = TestOutput.At(fixture.File("layout.pptx")),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
+        }));
 
-        Assert.Equal(["failed", "ok"], result.Applied.Select(static operation => operation.Status));
-        ErrorPayload error = result.Applied[0].Error!;
-        Assert.Equal(SlidesDiagnostics.LayoutNotFound.Name, error.Code);
-        Assert.Equal("Title Onyl", (string?)error.Details!["requested"]);
+        Assert.Equal(SlidesDiagnostics.LayoutNotFound.Name, error.Code.Name);
+        Assert.Equal("op-0001", (string?)error.Details!["id"]);
+        Assert.Equal("Title Onyl", (string?)error.Details["requested"]);
     }
 
     [Fact]

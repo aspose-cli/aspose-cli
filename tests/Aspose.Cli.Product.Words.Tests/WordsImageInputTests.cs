@@ -120,14 +120,14 @@ public sealed class WordsImageInputTests
     }
 
     [Fact]
-    public void InsertMarkdown_WithATruncatedImageFailsAloneInABestEffortBatch()
+    public void InsertMarkdown_WithATruncatedImageFailsItsOperation()
     {
         using var fixture = new WordsFixture();
         string input = fixture.CreateReport();
         Write(fixture, "chart.png", CutPng);
         string output = fixture.Temp.File("report.out.docx");
 
-        WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
             Batch = new WordsOpsBatch
@@ -139,12 +139,11 @@ public sealed class WordsImageInputTests
                 ],
             },
             Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
+        }));
 
-        Assert.Equal([OpStatuses.Failed, OpStatuses.Ok], result.Applied.Select(static item => item.Status));
-        Assert.Equal(ErrorCodes.FileCorrupt.Name, result.Applied[0].Error!.Code);
-        Assert.Contains("Kept paragraph.", new Aspose.Words.Document(output).GetText(), StringComparison.Ordinal);
+        Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
+        Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
+        Assert.False(File.Exists(output));
     }
 
     [Fact]

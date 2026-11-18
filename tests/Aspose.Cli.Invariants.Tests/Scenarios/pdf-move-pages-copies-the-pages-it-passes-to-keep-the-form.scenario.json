@@ -1,5 +1,5 @@
 {
-  "name": "pdf edit move_pages copies the pages it passes rather than those it moves where that keeps the form: a field with a parent in its name stays one field, filled and covered as the page shows it; a move that must copy one is refused naming it, and in --best-effort the field stays where it was; a field split between pages moves when the pages the hint names move together; pages that are not one run move as before",
+  "name": "pdf edit move_pages copies the pages it passes rather than those it moves where that keeps the form: a field with a parent in its name stays one field, filled and covered as the page shows it; a move that must copy one is refused naming it; a field split between pages moves when the pages the hint names move together; pages that are not one run move as before",
   "files": {
     "hier.pdf": {
       "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgL0Fjcm9Gb3JtIDw8IC9GaWVsZHMgWzEwMCAwIFIgMTAzIDAgUl0gL0RBICgvSGVsdiAwIFRmIDAgZykgL0RSIDw8IC9Gb250IDw8IC9IZWx2IDUgMCBSID4+ID4+ICA+PiAgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFsxMCAwIFIgMTEgMCBSXSAvQ291bnQgMiA+PgplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCjEwIDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvSGVsdiA1IDAgUiA+PiA+PiAvQ29udGVudHMgMzAgMCBSIC9Bbm5vdHMgWzEwMiAwIFJdID4+CmVuZG9iagoxMSAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0hlbHYgNSAwIFIgPj4gPj4gL0NvbnRlbnRzIDMxIDAgUiAvQW5ub3RzIFsxMDMgMCBSXSA+PgplbmRvYmoKMzAgMCBvYmoKPDwgL0xlbmd0aCAzOSA+PgpzdHJlYW0KQlQgL0hlbHYgMTIgVGYgNzIgNzQwIFRkIChQYWdlIDEpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMzEgMCBvYmoKPDwgL0xlbmd0aCAzOSA+PgpzdHJlYW0KQlQgL0hlbHYgMTIgVGYgNzIgNzQwIFRkIChQYWdlIDIpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKMTAwIDAgb2JqCjw8IC9UIChmb3JtKSAvS2lkcyBbMTAxIDAgUl0gPj4KZW5kb2JqCjEwMSAwIG9iago8PCAvVCAocGVyc29uKSAvUGFyZW50IDEwMCAwIFIgL0tpZHMgWzEwMiAwIFJdID4+CmVuZG9iagoxMDIgMCBvYmoKPDwgL1R5cGUgL0Fubm90IC9TdWJ0eXBlIC9XaWRnZXQgL0ZUIC9UeCAvVCAobmFtZSkgL1YgKEFsaWNlKSAvUGFyZW50IDEwMSAwIFIgL1JlY3QgWzcyIDYwMCAyNzIgNjIwXSAvUCAxMCAwIFIgPj4KZW5kb2JqCjEwMyAwIG9iago8PCAvVHlwZSAvQW5ub3QgL1N1YnR5cGUgL1dpZGdldCAvRlQgL1R4IC9UIChvdGhlcikgL1YgKE90aGVyVikgL1JlY3QgWzcyIDYwMCAyNzIgNjIwXSAvUCAxMSAwIFIgPj4KZW5kb2JqCnhyZWYKMCAxMDQKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAxNTcgMDAwMDAgbiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAyMjIgMDAwMDAgbiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMjkyIDAwMDAwIG4gCjAwMDAwMDA0NDAgMDAwMDAgbiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDU4OCAwMDAwMCBuIAowMDAwMDAwNjc4IDAwMDAwIG4gCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwNzY4IDAwMDAwIG4gCjAwMDAwMDA4MTcgMDAwMDAgbiAKMDAwMDAwMDg4NCAwMDAwMCBuIAowMDAwMDAxMDE1IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTA0IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoxMTMyCiUlRU9GCg=="
@@ -282,57 +282,6 @@
           {
             "path": "forms.fields[0].page",
             "equals": 3
-          }
-        ]
-      }
-    },
-    {
-      "args": [
-        "pdf",
-        "edit",
-        "hier2.pdf",
-        "--ops",
-        "[{\"op\":\"move_pages\",\"pages\":\"1\",\"to\":2},{\"op\":\"set_form_field\",\"name\":\"form.a\",\"value\":\"Changed\"}]",
-        "--out",
-        "hier2-best.pdf",
-        "--best-effort"
-      ],
-      "expect": {
-        "exitCode": 8,
-        "json": [
-          {
-            "path": "applied[0].status",
-            "equals": "failed"
-          },
-          {
-            "path": "applied[1].status",
-            "equals": "ok"
-          }
-        ]
-      }
-    },
-    {
-      "args": [
-        "pdf",
-        "inspect",
-        "hier2-best.pdf",
-        "--detail",
-        "forms"
-      ],
-      "expect": {
-        "exitCode": 0,
-        "json": [
-          {
-            "path": "forms.fields[0].name",
-            "equals": "form.a"
-          },
-          {
-            "path": "forms.fields[0].value",
-            "equals": "Changed"
-          },
-          {
-            "path": "forms.fields[0].page",
-            "equals": 1
           }
         ]
       }

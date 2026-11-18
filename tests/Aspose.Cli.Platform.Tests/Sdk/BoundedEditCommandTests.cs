@@ -120,11 +120,10 @@ public sealed class BoundedEditCommandTests : IDisposable
         EditCommandOptions options = Read(
             Plain(),
             "--ops", """{"ifMatch":"abcdef","ops":[{"op":"set","value":1}]}""",
-            "--if-match", "ABCDEF", "--dry-run", "--best-effort").Options;
+            "--if-match", "ABCDEF", "--dry-run").Options;
 
         Assert.Equal("ABCDEF", options.IfMatch);
         Assert.True(options.DryRun);
-        Assert.True(options.BestEffort);
         Assert.Equal(ErrorCodes.OptionInvalid, Assert.Throws<CliException>(() => Read(
             Plain(),
             "--ops", """{"ifMatch":"stale","ops":[{"op":"set","value":1}]}""",
@@ -367,7 +366,7 @@ public sealed class BoundedEditCommandTests : IDisposable
 
         Assert.Equal(
             [
-                "--ops", "--if-match", "--best-effort", "--verify", "--fast",
+                "--ops", "--if-match", "--verify", "--fast",
                 "--out", "--overwrite", "--in-place", "--backup", "--dry-run",
                 "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--encrypt-stdin", "--font-dir",
             ],

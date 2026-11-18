@@ -1,4 +1,3 @@
-using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Words;
 
@@ -74,41 +73,6 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
         _matched[operation] = handlers.Matched;
         _edited |= operation is not RevisionDecisionOp;
     }
-
-    /// <summary>
-    /// What a failed operation addressed: the blocks and sections it resolved before the batch;
-    /// for one whose address did not resolve, the block or section numbers it names as written,
-    /// which need not exist; otherwise the part of the document it changes. A heading, find text
-    /// or bookmark that matched no block names no block, so it attempted <c>block/all</c>, the
-    /// blocks it searched.
-    /// </summary>
-    public IReadOnlyList<string> AttemptedTargets(WordsOp operation)
-    {
-        ResolvedWordsOp resolved = _resolved[operation];
-        string[] blocks = [.. resolved.Targets.Where(static target => target.StartsWith(WordsSnapshots.BlockUnit + "/", StringComparison.Ordinal))];
-        string[] sections =
-        [
-            .. resolved.Sections.Select(section => _loaded.Document.Sections.IndexOf(section))
-                .Where(static index => index >= 0)
-                .Select(static index => $"{WordsSnapshots.SectionUnit}/{index + 1}"),
-        ];
-        if (blocks.Length + sections.Length > 0)
-        {
-            return [.. blocks, .. sections];
-        }
-
-        WordsOpTraits traits = WordsOpAddresses.Of(operation);
-        return [Named(traits) ?? traits.Fallback];
-    }
-
-    /// <summary>The block number or range, or the section number, an operation names, or null when it names none.</summary>
-    private static string? Named(WordsOpTraits traits) => traits switch
-    {
-        { Target.Block: int block } => string.Create(CultureInfo.InvariantCulture, $"{WordsSnapshots.BlockUnit}/{block}"),
-        { Target.Blocks: { } range } => $"{WordsSnapshots.BlockUnit}/{range}",
-        { Section: int number } => string.Create(CultureInfo.InvariantCulture, $"{WordsSnapshots.SectionUnit}/{number}"),
-        _ => null,
-    };
 
     public NoEffect? Explain(WordsOp operation) => operation switch
     {

@@ -26,7 +26,7 @@ internal static class EditCommand
             examples:
             [
                 "pdf edit report.pdf --ops ops.json --out reviewed.pdf --verify",
-                "pdf edit report.pdf --in-place --backup --ops ops.json --best-effort",
+                "pdf edit report.pdf --in-place --backup --ops ops.json",
             ],
             links:
             [

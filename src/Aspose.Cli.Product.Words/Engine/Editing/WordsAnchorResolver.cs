@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// operation mutates the DOM. The returned nodes retain identity even when
 /// insertions change the visible block numbering. An operation whose address does not
 /// resolve keeps its failure, which it raises when the batch reaches it, so the error names
-/// the operation and a best-effort batch keeps the others.
+/// the operation.
 /// </summary>
 internal static class WordsAnchorResolver
 {

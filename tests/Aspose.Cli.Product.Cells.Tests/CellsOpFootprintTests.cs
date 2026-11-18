@@ -6,9 +6,8 @@ namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
 /// What each Cells operation addresses, one row per sample: the target the footprint spotlights,
-/// whether the verification diff sees the operation, the cells it is charged for, and what a
-/// failed operation reports it attempted. Every operation of the vocabulary has a row, so a new
-/// operation fails here until it is placed.
+/// whether the verification diff sees the operation and the cells it is charged for. Every
+/// operation of the vocabulary has a row, so a new operation fails here until it is placed.
 /// </summary>
 public sealed class CellsOpFootprintTests
 {
@@ -71,112 +70,111 @@ public sealed class CellsOpFootprintTests
 
     /// <summary>
     /// Each row: the operation's name, its target as sheet!range (<c>-</c> for none, an empty
-    /// part for null), whether the diff sees it, its cell cost, and its attempted targets on a
-    /// workbook whose active sheet is Sheet1.
+    /// part for null), whether the diff sees it and its cell cost.
     /// </summary>
     private static readonly string[] Expected =
     [
-        "set_values | Sales!A6:D6 | diffed | 4 | cell/Sales!A6:D6",
-        "set_formula | !E2:E6 | diffed | 5 | cell/Sheet1!E2:E6",
-        "clear_range | !F1:F10 | diffed | 10 | cell/Sheet1!F1:F10",
-        "replace_text | Sales!A2:A6 | diffed | 5 | cell/Sales!A2:A6",
-        "copy_range | Summary!B2 | diffed | 9 | cell/Summary!B2",
-        "import_range | Summary!F2:I8 | diffed | 28 | cell/Summary!F2:I8",
-        "import_sheet | EU! | diffed | 0 | sheet/EU",
-        "format_range | !A1:E1 | unseen | 5 | cell/Sheet1!A1:E1",
-        "merge_cells | !A1:E1 | unseen | 5 | cell/Sheet1!A1:E1",
-        "unmerge_cells | !A1:E1 | unseen | 5 | cell/Sheet1!A1:E1",
-        "insert_rows | ! | diffed | 0 | sheet/Sheet1",
-        "delete_rows | ! | diffed | 0 | sheet/Sheet1",
-        "insert_columns | ! | diffed | 0 | sheet/Sheet1",
-        "delete_columns | ! | diffed | 0 | sheet/Sheet1",
-        "resize_columns | ! | unseen | 0 | sheet/Sheet1",
-        "resize_rows | ! | unseen | 0 | sheet/Sheet1",
-        "insert_sheet | Summary! | diffed | 0 | sheet/Summary",
-        "rename_sheet | Archive! | diffed | 0 | sheet/Archive",
-        "delete_sheet | Obsolete! | diffed | 0 | sheet/Obsolete",
-        "set_sheet_visibility | Archive! | unseen | 0 | sheet/Archive",
-        "freeze_panes | ! | unseen | 0 | sheet/Sheet1",
-        "unfreeze_panes | Sales! | unseen | 0 | sheet/Sales",
-        "clear_autofilter | Sales! | unseen | 0 | sheet/Sales",
-        "clear_tab_color | Sales! | unseen | 0 | sheet/Sales",
-        "clear_print_area | Sales! | unseen | 0 | sheet/Sales",
-        "insert_chart | Sales! | unseen | 0 | sheet/Sales",
-        "insert_pivot | Summary! | unseen | 0 | sheet/Summary",
-        "set_page_setup | Sales! | unseen | 0 | sheet/Sales",
-        "set_print_area | Sales!A1:H50 | unseen | 400 | cell/Sales!A1:H50",
-        "insert_image | Sales! | unseen | 0 | sheet/Sales",
-        "refresh_pivot | Summary! | unseen | 0 | sheet/Summary",
-        "define_table | Sales!A1:D20 | unseen | 80 | cell/Sales!A1:D20",
-        "resize_table | Sales!A1:D25 | unseen | 100 | cell/Sales!A1:D25",
-        "set_autofilter | Sales!A1:D20 | unseen | 80 | cell/Sales!A1:D20",
-        "sort_range | Sales!A2:D20 | diffed | 76 | cell/Sales!A2:D20",
-        "set_validation | Sales!C2:C100 | unseen | 99 | cell/Sales!C2:C100",
-        "define_name | - | unseen | 0 | name/TaxRate",
-        "delete_name | - | unseen | 0 | name/ObsoleteRange",
-        "add_comment | Sales!B2 | unseen | 1 | cell/Sales!B2",
-        "set_comment | Sales!B2 | unseen | 1 | cell/Sales!B2",
-        "delete_comment | Sales!C3 | unseen | 1 | cell/Sales!C3",
-        "protect_sheet | Sales! | unseen | 0 | sheet/Sales",
-        "unprotect_sheet | Archive! | unseen | 0 | sheet/Archive",
-        "group_rows | Sales! | unseen | 0 | sheet/Sales",
-        "ungroup_rows | Sales! | unseen | 0 | sheet/Sales",
-        "group_columns | Sales! | unseen | 0 | sheet/Sales",
-        "ungroup_columns | Sales! | unseen | 0 | sheet/Sales",
-        "clear_validation | Sales!C2:C100 | unseen | 99 | cell/Sales!C2:C100",
-        "delete_duplicates | Sales!A1:D100 | diffed | 400 | cell/Sales!A1:D100",
-        "protect_workbook | - | unseen | 0 | workbook/protection",
-        "unprotect_workbook | - | unseen | 0 | workbook/protection",
-        "set_hyperlink | Sales!A1 | unseen | 1 | cell/Sales!A1",
-        "delete_hyperlink | Sales!B2 | unseen | 1 | cell/Sales!B2",
-        "set_chart | Sales! | unseen | 0 | sheet/Sales",
-        "add_conditional_format | Sales!C2:C100 | unseen | 99 | cell/Sales!C2:C100",
-        "clear_conditional_formats | Sales!D2:D100 | unseen | 99 | cell/Sales!D2:D100",
-        "move_sheet | Summary! | unseen | 0 | sheet/Summary",
-        "set_borders | Sales!A1:D5 | unseen | 20 | cell/Sales!A1:D5",
-        "set_default_font | - | unseen | 0 | workbook/default-font",
-        "set_tab_color | Sales! | unseen | 0 | sheet/Sales",
-        "set_sheet_view | Sales! | unseen | 0 | sheet/Sales",
-        "delete_chart | Sales! | unseen | 0 | sheet/Sales",
-        "add_sparkline | Sales!F2:F5 | unseen | 4 | cell/Sales!F2:F5",
-        "set_active_sheet | Sales! | unseen | 0 | sheet/Sales",
-        "set_values | !B2:C3 | diffed | 4 | cell/Sheet1!B2:C3",
-        "set_values | Sales!C3 | diffed | 1 | cell/Sales!C3",
-        "copy_range | Sales!D4 | diffed | 4 | cell/Sales!D4",
-        "copy_range | Sales! | diffed | 4 | sheet/Sales",
-        "import_range | Summary!B2:D3 | diffed | 6 | cell/Summary!B2:D3",
-        "import_range | Sales!XFD1048576 | diffed | 6 | cell/Sales!XFD1048576",
-        "import_sheet | Totals! | diffed | 0 | sheet/Totals",
-        "import_sheet | ! | diffed | 0 | sheet/eu_raw",
-        "set_validation | Sales!D5:D8 | unseen | 4 | cell/Sales!D5:D8",
-        "clear_validation | Sales!D5:D8 | unseen | 4 | cell/Sales!D5:D8",
-        "add_conditional_format | Sales!D5:D8 | unseen | 4 | cell/Sales!D5:D8",
-        "clear_conditional_formats | Sales!D5:D8 | unseen | 4 | cell/Sales!D5:D8",
-        "set_print_area | Sales!D5:D8 | unseen | 4 | cell/Sales!D5:D8",
-        "add_sparkline | Sales!F2:F5 | unseen | 4 | cell/Sales!F2:F5",
-        "insert_chart | - | unseen | 0 | sheet/Sheet1",
-        "set_chart | - | unseen | 0 | sheet/Sheet1",
-        "delete_chart | - | unseen | 0 | sheet/Sheet1",
-        "insert_pivot | - | unseen | 0 | sheet/Sheet1",
-        "refresh_pivot | - | unseen | 0 | sheet/Sheet1",
-        "insert_image | - | unseen | 0 | sheet/Sheet1",
-        "clear_tab_color | - | unseen | 0 | sheet/Sheet1",
-        "unfreeze_panes | - | unseen | 0 | sheet/Sheet1",
-        "clear_autofilter | - | unseen | 0 | sheet/Sheet1",
-        "clear_print_area | - | unseen | 0 | sheet/Sheet1",
-        "group_rows | ! | unseen | 0 | sheet/Sheet1",
-        "ungroup_rows | ! | unseen | 0 | sheet/Sheet1",
-        "group_columns | ! | unseen | 0 | sheet/Sheet1",
-        "ungroup_columns | ! | unseen | 0 | sheet/Sheet1",
-        "protect_sheet | ! | unseen | 0 | sheet/Sheet1",
-        "unprotect_sheet | ! | unseen | 0 | sheet/Sheet1",
-        "set_page_setup | ! | unseen | 0 | sheet/Sheet1",
-        "set_tab_color | ! | unseen | 0 | sheet/Sheet1",
-        "move_sheet | ! | unseen | 0 | sheet/Sheet1",
-        "set_sheet_visibility | ! | unseen | 0 | sheet/Sheet1",
-        "set_active_sheet | ! | unseen | 0 | sheet/Sheet1",
-        "set_sheet_view | ! | unseen | 0 | sheet/Sheet1",
-        "delete_sheet | ! | diffed | 0 | sheet/Sheet1",
+        "set_values | Sales!A6:D6 | diffed | 4",
+        "set_formula | !E2:E6 | diffed | 5",
+        "clear_range | !F1:F10 | diffed | 10",
+        "replace_text | Sales!A2:A6 | diffed | 5",
+        "copy_range | Summary!B2 | diffed | 9",
+        "import_range | Summary!F2:I8 | diffed | 28",
+        "import_sheet | EU! | diffed | 0",
+        "format_range | !A1:E1 | unseen | 5",
+        "merge_cells | !A1:E1 | unseen | 5",
+        "unmerge_cells | !A1:E1 | unseen | 5",
+        "insert_rows | ! | diffed | 0",
+        "delete_rows | ! | diffed | 0",
+        "insert_columns | ! | diffed | 0",
+        "delete_columns | ! | diffed | 0",
+        "resize_columns | ! | unseen | 0",
+        "resize_rows | ! | unseen | 0",
+        "insert_sheet | Summary! | diffed | 0",
+        "rename_sheet | Archive! | diffed | 0",
+        "delete_sheet | Obsolete! | diffed | 0",
+        "set_sheet_visibility | Archive! | unseen | 0",
+        "freeze_panes | ! | unseen | 0",
+        "unfreeze_panes | Sales! | unseen | 0",
+        "clear_autofilter | Sales! | unseen | 0",
+        "clear_tab_color | Sales! | unseen | 0",
+        "clear_print_area | Sales! | unseen | 0",
+        "insert_chart | Sales! | unseen | 0",
+        "insert_pivot | Summary! | unseen | 0",
+        "set_page_setup | Sales! | unseen | 0",
+        "set_print_area | Sales!A1:H50 | unseen | 400",
+        "insert_image | Sales! | unseen | 0",
+        "refresh_pivot | Summary! | unseen | 0",
+        "define_table | Sales!A1:D20 | unseen | 80",
+        "resize_table | Sales!A1:D25 | unseen | 100",
+        "set_autofilter | Sales!A1:D20 | unseen | 80",
+        "sort_range | Sales!A2:D20 | diffed | 76",
+        "set_validation | Sales!C2:C100 | unseen | 99",
+        "define_name | - | unseen | 0",
+        "delete_name | - | unseen | 0",
+        "add_comment | Sales!B2 | unseen | 1",
+        "set_comment | Sales!B2 | unseen | 1",
+        "delete_comment | Sales!C3 | unseen | 1",
+        "protect_sheet | Sales! | unseen | 0",
+        "unprotect_sheet | Archive! | unseen | 0",
+        "group_rows | Sales! | unseen | 0",
+        "ungroup_rows | Sales! | unseen | 0",
+        "group_columns | Sales! | unseen | 0",
+        "ungroup_columns | Sales! | unseen | 0",
+        "clear_validation | Sales!C2:C100 | unseen | 99",
+        "delete_duplicates | Sales!A1:D100 | diffed | 400",
+        "protect_workbook | - | unseen | 0",
+        "unprotect_workbook | - | unseen | 0",
+        "set_hyperlink | Sales!A1 | unseen | 1",
+        "delete_hyperlink | Sales!B2 | unseen | 1",
+        "set_chart | Sales! | unseen | 0",
+        "add_conditional_format | Sales!C2:C100 | unseen | 99",
+        "clear_conditional_formats | Sales!D2:D100 | unseen | 99",
+        "move_sheet | Summary! | unseen | 0",
+        "set_borders | Sales!A1:D5 | unseen | 20",
+        "set_default_font | - | unseen | 0",
+        "set_tab_color | Sales! | unseen | 0",
+        "set_sheet_view | Sales! | unseen | 0",
+        "delete_chart | Sales! | unseen | 0",
+        "add_sparkline | Sales!F2:F5 | unseen | 4",
+        "set_active_sheet | Sales! | unseen | 0",
+        "set_values | !B2:C3 | diffed | 4",
+        "set_values | Sales!C3 | diffed | 1",
+        "copy_range | Sales!D4 | diffed | 4",
+        "copy_range | Sales! | diffed | 4",
+        "import_range | Summary!B2:D3 | diffed | 6",
+        "import_range | Sales!XFD1048576 | diffed | 6",
+        "import_sheet | Totals! | diffed | 0",
+        "import_sheet | ! | diffed | 0",
+        "set_validation | Sales!D5:D8 | unseen | 4",
+        "clear_validation | Sales!D5:D8 | unseen | 4",
+        "add_conditional_format | Sales!D5:D8 | unseen | 4",
+        "clear_conditional_formats | Sales!D5:D8 | unseen | 4",
+        "set_print_area | Sales!D5:D8 | unseen | 4",
+        "add_sparkline | Sales!F2:F5 | unseen | 4",
+        "insert_chart | - | unseen | 0",
+        "set_chart | - | unseen | 0",
+        "delete_chart | - | unseen | 0",
+        "insert_pivot | - | unseen | 0",
+        "refresh_pivot | - | unseen | 0",
+        "insert_image | - | unseen | 0",
+        "clear_tab_color | - | unseen | 0",
+        "unfreeze_panes | - | unseen | 0",
+        "clear_autofilter | - | unseen | 0",
+        "clear_print_area | - | unseen | 0",
+        "group_rows | ! | unseen | 0",
+        "ungroup_rows | ! | unseen | 0",
+        "group_columns | ! | unseen | 0",
+        "ungroup_columns | ! | unseen | 0",
+        "protect_sheet | ! | unseen | 0",
+        "unprotect_sheet | ! | unseen | 0",
+        "set_page_setup | ! | unseen | 0",
+        "set_tab_color | ! | unseen | 0",
+        "move_sheet | ! | unseen | 0",
+        "set_sheet_visibility | ! | unseen | 0",
+        "set_active_sheet | ! | unseen | 0",
+        "set_sheet_view | ! | unseen | 0",
+        "delete_sheet | ! | diffed | 0",
     ];
 
     [Fact]
@@ -190,16 +188,7 @@ public sealed class CellsOpFootprintTests
     [Fact]
     public void Footprint_PlacesEachOperation()
     {
-        // One new workbook stays within what evaluation mode opens, so the rows run unlicensed too.
-        using var fixture = new CellsFixture();
-        CellsSession session = ProductTestBudgets.StartEngine<CellsModule, CellsSession>(
-            (budgets, writer) => new CellsSession(fixture.Outputs(writer), budgets, new CellsWorkbookLoader(budgets, fixture.Outputs(writer))));
-        using var workbook = new Workbook();
-        using InputResourceScope inputs = session.Budgets.Inputs.CreateScope();
-        using var sources = new CellsImportSources(session.Loader, session.Budgets, secrets: null);
-        var model = new CellsEditModel(session.Budgets, workbook, secrets: null, inputs, sources, new CellsProtectionTracker());
-
-        string[] actual = [.. Samples.Select(op => Row(op, model))];
+        string[] actual = [.. Samples.Select(Row)];
 
         Assert.Equal(Expected, actual);
     }
@@ -447,11 +436,11 @@ public sealed class CellsOpFootprintTests
             : change.Structure ? "structure"
             : "none";
 
-    private static string Row(CellsOp op, CellsEditModel model)
+    private static string Row(CellsOp op)
     {
         var batch = new CellsOpsBatch { Ops = [op] };
         string target = OpsFootprint.Collect(batch) is [var found] ? $"{found.Sheet}!{found.Range}" : "-";
         bool diffed = OpsFootprint.Collect(batch, cellsOnly: true).Count > 0;
-        return $"{CellsOp.Catalog.NameOf(op)} | {target} | {(diffed ? "diffed" : "unseen")} | {OpsFootprint.CellCost(op)} | {string.Join(", ", model.AttemptedTargets(op))}";
+        return $"{CellsOp.Catalog.NameOf(op)} | {target} | {(diffed ? "diffed" : "unseen")} | {OpsFootprint.CellCost(op)}";
     }
 }

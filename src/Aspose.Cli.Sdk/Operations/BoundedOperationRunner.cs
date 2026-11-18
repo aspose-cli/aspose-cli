@@ -37,10 +37,9 @@ public sealed class AppliedOperation
 /// <remarks>
 /// Handlers resolve and check their targets before they change the document, so an
 /// <see cref="OperationInvalidException"/> or a domain <see cref="CliException"/> means the
-/// operation changed nothing: an atomic batch stops, and a best-effort batch records the
-/// failure and continues, as does a missing file the operation declares. An
+/// operation changed nothing, as does a missing file the operation declares. An
 /// <see cref="EngineOpException"/>, or another I/O exception the engine raised, can occur
-/// mid-change, so it stops the batch in both modes and nothing is published.
+/// mid-change. Either failure stops the batch, and nothing is published.
 /// </remarks>
 public static class BoundedOperationRunner
 {
@@ -63,7 +62,6 @@ public static class BoundedOperationRunner
     /// </summary>
     /// <param name="catalog">The vocabulary the batch was validated against.</param>
     /// <param name="operations">Validated operations with assigned ids.</param>
-    /// <param name="bestEffort">Whether a rejected operation is recorded instead of stopping the batch.</param>
     /// <param name="deadline">Invocation deadline checked before every operation.</param>
     /// <param name="model">Snapshots and applies the operations.</param>
     /// <param name="verifier">With <c>--verify</c>, records the effect of each operation that applied.</param>
@@ -75,7 +73,6 @@ public static class BoundedOperationRunner
     public static AppliedBatch Run<TOp>(
         OperationCatalog<TOp> catalog,
         IReadOnlyList<TOp> operations,
-        bool bestEffort,
         OperationDeadline? deadline,
         IOperationModel<TOp> model,
         IEditVerifier<TOp>? verifier = null,
@@ -94,7 +91,6 @@ public static class BoundedOperationRunner
         IReadOnlyList<BoundedOperationOutcome> outcomes = Execute(
             catalog,
             operations,
-            bestEffort,
             deadline,
             model.GetType().Assembly,
             (operation, index) =>
@@ -131,7 +127,6 @@ public static class BoundedOperationRunner
 
                 return new AppliedOperation(changes.Count, [.. changes.Select(static change => change.Address).Distinct(StringComparer.Ordinal)]);
             },
-            operation => Covered(model.AttemptedTargets(operation)),
             (operation, id, name, applied) =>
             {
                 if (applied.ItemsAffected == 0)
@@ -178,7 +173,7 @@ public static class BoundedOperationRunner
                 .OfType<int>());
         }
 
-        outcomes = [.. outcomes.Select((outcome, index) => outcome.Status == OpStatuses.Ok && placed.TryGetValue(index, out IReadOnlyList<ChangedObject>? objects)
+        outcomes = [.. outcomes.Select((outcome, index) => placed.TryGetValue(index, out IReadOnlyList<ChangedObject>? objects)
             ? outcome with { Targets = Covered(InOrder(objects.Select(static item => item.Address))) }
             : outcome)];
         return new AppliedBatch(outcomes, warnings, [.. pages], Batch(placed), unrecorded);
@@ -328,11 +323,9 @@ public static class BoundedOperationRunner
     private static IReadOnlyList<BoundedOperationOutcome> Execute<TOp>(
         OperationCatalog<TOp> catalog,
         IReadOnlyList<TOp> operations,
-        bool bestEffort,
         OperationDeadline? deadline,
         Assembly product,
         Func<TOp, int, AppliedOperation> apply,
-        Func<TOp, IReadOnlyList<string>> attemptedTargets,
         Action<TOp, string, string, AppliedOperation> applied)
         where TOp : BoundedOperation
     {
@@ -349,19 +342,18 @@ public static class BoundedOperationRunner
             string id = operation.Id
                 ?? throw new ArgumentException("Every operation of a validated batch has an id.", nameof(operations));
             deadline?.ThrowIfExpired("operations");
-            CliException? rejection = null;
-            AppliedOperation? done = null;
+            AppliedOperation result;
             try
             {
-                done = apply(operation, index);
+                result = apply(operation, index);
             }
             catch (OperationInvalidException invalid)
             {
-                rejection = OperationErrors.InvalidAt(id, name, invalid);
+                throw OperationErrors.InvalidAt(id, name, invalid);
             }
             catch (CliException failure) when (!failure.IsInvocationFailure)
             {
-                rejection = OperationErrors.FailedAt(id, name, failure);
+                throw OperationErrors.FailedAt(id, name, failure);
             }
             catch (CliException timeout) when (timeout.Code == ErrorCodes.OperationTimeout)
             {
@@ -376,9 +368,9 @@ public static class BoundedOperationRunner
             }
             catch (EngineOpException failure)
             {
-                rejection = DeclaredFileFailure(failure.InnerException, catalog.InputPaths(operation)) is { } file
+                throw DeclaredFileFailure(failure.InnerException, catalog.InputPaths(operation)) is { } file
                     ? OperationErrors.FailedAt(id, name, file)
-                    : throw OperationErrors.EngineFailedAt(id, name, failure);
+                    : OperationErrors.EngineFailedAt(id, name, failure);
             }
             catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
             {
@@ -387,47 +379,26 @@ public static class BoundedOperationRunner
                 // the engine raised can occur mid-change. One the CLI raised propagates.
                 if (DeclaredFileFailure(failure, catalog.InputPaths(operation)) is { } file)
                 {
-                    rejection = OperationErrors.FailedAt(id, name, file);
+                    throw OperationErrors.FailedAt(id, name, file);
                 }
-                else if (ExceptionOrigin.IsThirdParty(failure, own))
+
+                if (ExceptionOrigin.IsThirdParty(failure, own))
                 {
                     throw OperationErrors.EngineFailedAt(id, name, new EngineOpException(failure.Message, failure));
                 }
-                else
-                {
-                    throw;
-                }
+
+                throw;
             }
 
-            if (rejection is null)
-            {
-                // Nothing was rejected, so the operation applied and the model said what it changed.
-                AppliedOperation result = done!;
-                outcomes.Add(new BoundedOperationOutcome
-                {
-                    Id = id,
-                    Op = name,
-                    Status = OpStatuses.Ok,
-                    ItemsAffected = result.ItemsAffected,
-                    Targets = Covered(result.Targets),
-                });
-                applied(operation, id, name, result);
-                continue;
-            }
-
-            if (!bestEffort)
-            {
-                throw rejection;
-            }
             outcomes.Add(new BoundedOperationOutcome
             {
                 Id = id,
                 Op = name,
-                Status = OpStatuses.Failed,
-                ItemsAffected = 0,
-                Targets = attemptedTargets(operation),
-                Error = rejection.ToEnvelope().Error,
+                Status = OpStatuses.Ok,
+                ItemsAffected = result.ItemsAffected,
+                Targets = Covered(result.Targets),
             });
+            applied(operation, id, name, result);
         }
 
         return outcomes;

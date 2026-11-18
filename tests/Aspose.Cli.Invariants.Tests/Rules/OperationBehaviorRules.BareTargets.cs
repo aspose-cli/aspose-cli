@@ -12,7 +12,7 @@ internal static partial class ContractRules
     /// on each bare document of its product (<see cref="OperationSamples.Bare"/>). Refused, it holds
     /// once the sample is shown to address the bare part: the document's address replaced one of
     /// its properties and every one by which it addresses an object (<see cref="BareSample.Addressing"/>),
-    /// and the refusal names targets at the bare part (<see cref="BareSample.Target"/>).
+    /// and the refusal is that operation's error.
     /// Applied, each value it writes reads back at a new place, and not only on objects it added
     /// of the units the document names (<see cref="BareSample.Objects"/>), as the reads before and
     /// after name objects (<see cref="RoundTripAddress"/>).
@@ -72,25 +72,21 @@ internal static partial class ContractRules
         }
         string subject = $"{sample.Subject} as {operation.ToJsonString()}";
         string output = "edited." + extension;
-        // With --best-effort a refused operation is reported with the targets it addressed.
-        RuleRun edit = OperationRuns.Edit(workspace, bare.Product, document, output, [operation], "--best-effort");
+        RuleRun edit = OperationRuns.Edit(workspace, bare.Product, document, output, [operation]);
         if (edit.Unjudged)
         {
             yield break;
         }
-        JsonNode? applied = edit.Document?["applied"]?[0];
-        if (applied?["status"]?.GetValue<string>() != "ok")
+        if (edit.ExitCode != 0)
         {
             // Refused, as it should be where its object is missing, once it is shown to address the bare part.
-            string[] targets = [.. (applied?["targets"] as JsonArray ?? []).Select(static target => target?.GetValue<string>()).OfType<string>()];
-            if (applied is null || addressed == 0 || targets.Length == 0
-                || !targets.All(target => target == bare.Target || target.StartsWith(bare.Target + "/", StringComparison.Ordinal)))
+            if (edit.Error is null || addressed == 0 || edit.Document?["error"]?["details"]?["id"]?.GetValue<string>() != "op-0001")
             {
-                yield return $"{subject}: the sample does not address {bare.Label} ({bare.Target}): {(applied is null ? edit.Describe() : $"refused at {string.Join(", ", targets)}")}";
+                yield return $"{subject}: the sample does not address {bare.Label} ({bare.Target}): {edit.Describe()}";
             }
-            else if (applied["error"]?["code"]?.GetValue<string>() == "INTERNAL_ERROR")
+            else if (edit.Error == "INTERNAL_ERROR")
             {
-                yield return $"{subject}: {applied["error"]!.ToJsonString()}";
+                yield return $"{subject}: {edit.Document!["error"]!.ToJsonString()}";
             }
             yield break;
         }

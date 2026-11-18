@@ -17,7 +17,7 @@ public static class AppliedOperations
         where TOp : BoundedOperation
     {
         var recorder = new Recorder<TOp>();
-        BoundedOperationRunner.Run(catalog, [operation], bestEffort: false, deadline: null, new Model<TOp>(itemsAffected), recorder);
+        BoundedOperationRunner.Run(catalog, [operation], deadline: null, new Model<TOp>(itemsAffected), recorder);
         return recorder.Applied ?? throw new InvalidOperationException("The runner recorded no applied operation.");
     }
 
@@ -38,8 +38,6 @@ public static class AppliedOperations
         }
 
         public void Apply(TOp operation) => _applied = true;
-
-        public IReadOnlyList<string> AttemptedTargets(TOp operation) => [];
     }
 
     private sealed class Recorder<TOp> : IEditVerifier<TOp>

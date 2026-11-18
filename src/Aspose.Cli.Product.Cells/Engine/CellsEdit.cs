@@ -45,7 +45,7 @@ internal static class CellsEdit
         string activeSheet = Sheets.Resolve(workbook, sheetName: null).Name;
         var model = new CellsEditModel(session.Budgets, workbook, request.OpSecrets, operationInputs, importSources, protection, loaded.ReadAsWritten);
         AppliedBatch batchOutcome = BoundedOperationRunner.Run(
-            CellsOp.Catalog, batch.Ops, request.Options.BestEffort, session.Budgets.Deadline, model);
+            CellsOp.Catalog, batch.Ops, session.Budgets.Deadline, model);
         IReadOnlyList<BoundedOperationOutcome> applied = batchOutcome.Outcomes;
         bool defaultedToActiveSheet = model.DefaultedToActiveSheet;
         IReadOnlyList<Cell> formulaAnchors = model.FormulaAnchors;
@@ -61,8 +61,7 @@ internal static class CellsEdit
         if (!request.Options.DryRun)
         {
             // A batch that chose the active sheet keeps it; any other keeps the input's.
-            string[] activating = [.. batch.Ops.OfType<SetActiveSheetOp>().Select(static op => op.Id!)];
-            if (!applied.Any(outcome => outcome.Status == OpStatuses.Ok && activating.Contains(outcome.Id)))
+            if (!batch.Ops.OfType<SetActiveSheetOp>().Any())
             {
                 loaded.RestoreActiveSheet(savePlan);
             }

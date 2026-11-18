@@ -365,42 +365,21 @@ public sealed partial class WordsContinuedPageNumbersTests : IClassFixture<Words
     }
 
     /// <summary>
-    /// Under --best-effort, a set_page_numbers refused for a DATE field beside the number leaves
-    /// --verify nothing to read back for it: the number stays in the footer, and no
-    /// PAGE_NUMBERS_MISMATCH says it is still there. One section, so this runs without a license too.
+    /// A set_page_numbers that would clear a DATE field beside the number is refused, and nothing
+    /// is written. One section, so this runs without a license too.
     /// </summary>
     [Fact]
-    public void ARefusedMove_LeavesNothingToReadBack()
+    public void AMoveThatWouldClearAnotherField_IsRefused()
     {
         File.WriteAllText(_workspace.File("continued.rtf"), @"{\rtf1\ansi{\footer\pard " + NumberAndDate + @"\par}\pard Body.\par}");
 
-        CliResult edited = Edit("""{"op":"set_page_numbers","location":"header"}""", "--best-effort");
+        CliResult edited = Edit("""{"op":"set_page_numbers","location":"header"}""");
 
-        Assert.True(edited.ExitCode == 8, edited.StdErr + edited.StdOut);
-        JsonNode result = JsonNode.Parse(edited.StdOut)!;
-        Assert.Equal("failed", result["applied"]![0]!["status"]!.GetValue<string>());
-        Assert.DoesNotContain(result["verification"]!["issues"]!.AsArray(), static issue => issue!["code"]!.GetValue<string>() == "PAGE_NUMBERS_MISMATCH");
-        Assert.Equal("footer", Sections("numbered.docx")[0]["pageNumbers"]!["location"]!.GetValue<string>());
-    }
-
-    /// <summary>
-    /// Under --best-effort, the same refusal for section 3, which continues section 1's footer,
-    /// changes nothing: section 3 gains no header or footer of its own and still continues, and no
-    /// PAGE_NUMBERS_MISMATCH is read back for it.
-    /// </summary>
-    [Fact]
-    public void ARefusedMove_LeavesTheSectionContinuing()
-    {
-        TestLicense.Require(Continuation);
-        File.WriteAllText(_workspace.File("continued.rtf"), Continued("footer", NumberAndDate));
-
-        CliResult edited = Edit("""{"op":"set_page_numbers","section":3,"location":"header"}""", "--best-effort");
-
-        Assert.True(edited.ExitCode == 8, edited.StdErr + edited.StdOut);
-        JsonNode result = JsonNode.Parse(edited.StdOut)!;
-        Assert.Equal("failed", result["applied"]![0]!["status"]!.GetValue<string>());
-        Assert.DoesNotContain(result["verification"]!["issues"]!.AsArray(), static issue => issue!["code"]!.GetValue<string>() == "PAGE_NUMBERS_MISMATCH");
-        Assert.Empty(Sections("numbered.docx")[2]["headersFooters"]!.AsArray());
+        Assert.True(edited.ExitCode == 4, edited.StdErr + edited.StdOut);
+        JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("op-0001", error["details"]!["id"]!.GetValue<string>());
+        Assert.False(File.Exists(_workspace.File("numbered.docx")));
     }
 
     // A page number and a DATE field in one paragraph, which a move refuses to clear.

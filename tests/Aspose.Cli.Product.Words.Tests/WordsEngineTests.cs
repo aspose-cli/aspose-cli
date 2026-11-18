@@ -129,15 +129,13 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
     /// <summary>
     /// An address that does not resolve fails its own operation, named by id and op, when the
-    /// batch reaches it: an atomic batch stops there and a best-effort batch keeps the others.
+    /// batch reaches it, and the batch stops there.
     /// </summary>
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void AnAddressThatDoesNotResolve_FailsOnlyItsOwnOperation(bool bestEffort)
+    [Fact]
+    public void AnAddressThatDoesNotResolve_FailsItsOwnOperation()
     {
         string input = _fixture.CreateReport();
-        string output = _fixture.Temp.File($"unresolved-{bestEffort}.docx");
+        string output = _fixture.Temp.File("unresolved.docx");
         WordsEditResult Run() => WordsEdit.Run(_fixture.Session, new WordsEditRequest
         {
             Input = input,
@@ -151,27 +149,14 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                 ],
             },
             Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = bestEffort },
         });
 
-        if (!bestEffort)
-        {
-            CliException error = Assert.Throws<CliException>(Run);
-            Assert.Equal(WordsDiagnostics.BlockNotFound, error.Code);
-            Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
-            Assert.Equal("delete_blocks", error.Details["op"]!.GetValue<string>());
-            Assert.StartsWith("Operation op-0002 (delete_blocks) failed: ", error.Message, StringComparison.Ordinal);
-            Assert.False(File.Exists(output));
-            return;
-        }
-
-        WordsEditResult result = Run();
-        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed, OpStatuses.Ok], result.Applied.Select(static applied => applied.Status));
-        ErrorPayload failure = result.Applied[1].Error!;
-        Assert.Equal(WordsDiagnostics.BlockNotFound.Name, failure.Code);
-        Assert.Equal("op-0002", failure.Details!["id"]!.GetValue<string>());
-        Assert.Equal("delete_blocks", failure.Details["op"]!.GetValue<string>());
-        Assert.Contains("Kept", new Document(output).GetText(), StringComparison.Ordinal);
+        CliException error = Assert.Throws<CliException>(Run);
+        Assert.Equal(WordsDiagnostics.BlockNotFound, error.Code);
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
+        Assert.Equal("delete_blocks", error.Details["op"]!.GetValue<string>());
+        Assert.StartsWith("Operation op-0002 (delete_blocks) failed: ", error.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
     }
 
     [Fact]
@@ -1168,7 +1153,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
-    public void SetText_RejectedForATableTargetChangesNothing()
+    public void SetText_IsRejectedForATableTarget()
     {
         string input = _fixture.Temp.File("set-text-mixed.docx");
         var document = new Document();
@@ -1182,7 +1167,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         document.Save(input);
         string output = _fixture.Temp.File("set-text-mixed.out.docx");
 
-        WordsEditResult result = WordsEdit.Run(_fixture.Session, new WordsEditRequest
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(_fixture.Session, new WordsEditRequest
         {
             Input = input,
             Batch = new WordsOpsBatch
@@ -1190,13 +1175,10 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                 Ops = [new SetTextOp { Target = new WordsTarget { Blocks = "1-2" }, Text = "Replaced" }],
             },
             Output = TestOutput.At(output),
-            Options = new EditCommandOptions { BestEffort = true },
-        });
+        }));
 
-        Assert.Equal(OpStatuses.Failed, Assert.Single(result.Applied).Status);
-        string text = new Document(output).GetText();
-        Assert.Contains("Original paragraph", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("Replaced", text, StringComparison.Ordinal);
+        Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
+        Assert.False(File.Exists(output));
     }
 
     [Fact]

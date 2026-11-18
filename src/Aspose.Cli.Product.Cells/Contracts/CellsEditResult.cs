@@ -4,10 +4,8 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>
 /// Result of <c>aspose-cli cells edit</c>. Batches are
-/// atomic by default: the result exists only when every op applied (or on a dry
-/// run). With <c>--best-effort</c> the batch is partial — failing ops
-/// are recorded with <c>status: failed</c> and an error, the rest still apply,
-/// and the command exits 8. A resource failure of the invocation aborts publication.
+/// atomic: the result exists only when every op applied (or on a dry
+/// run). A resource failure of the invocation aborts publication.
 /// Verification describes the staged candidate and the evidence published with it.
 /// </summary>
 public sealed record CellsEditResult() : EngineResultEnvelope("edit-result"), IPartialOutcome
@@ -45,28 +43,9 @@ public sealed record CellsEditResult() : EngineResultEnvelope("edit-result"), IP
     /// </summary>
     public CellsEditVerification? Verification { get; init; }
 
-    /// <summary>Whether any op failed (best-effort mode). Not serialized.</summary>
+    /// <summary>Whether the read-back found a difference. Not serialized.</summary>
     [JsonIgnore]
-    public bool HasFailures
-    {
-        get
-        {
-            if (Verification is { Ok: false })
-            {
-                return true;
-            }
-
-            foreach (BoundedOperationOutcome op in Applied)
-            {
-                if (op.Status == OpStatuses.Failed)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
+    public bool HasFailures => Verification is { Ok: false };
 }
 
 /// <summary>Post-edit evidence produced by <c>cells edit --verify</c>.</summary>

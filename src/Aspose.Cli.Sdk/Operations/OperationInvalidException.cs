@@ -5,8 +5,7 @@ namespace Aspose.Cli.Sdk.Operations;
 /// <summary>
 /// Rejects one operation before it changes anything. Validators and handlers throw it
 /// without knowing the operation's position; the pipeline reports it as <c>OPS_INVALID</c>
-/// with the operation's id and name and the reason <c>invalid-value</c>, and a best-effort
-/// batch continues past it.
+/// with the operation's id and name and the reason <c>invalid-value</c>.
 /// </summary>
 public sealed class OperationInvalidException : Exception
 {

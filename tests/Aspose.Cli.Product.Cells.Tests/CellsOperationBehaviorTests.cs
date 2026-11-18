@@ -375,36 +375,11 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void BestEffort_ARejectedPivotLeavesNoPivotBehind()
-    {
-        string source = _fixture.CreateSalesWorkbook("pivot-rollback.xlsx");
-        CellsEditResult result = CellsEdit.Run(_fixture.Session,
-            new CellsEditRequest
-            {
-                Input = source,
-                Batch = Parse("""
-                { "ops": [
-                  { "op": "insert_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "rows": ["Region"], "values": [{ "field": "Ghost" }] },
-                  { "op": "set_values", "sheet": "Second", "range": "A2", "values": [["after"]] }
-                ] }
-                """),
-                Output = TestOutput.At(_fixture.Temp.File("pivot-rollback.out.xlsx"), overwrite: true),
-                Options = new EditCommandOptions { BestEffort = true },
-            });
-
-        Assert.Equal([OpStatuses.Failed, OpStatuses.Ok], result.Applied.Select(static outcome => outcome.Status));
-        using var workbook = new Workbook(result.Output!.Path);
-        Worksheet second = workbook.Worksheets["Second"];
-        Assert.Empty(second.PivotTables);
-        Assert.Equal(string.Empty, second.Cells["D1"].StringValue);
-        Assert.Equal("after", second.Cells["A2"].StringValue);
-    }
-
-    [Fact]
-    public void BestEffort_AxisTitlesOnAnExistingPieChangeNothing()
+    public void AxisTitlesOnAnExistingPie_AreRefused()
     {
         string source = _fixture.CreateSalesWorkbook("pie.xlsx");
-        CellsEditResult result = CellsEdit.Run(_fixture.Session,
+        string output = _fixture.Temp.File("pie.out.xlsx");
+        CliException error = Assert.Throws<CliException>(() => CellsEdit.Run(_fixture.Session,
             new CellsEditRequest
             {
                 Input = source,
@@ -414,13 +389,12 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                   { "op": "set_chart", "sheet": "Data", "index": 1, "title": "Changed", "axisTitles": { "value": "USD" } }
                 ] }
                 """),
-                Output = TestOutput.At(_fixture.Temp.File("pie.out.xlsx"), overwrite: true),
-                Options = new EditCommandOptions { BestEffort = true },
-            });
+                Output = TestOutput.At(output, overwrite: true),
+            }));
 
-        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], result.Applied.Select(static outcome => outcome.Status));
-        using var workbook = new Workbook(result.Output!.Path);
-        Assert.Equal("Share", workbook.Worksheets["Data"].Charts[0].Title.Text);
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
+        Assert.False(File.Exists(output));
     }
 
     [Theory]

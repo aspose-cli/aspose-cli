@@ -5002,7 +5002,6 @@ read-only | words read
 read-only | words search
 same-name-option | --author
 same-name-option | --backup
-same-name-option | --best-effort
 same-name-option | --bom
 same-name-option | --by
 same-name-option | --case-sensitive
@@ -5718,7 +5717,6 @@ unknown-option | cells create --encrypt-stdin as --ecnrypt-stdin
 unknown-option | cells create --overwrite as --oevrwrite
 unknown-option | cells create --sheet-names as --sehet-names
 unknown-option | cells edit --backup as --bcakup
-unknown-option | cells edit --best-effort as --bset-effort
 unknown-option | cells edit --bom as --bomm
 unknown-option | cells edit --dry-run as --dyr-run
 unknown-option | cells edit --encrypt as --ecnrypt
@@ -5799,7 +5797,6 @@ unknown-option | pdf create --margins as --mragins
 unknown-option | pdf create --overwrite as --oevrwrite
 unknown-option | pdf create --page-size as --pgae-size
 unknown-option | pdf edit --backup as --bcakup
-unknown-option | pdf edit --best-effort as --bset-effort
 unknown-option | pdf edit --dry-run as --dyr-run
 unknown-option | pdf edit --encrypt as --ecnrypt
 unknown-option | pdf edit --encrypt-env as --ecnrypt-env
@@ -5926,7 +5923,6 @@ unknown-option | slides create --overwrite as --oevrwrite
 unknown-option | slides create --slide-size as --silde-size
 unknown-option | slides create --template as --tmeplate
 unknown-option | slides edit --backup as --bcakup
-unknown-option | slides edit --best-effort as --bset-effort
 unknown-option | slides edit --dry-run as --dyr-run
 unknown-option | slides edit --encrypt as --ecnrypt
 unknown-option | slides edit --encrypt-env as --ecnrypt-env
@@ -6018,7 +6014,6 @@ unknown-option | words create --template as --tmeplate
 unknown-option | words create --title as --titlee
 unknown-option | words edit --author as --atuhor
 unknown-option | words edit --backup as --bcakup
-unknown-option | words edit --best-effort as --bset-effort
 unknown-option | words edit --dry-run as --dyr-run
 unknown-option | words edit --encrypt as --ecnrypt
 unknown-option | words edit --encrypt-env as --ecnrypt-env

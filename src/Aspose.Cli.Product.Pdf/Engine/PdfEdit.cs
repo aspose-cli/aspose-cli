@@ -50,7 +50,7 @@ internal static class PdfEdit
             session.Loader, operationInputs, loaded.Document, batch.Ops, request.Password, request.EncryptPassword is not null, request.OpSecrets, links);
         PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document, model.PageIdentities) : null;
         AppliedBatch applied = BoundedOperationRunner.Run(
-            PdfOp.Catalog, batch.Ops, request.Options.BestEffort, deadline: null, model, verifier, PdfSnapshots.PageUnit);
+            PdfOp.Catalog, batch.Ops, deadline: null, model, verifier, PdfSnapshots.PageUnit);
         // PDF-ENCRYPTED-INFO-TEXT: document information beyond Latin-1 set in this batch survives
         // only an encryption applied to a reopened copy.
         EncryptDocumentOp? encryptCopy = batch.Ops.Any(static op => op is SetPropertiesOp)
@@ -222,11 +222,10 @@ internal static class PdfEdit
     /// information leaves them in the output; its targets leave them out, and this says why they
     /// remain.
     /// </summary>
-    private static Warning? MetadataRewritten(IReadOnlyList<PdfOp> ops, IReadOnlyList<BoundedOperationOutcome> outcomes)
+    private static Warning? MetadataRewritten(IReadOnlyList<PdfOp> ops)
     {
-        HashSet<string> applied = [.. outcomes.Where(static outcome => outcome.Status == OpStatuses.Ok).Select(static outcome => outcome.Id)];
         string[] ids = [.. ops
-            .Where(op => op.Id is { } id && applied.Contains(id) && op switch
+            .Where(static op => op switch
             {
                 ClearPropertiesOp remove => remove.DocumentInfo,
                 _ => false,
@@ -308,7 +307,7 @@ internal static class PdfEdit
     {
         List<Warning> warnings = BuildWarnings(applied, model.TextMoved, model.TextBeside);
         warnings.AddRange(model.NumberedTwice.Select(static numbered => NumberedTwice(numbered.Id, numbered.Pages)));
-        if (MetadataRewritten(batch.Ops, applied.Outcomes) is { } rewritten)
+        if (MetadataRewritten(batch.Ops) is { } rewritten)
         {
             warnings.Add(rewritten);
         }
@@ -383,7 +382,7 @@ internal static class PdfEdit
         }
 
         string[] applied = outcomes
-            .Where(static item => item.Status == OpStatuses.Ok && item.ItemsAffected > 0)
+            .Where(static item => item.ItemsAffected > 0)
             .Select(static item => item.Op)
             .ToArray();
         string[] changes = applied

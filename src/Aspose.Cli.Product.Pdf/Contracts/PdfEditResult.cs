@@ -41,10 +41,9 @@ public sealed record PdfEditResult() : EngineResultEnvelope("edit-result"), IPar
     /// </summary>
     public PdfEditVerification? Verification { get; init; }
 
-    /// <summary>Whether an operation failed or the read-back found a difference.</summary>
+    /// <summary>Whether the read-back found a difference.</summary>
     [JsonIgnore]
-    public bool HasFailures => Applied.Any(static item => item.Status == OpStatuses.Failed)
-        || Verification is { Ok: false };
+    public bool HasFailures => Verification is { Ok: false };
 }
 
 /// <summary>

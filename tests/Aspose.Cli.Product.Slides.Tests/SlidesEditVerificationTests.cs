@@ -286,7 +286,6 @@ public sealed class SlidesEditVerificationTests
                 ],
             },
             Output = TestOutput.At(fixture.File("sections.out.pptx")),
-            Options = new EditCommandOptions { BestEffort = true },
         });
 
         Assert.Equal(["section/%20Q3 %2F plan 100%25%20"], result.Applied[0].Targets);

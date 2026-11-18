@@ -1,4 +1,3 @@
-using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
@@ -117,20 +116,12 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
     // ----- sheets: the sheet as a whole, for an add or rename the one that exists after it ----
 
     public CellsOpTraits Apply(InsertSheetOp operation) =>
-        Diffed(operation.Name, range: null) with
-        {
-            Protection = CellsProtectionScope.Structure,
-            WorkbookAddress = CellsAddresses.OfSheet("sheet", operation.Name),
-        };
+        Diffed(operation.Name, range: null) with { Protection = CellsProtectionScope.Structure };
 
     // An imported sheet is named after its source sheet unless it is given a name; the source's
     // first sheet is known only once the source is open.
     public CellsOpTraits Apply(ImportSheetOp operation) =>
-        Diffed(operation.Name ?? operation.SourceSheet, range: null) with
-        {
-            Protection = CellsProtectionScope.Structure,
-            WorkbookAddress = CellsAddresses.OfSheet("sheet", operation.Name ?? operation.SourceSheet ?? Path.GetFileNameWithoutExtension(operation.Path)),
-        };
+        Diffed(operation.Name ?? operation.SourceSheet, range: null) with { Protection = CellsProtectionScope.Structure };
 
     // A rename writes no cell.
     public CellsOpTraits Apply(RenameSheetOp operation) => Diffed(operation.Name, range: null) with { Protection = CellsProtectionScope.Structure, WritesCells = false };
@@ -184,17 +175,17 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
 
     // ----- the workbook: no visible spot to focus ---------------------------------------------
 
-    public CellsOpTraits Apply(DefineNameOp operation) => Workbook(CellsAddresses.Name(operation.Name), CellsProtectionScope.None);
+    public CellsOpTraits Apply(DefineNameOp operation) => Workbook(CellsProtectionScope.None);
 
-    public CellsOpTraits Apply(DeleteNameOp operation) => Workbook(CellsAddresses.Name(operation.Name), CellsProtectionScope.None);
+    public CellsOpTraits Apply(DeleteNameOp operation) => Workbook(CellsProtectionScope.None);
 
     // set_default_font is workbook-scoped.
-    public CellsOpTraits Apply(SetDefaultFontOp operation) => Workbook(CellsAddresses.DefaultFont, CellsProtectionScope.None);
+    public CellsOpTraits Apply(SetDefaultFontOp operation) => Workbook(CellsProtectionScope.None);
 
     // Protecting the structure again replaces its protection.
-    public CellsOpTraits Apply(ProtectWorkbookOp operation) => Workbook(CellsAddresses.WorkbookProtection, CellsProtectionScope.Structure);
+    public CellsOpTraits Apply(ProtectWorkbookOp operation) => Workbook(CellsProtectionScope.Structure);
 
-    public CellsOpTraits Apply(UnprotectWorkbookOp operation) => Workbook(CellsAddresses.WorkbookProtection, CellsProtectionScope.None);
+    public CellsOpTraits Apply(UnprotectWorkbookOp operation) => Workbook(CellsProtectionScope.None);
 
     private static CellsOpTraits Diffed(string? sheet, string? range) => Diffed(new CellsEditTarget(sheet, range));
 
@@ -208,8 +199,8 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
     private static CellsOpTraits NamedSheet(CellsSheetOp operation) =>
         new(operation.Sheet is null ? null : new CellsEditTarget(operation.Sheet, null), Diffed: false, CellsProtectionScope.Sheet);
 
-    private static CellsOpTraits Workbook(string address, CellsProtectionScope protection) =>
-        new(Target: null, Diffed: false, protection) { WorkbookAddress = address };
+    private static CellsOpTraits Workbook(CellsProtectionScope protection) =>
+        new(Target: null, Diffed: false, protection);
 
     /// <summary>
     /// The destination of a copy: its anchor, or the source range's size at the anchor when
@@ -234,16 +225,14 @@ internal sealed class CellsOpFootprints : ICellsOpHandler<CellsOpTraits>
         }
         catch (CliException)
         {
-            // Best effort: an unparsable destination (conceivable under
-            // --best-effort) still names the op's sheet.
+            // An unparsable destination still names the op's sheet.
             return new CellsEditTarget(sheet, null);
         }
     }
 
     /// <summary>
     /// The range <paramref name="values"/> fill from the top-left cell of <paramref name="range"/>,
-    /// clipped to the grid; the range as given when it is unparsable or the matrix is empty, which
-    /// only a failed operation under --best-effort can carry.
+    /// clipped to the grid; the range as given when it is unparsable or the matrix is empty.
     /// </summary>
     private static string MatrixRange(string range, IReadOnlyList<IReadOnlyList<object?>> values)
     {
@@ -296,9 +285,6 @@ internal sealed record CellsOpTraits(CellsEditTarget? Target, bool Diffed, Cells
 {
     /// <summary>The range a copy or import reads, charged against the cells budget instead of its target.</summary>
     public string? Source { get; init; }
-
-    /// <summary>What an operation that names no sheet changes in the workbook, as an address.</summary>
-    public string? WorkbookAddress { get; init; }
 
     /// <summary>Whether the operation changes only the contents of its cells, which Excel allows in unlocked cells of a protected sheet.</summary>
     public bool WritesContents { get; init; }

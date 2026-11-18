@@ -102,7 +102,7 @@ public sealed class CliException : Exception
     /// <summary>The process exit code this error maps to.</summary>
     public ExitCode ExitCode => Code.ExitCode;
 
-    /// <summary>Invocation-wide failures must never be converted into best-effort operation outcomes.</summary>
+    /// <summary>Whether the failure concerns the whole invocation, so an operation that raises it is not its cause.</summary>
     public bool IsInvocationFailure => Code == ErrorCodes.OperationTimeout
         || Code == ErrorCodes.InputBudgetExceeded || Code == ErrorCodes.FileTooLarge
         || Code == ErrorCodes.OutputBudgetExceeded;

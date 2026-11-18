@@ -42,7 +42,7 @@ public abstract record BoundedEditRequest<TBatch>
     /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
     public required ResolvedOutput Output { get; init; }
 
-    /// <summary>Shared stale-input, dry-run and best-effort semantics.</summary>
+    /// <summary>Shared stale-input and dry-run semantics.</summary>
     public EditCommandOptions Options { get; init; } = new();
 
     /// <summary>Whether the staged output is read back against the effect of each operation (<c>--verify</c>).</summary>

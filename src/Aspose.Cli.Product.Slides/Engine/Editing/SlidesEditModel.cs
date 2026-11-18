@@ -105,35 +105,6 @@ internal sealed class SlidesEditModel : IOperationModel<SlidesOp>
         }
     }
 
-    /// <summary>
-    /// What a failed operation addressed: its shape, its slide or slides as resolved when it
-    /// ran, the slides it names, or the part of the presentation it changes.
-    /// </summary>
-    public IReadOnlyList<string> AttemptedTargets(SlidesOp operation)
-    {
-        SlidesOpTarget named = SlidesOpTargets.Of(operation);
-        if (!named.ByResolution)
-        {
-            return named.Written;
-        }
-
-        SlidesMutationHandlers.ResolvedSlidesOp target = Target(operation);
-        int Number(ISlide slide) => _presentation.Slides.IndexOf(slide) + 1;
-        if (target.Slide is { } slide && _presentation.Slides.Contains(slide))
-        {
-            return target.ShapeId is long shapeId
-                ? [SlidesStateProjection.ShapeAddress(Number(slide), shapeId)]
-                : [SlidesStateProjection.SlideAddress(Number(slide))];
-        }
-
-        if (target.Slides?.Where(_presentation.Slides.Contains).ToArray() is { Length: > 0 } slides)
-        {
-            return [.. slides.Select(item => SlidesStateProjection.SlideAddress(Number(item)))];
-        }
-
-        return named.Written;
-    }
-
     /// <summary>The slides in order, which number what the batch changed on each.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() =>
         new Dictionary<string, IReadOnlyList<object>>(StringComparer.Ordinal) { [SlidesStateProjection.SlideUnit] = [.. _presentation.Slides] };

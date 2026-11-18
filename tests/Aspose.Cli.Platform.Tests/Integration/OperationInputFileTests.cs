@@ -6,7 +6,7 @@ namespace Aspose.Cli.IntegrationTests;
 
 /// <summary>
 /// A file an operation reads that does not exist fails that operation, numbered as the runner
-/// numbers every failure, so <c>--best-effort</c> keeps the others.
+/// numbers every failure.
 /// </summary>
 public sealed class OperationInputFileTests : IDisposable
 {
@@ -47,18 +47,5 @@ public sealed class OperationInputFileTests : IDisposable
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("op-0002", error["details"]!["id"]!.GetValue<string>());
         Assert.Equal(_workspace.File("missing.png"), error["details"]!["path"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void AMissingImage_WithBestEffort_KeepsTheOtherOperations()
-    {
-        CliResult result = _workspace.Run("words", "edit", "a.docx", "--ops", "ops.json", "--out", "b.docx", "--best-effort", "--output-format", "json");
-
-        Assert.Equal(8, result.ExitCode);
-        JsonArray applied = JsonNode.Parse(result.StdOut)!["applied"]!.AsArray();
-        Assert.Equal("ok", applied[0]!["status"]!.GetValue<string>());
-        Assert.Equal("failed", applied[1]!["status"]!.GetValue<string>());
-        Assert.Equal("FILE_NOT_FOUND", applied[1]!["error"]!["code"]!.GetValue<string>());
-        Assert.True(File.Exists(_workspace.File("b.docx")));
     }
 }

@@ -126,7 +126,7 @@ public sealed record ProductCapabilities
 
 /// <summary>
 /// One command that applies a bounded operation document, and the operations it accepts.
-/// Every such command is atomic unless --best-effort is given and supports --dry-run.
+/// Every such command is atomic and supports --dry-run.
 /// </summary>
 public sealed record ProductOperationDescriptor
 {

@@ -45,8 +45,7 @@ public sealed record WordsEditResult() : EngineResultEnvelope("edit-result"), IP
 
     /// <inheritdoc />
     [JsonIgnore]
-    public bool HasFailures => Applied.Any(static item => item.Status == OpStatuses.Failed)
-        || Verification is { Ok: false };
+    public bool HasFailures => Verification is { Ok: false };
 }
 
 /// <summary>

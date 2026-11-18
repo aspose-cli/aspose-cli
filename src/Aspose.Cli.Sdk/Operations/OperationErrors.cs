@@ -112,8 +112,8 @@ internal static class OperationErrors
     }
 
     /// <summary>
-    /// An engine failure can leave the document half changed, so the batch stops in every mode
-    /// and publishes nothing; the message says so because best-effort otherwise continues.
+    /// An engine failure can leave the document half changed; the batch stops and publishes
+    /// nothing, and the message says so.
     /// </summary>
     internal static CliException EngineFailedAt(string id, string name, EngineOpException failure) => EngineErrors.EngineFailed(
         $"{Subject(id, name)} failed inside the document engine, so the batch stopped and nothing was written: {failure.Message}",

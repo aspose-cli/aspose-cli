@@ -68,10 +68,8 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.NotNull(data["fingerprint"]);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Edit_UnsupportedOperationPreservesTheEntireInput(bool bestEffort)
+    [Fact]
+    public void Edit_UnsupportedOperationPreservesTheEntireInput()
     {
         string input = _workspace.File("source.pdf");
         using (var document = new Document())
@@ -87,10 +85,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
             "pdf", "edit", "source.pdf", "--ops", operations,
             "--in-place", "--backup", "--output-format", "json",
         ];
-        if (bestEffort)
-        {
-            arguments.Add("--best-effort");
-        }
 
         CliResult result = _workspace.Run(arguments.ToArray());
 

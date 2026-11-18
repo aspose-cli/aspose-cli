@@ -60,9 +60,7 @@ internal sealed class OperationSchemaWriter
 
     /// <summary>How every bounded edit applies a document, stated after the vocabulary's own description.</summary>
     private const string BatchSemantics =
-        "Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. "
-        + "With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command "
-        + "exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing. "
+        "Operations apply in order. The batch is atomic: if any operation fails, no file is written. "
         + "The bare array of operations is accepted as the document with only its ops.";
 
     /// <summary>What every operation field's <c>x-readBack</c> means (see <see cref="ReadBackAttribute"/>).</summary>
