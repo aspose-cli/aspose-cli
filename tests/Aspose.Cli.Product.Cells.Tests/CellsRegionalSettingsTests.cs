@@ -23,11 +23,7 @@ public sealed partial class CellsRegionalSettingsTests : IDisposable
     /// An edit of B1 recalculates <c>TEXT</c>, <c>VALUE</c> and a concatenation of B1 as under
     /// en-US, and its verification passes: <c>cells read</c>, which calculates the workbook again
     /// as it loads it, reports what it reports under en-US, and the workbook saves the results
-    /// en-US calculates, for a program that shows them without calculating. With
-    /// <c>--timeout</c> the edit runs in a worker process that <c>TimeoutWorkerSupervisor</c>
-    /// starts from the same executable and <c>Main</c>, which pins the culture as this process
-    /// does; no case here starts that worker under German settings, since it starts with only the
-    /// environment variables the CLI lists, and the test's culture hook is not one of them.
+    /// en-US calculates, for a program that shows them without calculating.
     /// </summary>
     [Fact]
     public void EditUnderGermanRegionalSettings_RecalculatesAsUnderEnglish()

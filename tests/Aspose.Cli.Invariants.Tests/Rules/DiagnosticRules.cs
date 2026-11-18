@@ -31,8 +31,8 @@ internal static partial class ContractRules
     /// <summary>
     /// The exit code that C-R24's table gives the errors whose code name places them in one of its
     /// classes, first matching row first: usage and option values 2, the input file 3, licensing 7,
-    /// the output 5, an unsupported format or content (a render the engine fails) 6, a timeout or a
-    /// worker it could not stop 9, ops and targets 4. A code no row names may take any error exit
+    /// the output 5, an unsupported format or content (a render the engine fails) 6, a timeout 9,
+    /// ops and targets 4. A code no row names may take any error exit
     /// code but 8.
     /// </summary>
     private static readonly (string Subject, int ExitCode, Regex Names)[] NamedExitCodes =
@@ -43,7 +43,7 @@ internal static partial class ContractRules
         ("license errors", 7, new Regex("^(LICENSE|EVALUATION|EVAL)_[A-Z0-9_]+$")),
         ("output errors", 5, new Regex("^OUTPUT_[A-Z0-9_]+$")),
         ("unsupported format or content errors", 6, new Regex("^(FORMAT_[A-Z0-9_]+|[A-Z0-9_]+_UNSUPPORTED|RENDER_FAILED)$")),
-        ("timeouts", 9, new Regex("^([A-Z0-9_]+_TIMEOUT|WORKER_TERMINATION_FAILED)$")),
+        ("timeouts", 9, new Regex("^[A-Z0-9_]+_TIMEOUT$")),
         ("ops and target errors", 4, new Regex("^(OPS_INVALID|[A-Z0-9_]+_NOT_FOUND)$")),
     ];
 

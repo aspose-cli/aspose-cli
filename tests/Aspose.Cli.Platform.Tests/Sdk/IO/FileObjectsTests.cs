@@ -70,7 +70,7 @@ public sealed class FileObjectsTests : IDisposable
     [Fact]
     public void Output_TakesItsFactsFromThePublication_NotFromTheTarget()
     {
-        // A supervised worker hands its outputs to the parent, so the target may not exist yet.
+        // A result describes an output from its staged copy, so the target may not exist yet.
         var published = new PublishedFile(_temp.File("absent.png"), 3);
 
         OutputInfo output = FileObjects.Output(published, Plain, encrypted: false);

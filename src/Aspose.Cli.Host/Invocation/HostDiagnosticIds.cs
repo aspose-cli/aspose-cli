@@ -11,5 +11,4 @@ internal static class HostDiagnosticIds
     public const string ProcessUnhandled = "HOST-PROCESS-0001";
     public const string ReportingFailure = "HOST-PROCESS-0002";
     public const string BootstrapFailure = "HOST-PROCESS-0003";
-    public const string WorkerUnhandled = "HOST-WORKER-0001";
 }

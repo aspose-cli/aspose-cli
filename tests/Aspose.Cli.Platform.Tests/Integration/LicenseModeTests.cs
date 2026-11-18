@@ -18,20 +18,17 @@ public sealed class LicenseModeTests : IDisposable
 
     public void Dispose() => _workspace.Dispose();
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void EvaluationMode_ReadsNoSourceSoABrokenOneCannotFailIt(bool supervised)
+    [Fact]
+    public void EvaluationMode_ReadsNoSourceSoABrokenOneCannotFailIt()
     {
         ProjectLicense("<License>synthetic invalid fixture</License>"u8.ToArray());
-        string[] timeout = supervised ? ["--timeout", TestDeadline.CliTimeout] : [];
 
         CliResult configured = _workspace.Run(
-            ["words", "create", "configured.docx", "--from-markdown", "brief.md", "--output-format", "json", .. timeout]);
+            ["words", "create", "configured.docx", "--from-markdown", "brief.md", "--output-format", "json"]);
         Assert.Equal(7, configured.ExitCode);
         Assert.Equal("LICENSE_INVALID", Error(configured)["code"]!.GetValue<string>());
 
-        JsonNode requested = Create("requested.docx", timeout);
+        JsonNode requested = Create("requested.docx");
         Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
         Assert.Contains(requested["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE");
 
@@ -50,7 +47,7 @@ public sealed class LicenseModeTests : IDisposable
 
         JsonNode licensed = _workspace.Run(
             "words", "create", "licensed.docx", "--from-markdown", "brief.md", "--output-format", "json").Json();
-        JsonNode requested = Create("requested.docx", []);
+        JsonNode requested = Create("requested.docx");
 
         Assert.Null(licensed["license"]);
         Assert.DoesNotContain(
@@ -59,10 +56,10 @@ public sealed class LicenseModeTests : IDisposable
         Assert.Contains(requested["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE");
     }
 
-    private JsonNode Create(string output, string[] options)
+    private JsonNode Create(string output)
     {
         CliResult result = _workspace.Run(
-            ["words", "create", output, "--from-markdown", "brief.md", "--license-mode", "evaluation", "--output-format", "json", .. options]);
+            ["words", "create", output, "--from-markdown", "brief.md", "--license-mode", "evaluation", "--output-format", "json"]);
         Assert.True(result.ExitCode == 0, result.StdErr);
         JsonNode created = JsonNode.Parse(result.StdOut)!;
         // The disclosure says the evaluation was asked for, not that a license is missing.

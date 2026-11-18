@@ -181,7 +181,7 @@ public sealed class VerifiedResourceReadTests
     }
 
     [Fact]
-    public void CancellationAndExpiredDeadline_AreFailuresIncludingOnRejectedReferences()
+    public void Cancellation_IsAFailureIncludingOnRejectedReferences()
     {
         using var temp = new TempDirectory();
         using var cancellation = new CancellationTokenSource();
@@ -190,10 +190,6 @@ public sealed class VerifiedResourceReadTests
             temp.File("input.html"), new ResourceBudgetLedger(deadline));
         cancellation.Cancel();
         Assert.Throws<OperationCanceledException>(() => resources.TryRead("https://example.invalid", out _));
-        using var expired = OperationDeadline.FromAbsoluteTick(TimeSpan.FromSeconds(1), Environment.TickCount64 - 1);
-        using var timed = new LocalDocumentResourceLoader(temp.File("input.html"), new ResourceBudgetLedger(expired));
-        Assert.Equal(ErrorCodes.OperationTimeout,
-            Assert.Throws<CliException>(() => timed.TryRead("missing", out _)).Code);
     }
 
     [Fact]

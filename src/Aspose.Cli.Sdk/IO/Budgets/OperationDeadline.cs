@@ -56,9 +56,6 @@ public sealed class OperationDeadline : IDisposable
     /// <summary>The cancellation token linked to the deadline and caller cancellation.</summary>
     public CancellationToken Token { get; }
 
-    /// <summary>The absolute monotonic expiration tick used by supervised child processes.</summary>
-    public long? ExpiresAtTick => _expiresAtTick;
-
     /// <summary>The remaining budget at the instant this property is read.</summary>
     public TimeSpan? Remaining => _expiresAtTick is { } expires
         ? TimeSpan.FromMilliseconds(Math.Max(0, expires - Environment.TickCount64))
@@ -86,17 +83,6 @@ public sealed class OperationDeadline : IDisposable
             : null;
         return new OperationDeadline(budget, expires, cancellationToken);
     }
-
-    /// <summary>
-    /// Rehydrates a parent-created monotonic deadline in a supervised worker.
-    /// TickCount64 is system-boot relative and therefore shared by local
-    /// processes on the same machine.
-    /// </summary>
-    public static OperationDeadline FromAbsoluteTick(
-        TimeSpan originalBudget,
-        long expiresAtTick,
-        CancellationToken cancellationToken = default) =>
-        new(originalBudget, expiresAtTick, cancellationToken);
 
     /// <summary>Throws the stable timeout error when no budget remains.</summary>
     public void ThrowIfExpired(string phase)

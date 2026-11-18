@@ -408,9 +408,9 @@ internal static partial class ContractRules
 
     /// <summary>
     /// A command that completes with a result that fails its check exits 8: a PDF that is not
-    /// PDF/A (<c>pdf validate</c>). And Ctrl+C without <c>--timeout</c> cancels a
-    /// command with exit 130 and leaves no staged output behind; that case runs a helper process
-    /// with a console of its own, so it is slow.
+    /// PDF/A (<c>pdf validate</c>). And Ctrl+C cancels a command with exit 130 and leaves no
+    /// staged output behind; that case runs a helper process with a console of its own, so it is
+    /// slow.
     /// </summary>
     private static IEnumerable<InvariantCase> R24Run(CliCatalog catalog)
     {
@@ -442,29 +442,8 @@ internal static partial class ContractRules
                 }
                 return problems;
             });
-            // With --timeout a supervising parent cancels its worker on the first press; the second
-            // press, while that runs, ends the parent at once, as it does without --timeout.
-            Invocation timed = Invocation.For(create).Add("--timeout", "600");
-            timed.Files["source.md"] = invocation.Files["source.md"];
-            yield return Runs("C-R24", $"{create} --timeout interrupted by Ctrl+C twice", "words", slow: true, timed, session =>
-            {
-                (int exitCode, string[] left) = session.Interrupt(TimeSpan.FromSeconds(3), presses: 2);
-                var problems = new List<string>();
-                if (exitCode != StatusControlCExit)
-                {
-                    problems.Add($"exit {exitCode}, expected {StatusControlCExit} (ended by the second Ctrl+C)");
-                }
-                if (left.Length > 0)
-                {
-                    problems.Add($"left {string.Join(", ", left.Select(static entry => R24GeneratedId().Replace(entry, "<id>")))}");
-                }
-                return problems;
-            });
         }
     }
-
-    /// <summary>The exit code of a Windows process that Ctrl+C ended: <c>STATUS_CONTROL_C_EXIT</c>.</summary>
-    private const int StatusControlCExit = unchecked((int)0xC000013A);
 
     /// <summary>A generated name part, such as a staging directory's GUID.</summary>
     [GeneratedRegex("(?=[0-9a-f-]*[0-9])[0-9a-f][0-9a-f-]{14,}[0-9a-f]")]

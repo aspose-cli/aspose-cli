@@ -16,37 +16,23 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
                 $"Cannot commit a transaction in state {plan.Journal.State}.");
         }
 
-        if (plan.WorkerStagingOnly)
+        Prepare();
+        RecordPublicationIntent();
+        foreach (PublicationJournalEntry entry in plan.Journal.Entries)
         {
-            plan.ResourceBudgets?.Deadline.ThrowIfExpired("worker-handoff-start");
-            beforeCommit?.Invoke();
-            PublishToWorker();
-            plan.Journal.State = PublicationTransactionState.Committed;
-            return plan.Journal.Entries.Select(static entry => entry.Size).ToArray();
-        }
-        else
-        {
-            Prepare();
-            RecordPublicationIntent();
-            foreach (PublicationJournalEntry entry in plan.Journal.Entries)
-            {
-                Publish(entry);
-            }
+            Publish(entry);
         }
 
         plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-commit");
         beforeCommit?.Invoke();
         plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-commit-record");
         plan.Transition(PublicationTransactionState.Committed);
-        if (!plan.WorkerStagingOnly) { plan.ResourceBudgets?.MarkOutputsCommitted(); }
+        plan.ResourceBudgets?.MarkOutputsCommitted();
         return plan.Journal.Entries
             .OrderBy(static entry => entry.Index)
             .Select(static entry => entry.Size)
             .ToArray();
     }
-
-    private void PublishToWorker() => plan.Worker!.RegisterBatch(
-        plan.Journal.Entries, plan.OutputDirectories, plan.ResourceBudgets!.Deadline);
 
     /// <summary>
     /// Writes one write-ahead record naming every target as possibly published before the

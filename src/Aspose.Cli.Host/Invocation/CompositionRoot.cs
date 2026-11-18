@@ -109,7 +109,7 @@ internal static class CompositionRoot
         ProductCatalog catalog,
         GlobalValues globals,
         OperationDeadline deadline,
-        WorkerOutputSession? outputs = null, long? outputBytesLimit = null)
+        long? outputBytesLimit = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         var limits = new Dictionary<string, long>(StringComparer.Ordinal)
@@ -140,6 +140,6 @@ internal static class CompositionRoot
                     $"Resource budget '{budget.Kind}' is declared more than once.");
             }
         }
-        return new ResourceBudgetLedger(deadline, limits, outputs);
+        return new ResourceBudgetLedger(deadline, limits);
     }
 }

@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Extraction;
 using Aspose.Cli.Sdk.IO.Files;
@@ -298,48 +297,6 @@ public sealed class PublicationBoundaryTests
     }
 
     [Fact]
-    public void UnfinishedWorkerCannotPublishEvenAfterAnOutputSetWasStaged()
-    {
-        using var temp = new TempDirectory();
-        string root = WorkerOutputSession.CreateRoot();
-        try
-        {
-            string manifest = Path.Combine(root, WorkerOutputSession.ManifestName);
-            var worker = new WorkerOutputSession(root, manifest);
-            using var deadline = OperationDeadline.Start(null);
-            var writer = new SafeFileWriter(new ResourceBudgetLedger(deadline, outputSession: worker));
-            writer.Write(temp.File("output.txt"), false, file => File.WriteAllText(file, "candidate"));
-            Assert.Throws<CliException>(() => WorkerOutputPublisher.Publish(manifest, TestBudgets.Create()));
-            Assert.False(File.Exists(temp.File("output.txt")));
-        }
-        finally { UserStorage.TryDeleteTree(root); }
-    }
-
-    [Fact]
-    public void FailedWorkerBatchDoesNotRetainAnEarlierEntry()
-    {
-        using var temp = new TempDirectory();
-        string root = WorkerOutputSession.CreateRoot();
-        try
-        {
-            string manifest = Path.Combine(root, WorkerOutputSession.ManifestName);
-            var worker = new WorkerOutputSession(root, manifest);
-            using var deadline = OperationDeadline.Start(null);
-            var writer = new SafeFileWriter(new ResourceBudgetLedger(deadline, outputSession: worker));
-            using var outputs = new AtomicOutputSetWriter(writer, temp.Path, "failed-batch");
-            outputs.Stage(temp.File("first.txt"), false, file => File.WriteAllText(file, "first"));
-            StagedOutput changed = outputs.Stage(temp.File("second.txt"), false, file => File.WriteAllText(file, "second"));
-            File.WriteAllText(changed.Path, "external replacement");
-            Assert.Throws<CliException>(() => outputs.Commit());
-            worker.SealForPublication();
-            Assert.Empty(WorkerOutputPublisher.Publish(manifest, TestBudgets.Create()));
-            Assert.False(File.Exists(temp.File("first.txt")));
-            Assert.False(File.Exists(temp.File("second.txt")));
-        }
-        finally { UserStorage.TryDeleteTree(root); }
-    }
-
-    [Fact]
     public void OutputRootIncludesSiblingEvidenceDirectoriesWithoutCreatingThem()
     {
         using var temp = new TempDirectory();
@@ -379,13 +336,13 @@ public sealed class PublicationBoundaryTests
     public void ExistingDirectoryDoesNotConsumeTheNewDirectoryBudget()
     {
         using var temp = new TempDirectory();
-        var directories = new OwnedOutputDirectories(deferred: true);
+        var directories = new OwnedOutputDirectories();
         directories.Ensure(temp.Path);
         for (int index = 0; index < PublicationLimits.MaximumDirectories; index++)
         { directories.Ensure(temp.File($"directory-{index}")); }
         Assert.Equal(PublicationLimits.MaximumDirectories, directories.Declared.Count());
         Assert.Throws<CliException>(() => directories.Ensure(temp.File("overflow")));
-        Assert.Empty(Directory.GetDirectories(temp.Path));
+        Assert.False(Directory.Exists(temp.File("overflow")));
     }
 
     [Fact]
@@ -395,7 +352,7 @@ public sealed class PublicationBoundaryTests
         string first = temp.File(new string('a', 90));
         string target = Path.Combine(first, new string('b', 90), new string('c', 90));
         Assert.True(target.Length > 260);
-        var directories = new OwnedOutputDirectories(deferred: false);
+        var directories = new OwnedOutputDirectories();
         directories.Ensure(target);
         Assert.True(Directory.Exists(target));
         directories.CleanUp();
@@ -409,7 +366,7 @@ public sealed class PublicationBoundaryTests
         using var temp = new TempDirectory();
         string existing = temp.File("existing");
         Directory.CreateDirectory(existing);
-        var directories = new OwnedOutputDirectories(deferred: false);
+        var directories = new OwnedOutputDirectories();
         directories.Ensure(existing);
         directories.Ensure(temp.File(Path.Combine("created", "nested")));
         string populated = temp.File("populated");

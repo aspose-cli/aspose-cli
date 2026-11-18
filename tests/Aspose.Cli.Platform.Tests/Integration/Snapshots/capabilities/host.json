@@ -1332,9 +1332,6 @@
             "phase": {
               "description": "The stage of processing that failed."
             },
-            "pid": {
-              "description": "The id of the process the error is about."
-            },
             "problems": {
               "description": "The problems the engine reported."
             },
@@ -1343,9 +1340,6 @@
             },
             "profile": {
               "description": "The conformance profile the error is about."
-            },
-            "quiescenceConfirmed": {
-              "description": "Whether the stopped worker was confirmed to have ended."
             },
             "range": {
               "description": "The range or selection as the caller wrote it."
@@ -2310,21 +2304,6 @@
           "description": "How results print: the contract envelope, indented or on one line. Default: json."
         },
         {
-          "name": "--timeout",
-          "aliases": [],
-          "type": "integer",
-          "minimumArity": 1,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": true,
-          "hidden": false,
-          "hasDefault": false,
-          "allowedValues": [],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered."
-        },
-        {
           "name": "--verbose",
           "aliases": [
             "-v"
@@ -3220,14 +3199,6 @@
       "severity": "error",
       "exitCode": 2,
       "category": "usage",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "WORKER_TERMINATION_FAILED",
-      "owner": "common",
-      "severity": "error",
-      "exitCode": 9,
-      "category": "timeout",
       "detailsSchemaId": "v2/common/diagnostic-details"
     }
   ]

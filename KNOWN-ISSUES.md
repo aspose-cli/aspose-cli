@@ -773,19 +773,12 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 - **CLI behavior:** a command that reads the text of such a page ends the same way, and so does
   every command whose evaluation-notice check reaches it: licensed or not, that check reads the
   text of up to four pages of every document a PDF command writes or renders. `pdf read`,
-  `pdf edit`, `pdf convert` and `pdf render` are among them. Without `--timeout` the
-  command runs in the CLI's own process: it exits with `0xC00000FD`, with nothing on stdout and
-  the runtime's `Stack overflow.` and stack trace on stderr. An output published before the check
-  stays, as `pdf render`'s image does; one only staged, as the outputs of `pdf edit` and
-  `pdf convert` are, is not published, but its `.aspose-publication-*` staging stays
-  in the output's directory until the next command that writes there removes it. With
-  `--timeout`, the command runs in a worker process:
-  a worker that ends with an exit code the CLI does not use has its output withheld and its
-  staging removed, and the command reports `INTERNAL_ERROR` (exit 1) with the worker's exit code
-  in its message.
-- **Workaround:** pass `--timeout` so that such a document fails with `INTERNAL_ERROR` and leaves
-  no output; its text cannot be read until the application that made it saves it without the
-  form that draws itself.
+  `pdf edit`, `pdf convert` and `pdf render` are among them. The command exits with
+  `0xC00000FD`, with nothing on stdout and the runtime's `Stack overflow.` and stack trace on
+  stderr. An output published before the check stays, as `pdf render`'s image does; one only
+  staged, as the outputs of `pdf edit` and `pdf convert` are, is not published, but its
+  `.aspose-publication-*` staging stays in the output's directory until the next command that
+  writes there removes it.
 
 ### PDF-MD-FIELD-REPEATS
 
@@ -1096,8 +1089,7 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   before `INPUT_BUDGET_EXCEEDED` refuses it, and a 500 KB XLSX of 8 million cells reaches 0.76 GB
   and loads.
 - **CLI behavior:** `--max-input-bytes` admits a document by the size of its file, which such a
-  document passes. A command has no deadline unless it is given `--timeout`. `--timeout` stops the
-  worker by time only and sets no memory limit.
-- **Workaround:** on an untrusted document pass `--timeout` and `--max-input-bytes` on every
-  command, and to cap memory run the CLI under an operating-system limit on the process, such as
-  a Windows job object.
+  document passes. A command has no deadline.
+- **Workaround:** on an untrusted document pass `--max-input-bytes` on every command, and to cap
+  memory run the CLI under an operating-system limit on the process, such as a Windows job
+  object.

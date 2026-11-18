@@ -15,7 +15,7 @@ namespace Aspose.Cli.Sdk.IO.Paths;
 /// </summary>
 public static class UserStorage
 {
-    // A worker can retain a bounded directory tree plus scratch and file transactions.
+    // Twice the largest directory tree a publication admits.
     internal const int MaximumCleanupEntries = 2 * (PublicationLimits.MaximumDirectoryFiles + PublicationLimits.MaximumDirectories);
 
     /// <summary>
@@ -48,8 +48,7 @@ public static class UserStorage
     /// <summary>
     /// Returns the current user's Aspose CLI local state root, <c>%LOCALAPPDATA%\aspose-cli</c>,
     /// creating it when absent, as the path the file system reaches what is created in it by.
-    /// Scratch directories, worker outputs, local service locks and update staging all live
-    /// below it.
+    /// Scratch directories, local service locks and update staging all live below it.
     /// </summary>
     /// <remarks>
     /// The CLI compares a file it opened with the path it named (<c>VerifiedFileBoundary</c>,

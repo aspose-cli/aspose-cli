@@ -101,8 +101,7 @@ internal static class PdfSign
             facade.Save(temp);
         }, encrypted: encrypted, saved: true);
 
-        // The staged candidate is the only readable copy before publication: a supervised
-        // worker leaves the target to its parent, so reading it here would find nothing.
+        // The staged candidate is the only readable copy before publication.
         PdfSignatureInfo signed = write.Read(
             candidate => VerifySignedOutput(session.Loader, candidate, request.Password, alreadySigned));
         transaction.Commit();

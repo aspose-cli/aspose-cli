@@ -413,7 +413,7 @@ public static partial class CliErrors
 
     /// <summary>
     /// The content recognizers that choose a file's product ran past their shared routing
-    /// budget, a fixed bound that <c>--timeout</c> does not raise.
+    /// budget, a fixed bound.
     /// </summary>
     /// <param name="budget">The routing budget that ran out.</param>
     public static CliException FileRoutingTimeout(TimeSpan budget)
@@ -431,7 +431,7 @@ public static partial class CliErrors
 
     /// <summary>
     /// A regular expression the caller supplied ran past its execution budget, which bounds
-    /// the time any one match may take whatever <c>--timeout</c> allows.
+    /// the time any one match may take.
     /// </summary>
     /// <param name="exception">The timeout, which states the budget.</param>
     public static CliException RegexTimeout(RegexMatchTimeoutException exception)
@@ -444,15 +444,6 @@ public static partial class CliErrors
             details: new JsonObject { ["phase"] = "regex" },
             innerException: exception);
     }
-
-    public static CliException WorkerTerminationFailed(int processId) => CliException.Create(
-        ErrorCodes.WorkerTerminationFailed,
-        "The operation deadline expired, but the worker process tree could not be confirmed stopped.",
-        details: new JsonObject
-        {
-            ["pid"] = processId,
-            ["quiescenceConfirmed"] = false,
-        });
 
     /// <summary>An output file exists and the caller did not ask to replace it.</summary>
     /// <param name="path">The file.</param>

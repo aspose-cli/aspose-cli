@@ -459,8 +459,7 @@ internal sealed class PublicationJournalVersionException(string path, int versio
     : IOException($"Publication journal '{path}' has version {version}; this build reads version {PublicationJournal.CurrentVersion}.");
 
 /// <summary>
-/// One staged output and what its publication requires: the plan a publication journal records
-/// and a worker hands to its parent.
+/// One staged output and what its publication requires: the plan a publication journal records.
 /// </summary>
 internal record PlannedOutput
 {
@@ -503,9 +502,6 @@ internal record PlannedOutput
         && RequestedBackupOriginal?.IsStructurallyValid() != false
         && (InputPath is null) == (InputSnapshot is null)
         && (InputSnapshot is null || InputSnapshot.Exists && InputSnapshot.IsStructurallyValid());
-
-    /// <summary>The same plan with its staged file at <paramref name="staged"/>.</summary>
-    internal PlannedOutput StagedAt(string staged) => new PlannedOutput(this) { Staged = staged };
 }
 
 /// <summary>A planned output and how far its publication has gone.</summary>

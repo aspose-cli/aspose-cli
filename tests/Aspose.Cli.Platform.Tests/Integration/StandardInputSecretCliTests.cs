@@ -40,21 +40,20 @@ public sealed class StandardInputSecretCliTests
         Succeeds(Piped(workspace, Utf8.GetBytes(Password + "\n"), [product, "inspect", "env-" + file, "--password-stdin", "--output-format", "json"]));
     }
 
-    /// <summary>The first line is the password, after a UTF-8 byte order mark and before LF or CRLF, also in the worker of --timeout.</summary>
+    /// <summary>The first line is the password, after a UTF-8 byte order mark and before LF or CRLF.</summary>
     [Theory]
-    [InlineData("Pa55-word\n", "Pa55-word", false)]
-    [InlineData("Pa55-word\r\n", "Pa55-word", false)]
-    [InlineData("Pa55-word", "Pa55-word", false)]
-    [InlineData("﻿" + Password + "\n", Password, false)]
-    [InlineData(Password + "\r\n", Password, true)]
-    public void PasswordOnStdin_IsItsFirstLine(string input, string password, bool timeout)
+    [InlineData("Pa55-word\n", "Pa55-word")]
+    [InlineData("Pa55-word\r\n", "Pa55-word")]
+    [InlineData("Pa55-word", "Pa55-word")]
+    [InlineData("﻿" + Password + "\n", Password)]
+    [InlineData(Password + "\r\n", Password)]
+    public void PasswordOnStdin_IsItsFirstLine(string input, string password)
     {
         using var workspace = new TempWorkspace();
         ScenarioLicense.Project(workspace.Path);
         workspace.RunWithEnv(new Dictionary<string, string?> { ["PW"] = password }, "cells", "create", "enc.xlsx", "--encrypt-env", "PW", "--output-format", "json").Succeeded();
-        string[] worker = timeout ? ["--timeout", "60"] : [];
 
-        Succeeds(Piped(workspace, Utf8.GetBytes(input), ["cells", "inspect", "enc.xlsx", "--password-stdin", .. worker, "--output-format", "json"]));
+        Succeeds(Piped(workspace, Utf8.GetBytes(input), ["cells", "inspect", "enc.xlsx", "--password-stdin", "--output-format", "json"]));
     }
 
     /// <summary>

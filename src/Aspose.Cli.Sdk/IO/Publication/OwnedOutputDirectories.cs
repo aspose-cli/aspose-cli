@@ -8,7 +8,7 @@ using Aspose.Cli.Sdk.IO.Paths;
 namespace Aspose.Cli.Sdk.IO.Publication;
 
 /// <summary>Tracks explicitly declared output directories and only cleans directories this invocation created.</summary>
-internal sealed class OwnedOutputDirectories(bool deferred)
+internal sealed class OwnedOutputDirectories
 {
     private readonly HashSet<string> _declared = new(FilePaths.Comparer);
     private readonly Dictionary<string, FilePhysicalIdentity?> _created = new(FilePaths.Comparer);
@@ -25,7 +25,6 @@ internal sealed class OwnedOutputDirectories(bool deferred)
         if (additions.Length > PublicationLimits.MaximumDirectories - _declared.Count)
         { throw CliErrors.OutputBudgetExceeded(ResourceBudgetKinds.OutputSetDirectories, _declared.Count + additions.Length, PublicationLimits.MaximumDirectories, "items", "output-set-admission"); }
         _declared.UnionWith(additions);
-        if (deferred) { return; }
         while (missing.TryPop(out string? current))
         {
             OutputPathValidator.EnsureSafeDirectory(current);

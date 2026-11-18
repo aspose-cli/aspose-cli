@@ -8,10 +8,8 @@ namespace Aspose.Cli.Product.Words.Tests;
 
 public sealed class WordsAuxiliaryInputTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void OversizedImageAbortsTheEntireEdit(bool supervised)
+    [Fact]
+    public void OversizedImageAbortsTheEntireEdit()
     {
         using var workspace = new TempWorkspace();
         var document = new Document();
@@ -27,7 +25,6 @@ public sealed class WordsAuxiliaryInputTests
         { op = "insert_image", at = new { block = 1 }, position = "after", path = workspace.File("image.png") } } });
         var args = new List<string> { "words", "edit", "source.docx", "--ops", ops, "--out", "result.docx",
             "--max-input-bytes", limit.ToString(CultureInfo.InvariantCulture), "--output-format", "json" };
-        if (supervised) { args.AddRange(["--timeout", TestDeadline.CliTimeout]); }
         CliResult result = workspace.Run(args.ToArray());
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains("FILE_TOO_LARGE", result.StdErr, StringComparison.Ordinal);

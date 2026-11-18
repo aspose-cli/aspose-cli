@@ -18,46 +18,38 @@ public sealed class ProductPublicationTests
     [Category(TestCategory.Slow)]
     [Theory]
     [MemberData(nameof(EditCases))]
-    public void EditPublishesTheCandidateInBothExecutionModes(string product, string extension,
+    public void EditPublishesTheCandidate(string product, string extension,
         string[] sourceOptions, string ops)
     {
-        foreach (bool supervised in new[] { false, true })
-        {
-            using var workspace = new TempWorkspace();
-            string input = CreateInput(workspace, product, extension, sourceOptions);
-            string output = workspace.File("edited." + extension);
-            CliResult edited = workspace.Run([product, "edit", input, "--ops", ops, "--out", output,
-                "--output-format", "json", "--max-input-bytes", new FileInfo(input).Length.ToString(),
-                .. (supervised ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>())]);
-            edited.Succeeded();
-            Assert.True(File.Exists(output));
-            Assert.Equal([output], Directory.GetFiles(workspace.File("."), "edited.*").Select(Path.GetFullPath));
-            AssertDescribesThePublishedFile(JsonNode.Parse(edited.StdOut)!["output"]!);
-        }
+        using var workspace = new TempWorkspace();
+        string input = CreateInput(workspace, product, extension, sourceOptions);
+        string output = workspace.File("edited." + extension);
+        CliResult edited = workspace.Run([product, "edit", input, "--ops", ops, "--out", output,
+            "--output-format", "json", "--max-input-bytes", new FileInfo(input).Length.ToString()]);
+        edited.Succeeded();
+        Assert.True(File.Exists(output));
+        Assert.Equal([output], Directory.GetFiles(workspace.File("."), "edited.*").Select(Path.GetFullPath));
+        AssertDescribesThePublishedFile(JsonNode.Parse(edited.StdOut)!["output"]!);
     }
 
     /// <summary>
-    /// A supervised worker hands its outputs to the parent, which publishes them after the worker
-    /// has reported them; the reported size is still that of the published files,
-    /// for one written file, a page per file and a deck with its companion files.
+    /// The reported size is that of the published files, for one written file, a page per file
+    /// and a deck with its companion files.
     /// </summary>
     [Category(TestCategory.Slow)]
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ReportedOutputsDescribeThePublishedFilesInBothExecutionModes(bool supervised)
+    [Fact]
+    public void ReportedOutputsDescribeThePublishedFiles()
     {
         using var workspace = new TempWorkspace();
-        string[] timeout = supervised ? ["--timeout", TestDeadline.CliTimeout] : [];
         string document = CreateInput(workspace, "words", "docx", ["--from-text", "source.txt"]);
         string deck = CreateInput(workspace, "slides", "pptx", ["--from-markdown", "source.md"]);
 
         CliResult converted = workspace.Run(["words", "convert", document, "--to", "pdf", "--out", workspace.File("converted.pdf"),
-            "--output-format", "json", .. timeout]);
+            "--output-format", "json"]);
         CliResult pages = workspace.Run(["pdf", "render", workspace.File("converted.pdf"), "--out", workspace.File("page.png"),
-            "--output-format", "json", .. timeout]);
+            "--output-format", "json"]);
         CliResult site = workspace.Run(["slides", "convert", deck, "--to", "html5", "--out", workspace.File(Path.Combine("site", "deck.html")),
-            "--output-format", "json", .. timeout]);
+            "--output-format", "json"]);
 
         converted.Succeeded();
         pages.Succeeded();
@@ -78,43 +70,35 @@ public sealed class ProductPublicationTests
     }
 
     [Category(TestCategory.Slow)]
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void WordsVerificationReadsTheCandidateInBothExecutionModes(bool supervised)
+    [Fact]
+    public void WordsVerificationReadsTheCandidate()
     {
         using var workspace = new TempWorkspace();
         string input = CreateInput(workspace, "words", "docx", ["--from-text", "source.txt"]);
         CliResult edited = workspace.Run(["words", "edit", input,
             "--ops", """{"ops":[{"op":"set_text","target":{"find":"Anchor"},"text":"Edited"}]}""",
-            "--out", workspace.File("edited.docx"), "--verify", "--output-format", "json",
-            .. (supervised ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>())]);
+            "--out", workspace.File("edited.docx"), "--verify", "--output-format", "json"]);
         edited.Succeeded();
         JsonNode verification = JsonNode.Parse(edited.StdOut)!["verification"]!;
         Assert.True(verification["ok"]!.GetValue<bool>());
         Assert.True(verification["semanticChangesDetected"]!.GetValue<bool>());
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void AllSheetsFailureDoesNotLeaveEarlierOutputFiles(bool supervised)
+    [Fact]
+    public void AllSheetsFailureDoesNotLeaveEarlierOutputFiles()
     {
         using var workspace = new TempWorkspace();
         workspace.Run("cells", "create", "input.xlsx", "--sheet-names", "First,Second").Succeeded();
         workspace.Run("cells", "edit", "input.xlsx", "--set", "First!A1=1", "--set", "Second!A1=2", "--in-place").Succeeded();
         File.WriteAllText(workspace.File("render.Second.png"), "existing second sheet");
-        CliResult result = workspace.Run(["cells", "render", "input.xlsx", "--sheets", "all", "--out", "render.png", "--output-format", "json",
-            .. (supervised ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>())]);
+        CliResult result = workspace.Run(["cells", "render", "input.xlsx", "--sheets", "all", "--out", "render.png", "--output-format", "json"]);
         Assert.Equal(5, result.ExitCode);
         Assert.False(File.Exists(workspace.File("render.First.png")));
         Assert.Equal("existing second sheet", File.ReadAllText(workspace.File("render.Second.png")));
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void SignVerifiesTheCandidateInBothExecutionModes(bool supervised)
+    [Fact]
+    public void SignVerifiesTheCandidate()
     {
         const string certificatePassword = "publication-test-certificate";
         using var workspace = new TempWorkspace();
@@ -126,74 +110,13 @@ public sealed class ProductPublicationTests
             ["pdf", "sign", input,
              "--certificate", CreateCertificate(workspace, certificatePassword),
              "--certificate-password-env", "ASPOSE_CLI_TEST_CERT_PASSWORD",
-             "--out", output, "--output-format", "json",
-             .. (supervised ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>())]);
+             "--out", output, "--output-format", "json"]);
 
         signed.Succeeded();
         Assert.True(File.Exists(output));
         JsonNode signature = JsonNode.Parse(signed.StdOut)!["signature"]!;
         Assert.True(signature["signed"]!.GetValue<bool>());
         Assert.True(signature["intact"]!.GetValue<bool>());
-    }
-
-    // SkillInstallTests cover the install of every Skill without a timeout.
-    [Fact]
-    public void SkillInstallPublishesItsTreeUnderATimeout()
-    {
-        using var workspace = new TempWorkspace();
-        string target = workspace.File("skills");
-
-        CliResult installed = workspace.Run(["skill", "install", "aspose-cli-pdf",
-            "--target", target, "--output-format", "json", "--timeout", TestDeadline.CliTimeout]);
-
-        installed.Succeeded();
-        string tree = Path.Combine(target, "aspose-cli-pdf");
-        Assert.True(File.Exists(Path.Combine(tree, "SKILL.md")));
-        Assert.True(File.Exists(Path.Combine(tree, ".aspose-skill-manifest.json")));
-        Assert.Equal(
-            JsonNode.Parse(installed.StdOut)!["fileCount"]!.GetValue<int>(),
-            Directory.GetFiles(tree, "*", SearchOption.AllDirectories).Length);
-    }
-
-    // A CLI killed with its worker leaves the worker's private staging, which can hold decrypted
-    // copies, in the user's temporary directory; the next supervised command removes it.
-    [Fact]
-    public void ATimeoutCommandRemovesOnlyTheWorkerRootsOfOwnersThatHaveExited()
-    {
-        using var workspace = new TempWorkspace();
-        string workers = Directory.CreateDirectory(
-            Path.Combine(Aspose.Cli.Sdk.IO.Paths.UserStorage.TemporaryRoot(), "worker")).FullName;
-        using var self = System.Diagnostics.Process.GetCurrentProcess();
-        long started = self.StartTime.ToUniversalTime().Ticks;
-        // The owner's identity is its process id and start time, so a start time this process
-        // never had names an owner that has exited.
-        string exited = Root(workers, $"{Environment.ProcessId}-1-{Guid.NewGuid():N}");
-        string live = Root(workers, $"{Environment.ProcessId}-{started}-{Guid.NewGuid():N}");
-        string other = Root(workers, $"not-a-worker-{Guid.NewGuid():N}");
-        try
-        {
-            workspace.Run(["skill", "install", "aspose-cli-pdf", "--target", workspace.File("skills"),
-                "--output-format", "json", "--timeout", TestDeadline.CliTimeout]).Succeeded();
-
-            Assert.False(Directory.Exists(exited));
-            Assert.True(File.Exists(Path.Combine(live, "copy.bin")));
-            Assert.True(File.Exists(Path.Combine(other, "copy.bin")));
-        }
-        finally
-        {
-            foreach (string root in new[] { exited, live, other })
-            {
-                if (Directory.Exists(root)) { Directory.Delete(root, recursive: true); }
-            }
-        }
-
-        static string Root(string workers, string name)
-        {
-            string root = Directory.CreateDirectory(Path.Combine(workers, name, "000001-scratch")).Parent!.FullName;
-            File.WriteAllText(Path.Combine(root, "copy.bin"), "decrypted");
-            File.WriteAllText(Path.Combine(root, "000001-scratch", "part.bin"), "decrypted");
-            return root;
-        }
     }
 
     private static string CreateCertificate(TempWorkspace workspace, string password)

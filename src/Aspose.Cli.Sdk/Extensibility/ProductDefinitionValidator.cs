@@ -338,7 +338,7 @@ internal sealed class ProductDefinitionValidator
             throw new InvalidOperationException(
                 $"Product '{definition.Manifest.Id}' generic recognizer "
                 + $"'{recognizer.Descriptor.Strategy}' is not approved for cooperative in-process cancellation. "
-                + "Keep the format explicit-only or provide a terminable worker boundary.");
+                + "Keep the format explicit-only.");
         }
     }
 

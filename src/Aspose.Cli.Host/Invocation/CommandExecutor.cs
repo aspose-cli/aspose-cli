@@ -5,12 +5,10 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Aspose.Cli.Host.Output;
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Input;
-using Aspose.Cli.Sdk.IO.Publication;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -52,9 +50,8 @@ internal sealed class CommandExecutor
 
     /// <summary>
     /// Runs a command that answers with one result. Ctrl+C cancels it as the caller's own
-    /// cancellation, with or without <c>--timeout</c>: the work stops at its next check, nothing
-    /// is published, its staging is removed and the process exits 130. A second Ctrl+C ends the
-    /// process at once.
+    /// cancellation: the work stops at its next check, nothing is published, its staging is
+    /// removed and the process exits 130. A second Ctrl+C ends the process at once.
     /// </summary>
     private int RunEnvelope(
         ParseResult parseResult,
@@ -75,8 +72,7 @@ internal sealed class CommandExecutor
                     ResultEnvelope result = handler(scope);
                     if (!scope.Budgets.HasCommittedOutputs) { scope.Deadline.ThrowIfExpired("command-complete"); }
                     return scope.Complete(result, detectPartial);
-                }),
-            SecondPress.EndProcess);
+                }));
     }
 
     /// <summary>
@@ -188,19 +184,11 @@ internal sealed class CommandExecutor
         OperationDeadline? deadline,
         bool resultWritten)
     {
-        if (exception is OperationCanceledException)
+        if (exception is OperationCanceledException
+            && deadline?.Token.IsCancellationRequested == true)
         {
-            if (deadline?.IsExpired == true)
-            {
-                exception = CliErrors.OperationTimeout(
-                    Math.Max(1, (int)Math.Ceiling(deadline.OriginalBudget?.TotalSeconds ?? 1)),
-                    "cooperative-cancellation");
-            }
-            else if (deadline?.Token.IsCancellationRequested == true)
-            {
-                // The caller cancelled through the invocation's own token.
-                return (int)ExitCode.Cancelled;
-            }
+            // The caller cancelled through the invocation's own token.
+            return (int)ExitCode.Cancelled;
         }
 
         bool expected = exception is CliException;
@@ -227,49 +215,6 @@ internal sealed class CommandExecutor
             stopwatch.ElapsedMilliseconds,
             error);
         return (int)error.ExitCode;
-    }
-
-    private static OperationDeadline CreateDeadline(
-        GlobalValues globals,
-        CancellationToken cancellationToken)
-    {
-        TimeSpan? budget = ResolveTimeout(globals);
-        if (long.TryParse(Environment.GetEnvironmentVariable(WorkerOutputSession.BudgetEnvironmentVariable),
-                System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture,
-                out long milliseconds) && milliseconds > 0
-            && long.TryParse(
-                Environment.GetEnvironmentVariable(
-                    WorkerOutputSession.DeadlineEnvironmentVariable),
-                System.Globalization.NumberStyles.Integer,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out long expiresAt)
-            && string.Equals(
-                Environment.GetEnvironmentVariable(
-                    WorkerOutputSession.WorkerEnvironmentVariable),
-                "1",
-                StringComparison.Ordinal))
-        {
-            return OperationDeadline.FromAbsoluteTick(
-                TimeSpan.FromMilliseconds(milliseconds),
-                expiresAt,
-                cancellationToken);
-        }
-        return OperationDeadline.Start(budget, cancellationToken);
-    }
-
-    private static TimeSpan? ResolveTimeout(GlobalValues globals)
-    {
-        if (globals.TimeoutSeconds is not { } seconds)
-        {
-            return null;
-        }
-        if (seconds <= 0)
-        {
-            throw CliErrors.OptionInvalid(
-                GlobalOptionNames.Timeout,
-                "value must be a positive number of seconds");
-        }
-        return TimeSpan.FromSeconds(seconds);
     }
 
     /// <summary>The command's words below the root, for example <c>license install</c>.</summary>
@@ -318,11 +263,11 @@ internal sealed class CommandExecutor
             CancellationToken cancellationToken)
         {
             OperationDeadline deadline =
-                CreateDeadline(globals, cancellationToken);
+                OperationDeadline.Start(null, cancellationToken);
             try
             {
                 ResourceBudgetLedger budgets =
-                    CompositionRoot.CreateBudgets(host.Catalog, globals, deadline, host.WorkerOutputs,
+                    CompositionRoot.CreateBudgets(host.Catalog, globals, deadline,
                         parseResult.CommandResult.Command.Policy().OutputBytesLimit);
                 if (admitInputs)
                 {
@@ -372,7 +317,6 @@ internal sealed class CommandExecutor
         public int Complete(Action writeResult)
         {
             Budgets.ThrowIfFailed();
-            Budgets.OutputSession?.SealForPublication();
             ResultWritten = true;
             writeResult();
             VerboseLog.Completed(

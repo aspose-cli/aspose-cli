@@ -121,7 +121,7 @@ public sealed class LicenseManagementTests
     /// <summary>
     /// `license install` leaves every copy of the license readable only by the current user, even
     /// in a configuration directory that lets everyone read what is created inside it: installed
-    /// in process or through a worker (`--timeout`), as new files and as replacements.
+    /// as new files and as replacements.
     /// </summary>
     [LicensedFact]
     public void InstalledLicense_InASharedConfigurationDirectory_IsReadableOnlyByTheCurrentUser()
@@ -129,13 +129,11 @@ public sealed class LicenseManagementTests
         Requires.Windows();
         using var workspace = new TempWorkspace();
         AccessRules.ShareForReading(workspace.ConfigDirectory);
-        string[] inProcess = [];
-        string[] worker = ["--timeout", "60"];
 
-        // In process (new copies), then through a worker (replacements).
-        foreach (string[] run in new[] { inProcess, worker })
+        // New copies, then replacements.
+        for (int run = 0; run < 2; run++)
         {
-            CliResult installed = workspace.Run(["license", "install", TestLicense.Path!, "--output-format", "json", .. run]);
+            CliResult installed = workspace.Run(["license", "install", TestLicense.Path!, "--output-format", "json"]);
 
             Assert.True(installed.ExitCode == 0, installed.StdErr);
             string[] copies = [.. JsonNode.Parse(installed.StdOut)!["products"]!.AsArray()
@@ -148,29 +146,23 @@ public sealed class LicenseManagementTests
                 AccessRules.AssertCurrentUserOnly(copy);
             });
         }
-        // The worker also installs new copies, not only replacements.
-        Assert.Equal(0, workspace.Run("license", "remove", "--output-format", "json").ExitCode);
-        CliResult again = workspace.Run(["license", "install", TestLicense.Path!, "--output-format", "json", .. worker]);
-        Assert.True(again.ExitCode == 0, again.StdErr);
-        Assert.All(JsonNode.Parse(again.StdOut)!["products"]!.AsArray(),
-            product => AccessRules.AssertCurrentUserOnly(product!["path"]!.GetValue<string>()));
     }
 
     [LicensedFact]
-    public void ValidatedTotalLicense_InstallsAndRemovesAtomicallyThroughWorkers()
+    public void ValidatedTotalLicense_InstallsAndRemovesAtomically()
     {
         using var workspace = new TempWorkspace();
         string source = TestLicense.Path!;
         string sourceHash = FileHashes.Sha256(source);
         DateTime sourceTime = File.GetLastWriteTimeUtc(source);
-        CliResult selected = workspace.Run("license", "install", source, "--product", "words", "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
+        CliResult selected = workspace.Run("license", "install", source, "--product", "words", "--output-format", "json");
         Assert.True(selected.ExitCode == 0, selected.StdErr);
         JsonNode selectedStatus = JsonNode.Parse(selected.StdOut)!;
         Assert.All(selectedStatus["products"]!.AsArray(), product =>
             Assert.Equal(product!["product"]!.GetValue<string>() == "words" ? "licensed" : "evaluation",
                 product["mode"]!.GetValue<string>()));
 
-        CliResult installed = workspace.Run("license", "install", source, "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
+        CliResult installed = workspace.Run("license", "install", source, "--output-format", "json");
         Assert.True(installed.ExitCode == 0, installed.StdErr);
         Assert.All(JsonNode.Parse(installed.StdOut)!["products"]!.AsArray(), product =>
         {
@@ -183,12 +175,12 @@ public sealed class LicenseManagementTests
 
         string invalid = workspace.File("invalid.lic");
         File.WriteAllText(invalid, "not a license", Encoding.UTF8);
-        CliResult rejected = workspace.Run("license", "install", invalid, "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
+        CliResult rejected = workspace.Run("license", "install", invalid, "--output-format", "json");
         Assert.Equal(7, rejected.ExitCode);
         Assert.All(Directory.GetFiles(Path.Combine(workspace.ConfigDirectory, "licenses")), path =>
             Assert.Equal(sourceHash, FileHashes.Sha256(path)));
 
-        CliResult removed = workspace.Run("license", "remove", "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
+        CliResult removed = workspace.Run("license", "remove", "--output-format", "json");
         Assert.True(removed.ExitCode == 0, removed.StdErr);
         Assert.All(JsonNode.Parse(removed.StdOut)!["products"]!.AsArray(), product =>
         {

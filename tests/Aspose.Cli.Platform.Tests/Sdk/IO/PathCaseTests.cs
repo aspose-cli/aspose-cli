@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Extraction;
 using Aspose.Cli.Sdk.IO.Files;
@@ -12,58 +11,17 @@ namespace Aspose.Cli.Sdk.Tests.IO;
 
 /// <summary>
 /// Windows file names ignore case, so every place that compares local paths treats two
-/// spellings of one path as the same path: the worker layout, the publication journal and its
-/// recovery, the output set, the publication locks and the directory boundaries. The tests
+/// spellings of one path as the same path: the publication journal and its recovery, the
+/// output set, the publication locks and the directory boundaries. The tests
 /// spell the second path in upper case, which every test directory under %TEMP% changes.
 /// </summary>
 public sealed class PathCaseTests : IDisposable
 {
     private readonly TempDirectory _temp = new();
-    private readonly string _workerRoot = WorkerOutputSession.CreateRoot();
 
-    public void Dispose()
-    {
-        _temp.Dispose();
-        UserStorage.TryDeleteTree(_workerRoot);
-    }
+    public void Dispose() => _temp.Dispose();
 
     private static string Upper(string path) => path.ToUpperInvariant();
-
-    [Fact]
-    public void WorkerManifest_ATargetInACaseVariantOfThePrivateRoot_IsRefused()
-    {
-        Assert.NotEqual(_workerRoot, Upper(_workerRoot));
-        string manifestPath = Path.Combine(_workerRoot, WorkerOutputSession.ManifestName);
-        PlannedOutput entry = WorkerEntry(_temp.File("report.txt"));
-        WorkerManifestStore.Write(manifestPath, new WorkerOutputManifest
-        {
-            Entries = [entry with { Target = Upper(Path.Combine(_workerRoot, "report.txt")) }],
-            Sealed = true,
-        });
-
-        CliException error = Assert.Throws<CliException>(() => WorkerManifestStore.ReadAndValidate(manifestPath));
-
-        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
-        InvalidDataException cause = Assert.IsType<InvalidDataException>(error.InnerException);
-        Assert.Contains("private transport storage", cause.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void WorkerManifest_TwoTargetsThatDifferOnlyInCase_Overlap()
-    {
-        string manifestPath = Path.Combine(_workerRoot, WorkerOutputSession.ManifestName);
-        string target = _temp.File("report.txt");
-        WorkerManifestStore.Write(manifestPath, new WorkerOutputManifest
-        {
-            Entries = [WorkerEntry(target), WorkerEntry(target) with { Target = Upper(target) }],
-            Sealed = true,
-        });
-
-        CliException error = Assert.Throws<CliException>(() => WorkerManifestStore.ReadAndValidate(manifestPath));
-
-        InvalidDataException cause = Assert.IsType<InvalidDataException>(error.InnerException);
-        Assert.Contains("target paths overlap", cause.Message, StringComparison.Ordinal);
-    }
 
     [Fact]
     public void PublicationPlan_TreatsACaseVariantOfItsDirectoryAndArtifactsAsItsOwn()
@@ -156,12 +114,12 @@ public sealed class PathCaseTests : IDisposable
         string lower = _temp.File("out");
         Assert.Equal(lower, OutputSetPaths.CommonDirectory([Path.Combine(lower, "x"), Upper(Path.Combine(lower, "y"))]));
 
-        var directories = new OwnedOutputDirectories(deferred: true);
+        var directories = new OwnedOutputDirectories();
         directories.Ensure(Path.Combine(lower, "new"));
         directories.Ensure(Upper(Path.Combine(lower, "new")));
 
         Assert.Equal(2, directories.Declared.Count());
-        Assert.False(Directory.Exists(lower));
+        Assert.True(Directory.Exists(Path.Combine(lower, "new")));
     }
 
     [Fact]
@@ -261,11 +219,8 @@ public sealed class PathCaseTests : IDisposable
     [InlineData(@"C:\", @"D:\x", false)]
     [InlineData(@"\\server\share\a", @"\\server\share\a\x", true)]
     [InlineData(@"\\server\share\a", @"\\server\share\ab", false)]
-    public void Boundaries_ForTheWorkerRootAndTheLicenseSnapshot(string root, string path, bool overlaps)
-    {
-        Assert.Equal(overlaps, Record.Exception(() => WorkerManifestStore.EnsureOutsideRoot(root, path)) is InvalidDataException);
+    public void Boundaries_ForTheLicenseSnapshot(string root, string path, bool overlaps) =>
         Assert.Equal(overlaps, Aspose.Cli.Sdk.Licensing.LicenseInstaller.IsInsideSnapshot(root, path));
-    }
 
     [Fact]
     public void Boundaries_ForASiblingThatSharesThePrefix()
@@ -332,22 +287,5 @@ public sealed class PathCaseTests : IDisposable
         Assert.False(FilePaths.Same(@"C:\Data\Book.xlsx", @"C:\Data\Book.xls"));
         Assert.True(FilePaths.Comparer.Equals(@"C:\Data", @"c:\DATA"));
         Assert.Equal(StringComparison.OrdinalIgnoreCase, FilePaths.Comparison);
-    }
-
-    private PlannedOutput WorkerEntry(string target)
-    {
-        string fullTarget = Path.GetFullPath(target);
-        string retained = Directory.CreateDirectory(Path.Combine(_workerRoot, Guid.NewGuid().ToString("N") + "-retained")).FullName;
-        string staged = Path.Combine(retained, "output.stage");
-        File.WriteAllText(staged, "published");
-        return new PlannedOutput
-        {
-            Target = fullTarget,
-            Staged = staged,
-            Overwrite = false,
-            TargetParentIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(Path.GetDirectoryName(fullTarget)!),
-            Original = FilePublicationSnapshot.Capture(fullTarget),
-            StagedSnapshot = FilePublicationSnapshot.Capture(staged),
-        };
     }
 }

@@ -123,7 +123,7 @@ public sealed class UsageMistakeTests : IDisposable
 
     [Theory]
     [InlineData("--help --output-format compact")]
-    [InlineData("cells inspect --help --timeout 5")]
+    [InlineData("cells inspect --help --max-input-bytes 5")]
     [InlineData("cells inspect -h")]
     public void HelpBesideAcceptedGlobalValues_PrintsHelp(string commandLine)
     {

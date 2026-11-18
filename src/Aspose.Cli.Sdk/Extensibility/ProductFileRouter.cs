@@ -417,8 +417,8 @@ public sealed class ProductFileRouter
     }
 
     /// <summary>
-    /// Ends routing whose own budget ran out with the error that names that budget, which
-    /// <c>--timeout</c> does not govern; caller cancellation stays a cancellation.
+    /// Ends routing whose own budget ran out with the error that names that budget; caller
+    /// cancellation stays a cancellation.
     /// </summary>
     private static void ThrowIfRoutingExpired(OperationDeadline deadline)
     {

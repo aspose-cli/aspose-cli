@@ -39,10 +39,7 @@ public enum ExitCode
     /// </summary>
     PartialFailure = 8,
 
-    /// <summary>
-    /// The operation exceeded the --timeout budget, or the worker it stopped could not be
-    /// confirmed ended.
-    /// </summary>
+    /// <summary>The operation exceeded a time budget.</summary>
     OperationTimeout = 9,
 
     /// <summary>

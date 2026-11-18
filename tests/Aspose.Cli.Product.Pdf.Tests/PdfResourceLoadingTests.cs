@@ -9,10 +9,8 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 
 public sealed class PdfResourceLoadingTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void HtmlCreation_RelativeImageHonorsTheOriginalDirectoryBoundary(bool worker)
+    [Fact]
+    public void HtmlCreation_RelativeImageHonorsTheOriginalDirectoryBoundary()
     {
         using var workspace = new TempWorkspace();
         string directory = workspace.File("本地 资源");
@@ -23,10 +21,9 @@ public sealed class PdfResourceLoadingTests
         const string html = "<html><body><p>Local brand</p><img src=\"brand.png\" width=\"30\" height=\"30\"></body></html>";
         File.WriteAllText(input, html);
         byte[] original = File.ReadAllBytes(input);
-        string[] supervision = worker ? ["--timeout", TestDeadline.CliTimeout] : [];
 
         CliResult result = workspace.Run(
-            ["pdf", "create", output, "--from-html", input, "--output-format", "json", .. supervision]);
+            ["pdf", "create", output, "--from-html", input, "--output-format", "json"]);
 
         Assert.True(result.ExitCode == 0, result.StdErr);
         JsonNode response = JsonNode.Parse(result.StdOut)!;
@@ -53,15 +50,14 @@ public sealed class PdfResourceLoadingTests
     // Aspose.PDF.Drawing 26.8 requests http(s) resources before it consults
     // CustomLoaderOfExternalResources (gate PDF-HTML-EGRESS), and no scan of the HTML can tell
     // which addresses it will request: the first case hides the address from a scan inside a
-    // decoy namespace declaration. The process's network gate blocks every request instead, in
-    // process and in a supervised worker, and the result lists what it blocked.
+    // decoy namespace declaration. The process's network gate blocks every request instead, and
+    // the result lists what it blocked.
     [Theory]
-    [InlineData("""<img alt='xmlns="' src={0}/decoy.png title='"'>""", false)]
-    [InlineData("""<img alt='xmlns="' src={0}/decoy.png title='"'>""", true)]
-    [InlineData("""<img src="{0}/image.png">""", false)]
-    [InlineData("""<link rel="stylesheet" href="{0}/style.css">""", false)]
-    [InlineData("""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="9" height="9"><image xlink:href="{0}/inline-svg.png" width="9" height="9"/></svg>""", false)]
-    public async Task HtmlCreation_TheGateBlocksEveryRequestAndListsIt(string reference, bool worker)
+    [InlineData("""<img alt='xmlns="' src={0}/decoy.png title='"'>""")]
+    [InlineData("""<img src="{0}/image.png">""")]
+    [InlineData("""<link rel="stylesheet" href="{0}/style.css">""")]
+    [InlineData("""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="9" height="9"><image xlink:href="{0}/inline-svg.png" width="9" height="9"/></svg>""")]
+    public async Task HtmlCreation_TheGateBlocksEveryRequestAndListsIt(string reference)
     {
         using var workspace = new TempWorkspace();
         await using var server = new ResourceHttpServer();
@@ -69,9 +65,8 @@ public sealed class PdfResourceLoadingTests
         string output = workspace.File("output.pdf");
         File.WriteAllText(input, "<html><head></head><body><p>Local content</p>"
             + string.Format(System.Globalization.CultureInfo.InvariantCulture, reference, server.Url) + "</body></html>");
-        string[] supervision = worker ? ["--timeout", TestDeadline.CliTimeout] : [];
 
-        CliResult result = workspace.Run(["pdf", "create", output, "--from-html", input, "--output-format", "json", .. supervision]);
+        CliResult result = workspace.Run(["pdf", "create", output, "--from-html", input, "--output-format", "json"]);
 
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
         Assert.True(result.ExitCode == 0, result.StdErr);
@@ -302,7 +297,7 @@ public sealed class PdfResourceLoadingTests
         string[] optIn = allowed ? ["--allow-network-resources"] : [];
 
         CliResult result = workspace.Run(
-            ["pdf", "create", workspace.File("output.pdf"), "--from-html", input, .. optIn, "--timeout", TestDeadline.CliTimeout, "--output-format", "json"]);
+            ["pdf", "create", workspace.File("output.pdf"), "--from-html", input, .. optIn, "--output-format", "json"]);
 
         Assert.True(result.ExitCode == 0, result.StdErr);
         if (allowed)
@@ -551,48 +546,5 @@ public sealed class PdfResourceLoadingTests
                 Assert.Contains("https://example.test/a.png", requested.Message, StringComparison.Ordinal);
                 Assert.DoesNotContain("server/share", requested.Message, StringComparison.Ordinal);
             });
-    }
-
-    // The importer waits up to 100 seconds for each unanswered request and cannot be cancelled
-    // in-process; the supervised worker ends at the operation deadline without publishing.
-    [Category(TestCategory.Slow)]
-    [Fact]
-    public async Task HtmlCreation_AllowNetworkResources_StopsAtTheOperationDeadline()
-    {
-        using var workspace = new TempWorkspace();
-        using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
-        listener.Start();
-        int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
-        using var stop = new CancellationTokenSource();
-        var accepted = new System.Collections.Concurrent.ConcurrentQueue<System.Net.Sockets.TcpClient>();
-        Task silent = Task.Run(async () =>
-        {
-            try
-            {
-                while (!stop.IsCancellationRequested)
-                {
-                    accepted.Enqueue(await listener.AcceptTcpClientAsync(stop.Token));
-                }
-            }
-            catch (OperationCanceledException) { }
-        });
-        string input = workspace.File("input.html");
-        string output = workspace.File("output.pdf");
-        File.WriteAllText(input, $"<html><body><p>x</p><img src=\"http://127.0.0.1:{port}/never.png\"></body></html>");
-        var watch = System.Diagnostics.Stopwatch.StartNew();
-
-        // The deadline leaves a loaded machine time to start the worker and reach the silent server.
-        CliResult result = workspace.Run(
-            ["pdf", "create", output, "--from-html", input, "--allow-network-resources", "--timeout", "15", "--output-format", "json"]);
-
-        watch.Stop();
-        await stop.CancelAsync();
-        listener.Stop();
-        await silent;
-        foreach (System.Net.Sockets.TcpClient client in accepted) { client.Dispose(); }
-        Assert.Equal("OPERATION_TIMEOUT", JsonNode.Parse(result.StdErr)!["error"]!["code"]!.GetValue<string>());
-        Assert.NotEmpty(accepted);
-        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(60), $"The import ran {watch.Elapsed}.");
-        Assert.False(File.Exists(output));
     }
 }

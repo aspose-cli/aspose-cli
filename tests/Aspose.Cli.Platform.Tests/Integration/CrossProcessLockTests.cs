@@ -27,7 +27,7 @@ public sealed class CrossProcessLockTests
         CliResult blocked;
         using (PublicationDirectoryLease.Acquire(workspace.Path))
         {
-            blocked = workspace.Run([.. edit, "--timeout", "3"]);
+            blocked = workspace.Run(edit);
         }
 
         Assert.Equal(9, blocked.ExitCode);
@@ -60,7 +60,7 @@ public sealed class CrossProcessLockTests
         using (PublicationDirectoryLease.Acquire(heldInUpperCase ? target.ToUpperInvariant() : target))
         {
             refused = workspace.Run("skill", "install", Skill, "--target", installedInUpperCase ? target.ToUpperInvariant() : target,
-                "--output-format", "json", "--timeout", "3");
+                "--output-format", "json");
         }
 
         Assert.Equal("OPERATION_TIMEOUT", ErrorCode(refused));
@@ -69,29 +69,6 @@ public sealed class CrossProcessLockTests
         Assert.True(accepted.ExitCode == 0, accepted.StdErr);
         Assert.Equal(Tree(Path.Combine(reference, Skill)), Tree(installed));
         // The released lock leaves no lock file beside the installed Skill.
-        Assert.Equal([Skill], Entries(target));
-    }
-
-    [Fact]
-    public void SkillInstall_WhoseTimeoutEndsBeforeItPublishes_LeavesTheInstalledSkill()
-    {
-        using var workspace = new TempWorkspace();
-        string target = workspace.File("skills");
-        Assert.Equal(0, workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json").ExitCode);
-        string installed = Path.Combine(target, Skill);
-        string[] before = Tree(installed);
-
-        // Under --timeout the install runs in a worker that may only stage; the timeout ends it
-        // while the publication waits for the Skills root, so the installed Skill is untouched.
-        CliResult timedOut;
-        using (PublicationDirectoryLease.Acquire(target))
-        {
-            timedOut = workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json", "--timeout", "3");
-        }
-
-        Assert.Equal(9, timedOut.ExitCode);
-        Assert.Equal("OPERATION_TIMEOUT", ErrorCode(timedOut));
-        Assert.Equal(before, Tree(installed));
         Assert.Equal([Skill], Entries(target));
     }
 
