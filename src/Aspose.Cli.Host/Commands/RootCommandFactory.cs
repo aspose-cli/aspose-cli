@@ -8,7 +8,7 @@ internal static class RootCommandFactory
 {
     /// <summary>
     /// Builds the command tree and hands back the global options, so the entry
-    /// point can read <c>--output-format</c>/<c>--quiet</c> when rendering a parse error.
+    /// point can read <c>--output-format</c> when rendering a parse error.
     /// </summary>
     public static RootCommand Create(
         HostContext host,

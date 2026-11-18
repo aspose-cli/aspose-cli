@@ -28,7 +28,7 @@ public sealed class UsageMistakeTests : IDisposable
     {
         Created("cells", "b.xlsx");
 
-        CliResult result = _workspace.Run("cells", "read", "b.xlsx", "--content", "--quiet", "--output-format", "json");
+        CliResult result = _workspace.Run("cells", "read", "b.xlsx", "--content", "--verbose", "--output-format", "json");
 
         Error(result, "OPTION_INVALID");
     }
@@ -46,7 +46,7 @@ public sealed class UsageMistakeTests : IDisposable
     [Theory]
     [InlineData("-x")]
     [InlineData("--regex")]
-    [InlineData("--quiet")]
+    [InlineData("--verbose")]
     [InlineData("--max-hits")]
     public void AValueStartingWithADash_StaysTheValueOfItsOption(string pattern)
     {

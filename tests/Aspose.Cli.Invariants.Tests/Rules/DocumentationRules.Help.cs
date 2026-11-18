@@ -206,7 +206,7 @@ internal static partial class ContractRules
     [GeneratedRegex(@"\s*\[default: [^\]]*\]$")]
     private static partial Regex DefaultSuffix();
 
-    /// <summary>An option name in a line, such as <c>--quiet</c> in <c>-q/--quiet</c>.</summary>
+    /// <summary>An option name in a line, such as <c>--verbose</c> in <c>-v/--verbose</c>.</summary>
     [GeneratedRegex(@"(?<![\w-])--?[A-Za-z][\w-]*")]
     private static partial Regex OptionName();
 

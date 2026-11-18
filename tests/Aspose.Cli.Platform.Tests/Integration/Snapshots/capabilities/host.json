@@ -2310,27 +2310,6 @@
           "description": "How results print: the contract envelope, indented or on one line. Default: json."
         },
         {
-          "name": "--quiet",
-          "aliases": [
-            "-q"
-          ],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": true,
-          "hidden": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Suppress warnings and notices on stderr (errors still print)."
-        },
-        {
           "name": "--timeout",
           "aliases": [],
           "type": "integer",

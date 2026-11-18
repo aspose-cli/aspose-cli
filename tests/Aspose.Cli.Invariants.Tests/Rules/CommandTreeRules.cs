@@ -138,12 +138,11 @@ internal static partial class ContractRules
         }
     }
 
-    // ----- C-R06: long names are lowercase kebab case; the short names are -o, -q, -v, -h -------
+    // ----- C-R06: long names are lowercase kebab case; the short names are -o, -v, -h -----------
 
     private static readonly Dictionary<string, string> ShortNames = new(StringComparer.Ordinal)
     {
         ["-o"] = "--out",
-        ["-q"] = "--quiet",
         ["-v"] = "--verbose",
         ["-h"] = "--help",
     };
@@ -161,7 +160,7 @@ internal static partial class ContractRules
                 }
                 problems.AddRange(option.Aliases
                     .Where(alias => !ShortNames.TryGetValue(alias, out string? owner) || owner != option.Name)
-                    .Select(alias => $"{option.Name} has the short name {alias}; the only short names are -o (--out), -q (--quiet), -v (--verbose) and -h (--help)."));
+                    .Select(alias => $"{option.Name} has the short name {alias}; the only short names are -o (--out), -v (--verbose) and -h (--help)."));
                 return problems;
             }));
         }

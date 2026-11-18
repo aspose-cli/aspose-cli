@@ -37,12 +37,6 @@ internal sealed class GlobalOptions
         }.WithInput(InputKind.None);
         OutputFormat.AcceptOnlyFromAmong([.. OutputModes.Keys]);
 
-        Quiet = new Option<bool>(GlobalOptionNames.Quiet, GlobalOptionNames.QuietAlias)
-        {
-            Description = "Suppress warnings and notices on stderr (errors still print).",
-            Recursive = true,
-        };
-
         Verbose = new Option<bool>(GlobalOptionNames.Verbose, GlobalOptionNames.VerboseAlias)
         {
             Description = "Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.",
@@ -84,8 +78,6 @@ internal sealed class GlobalOptions
 
     public Option<string?> OutputFormat { get; }
 
-    public Option<bool> Quiet { get; }
-
     public Option<bool> Verbose { get; }
 
     public Option<string?> License { get; }
@@ -111,7 +103,6 @@ internal sealed class GlobalOptions
             help.Aliases.Remove(alias);
         }
         root.Options.Add(OutputFormat);
-        root.Options.Add(Quiet);
         root.Options.Add(Verbose);
         root.Options.Add(License);
         root.Options.Add(LicenseMode);
@@ -156,7 +147,6 @@ internal sealed class GlobalOptions
         long maxInputBytes = ResolveMaxInputBytes(requestedInputBytes ?? inherited?.MaxInputBytes);
         return new GlobalValues(
             MapOutputFormat(parseResult.GetValue(OutputFormat)),
-            parseResult.GetValue(Quiet),
             parseResult.GetValue(Verbose),
             licensePath,
             workDirectory,
@@ -173,60 +163,39 @@ internal sealed class GlobalOptions
             $"'{command}' does not run one command's documents, so evaluation mode cannot apply to it");
 
     /// <summary>
-    /// Best-effort read of the output mode and quiet flag for rendering a parse
-    /// error. Parsing has already failed, so an option may be unreadable (e.g.
-    /// <c>--output-format</c> itself carried the bad value); fall back to the default, the
-    /// indented envelope.
+    /// Best-effort read of the output mode for rendering a parse error. Parsing has already
+    /// failed, so the option may be unreadable (e.g. <c>--output-format</c> itself carried the
+    /// bad value); fall back to the default, the indented envelope.
     /// </summary>
-    public (OutputMode OutputFormat, bool Quiet) ResolveForErrorReporting(ParseResult parseResult)
+    public OutputMode ResolveForErrorReporting(ParseResult parseResult)
     {
         ArgumentNullException.ThrowIfNull(parseResult);
 
-        OutputMode mode;
         try
         {
-            mode = MapOutputFormat(parseResult.GetValue(OutputFormat));
+            return MapOutputFormat(parseResult.GetValue(OutputFormat));
         }
         catch (InvalidOperationException)
         {
-            mode = MapOutputFormat(null);
+            return MapOutputFormat(null);
         }
-
-        bool quiet;
-        try
-        {
-            quiet = parseResult.GetValue(Quiet);
-        }
-        catch (InvalidOperationException)
-        {
-            quiet = false;
-        }
-
-        return (mode, quiet);
     }
 
     /// <summary>
-    /// Resolves only non-secret output flags when composition failed before a
+    /// Resolves only the output mode when composition failed before a
     /// <see cref="ParseResult"/> could reach the normal command boundary.
     /// </summary>
-    internal static (OutputMode OutputFormat, bool Quiet) ResolveForProcessFailure(
+    internal static OutputMode ResolveForProcessFailure(
         IReadOnlyList<string> args)
     {
         ArgumentNullException.ThrowIfNull(args);
         string? output = null;
-        bool quiet = false;
         for (int index = 0; index < args.Count; index++)
         {
             string argument = args[index];
             if (argument == "--")
             {
                 break;
-            }
-
-            if (argument is GlobalOptionNames.Quiet or GlobalOptionNames.QuietAlias)
-            {
-                quiet = true;
-                continue;
             }
 
             string? candidate = null;
@@ -248,7 +217,7 @@ internal sealed class GlobalOptions
             }
         }
 
-        return (MapOutputFormat(output), quiet);
+        return MapOutputFormat(output);
     }
 
     /// <summary>Whether a value is one of the accepted <c>--output-format</c> modes.</summary>
@@ -265,7 +234,6 @@ internal sealed class GlobalOptions
 /// <summary>Resolved global option values for one invocation.</summary>
 internal sealed record GlobalValues(
     OutputMode OutputFormat,
-    bool Quiet,
     bool Verbose,
     string? LicensePath,
     string? WorkDir,
