@@ -490,12 +490,4 @@ internal sealed class InvocationParser(RootCommand root, GlobalOptions globals)
 
     internal OutputMode ResolveErrorOutput(IReadOnlyList<string> args) =>
         globals.ResolveForErrorReporting(root.Parse(args, Configuration));
-
-    /// <summary>Writes the help of the command <paramref name="args"/> name to <paramref name="output"/>, as <c>--help</c> prints it.</summary>
-    internal void WriteHelp(IReadOnlyList<string> args, TextWriter output) =>
-        root.Parse([.. args, GlobalOptionNames.Help], Configuration).Invoke(new InvocationConfiguration
-        {
-            Output = output,
-            EnableDefaultExceptionHandler = false,
-        });
 }
