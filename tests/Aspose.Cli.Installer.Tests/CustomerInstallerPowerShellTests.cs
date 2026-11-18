@@ -28,138 +28,16 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         DeleteDirectoryWithRetry(_root);
     }
 
-    [Theory]
-    [InlineData(0, false, false, "exact")]
-    [InlineData(3, false, false, "exact")]
-    [InlineData(3, true, false, "exact")]
-    [InlineData(3, true, true, "exact")]
-    [InlineData(3, true, true, "command")]
-    [InlineData(3, true, true, "args")]
-    [InlineData(3, true, true, "joined-args")]
-    [InlineData(3, true, true, "transport")]
-    public void McpRegistration_SelectsOneExecutableAndPreservesOwnership(int availableHosts, bool existing, bool owned, string variation)
-    {
-        Requires.Windows();
-        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
-        string command = $$"""
-            $ErrorActionPreference = 'Stop'
-            . {{PowerShellLiteral(installer)}}
-            $available = @(@('codex','claude','opencode') | Select-Object -First {{availableHosts}})
-            $script:registrations = @{}
-            $script:adds = 0
-            $installation = 'C:\isolated path\aspose-cli.exe'
-            $variation = '{{variation}}'
-            $configuredCommand = if ($variation -ceq 'command') { $installation + '.other' } else { $installation }
-            $configuredArgs = @(if ($variation -ceq 'args') { 'mcp'; 'other' } elseif ($variation -ceq 'joined-args') { 'mcp serve' } else { 'mcp'; 'serve' })
-            $configuredType = if ($variation -ceq 'transport') { 'http' } else { 'stdio' }
-            $env:CLAUDE_CONFIG_DIR = {{PowerShellLiteral(Path.Combine(_root, "claude-config"))}}
-            [IO.Directory]::CreateDirectory($env:CLAUDE_CONFIG_DIR) | Out-Null
-            if (${{existing.ToString().ToLowerInvariant()}}) {
-                foreach ($hostName in $available) { $script:registrations[$hostName] = $true }
-            }
-            function Get-Command {
-                [CmdletBinding()] param([string] $Name, [string] $CommandType)
-                if ($Name -in $available) {
-                    [pscustomobject]@{ Source = "C:\hosts\$Name.cmd" }
-                    [pscustomobject]@{ Source = 'C:\hosts\must-not-run.exe' }
-                }
-            }
-            function Invoke-OfficialMcp {
-                param([string] $Executable, [string[]] $Arguments, [hashtable] $Environment, [string] $WorkingDirectory)
-                $hostName = [IO.Path]::GetFileNameWithoutExtension($Executable)
-                if ($hostName -notin $available) { throw 'Unexpected executable selection.' }
-                $joined = $Arguments -join '|'
-                if ($hostName -ceq 'opencode' -and $joined -ceq 'debug|config') {
-                    if ($Environment.OPENCODE_DISABLE_PROJECT_CONFIG -cne 'true') { throw 'Project configuration was not excluded.' }
-                    $mcp = @{}
-                    if ($script:registrations.ContainsKey($hostName)) { $mcp['aspose-cli'] = @{ type=$(if ($variation -ceq 'transport') {'remote'} else {'local'}); command=(@($configuredCommand)+$configuredArgs) } }
-                    return [pscustomobject]@{ ExitCode=0; StdOut=(@{ mcp=$mcp; provider=@{ secret='synthetic-provider-secret' } } | ConvertTo-Json -Depth 5); StdErr='' }
-                }
-                $entry = @{ type=$configuredType; command=$configuredCommand; args=$configuredArgs }
-                if ($hostName -ceq 'codex' -and $joined -ceq 'mcp|get|aspose-cli|--json') {
-                    return [pscustomobject]@{ ExitCode=$(if ($script:registrations.ContainsKey($hostName)) {0} else {1}); StdOut=(@{ transport=$entry } | ConvertTo-Json -Depth 5); StdErr='' }
-                }
-                if ($hostName -ceq 'claude' -and $joined -ceq 'mcp|get|aspose-cli') {
-                    [IO.File]::WriteAllText((Join-Path $env:CLAUDE_CONFIG_DIR '.claude.json'), (@{ mcpServers=@{ 'aspose-cli'=$entry }; secret='synthetic-provider-secret' } | ConvertTo-Json -Depth 5))
-                    return [pscustomobject]@{ ExitCode=$(if ($script:registrations.ContainsKey($hostName)) {0} else {1}); StdOut="aspose-cli:`n  Scope: User config (available in all your projects)`n  Type: $configuredType`n  Command: $configuredCommand`n  Args: $($configuredArgs -join ' ')"; StdErr='' }
-                }
-                $expected = @('mcp','add','aspose-cli')
-                if ($hostName -ceq 'claude') { $expected += @('--scope','user') }
-                $expected += @('--',$installation,'mcp','serve')
-                if ($joined -cne ($expected -join '|')) { throw 'Unsupported host command.' }
-                if ($script:registrations.ContainsKey($hostName)) { throw 'Existing registration was overwritten.' }
-                $script:registrations[$hostName] = $true
-                $script:adds++
-                return [pscustomobject]@{ ExitCode=0; StdOut=''; StdErr='' }
-            }
-            $previous = @(if (${{owned.ToString().ToLowerInvariant()}}) { $available })
-            $registered = @(Register-OwnedMcp $installation $previous)
-            $expected = if (${{existing.ToString().ToLowerInvariant()}} -and (-not ${{owned.ToString().ToLowerInvariant()}} -or $variation -cne 'exact')) {0} else { {{availableHosts}} }
-            if ($registered.Count -ne $expected) { throw 'Unexpected registration count.' }
-            $again = @(Register-OwnedMcp $installation $registered)
-            if ($again.Count -ne $expected) { throw 'Registration was not idempotent.' }
-            $expectedAdds = if (${{existing.ToString().ToLowerInvariant()}}) {0} else { {{availableHosts}} }
-            if ($script:adds -ne $expectedAdds) { throw 'Unexpected registration writes.' }
-            Write-Output 'MCP contract passed'
-            """;
-        PowerShellResult result = RunExecutable("powershell.exe",
-            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
-        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
-        Assert.Contains("MCP contract passed", result.StdOut, StringComparison.Ordinal);
-        Assert.DoesNotContain("synthetic-provider-secret", result.StdOut + result.StdErr, StringComparison.Ordinal);
-    }
-
     [Fact]
-    public void OfficialMcpCommandShim_PreservesArgumentsWithoutShellExpansion()
-    {
-        Requires.Windows();
-        string receiver = Path.Combine(_root, "receive.ps1");
-        File.WriteAllText(receiver, "ConvertTo-Json -InputObject @($args) -Compress", new UTF8Encoding(false));
-        string powerShell = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell/v1.0/powershell.exe");
-        string shim = Path.Combine(_root, "host with spaces.cmd");
-        File.WriteAllText(shim, $"@echo off\r\n\"{powerShell}\" -NoProfile -NonInteractive -File \"{receiver}\" %*\r\n", Encoding.ASCII);
-        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
-        string[] arguments = ["mcp", @"C:\literal %USERNAME% & ! ^ ( )\aspose-cli.exe", "A&B", "mcp serve"];
-        string command = $". {PowerShellLiteral(installer)}; $result = Invoke-OfficialMcp {PowerShellLiteral(shim)} @({string.Join(',', arguments.Select(PowerShellLiteral))}); if ($result.ExitCode -ne 0) {{ throw 'Shim failed.' }}; $result.StdOut";
-        PowerShellResult result = RunExecutable(powerShell,
-            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
-        Assert.True(result.ExitCode == 0, result.StdOut + result.StdErr);
-        Assert.Equal(arguments, JsonSerializer.Deserialize<string[]>(result.StdOut));
-    }
-
-    [Fact]
-    public void CrashAfterOptionalMcpMetadataDoesNotInvalidateCommittedRecovery()
-    {
-        Requires.Windows();
-        string install = Path.Combine(_root, "mcp-metadata-recovery");
-        _package.CopyInstallation(install);
-        RewriteMarker(install, marker => marker["mcpRegistrations"] = new JsonArray("codex"));
-        string emptyPath = Path.Combine(_root, "mcp-empty-path");
-        Directory.CreateDirectory(emptyPath);
-        PowerShellResult interrupted = RunInstaller(_package.Path, install,
-            new Dictionary<string, string?> { ["Path"] = emptyPath, ["ASPOSE_CLI_INSTALL_CRASH"] = "mcpMetadataUpdated" },
-            registerMcp: true);
-        Assert.True(interrupted.ExitCode == 97, interrupted.StdErr + interrupted.StdOut);
-        PowerShellResult recovered = RunInstaller(_package.Path, install);
-        Assert.True(recovered.ExitCode == 0, recovered.StdErr + recovered.StdOut);
-        AssertInstall(install);
-    }
-
-    [Fact]
-    public void CommittedCleanupFailureKeepsInstallValidAndDefersMcpMetadata()
+    public void CommittedCleanupFailureKeepsInstallValid()
     {
         Requires.Windows();
         string install = Path.Combine(_root, "pending-cleanup");
         _package.CopyInstallation(install);
-        RewriteMarker(install, marker => marker["mcpRegistrations"] = new JsonArray("codex"));
-        string markerPath = Path.Combine(install, ".aspose-cli-install.json");
-        string emptyPath = Path.Combine(_root, "cleanup-empty-path");
-        Directory.CreateDirectory(emptyPath);
         PowerShellResult committed = RunInstaller(_package.Path, install,
-            new Dictionary<string, string?> { ["Path"] = emptyPath, ["ASPOSE_CLI_INSTALL_FAULT"] = "committedCleanup" }, registerMcp: true);
+            new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_FAULT"] = "committedCleanup" });
         Assert.True(committed.ExitCode == 0, committed.StdErr + committed.StdOut);
         Assert.Contains("cleanup remains pending", committed.StdErr + committed.StdOut, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal("codex", JsonNode.Parse(File.ReadAllText(markerPath))!["mcpRegistrations"]![0]!.GetValue<string>());
         AssertInstall(install);
         // The committed journal and the verified backup stay exactly as a process killed at the
         // commit point leaves them, and the next run must finish them without a rollback.
@@ -187,9 +65,6 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         PowerShellResult first = RunInstaller(package, install);
         Assert.True(first.ExitCode == 0, first.StdErr);
         AssertInstall(install);
-        // Without -Mcp the installation changes no agent host's MCP configuration.
-        Assert.False(JsonNode.Parse(MarkerChoices(install))!["mcp"]!.GetValue<bool>());
-        Assert.DoesNotContain("MCP host", first.StdOut + first.StdErr, StringComparison.Ordinal);
         string firstSnapshot = Snapshot(install);
 
         PowerShellResult second = RunInstaller(package, install);
@@ -200,13 +75,13 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     }
 
     [Fact]
-    public void CleanInstall_WorksWithoutPowerShellModulesCommandPathOrMcpHosts()
+    public void CleanInstall_WorksWithoutPowerShellModulesOrCommandPath()
     {
         Requires.Windows();
 
         string install = Path.Combine(_root, "minimal-environment");
-        // An empty directory as the whole command path: nothing the installer or an MCP host
-        // lookup could find, while the child processes it starts are named by full path.
+        // An empty directory as the whole command path: nothing the installer could find,
+        // while the child processes it starts are named by full path.
         string emptyPath = Path.Combine(_root, "empty-command-path");
         Directory.CreateDirectory(emptyPath);
         PowerShellResult result = RunInstaller(
@@ -216,14 +91,10 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
             {
                 ["Path"] = emptyPath,
                 ["PSModulePath"] = string.Empty,
-            },
-            registerMcp: true);
+            });
 
         Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
         AssertInstall(install);
-        using JsonDocument marker = JsonDocument.Parse(File.ReadAllText(Path.Combine(install, ".aspose-cli-install.json")));
-        Assert.Equal(0, marker.RootElement.GetProperty("mcpRegistrations").GetArrayLength());
-        Assert.True(marker.RootElement.GetProperty("choices").GetProperty("mcp").GetBoolean());
     }
 
     [Fact]
@@ -488,8 +359,9 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     public void UnsupportedOldInstallIsRejectedWithoutExecutingOrChangingIt()
     {
         Requires.Windows();
-        string source = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "where.exe");
-        string old = CreateV1Install("unsupported-old", source);
+        string old = Path.Combine(_root, "unsupported-old");
+        _package.CopyInstallation(old);
+        RewriteMarker(old, marker => marker["schemaVersion"] = 3);
         string before = Snapshot(old);
         string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
         string command = $". {PowerShellLiteral(installer)}; Get-ManagedInstallState {PowerShellLiteral(old)}";
@@ -666,32 +538,6 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         }
     }
 
-    [Fact]
-    public void OfficialMcpCapture_BoundsOutputAndTerminatesTheProcessTree()
-    {
-        Requires.Windows();
-        string pidFile = Path.Combine(_root, "mcp-child.pid");
-        string producer = Path.Combine(_root, "mcp-output.ps1");
-        File.WriteAllText(
-            producer,
-            "$child = Start-Process powershell.exe -WindowStyle Hidden -ArgumentList '-NoLogo','-NoProfile','-NonInteractive','-Command','Start-Sleep -Seconds 60' -PassThru\n"
-            + $"[IO.File]::WriteAllText('{pidFile.Replace("'", "''", StringComparison.Ordinal)}', [string]$child.Id)\n"
-            + "[Console]::Out.Write(('x' * (2MB)))\nStart-Sleep -Seconds 60\n",
-            new UTF8Encoding(false));
-        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
-        string command = $". {PowerShellLiteral(installer)}; Invoke-OfficialMcp 'powershell.exe' @('-NoLogo','-NoProfile','-NonInteractive','-File',{PowerShellLiteral(producer)})";
-
-        PowerShellResult result = RunExecutable(
-            "powershell.exe",
-            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
-
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("1 MiB", result.StdErr + result.StdOut, StringComparison.Ordinal);
-        Assert.True(File.Exists(pidFile));
-        int childId = int.Parse(File.ReadAllText(pidFile, Encoding.UTF8), System.Globalization.CultureInfo.InvariantCulture);
-        Assert.True(SpinWait.SpinUntil(() => !IsProcessRunning(childId), TimeSpan.FromSeconds(10)));
-    }
-
     [Theory]
     [InlineData("prepared")]
     [InlineData("oldMoved")]
@@ -788,21 +634,18 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     {
         yield return ("valid", _ => { }, null);
         yield return ("duplicate-property",
-            install => File.WriteAllText(MarkerPath(install), "{\"schemaVersion\":3,\"schemaVersion\":3}", new UTF8Encoding(false)),
+            install => File.WriteAllText(MarkerPath(install), "{\"schemaVersion\":4,\"schemaVersion\":4}", new UTF8Encoding(false)),
             "duplicate JSON property 'schemaVersion'");
         yield return ("missing-schemaVersion", Remove("schemaVersion"), "missing required property schemaVersion");
         foreach (string property in new[] { "productId", "cliVersion", "payloadManifest", "payloadManifestSha256", "sourceRevision", "choices" })
         {
             yield return ("missing-" + property, Remove(property), $"missing: [{property}]");
         }
-        yield return ("missing-mcpRegistrations", Remove("mcpRegistrations"), "missing mcpRegistrations");
         // The supported schema version, in a JSON type other than an integer.
-        yield return ("schema-string", Change(marker => marker["schemaVersion"] = "3"), "schemaVersion must be an integer");
-        yield return ("schema-fraction", Change(marker => marker["schemaVersion"] = 3.5), "schemaVersion must be an integer");
+        yield return ("schema-string", Change(marker => marker["schemaVersion"] = "4"), "schemaVersion must be an integer");
+        yield return ("schema-fraction", Change(marker => marker["schemaVersion"] = 4.5), "schemaVersion must be an integer");
         yield return ("empty-version", Change(marker => marker["cliVersion"] = ""), "invalid ownership fields");
         yield return ("revision", Change(marker => marker["sourceRevision"] = "abc"), "invalid ownership fields");
-        yield return ("mcp-type", Change(marker => marker["mcpRegistrations"] = "codex"), "invalid ownership fields");
-        yield return ("mcp-duplicate", Change(marker => marker["mcpRegistrations"] = new JsonArray("codex", "codex")), "invalid or duplicate MCP registration");
         yield return ("choices-type", Change(marker => marker["choices"] = "detected-hosts"), "invalid installation choices");
         yield return ("choices-skills", Change(marker => marker["choices"]!["skills"] = "everywhere"), "invalid installation choices");
         yield return ("choices-root", Change(marker => marker["choices"]!["skillsRoot"] = @"C:\skills"), "invalid installation choices");
@@ -849,7 +692,6 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         bool skipPath = true,
         bool skipSkills = true,
         bool developmentPackage = true,
-        bool registerMcp = false,
         string shell = "powershell.exe")
     {
         string script = Path.Combine(RepositoryPaths.Root, "install.ps1");
@@ -871,7 +713,6 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         {
             start.ArgumentList.Add(argument);
         }
-        if (registerMcp) { start.ArgumentList.Add("-Mcp"); }
         if (skipPath)
         {
             start.ArgumentList.Add("-SkipPath");
@@ -913,19 +754,6 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         }
         Task.WaitAll(output, error);
         return new(process.ExitCode, output.Result, error.Result);
-    }
-
-    private static bool IsProcessRunning(int processId)
-    {
-        try
-        {
-            using Process process = Process.GetProcessById(processId);
-            return !process.HasExited;
-        }
-        catch (ArgumentException)
-        {
-            return false;
-        }
     }
 
     private static PowerShellResult RunSkillOwnershipValidation(string root, string skill)
@@ -984,37 +812,14 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     {
         string markerPath = Path.Combine(install, ".aspose-cli-install.json");
         using JsonDocument marker = JsonDocument.Parse(File.ReadAllBytes(markerPath));
-        Assert.Equal(3, marker.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal(4, marker.RootElement.GetProperty("schemaVersion").GetInt32());
         Assert.Matches("^(?:[0-9a-f]{40}|unknown)$", marker.RootElement.GetProperty("sourceRevision").GetString());
         Assert.Equal(JsonValueKind.Object, marker.RootElement.GetProperty("choices").ValueKind);
         Assert.Equal("aspose-cli", marker.RootElement.GetProperty("productId").GetString());
-        Assert.True(marker.RootElement.GetProperty("mcpRegistrations").GetArrayLength() >= 0);
         string manifestName = marker.RootElement.GetProperty("payloadManifest").GetString()!;
         string manifest = Path.Combine(install, manifestName);
         Assert.Equal(FileHashes.Sha256(manifest), marker.RootElement.GetProperty("payloadManifestSha256").GetString());
     }
-
-    private string CreateV1Install(string name, string executable)
-    {
-        string root = Path.Combine(_root, name);
-        Directory.CreateDirectory(Path.Combine(root, "licenses"));
-        File.Copy(executable, Path.Combine(root, "aspose-cli.exe"));
-        File.WriteAllText(
-            Path.Combine(root, ".aspose-cli-install.json"),
-            "{\"schemaVersion\":1,\"cliVersion\":\"1.0.0\"}",
-            new UTF8Encoding(false));
-        File.WriteAllText(Path.Combine(root, "THIRD-PARTY-NOTICES.md"), "test", Encoding.UTF8);
-        foreach (string product in new[] { "Cells", "Pdf", "Slides", "Words" })
-        {
-            File.WriteAllText(
-                Path.Combine(root, "licenses", $"Aspose.{product}.FOSS.LICENSE.txt"),
-                "test",
-                Encoding.UTF8);
-        }
-        return root;
-    }
-
-
 
     private PowerShellResult RunPathTransactionValidation(string phase, bool originalNull)
     {
@@ -1205,11 +1010,11 @@ public sealed class CustomerInstallerPackageFixture : IDisposable
 
     public string Path { get; }
 
-    /// <summary>Copies the installation made with -SkipPath -SkipSkills and no -Mcp to <paramref name="install"/>.</summary>
+    /// <summary>Copies the installation made with -SkipPath -SkipSkills to <paramref name="install"/>.</summary>
     public void CopyInstallation(string install) => CopyInstallationTree(_installation.Value, install);
 
     /// <summary>
-    /// Copies the installation made with -SkillsRoot -SkipPath and no -Mcp to <paramref name="install"/>
+    /// Copies the installation made with -SkillsRoot -SkipPath to <paramref name="install"/>
     /// and its Skills to <paramref name="skillsRoot"/>, which the copied marker records.
     /// </summary>
     public void CopySkillsInstallation(string install, string skillsRoot)

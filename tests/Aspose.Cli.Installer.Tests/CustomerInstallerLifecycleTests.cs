@@ -22,7 +22,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         string choices = MarkerChoices(install);
         string stale = AddManagedStaleFile(Path.Combine(skills, "aspose-cli-cells"));
 
-        // Only -Update: PATH, Skills and MCP choices come from the marker.
+        // Only -Update: PATH and Skills choices come from the marker.
         PowerShellResult updated = RunInstaller(_package.Path, install, arguments: ["-Update"],
             skipPath: false, skipSkills: false);
 
@@ -30,7 +30,6 @@ public sealed partial class CustomerInstallerPowerShellTests
         Assert.Equal(choices, MarkerChoices(install));
         Assert.False(File.Exists(stale));
         AssertBundledSkills(skills);
-        Assert.DoesNotContain("MCP host", Flat(updated), StringComparison.Ordinal);
         Assert.DoesNotContain("user PATH", Flat(updated), StringComparison.Ordinal);
         Assert.Equal(before, CaptureUserState());
     }
@@ -286,86 +285,6 @@ public sealed partial class CustomerInstallerPowerShellTests
             + "catch { if ($_.Exception.Message -match 'older') { 'older' } elseif ($_.Exception.Message -match 'same version precedence') { 'same' } else { throw } }");
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.Equal(expected, result.StdOut.Trim());
-    }
-
-    [Theory]
-    [InlineData("powershell")]
-    [InlineData("pwsh")]
-    public void ClaudeVerification_ReadsLargeConfigurationsWithCaseDistinctKeys(string shell)
-    {
-        Requires.Windows();
-        string executable = shell == "pwsh" ? ToolPath.Require("pwsh") : "powershell.exe";
-        string configDirectory = Path.Combine(_root, "claude-large-" + shell);
-        Directory.CreateDirectory(configDirectory);
-        const string installation = @"C:\isolated path\aspose-cli.exe";
-        var configuration = new JsonObject
-        {
-            ["projects"] = new JsonObject { ["history"] = new string('x', 3 * 1024 * 1024) },
-            ["mcpServers"] = new JsonObject
-            {
-                ["aspose-cli"] = new JsonObject { ["type"] = "stdio", ["command"] = installation, ["args"] = new JsonArray("mcp", "serve") },
-                ["ASPOSE-CLI"] = new JsonObject { ["type"] = "stdio", ["command"] = "other.exe", ["args"] = new JsonArray() },
-            },
-            ["MCPSERVERS"] = new JsonObject(),
-        };
-        File.WriteAllText(Path.Combine(configDirectory, ".claude.json"), configuration.ToJsonString(), new UTF8Encoding(false));
-        string command = $". {PowerShellLiteral(Path.Combine(RepositoryPaths.Root, "install.ps1"))}; "
-            + $"$env:CLAUDE_CONFIG_DIR = {PowerShellLiteral(configDirectory)}; "
-            + "function Invoke-OfficialMcp { param([string] $Executable, [string[]] $Arguments, [hashtable] $Environment, [string] $WorkingDirectory) "
-            + "[pscustomobject]@{ ExitCode = 0; StdErr = ''; StdOut = \"aspose-cli:`n  Scope: User config (available in all your projects)`n\" } }; "
-            + $"$state = Get-McpRegistration 'claude' 'C:\\hosts\\claude.cmd' {PowerShellLiteral(installation)}; \"$($state.Exists)|$($state.Matches)\"";
-        PowerShellResult result = RunExecutable(executable,
-            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
-        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
-        Assert.Equal("True|True", result.StdOut.Trim());
-    }
-
-    [Fact]
-    public void McpRegistration_RollsBackOrRecordsAnAddThatCannotBeVerified()
-    {
-        Requires.Windows();
-        PowerShellResult result = RunInstallerFunctions("""
-            $script:entries = @{}
-            function Get-Command { [CmdletBinding()] param([string] $Name, [string] $CommandType) if ($Name -in @('codex','opencode')) { [pscustomobject]@{ Source = "C:\hosts\$Name.cmd" } } }
-            function Get-McpRegistration { param([string] $HostName, [string] $Executable, [string] $InstallExecutable)
-                [pscustomobject]@{ Exists = $script:entries.ContainsKey($HostName); Matches = $false } }
-            function Invoke-OfficialMcp { param([string] $Executable, [string[]] $Arguments, [hashtable] $Environment, [string] $WorkingDirectory)
-                $hostName = [IO.Path]::GetFileNameWithoutExtension($Executable)
-                if ($Arguments[1] -ceq 'add') { $script:entries[$hostName] = $true }
-                elseif ($Arguments[1] -ceq 'remove') { $script:entries.Remove($hostName) }
-                [pscustomobject]@{ ExitCode = 0; StdOut = ''; StdErr = '' } }
-            $registered = @(Register-OwnedMcp 'C:\isolated\aspose-cli.exe' @() 3>&1 | ForEach-Object { if ($_ -is [Management.Automation.WarningRecord]) { Write-Host "WARNING: $_" } else { $_ } })
-            "registered=$($registered -join ',');left=$(@($script:entries.Keys | Sort-Object) -join ',')"
-            """);
-        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
-        // Codex can remove what it added; OpenCode cannot, so its unverified entry stays owned.
-        Assert.Contains("registered=opencode;left=opencode", Flat(result), StringComparison.Ordinal);
-        Assert.Contains("'codex' accepted the registration, but it could not be verified, so it was removed again", Flat(result), StringComparison.Ordinal);
-        Assert.Contains("recorded as installer-owned", Flat(result), StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void McpUnregistration_RemovesOnlyOwnedEntriesThatStillPointAtTheInstallation()
-    {
-        Requires.Windows();
-        PowerShellResult result = RunInstallerFunctions("""
-            $script:entries = @{ codex = $true; claude = $false; opencode = $true }
-            $script:removed = @()
-            function Get-Command { [CmdletBinding()] param([string] $Name, [string] $CommandType) [pscustomobject]@{ Source = "C:\hosts\$Name.cmd" } }
-            function Get-McpRegistration { param([string] $HostName, [string] $Executable, [string] $InstallExecutable)
-                [pscustomobject]@{ Exists = $script:entries.ContainsKey($HostName); Matches = [bool]$script:entries[$HostName] } }
-            function Invoke-OfficialMcp { param([string] $Executable, [string[]] $Arguments, [hashtable] $Environment, [string] $WorkingDirectory)
-                $hostName = [IO.Path]::GetFileNameWithoutExtension($Executable)
-                if ($Arguments[1] -cne 'remove') { throw 'Unexpected host command.' }
-                $script:removed += $hostName; $script:entries.Remove($hostName)
-                [pscustomobject]@{ ExitCode = 0; StdOut = ''; StdErr = '' } }
-            Unregister-OwnedMcp 'C:\isolated\aspose-cli.exe' @('codex','claude','opencode') 3>&1 | ForEach-Object { "$_" }
-            "removed=$($script:removed -join ',');left=$(@($script:entries.Keys | Sort-Object) -join ',')"
-            """);
-        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
-        Assert.Contains("removed=codex;left=claude,opencode", Flat(result), StringComparison.Ordinal);
-        Assert.Contains("no longer points at this installation; it was preserved", Flat(result), StringComparison.Ordinal);
-        Assert.Contains("OpenCode global configuration", Flat(result), StringComparison.Ordinal);
     }
 
     private PowerShellResult RunUninstaller(

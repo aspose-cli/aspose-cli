@@ -9,13 +9,12 @@ downloads the latest release and checks it against the SHA-256 its release manif
 Every file of the package must match the package's SHA256SUMS.
 
 It adds the installation to the user PATH and installs the Agent Skills for the agent hosts it
-finds. It changes no agent host's MCP configuration unless -Mcp asks it to register the MCP
-server with the Codex, Claude Code and OpenCode setups it finds.
+finds.
 
-An installation records the choices it was made with (PATH, Skills, MCP). -Update replaces an
+An installation records the choices it was made with (PATH, Skills). -Update replaces an
 existing installation and replays those choices; -Uninstall removes the installation, its PATH
-entry, its pristine Skill copies and the MCP registrations it owns. Every mode is one
-transaction under per-user interprocess locks.
+entry and its pristine Skill copies. Every mode is one transaction under per-user interprocess
+locks.
 #>
 [CmdletBinding()]
 param(
@@ -27,7 +26,6 @@ param(
     [string] $LicensePath,
     [string] $LicenseProduct,
     [switch] $SkipLicensePrompt,
-    [switch] $Mcp,
 
     [switch] $Update,
 
@@ -59,87 +57,6 @@ namespace AsposeFileInstaller {
         public static extern System.IntPtr SendMessageTimeout(
             System.IntPtr window, uint message, System.UIntPtr wParam, string lParam,
             uint flags, uint timeout, out System.UIntPtr result);
-    }
-
-    public sealed class BoundedWriteStream : System.IO.Stream {
-        private readonly System.IO.MemoryStream _inner = new System.IO.MemoryStream();
-        private readonly long _maximum;
-
-        public BoundedWriteStream(long maximum) { _maximum = maximum; }
-        public override bool CanRead { get { return false; } }
-        public override bool CanSeek { get { return false; } }
-        public override bool CanWrite { get { return true; } }
-        public override long Length { get { return _inner.Length; } }
-        public override long Position { get { return _inner.Position; } set { throw new System.NotSupportedException(); } }
-        public override void Flush() { }
-        public override int Read(byte[] buffer, int offset, int count) { throw new System.NotSupportedException(); }
-        public override long Seek(long offset, System.IO.SeekOrigin origin) { throw new System.NotSupportedException(); }
-        public override void SetLength(long value) { throw new System.NotSupportedException(); }
-        public override void Write(byte[] buffer, int offset, int count) {
-            if (_inner.Length + count > _maximum) { throw new System.IO.InvalidDataException("Child process output exceeded its limit."); }
-            _inner.Write(buffer, offset, count);
-        }
-        public override System.Threading.Tasks.Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken) {
-            try { Write(buffer, offset, count); return System.Threading.Tasks.Task.FromResult(0); }
-            catch (System.Exception exception) { return System.Threading.Tasks.Task.FromException(exception); }
-        }
-        public string GetText() { return System.Text.Encoding.UTF8.GetString(_inner.ToArray()); }
-        protected override void Dispose(bool disposing) { if (disposing) { _inner.Dispose(); } base.Dispose(disposing); }
-    }
-
-    public sealed class KillOnCloseJob : System.IDisposable {
-        private System.IntPtr _handle;
-
-        public KillOnCloseJob() {
-            _handle = CreateJobObject(System.IntPtr.Zero, null);
-            if (_handle == System.IntPtr.Zero) { return; }
-            var information = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION();
-            information.BasicLimitInformation.LimitFlags = 0x00002000;
-            int length = System.Runtime.InteropServices.Marshal.SizeOf(information);
-            System.IntPtr pointer = System.Runtime.InteropServices.Marshal.AllocHGlobal(length);
-            try {
-                System.Runtime.InteropServices.Marshal.StructureToPtr(information, pointer, false);
-                if (!SetInformationJobObject(_handle, 9, pointer, (uint)length)) {
-                    CloseHandle(_handle); _handle = System.IntPtr.Zero;
-                }
-            }
-            finally { System.Runtime.InteropServices.Marshal.FreeHGlobal(pointer); }
-        }
-
-        public bool TryAssign(System.Diagnostics.Process process) {
-            return _handle != System.IntPtr.Zero && AssignProcessToJobObject(_handle, process.Handle);
-        }
-
-        public void Dispose() {
-            if (_handle != System.IntPtr.Zero) { CloseHandle(_handle); _handle = System.IntPtr.Zero; }
-        }
-
-        [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
-        private static extern System.IntPtr CreateJobObject(System.IntPtr securityAttributes, string name);
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-        private static extern bool SetInformationJobObject(System.IntPtr job, int infoClass, System.IntPtr information, uint length);
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-        private static extern bool AssignProcessToJobObject(System.IntPtr job, System.IntPtr process);
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-        private static extern bool CloseHandle(System.IntPtr handle);
-
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        private struct JOBOBJECT_BASIC_LIMIT_INFORMATION {
-            public long PerProcessUserTimeLimit, PerJobUserTimeLimit;
-            public uint LimitFlags;
-            public System.UIntPtr MinimumWorkingSetSize, MaximumWorkingSetSize;
-            public uint ActiveProcessLimit;
-            public System.UIntPtr Affinity;
-            public uint PriorityClass, SchedulingClass;
-        }
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        private struct IO_COUNTERS { public ulong ReadOperationCount, WriteOperationCount, OtherOperationCount, ReadTransferCount, WriteTransferCount, OtherTransferCount; }
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        private struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
-            public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
-            public IO_COUNTERS IoInfo;
-            public System.UIntPtr ProcessMemoryLimit, JobMemoryLimit, PeakProcessMemoryUsed, PeakJobMemoryUsed;
-        }
     }
 
     // Strict JSON with unique object keys, compared as PowerShell compares property names.
@@ -663,7 +580,7 @@ function Move-DirectoryWithRetry {
             if ($attempt -eq 30) {
                 $users = @(Get-ProcessesUsingDirectory $Source)
                 $running = if ($users.Count -ne 0) { " Running from it: $($users -join ', ')." } else { '' }
-                throw "Directory publication remained blocked after 3 seconds: '$Source' -> '$Destination' ($($_.Exception.Message)).$running Close every program that uses it, including AI agents (Codex, Claude Code, OpenCode) that started '$($script:CommandName) mcp serve' and terminals whose current directory is inside it, then retry."
+                throw "Directory publication remained blocked after 3 seconds: '$Source' -> '$Destination' ($($_.Exception.Message)).$running Close every program that uses it, including terminals whose current directory is inside it, then retry."
             }
             Start-Sleep -Milliseconds 100
         }
@@ -738,8 +655,8 @@ function Invoke-Capabilities {
 function Assert-InstallChoices {
     param($Choices)
     if ($Choices -isnot [Management.Automation.PSCustomObject]) { throw 'The installation marker has invalid installation choices.' }
-    Assert-ExactProperties $Choices @('path','skills','skillsRoot','mcp') 'installation marker choices'
-    if ($Choices.path -isnot [bool] -or $Choices.mcp -isnot [bool] -or
+    Assert-ExactProperties $Choices @('path','skills','skillsRoot') 'installation marker choices'
+    if ($Choices.path -isnot [bool] -or
         $Choices.skills -isnot [string] -or $Choices.skills -cnotin @('detected-hosts','custom','none') -or
         ($Choices.skills -ceq 'custom' -and ($Choices.skillsRoot -isnot [string] -or $Choices.skillsRoot -cnotmatch '^[A-Za-z]:\\')) -or
         ($Choices.skills -cne 'custom' -and $null -ne $Choices.skillsRoot)) {
@@ -757,31 +674,22 @@ function Get-ManagedInstallState {
     if ('schemaVersion' -cnotin @($marker.PSObject.Properties.Name)) {
         throw 'Installation marker is missing required property schemaVersion.'
     }
-    if (-not (Test-JsonInteger $marker.schemaVersion 3)) {
+    if (-not (Test-JsonInteger $marker.schemaVersion 4)) {
         throw "Installation marker schemaVersion must be an integer with a supported value: '$Root' was installed by a build this installer does not support. Nothing was changed. Move that directory aside, and remove the $($script:ProductId)-* Skill folders it installed, then install again."
     }
     $schemaVersion = [long]$marker.schemaVersion
 
-        if ('mcpRegistrations' -cnotin @($marker.PSObject.Properties.Name)) { throw 'Installation marker is missing mcpRegistrations.' }
-        $markerNames = @('schemaVersion','productId','cliVersion','sourceRevision','payloadManifest','payloadManifestSha256','choices','mcpRegistrations')
+        $markerNames = @('schemaVersion','productId','cliVersion','sourceRevision','payloadManifest','payloadManifestSha256','choices')
         Assert-ExactProperties $marker $markerNames 'installation marker'
         if ($marker.productId -isnot [string] -or $marker.productId -cne $script:ProductId -or
             $marker.cliVersion -isnot [string] -or [string]::IsNullOrWhiteSpace($marker.cliVersion) -or
             $marker.cliVersion -cnotmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$' -or
             $marker.sourceRevision -isnot [string] -or $marker.sourceRevision -cnotmatch '^(?:[0-9a-f]{40}|unknown)$' -or
             $marker.payloadManifest -isnot [string] -or $marker.payloadManifest -cne $script:PayloadManifestName -or
-            $marker.payloadManifestSha256 -isnot [string] -or $marker.payloadManifestSha256 -cnotmatch '^[0-9a-f]{64}$' -or
-            $marker.mcpRegistrations -isnot [Array]) {
+            $marker.payloadManifestSha256 -isnot [string] -or $marker.payloadManifestSha256 -cnotmatch '^[0-9a-f]{64}$') {
             throw 'The installation marker has invalid ownership fields.'
         }
         $choices = Assert-InstallChoices $marker.choices
-        $registrations = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-        foreach ($registration in @($marker.mcpRegistrations)) {
-            if ($registration -isnot [string] -or $registration -notin @('codex','claude','opencode') -or
-                -not $registrations.Add([string]$registration)) {
-                throw 'The installation marker contains an invalid or duplicate MCP registration.'
-            }
-        }
         $payloadManifestPath = Join-Path $Root $script:PayloadManifestName
         if ((Get-FileSha256 $payloadManifestPath) -cne $marker.payloadManifestSha256) { throw 'The payload manifest hash does not match the installation marker.' }
         $manifest = Read-StrictJson $payloadManifestPath 'payload manifest'
@@ -814,7 +722,6 @@ function Get-ManagedInstallState {
         Choices = $choices
         Snapshot = Get-InventorySnapshot $inventory
         BuildMetadata = $buildMetadata
-        McpRegistrations = @($marker.mcpRegistrations)
     }
 }
 
@@ -1068,318 +975,6 @@ function Get-DetectedSkillHosts {
     if (Test-Path -LiteralPath (Join-Path $profile '.claude')) { $hosts += 'claude-code' }
     if (Test-Path -LiteralPath (Join-Path $profile '.config\opencode')) { $hosts += 'opencode' }
     return $hosts
-}
-
-function Invoke-OfficialMcp {
-    param(
-        [Parameter(Mandatory)][string] $Executable,
-        [Parameter(Mandatory)][string[]] $Arguments,
-        [hashtable] $Environment = @{},
-        [string] $WorkingDirectory
-    )
-    $start = [Diagnostics.ProcessStartInfo]::new()
-    $start.FileName = $Executable
-    $start.Arguments = (@($Arguments | ForEach-Object { ConvertTo-NativeArgument ([string]$_) }) -join ' ')
-    if ($WorkingDirectory) { $start.WorkingDirectory = $WorkingDirectory }
-    foreach ($name in $Environment.Keys) { $start.EnvironmentVariables[$name] = $Environment[$name] }
-    if ([IO.Path]::GetExtension($Executable) -in @('.cmd', '.bat')) {
-        # cmd has different escaping from CommandLineToArgvW. Expand private
-        # variables once, inside quotes, with AutoRun and delayed expansion off.
-        $values = @($Executable) + $Arguments
-        $tokens = @()
-        for ($index = 0; $index -lt $values.Count; $index++) {
-            $value = [string]$values[$index]
-            [void](ConvertTo-NativeArgument $value)
-            if ($value.Contains('"')) { throw 'MCP command-shim arguments may not contain double quotes.' }
-            $name = $script:EnvironmentVariablePrefix + 'MCP_ARGUMENT_' + $index
-            $start.EnvironmentVariables[$name] = $value
-            $tokens += '"%' + $name + '%"'
-        }
-        $start.FileName = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::System)) 'cmd.exe'
-        $start.Arguments = '/d /v:off /s /c "' + ($tokens -join ' ') + '"'
-    }
-    $start.UseShellExecute = $false
-    $start.RedirectStandardOutput = $true
-    $start.RedirectStandardError = $true
-    $start.CreateNoWindow = $true
-    $start.ErrorDialog = $false
-    $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
-    $process = [Diagnostics.Process]::Start($start)
-    if ($null -eq $process) { throw "MCP host CLI could not start: $Executable" }
-    $job = [AsposeFileInstaller.KillOnCloseJob]::new()
-    [void]$job.TryAssign($process)
-    $stdout = [AsposeFileInstaller.BoundedWriteStream]::new(1MB)
-    $stderr = [AsposeFileInstaller.BoundedWriteStream]::new(1MB)
-    try {
-        $stdoutTask = $process.StandardOutput.BaseStream.CopyToAsync($stdout)
-        $stderrTask = $process.StandardError.BaseStream.CopyToAsync($stderr)
-        $deadline = [DateTime]::UtcNow.AddSeconds(30)
-        while (-not $process.WaitForExit(100)) {
-            if ($stdoutTask.IsFaulted -or $stderrTask.IsFaulted) {
-                Stop-CliChildProcessTree $process
-                throw "MCP host CLI output exceeded the 1 MiB per-stream limit: $Executable"
-            }
-            if ([DateTime]::UtcNow -ge $deadline) {
-                Stop-CliChildProcessTree $process
-                throw "MCP host CLI timed out after 30 seconds and its process tree was terminated: $Executable"
-            }
-        }
-        $pipesClosed = $false
-        try {
-            $pipesClosed = [Threading.Tasks.Task]::WaitAll(
-                [Threading.Tasks.Task[]]@($stdoutTask, $stderrTask),
-                5000)
-        }
-        catch [AggregateException] {
-            throw "MCP host CLI output exceeded the 1 MiB per-stream limit: $Executable"
-        }
-        if (-not $pipesClosed) {
-            Stop-CliChildProcessTree $process
-            throw "MCP host CLI output pipes did not close within 5 seconds: $Executable"
-        }
-        if ($stdoutTask.IsFaulted -or $stderrTask.IsFaulted) {
-            throw "MCP host CLI output exceeded the 1 MiB per-stream limit: $Executable"
-        }
-        return [pscustomobject]@{
-            ExitCode = $process.ExitCode
-            StdOut = $stdout.GetText()
-            StdErr = $stderr.GetText()
-        }
-    }
-    finally {
-        if (-not $process.HasExited) { Stop-CliChildProcessTree $process }
-        $job.Dispose()
-        $stdout.Dispose()
-        $stderr.Dispose()
-        $process.Dispose()
-    }
-}
-
-# Parses host JSON into case-sensitive dictionaries. PowerShell objects merge keys that differ
-# only in case, and host configuration files (Claude's in particular) grow far beyond what a
-# strict tokenizer should read, so neither ConvertFrom-Json objects nor Read-StrictJson fit.
-function ConvertFrom-HostJson {
-    param([Parameter(Mandatory)][AllowEmptyString()][string] $Text, [Parameter(Mandatory)][string] $Context)
-    try {
-        if ($PSVersionTable.PSEdition -ceq 'Core') {
-            return ,(ConvertFrom-Json -InputObject $Text -AsHashtable)
-        }
-        Add-Type -AssemblyName System.Web.Extensions
-        $serializer = [Web.Script.Serialization.JavaScriptSerializer]::new()
-        $serializer.MaxJsonLength = [int]::MaxValue
-        $serializer.RecursionLimit = 256
-        return ,$serializer.DeserializeObject($Text)
-    }
-    catch { throw "$Context is not valid JSON." }
-}
-
-function Read-HostJsonFile {
-    param([Parameter(Mandatory)][string] $Path, [Parameter(Mandatory)][string] $Context)
-    # The host may be writing its own file; share it fully and never hold it open.
-    $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read,
-        [IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete)
-    try {
-        if ($stream.Length -gt 256MB) { throw "$Context exceeds its 256 MiB read budget." }
-        $reader = [IO.StreamReader]::new($stream, $script:Utf8, $true)
-        try { $text = $reader.ReadToEnd() } finally { $reader.Dispose() }
-    }
-    finally { $stream.Dispose() }
-    return ,(ConvertFrom-HostJson $text $Context)
-}
-
-function Get-JsonMember {
-    param($Object, [Parameter(Mandatory)][string] $Name)
-    # Both parsers' dictionaries expose ContainsKey; Dictionary<,> hides IDictionary.Contains.
-    if ($Object -isnot [Collections.IDictionary] -or -not $Object.ContainsKey($Name)) { return $null }
-    $value = $Object[$Name]
-    if ($null -eq $value) { return $null }
-    return ,$value
-}
-
-function Test-StdioMcpCommand {
-    param($Transport, [string] $InstallExecutable)
-    $type = Get-JsonMember $Transport 'type'
-    $command = Get-JsonMember $Transport 'command'
-    $arguments = Get-JsonMember $Transport 'args'
-    return $type -is [string] -and $type -ceq 'stdio' -and
-        $command -is [string] -and [string]::Equals($command, $InstallExecutable, [StringComparison]::OrdinalIgnoreCase) -and
-        $arguments -is [array] -and $arguments.Count -eq 2 -and
-        $arguments[0] -ceq 'mcp' -and $arguments[1] -ceq 'serve'
-}
-
-function Get-McpRegistration {
-    param([string] $HostName, [string] $Executable, [string] $InstallExecutable)
-    if ($HostName -ceq 'opencode') {
-        # Query only user-wide configuration; never echo the resolved configuration,
-        # which can contain provider credentials unrelated to this installation.
-        $environment = @{
-            OPENCODE_DISABLE_PROJECT_CONFIG = 'true'
-            OPENCODE_CONFIG = ''; OPENCODE_CONFIG_DIR = ''; OPENCODE_CONFIG_CONTENT = ''
-        }
-        $result = Invoke-OfficialMcp $Executable @('debug','config') `
-            -Environment $environment -WorkingDirectory ([IO.Path]::GetTempPath())
-        if ($result.ExitCode -ne 0) { throw 'OpenCode configuration could not be queried.' }
-        $configuration = ConvertFrom-HostJson $result.StdOut 'OpenCode configuration response'
-        if ($configuration -isnot [Collections.IDictionary]) { throw 'OpenCode configuration response is not an object.' }
-        $entry = Get-JsonMember (Get-JsonMember $configuration 'mcp') $script:CommandName
-        if ($null -eq $entry) { return [pscustomobject]@{ Exists = $false; Matches = $false } }
-        $type = Get-JsonMember $entry 'type'
-        # Get-JsonMember keeps an array whole, so wrap only a scalar.
-        $command = Get-JsonMember $entry 'command'
-        $arguments = if ($command -is [array]) { $command } else { @($command) }
-        $sameCommand = $type -is [string] -and $type -ceq 'local' -and $arguments.Count -eq 3 -and
-            $arguments[0] -is [string] -and [string]::Equals($arguments[0], $InstallExecutable, [StringComparison]::OrdinalIgnoreCase) -and
-            $arguments[1] -ceq 'mcp' -and $arguments[2] -ceq 'serve'
-        return [pscustomobject]@{ Exists = $true; Matches = [bool]$sameCommand }
-    }
-    $query = @('mcp','get',$script:CommandName)
-    if ($HostName -ceq 'codex') { $query += '--json' }
-    $result = Invoke-OfficialMcp $Executable $query -WorkingDirectory ([IO.Path]::GetTempPath())
-    if ($result.ExitCode -ne 0) { return [pscustomobject]@{ Exists = $false; Matches = $false } }
-    if ($HostName -ceq 'codex') {
-        $configuration = ConvertFrom-HostJson $result.StdOut 'Codex MCP response'
-        $sameCommand = Test-StdioMcpCommand (Get-JsonMember $configuration 'transport') $InstallExecutable
-    }
-    else {
-        # Claude's get output joins arguments with spaces. Read its documented
-        # user configuration to distinguish ['mcp','serve'] from ['mcp serve'].
-        $scope = [regex]::Matches($result.StdOut, '(?m)^  Scope: User config \(available in all your projects\)\r?$')
-        $sameCommand = $false
-        if ($scope.Count -eq 1) {
-            $configDirectory = [Environment]::GetEnvironmentVariable('CLAUDE_CONFIG_DIR', 'Process')
-            if ([string]::IsNullOrWhiteSpace($configDirectory)) {
-                $configDirectory = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
-            }
-            elseif (-not [IO.Path]::IsPathRooted($configDirectory)) {
-                $configDirectory = Join-Path ([IO.Path]::GetTempPath()) $configDirectory
-            }
-            $configuration = Read-HostJsonFile (Join-Path $configDirectory '.claude.json') 'Claude user configuration'
-            $entry = Get-JsonMember (Get-JsonMember $configuration 'mcpServers') $script:CommandName
-            $sameCommand = Test-StdioMcpCommand $entry $InstallExecutable
-        }
-    }
-    return [pscustomobject]@{ Exists = $true; Matches = [bool]$sameCommand }
-}
-
-# Each host's own CLI adds and removes its registration; OpenCode's named, noninteractive add
-# writes global configuration itself, preserving JSONC. Do not implement a second host
-# configuration writer. OpenCode has no noninteractive remove, so its removal is manual.
-function Get-McpHostSpecs {
-    param([Parameter(Mandatory)][string] $InstallExecutable)
-    $name = $script:CommandName
-    return @(
-        [pscustomobject]@{ Name = 'codex'; Executable = 'codex'
-            Add = @('mcp','add',$name,'--',$InstallExecutable,'mcp','serve'); Remove = @('mcp','remove',$name)
-            ManualRemoval = "run 'codex mcp remove $name'" },
-        [pscustomobject]@{ Name = 'claude'; Executable = 'claude'
-            Add = @('mcp','add',$name,'--scope','user','--',$InstallExecutable,'mcp','serve'); Remove = @('mcp','remove',$name,'--scope','user')
-            ManualRemoval = "run 'claude mcp remove $name --scope user'" },
-        [pscustomobject]@{ Name = 'opencode'; Executable = 'opencode'
-            Add = @('mcp','add',$name,'--',$InstallExecutable,'mcp','serve'); Remove = $null
-            ManualRemoval = "remove the '$name' entry from the 'mcp' section of the OpenCode global configuration (~/.config/opencode/opencode.json or opencode.jsonc)" }
-    )
-}
-
-function Remove-McpRegistration {
-    param([Parameter(Mandatory)] $HostSpec, [Parameter(Mandatory)][string] $Executable, [Parameter(Mandatory)][string] $InstallExecutable)
-    if ($null -eq $HostSpec.Remove) { return $false }
-    try {
-        $removal = Invoke-OfficialMcp $Executable ([string[]]$HostSpec.Remove) -WorkingDirectory ([IO.Path]::GetTempPath())
-        if ($removal.ExitCode -ne 0) { return $false }
-        return -not (Get-McpRegistration $HostSpec.Name $Executable $InstallExecutable).Exists
-    }
-    catch { return $false }
-}
-
-# Returns the hosts whose registration this installation owns afterwards. An entry is owned
-# only when this installer created it: an existing entry stays owned while it still matches,
-# and a failed query keeps the recorded ownership instead of silently giving it up.
-function Register-OwnedMcp {
-    param(
-        [Parameter(Mandatory)][string] $InstallExecutable,
-        [Parameter(Mandatory)][AllowEmptyCollection()][string[]] $PreviouslyOwned
-    )
-    $registered = [Collections.Generic.List[string]]::new()
-    foreach ($hostSpec in @(Get-McpHostSpecs $InstallExecutable)) {
-        $name = $hostSpec.Name
-        $owned = $name -in $PreviouslyOwned
-        $command = Get-Command $hostSpec.Executable -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($null -eq $command) {
-            if ($owned) { $registered.Add($name) }
-            Write-Warning "MCP host '$name' CLI was not found; registration was skipped."
-            continue
-        }
-        try { $existing = Get-McpRegistration $name $command.Source $InstallExecutable }
-        catch {
-            if ($owned) { $registered.Add($name) }
-            Write-Warning "MCP host '$name' registration could not be queried and was left unchanged ($($_.Exception.Message)); the CLI installation remains valid."
-            continue
-        }
-        if ($existing.Exists) {
-            if ($owned -and $existing.Matches) { $registered.Add($name) }
-            else { Write-Warning "MCP host '$name' already has a '$($script:CommandName)' registration that is not verified as installer-owned; it was preserved as user-owned." }
-            continue
-        }
-        try { $add = Invoke-OfficialMcp $command.Source ([string[]]$hostSpec.Add) -WorkingDirectory ([IO.Path]::GetTempPath()) }
-        catch {
-            Write-Warning "MCP host '$name' registration command could not run ($($_.Exception.Message)); registration was skipped."
-            continue
-        }
-        if ($add.ExitCode -ne 0) {
-            # The host's own first line of output usually names the fix, such as a broken configuration file.
-            $reason = @((Get-ChildProcessDiagnostic $add) -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 3) -join ' '
-            Write-Warning "MCP host '$name' registration command failed with exit code $($add.ExitCode)$(if ($reason) { ": $reason" }); registration was skipped."
-            continue
-        }
-        # No entry existed before the add, so whatever is registered now was created here.
-        $verified = $false
-        try {
-            $published = Get-McpRegistration $name $command.Source $InstallExecutable
-            $verified = $published.Exists -and $published.Matches
-        }
-        catch { $verified = $false }
-        if ($verified) { $registered.Add($name); continue }
-        if (Remove-McpRegistration $hostSpec $command.Source $InstallExecutable) {
-            Write-Warning "MCP host '$name' accepted the registration, but it could not be verified, so it was removed again."
-        }
-        else {
-            $registered.Add($name)
-            Write-Warning "MCP host '$name' accepted the registration, but it could not be verified or removed again; it is recorded as installer-owned so that uninstall removes it."
-        }
-    }
-    return @($registered)
-}
-
-# Removes only registrations this installation owns and that still point at it.
-function Unregister-OwnedMcp {
-    param(
-        [Parameter(Mandatory)][string] $InstallExecutable,
-        [Parameter(Mandatory)][AllowEmptyCollection()][string[]] $Owned
-    )
-    foreach ($hostSpec in @(Get-McpHostSpecs $InstallExecutable | Where-Object { $_.Name -in $Owned })) {
-        $name = $hostSpec.Name
-        $command = Get-Command $hostSpec.Executable -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($null -eq $command) {
-            Write-Warning "MCP host '$name' CLI was not found. To remove this installation's MCP registration, $($hostSpec.ManualRemoval)."
-            continue
-        }
-        try { $existing = Get-McpRegistration $name $command.Source $InstallExecutable }
-        catch {
-            Write-Warning "MCP host '$name' registration could not be queried ($($_.Exception.Message)). To remove it, $($hostSpec.ManualRemoval)."
-            continue
-        }
-        if (-not $existing.Exists) { continue }
-        if (-not $existing.Matches) {
-            Write-Warning "MCP host '$name' has a '$($script:CommandName)' registration that no longer points at this installation; it was preserved."
-            continue
-        }
-        if (Remove-McpRegistration $hostSpec $command.Source $InstallExecutable) {
-            Write-Host "Removed the '$($script:CommandName)' MCP registration from $name."
-        }
-        else {
-            Write-Warning "MCP host '$name' registration could not be removed automatically. To remove it, $($hostSpec.ManualRemoval)."
-        }
-    }
 }
 
 function Get-SkillContentHash {
@@ -1779,7 +1374,7 @@ function Get-TransactionKey {
 }
 
 # Install, update and uninstall share two locks: a per-user mutex for state shared by every
-# installation (the user PATH and host registrations), and a per-directory lock file.
+# installation (the user PATH), and a per-directory lock file.
 function Enter-InstallLock {
     param([Parameter(Mandatory)][string] $InstallRoot)
     $installParent = Split-Path -Parent $InstallRoot
@@ -1950,11 +1545,10 @@ function Install-Release {
     }
     $skipPath = [bool]$SkipPath
     $skipSkills = [bool]$SkipSkills
-    $skipMcp = -not [bool]$Mcp
     $skipLicensePrompt = [bool]$SkipLicensePrompt
     $licensePath = $LicensePath
     if ($Update) {
-        foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','Mcp','LicensePath','LicenseProduct')) {
+        foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','LicensePath','LicenseProduct')) {
             if ($bound.ContainsKey($name)) { throw "-Update replays the choices recorded by the existing installation and cannot be combined with -$name." }
         }
         $skipLicensePrompt = $true
@@ -2033,7 +1627,6 @@ function Install-Release {
             # Replay the choices the installation was made with.
             $choices = $existingState.Choices
             $skipPath = -not [bool]$choices.path
-            $skipMcp = -not [bool]$choices.mcp
             $skipSkills = $choices.skills -ceq 'none'
             if ($choices.skills -ceq 'custom') {
                 $customSkillsRoot = Resolve-CustomSkillsRoot ([string]$choices.skillsRoot)
@@ -2060,7 +1653,7 @@ function Install-Release {
         $payloadManifestPath = Join-Path $stage $script:PayloadManifestName
         Write-JsonAtomic $payloadManifestPath $payloadManifest
         $marker = [ordered]@{
-            schemaVersion = 3
+            schemaVersion = 4
             productId = $script:ProductId
             cliVersion = [string]$capabilities.cliVersion
             sourceRevision = [string]$capabilities.sourceRevision
@@ -2071,11 +1664,7 @@ function Install-Release {
                 path = -not $skipPath
                 skills = $(if ($skipSkills) { 'none' } elseif ($customSkillsRoot) { 'custom' } else { 'detected-hosts' })
                 skillsRoot = $(if ($customSkillsRoot) { $customSkillsRoot } else { $null })
-                mcp = -not $skipMcp
             }
-            mcpRegistrations = @(
-                if ($null -ne $existingState) { @($existingState.McpRegistrations) }
-            )
         }
         Write-JsonAtomic (Join-Path $stage $script:MarkerName) $marker
         $newState = Get-ManagedInstallState $stage
@@ -2220,7 +1809,6 @@ function Install-Release {
         # transactions can be exercised without lying about transaction outcome.
         Invoke-TestCrash 'committed'
 
-        $committedCleanupComplete = $false
         try {
             Invoke-TestFault 'committedCleanup'
             if (Test-Path -LiteralPath $backup -PathType Container) { Remove-VerifiedInstallDirectory $backup $existingState.Snapshot }
@@ -2232,24 +1820,9 @@ function Install-Release {
                 }
             }
             Remove-Item -LiteralPath $journalPath -Force
-            $committedCleanupComplete = $true
         }
         catch {
-            Write-Warning "The CLI installation is committed, but transaction cleanup remains pending. MCP setup was skipped; retry installation to finish cleanup: $($_.Exception.Message)"
-        }
-
-        if ($committedCleanupComplete -and -not $skipMcp) {
-            try {
-                $mcpRegistrations = @(Register-OwnedMcp $installExecutable @($newState.McpRegistrations))
-                $installedMarkerPath = Join-Path $installRoot $script:MarkerName
-                $installedMarker = Read-StrictJson $installedMarkerPath 'installation marker'
-                $installedMarker.mcpRegistrations = @($mcpRegistrations)
-                Write-JsonAtomic $installedMarkerPath $installedMarker
-                Invoke-TestFault 'mcpMetadataUpdated'
-            }
-            catch {
-                Write-Warning "Optional MCP setup could not be completed; the CLI installation remains valid: $($_.Exception.Message)"
-            }
+            Write-Warning "The CLI installation is committed, but transaction cleanup remains pending; retry installation to finish cleanup: $($_.Exception.Message)"
         }
         if ($null -ne $licenseArguments) {
             $licenseResult = Invoke-CliChildProcess $installExecutable $licenseArguments
@@ -2290,7 +1863,7 @@ function Install-Release {
 
 function Uninstall-Installation {
     $bound = $script:ScriptParameters
-    foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','Mcp','LicensePath','LicenseProduct')) {
+    foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','LicensePath','LicenseProduct')) {
         if ($bound.ContainsKey($name)) { throw "-Uninstall cannot be combined with -$name." }
     }
     # The installed copy of this script uninstalls the installation it belongs to.
@@ -2390,8 +1963,6 @@ function Uninstall-Installation {
             catch {
                 Write-Warning "The uninstall is committed, but removing its backups remains pending; run install.ps1 -Uninstall again to finish: $($_.Exception.Message)"
             }
-            # Host registrations are not transactional; they are removed once the removal is final.
-            Unregister-OwnedMcp $executable @($state.McpRegistrations)
             Write-Host "$($script:DisplayName) $($state.CliVersion) was removed from $installRoot."
             if ($skillCopies.Count -ne 0) { Write-Host "Removed $($skillCopies.Count) pristine bundled Agent Skill package(s)." }
             Write-Host 'Restart terminals and AI agents so that they stop using the removed installation.'
