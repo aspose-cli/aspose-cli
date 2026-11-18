@@ -70,7 +70,4 @@ internal static class InvocationChecks
     /// <summary>The lines of a stream without line endings or blank lines.</summary>
     public static string[] Lines(string text) =>
         [.. text.ReplaceLineEndings("\n").Split('\n').Where(static line => line.Trim().Length > 0)];
-
-    /// <summary>Text with normalized line endings and no trailing white space.</summary>
-    public static string Normalize(string text) => text.ReplaceLineEndings("\n").TrimEnd();
 }

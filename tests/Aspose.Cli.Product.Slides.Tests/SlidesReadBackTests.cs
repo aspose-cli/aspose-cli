@@ -70,9 +70,6 @@ public sealed class SlidesReadBackTests
         });
 
         Assert.Equal([1, null], info.Sections!.Select(static section => section.StartSlide));
-        string text = RenderedText.Of(surface => InspectCommand.Table(info, surface), Aspose.Cli.Sdk.Extensibility.Output.TableFormat.Plain);
-        string appendix = Assert.Single(text.Split('\n'), static line => line.StartsWith("Appendix", StringComparison.Ordinal));
-        Assert.EndsWith(" -", appendix.TrimEnd());
     }
 
     [Fact]

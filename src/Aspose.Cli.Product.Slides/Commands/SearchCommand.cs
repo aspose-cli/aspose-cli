@@ -1,7 +1,5 @@
-using System.Globalization;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -23,8 +21,7 @@ internal static class SearchCommand
                 Input = standard.Input,
                 Query = search.Read(parse),
                 Password = standard.InputPassword,
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -38,21 +35,5 @@ internal static class SearchCommand
             ],
             Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
         };
-    }
-
-    internal static void Table(SlidesSearchResult result, TableSurface surface)
-    {
-        var table = new TextTable("slide", "id", "scope", "shape", "text");
-        foreach (SlidesSearchHit hit in result.Hits)
-        {
-            table.AddRow(
-                TableText.Int(hit.Slide),
-                hit.SlideId.ToString(CultureInfo.InvariantCulture),
-                hit.Scope,
-                hit.ShapeName ?? hit.ShapeId?.ToString(CultureInfo.InvariantCulture),
-                hit.Context);
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
     }
 }

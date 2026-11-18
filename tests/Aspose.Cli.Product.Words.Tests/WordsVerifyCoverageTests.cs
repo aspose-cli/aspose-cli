@@ -40,18 +40,6 @@ public sealed class WordsVerifyCoverageTests : IDisposable
         Assert.Null(whole["uncheckedOps"]);
     }
 
-    [Fact]
-    public void Verify_InTheTable_ListsAnOperationItDoesNotReadBack()
-    {
-        string input = _fixture.CreateReport();
-
-        CliResult table = Cli("words", "edit", input, "--ops", """{"ops":[{"id":"props","op":"set_properties","title":"T"}]}""",
-            "--out", "table.docx", "--verify", "--output-format", "table");
-
-        Assert.True(table.ExitCode == 0, table.StdErr + table.StdOut);
-        Assert.Contains("not checked props: ", table.StdOut, StringComparison.Ordinal);
-    }
-
     private CliResult Edit(string input, string ops)
     {
         CliResult edited = Cli("words", "edit", input, "--ops", ops, "--out", "out.docx", "--overwrite", "--verify", "--output-format", "json");

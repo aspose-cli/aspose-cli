@@ -1,7 +1,5 @@
 using System.CommandLine;
-using System.Globalization;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
@@ -64,8 +62,7 @@ internal static class ReadCommand
                     MaxCells = maxCells,
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             // A read within the budget is complete. A read over it is a planned scan with
             // another page: of the used range by default, of the data inside an explicit
@@ -86,57 +83,4 @@ internal static class ReadCommand
             ],
         };
     }
-
-    internal static void Table(CellsReadResult read, TableSurface surface)
-    {
-        CellsSheetProjection sheet = read.Sheet;
-        var headline = new List<string> { sheet.Name };
-        if (sheet.Range is { } returned)
-        {
-            headline.Add(returned);
-        }
-
-        if (sheet.UsedRange is { } used)
-        {
-            headline.Add($"(used {used})");
-        }
-
-        surface.Out.WriteLine(string.Join(' ', headline));
-
-        if (sheet.Cells is { Count: > 0 } cells && sheet.Range is not null)
-        {
-            RangeRef range = A1.ParseRange(sheet.Range).Range;
-
-            string[] headers = new string[range.ColumnCount + 1];
-            headers[0] = string.Empty;
-            for (int column = 0; column < range.ColumnCount; column++)
-            {
-                headers[column + 1] = A1.ColumnName(range.Start.Column + column);
-            }
-
-            var table = new TextTable(headers);
-            for (int row = 0; row < cells.Count; row++)
-            {
-                string?[] line = new string?[range.ColumnCount + 1];
-                line[0] = TableText.Int(range.Start.Row + row + 1);
-                for (int column = 0; column < cells[row].Count; column++)
-                {
-                    line[column + 1] = FormatCellValue(cells[row][column]);
-                }
-
-                table.AddRow(line);
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-    }
-
-    private static string? FormatCellValue(CellsCellData cell) => cell.V switch
-    {
-        null => null,
-        bool value => value ? "TRUE" : "FALSE",
-        double value => value.ToString(CultureInfo.InvariantCulture),
-        string value => value,
-        var value => Convert.ToString(value, CultureInfo.InvariantCulture),
-    };
 }

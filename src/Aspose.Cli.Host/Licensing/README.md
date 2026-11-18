@@ -20,8 +20,6 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
 - Installation/removal results come from explicit validated configuration changes. Only
   the supervisor publishes worker outputs; ordinary file reads always address physical files.
   Existing license targets must be regular files reached without links or reparse points.
-- Human startup messages are emitted once at the outer CLI boundary. JSON, verbose JSONL
-  and internal protocols remain parseable.
 
 The public status contract is `LicenseStatusResult.Products`; `Identity` is an opaque
 key for a fully validated snapshot, not a substitute for SDK validation.

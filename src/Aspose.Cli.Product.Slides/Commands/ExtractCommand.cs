@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -31,8 +30,7 @@ internal static class ExtractCommand
                     Slides = slides.ReadRange(parse),
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -44,11 +42,5 @@ internal static class ExtractCommand
                 CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "what each Slides command is for"),
             ],
         };
-    }
-
-    internal static void Table(SlidesExtractResult result, TableSurface surface)
-    {
-        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Outputs.Select(static item =>
-            new ProducedFile(item.Slide is { } slide ? $"slide {slide}" : $"media {item.Index}", item.Path, item.Format, item.SizeBytes))]);
     }
 }

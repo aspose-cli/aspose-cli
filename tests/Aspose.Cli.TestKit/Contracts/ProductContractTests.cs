@@ -217,10 +217,10 @@ public abstract class ProductContractTests<TModule>
 
     /// <summary>
     /// Ensures every declared JSON root has product-local source-generated
-    /// metadata and every successful result is rendered by its product.
+    /// metadata and every successful result publishes a schema.
     /// </summary>
     [Fact]
-    public void JsonRoots_HaveMetadataRendererAndSchemas()
+    public void JsonRoots_HaveMetadataAndSchemas()
     {
         ProductDefinition definition = new TModule().Define();
         Assert.NotNull(definition.Json);
@@ -246,11 +246,6 @@ public abstract class ProductContractTests<TModule>
                 typeof(ResultEnvelope).IsAssignableFrom(root))
             .ToArray();
         Assert.NotEmpty(results);
-        Assert.Equal(
-            results.OrderBy(static type => type.FullName, StringComparer.Ordinal),
-            definition.Outputs
-                .Select(static output => output.ResultType)
-                .OrderBy(static type => type.FullName, StringComparer.Ordinal));
 
         Type[] inputs = roots
             .Where(static root =>
@@ -304,7 +299,7 @@ public abstract class ProductContractTests<TModule>
         ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
         ProductDefinition definition = Assert.Single(catalog.Products);
         Type outcome = Assert.Single(
-            definition.Outputs.Select(static output => output.ResultType).Distinct(),
+            definition.Json.ResultRecords.Select(static record => record.Type).Distinct(),
             // A partial outcome that applies operations, as an edit does; a check such as a
             // validation that fails completes partially too, but applies nothing.
             static type => typeof(IPartialOutcome).IsAssignableFrom(type) && type.GetProperty("Applied") is not null);
@@ -684,8 +679,8 @@ public abstract class ProductContractTests<TModule>
             RecognizerFingerprint(definition.Files.Recognizer),
             string.Join(
                 "\n",
-                definition.Outputs
-                .Select(static output => output.ResultType)
+                definition.Json.ResultRecords
+                .Select(static record => record.Type)
                 .OrderBy(static type => type.FullName, StringComparer.Ordinal)
                 .Select(static type => type.AssemblyQualifiedName)),
             string.Join(

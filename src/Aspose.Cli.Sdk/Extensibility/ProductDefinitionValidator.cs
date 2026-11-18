@@ -9,7 +9,6 @@ internal sealed class ProductDefinitionValidator
 {
     private readonly IReadOnlyDictionary<IProductModule, ProductModuleRegistration>?
         _descriptors;
-    private readonly Dictionary<Type, string> _outputs = [];
 
     public ProductDefinitionValidator(
         IReadOnlyDictionary<IProductModule, ProductModuleRegistration>? descriptors) =>
@@ -31,7 +30,6 @@ internal sealed class ProductDefinitionValidator
         ValidateOperations(definition);
         ValidateFormats(definition);
         ValidateBudgetOptions(definition);
-        RegisterContracts(definition);
         return definition;
     }
 
@@ -86,21 +84,6 @@ internal sealed class ProductDefinitionValidator
         }
 
         return byModule;
-    }
-
-    private void RegisterContracts(ProductDefinition definition)
-    {
-        string productId = definition.Manifest.Id;
-        foreach (ProductOutputDefinition output in definition.Outputs)
-        {
-            if (_outputs.TryGetValue(output.ResultType, out string? owner))
-            {
-                throw new InvalidOperationException(
-                    $"Result type '{output.ResultType.FullName}' has multiple renderers: "
-                    + $"'{owner}' and '{productId}'.");
-            }
-            _outputs.Add(output.ResultType, productId);
-        }
     }
 
     private static void ValidateOperationSchemas(ProductDefinition definition)

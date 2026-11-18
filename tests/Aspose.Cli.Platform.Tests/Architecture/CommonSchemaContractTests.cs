@@ -248,8 +248,7 @@ public sealed class CommonSchemaContractTests
                     "Edits.",
                     new CommandTraits(),
                     [],
-                    static (_, _) => new TestMenu.TestRequest(),
-                    static (_, _) => { })
+                    static (_, _) => new TestMenu.TestRequest())
                 {
                     Operations = operations,
                 },

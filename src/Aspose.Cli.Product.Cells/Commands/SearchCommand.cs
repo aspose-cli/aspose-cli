@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Commands;
@@ -45,8 +44,7 @@ internal static class SearchCommand
                     SheetName = parse.GetValue(sheet),
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
             Examples =
@@ -60,22 +58,5 @@ internal static class SearchCommand
                 new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
         };
-    }
-
-    internal static void Table(CellsSearchResult search, TableSurface surface)
-    {
-        surface.Out.WriteLine($"{search.Hits.Count} hit(s) for '{search.Pattern}' in {search.Input.Path}");
-
-        if (search.Hits.Count > 0)
-        {
-            surface.Out.WriteLine();
-            var table = new TextTable("sheet", "cell", "text");
-            foreach (CellsSearchHit hit in search.Hits)
-            {
-                table.AddRow(hit.Sheet, hit.Part is null ? hit.Cell : $"{hit.Cell ?? hit.Location} ({hit.Part})", hit.Context);
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
     }
 }

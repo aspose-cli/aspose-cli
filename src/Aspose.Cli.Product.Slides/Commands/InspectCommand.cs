@@ -1,7 +1,5 @@
-using System.Globalization;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -27,8 +25,7 @@ internal static class InspectCommand
                 IncludePreview = sample.Read(parse),
                 Details = detail.Read(parse),
                 Password = standard.InputPassword,
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -41,57 +38,5 @@ internal static class InspectCommand
                 new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
         };
-    }
-
-    internal static void Table(SlidesInspectResult result, TableSurface surface)
-    {
-        SlidesPresentationSummary presentation = result.Presentation;
-        ResultText.Input(surface, result.Input);
-        surface.Out.WriteLine(
-            $"slides: {presentation.SlideCount}   size: {TableText.Points(presentation.SlideSize.Width)} x {TableText.Points(presentation.SlideSize.Height)} pt   "
-            + $"orientation: {presentation.Orientation}");
-        surface.Out.WriteLine(
-            $"masters: {presentation.MasterCount}   layouts: {presentation.LayoutCount}   sections: {presentation.SectionCount}   "
-            + $"comments: {presentation.CommentCount}   media: {presentation.MediaCount}   macros: {TableText.YesNo(presentation.HasMacros)}");
-
-        var table = new TextTable("slide", "id", "title", "layout", "shapes", "flags");
-        foreach (SlidesSlideInfo slide in result.Slides)
-        {
-            table.AddRow(
-                TableText.Int(slide.Slide),
-                slide.SlideId.ToString(CultureInfo.InvariantCulture),
-                (slide.Title ?? slide.Name)?.ReplaceLineEndings(" "),
-                slide.Layout,
-                TableText.Int(slide.ShapeCount),
-                string.Join(", ", new[]
-                {
-                    slide.Hidden ? "hidden" : null,
-                    slide.HasNotes ? "notes" : null,
-                    slide.CommentCount > 0 ? $"{slide.CommentCount} comment(s)" : null,
-                }.Where(static value => value is not null)));
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
-        DetailTables(result, surface);
-    }
-
-    /// <summary>The sections --detail asked for, in the order the JSON result lists them.</summary>
-    private static void DetailTables(SlidesInspectResult result, TableSurface surface)
-    {
-        ResultText.Table(surface, "sections", result.Sections, ["name", "id", "start slide"],
-            static section => [section.Name, section.SectionId, section.StartSlide is int start ? TableText.Int(start) : null]);
-        ResultText.Table(surface, "masters", result.Masters, ["name", "slides"],
-            static master => [master.Name, TableText.Int(master.SlideCount)]);
-        ResultText.Table(surface, "layouts", result.Layouts, ["name", "master", "slides"],
-            static layout => [layout.Name, layout.Master, TableText.Int(layout.SlideCount)]);
-        ResultText.Table(surface, "media", result.Media, ["index", "type", "content type", "size"],
-            static item => [TableText.Int(item.Index), item.Kind, item.ContentType, TableText.Bytes(item.SizeBytes)]);
-        ResultText.Table(surface, "notes", result.Notes, ["slide", "present", "characters"],
-            static note => [TableText.Int(note.Slide), TableText.YesNo(note.Present), TableText.Int(note.CharacterCount)]);
-        ResultText.Table(surface, "comments", result.Comments, ["slide", "author", "text"],
-            static comment => [TableText.Int(comment.Slide), comment.Author, comment.Text]);
-        ResultText.List(surface, "fonts", result.Fonts);
-
-        ResultText.Properties(surface, "properties", result.Properties);
     }
 }

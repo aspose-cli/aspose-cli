@@ -5,9 +5,8 @@ that answers the question; never dump a whole document.
 
 ## Output
 
-Parse `--output-format json` or `compact` (the same JSON on one line, fewer
-tokens). Without the option, a terminal gets human text and a redirected
-stdout gets JSON; `--help` lists the other formats. Results go to stdout; an
+Results are JSON, indented by default; `--output-format compact` writes the
+same JSON on one line, with fewer tokens. Results go to stdout; an
 error envelope goes to stderr and leaves stdout empty. Reads are
 deterministic: repeating one returns the same output, so two reads can be
 diffed.

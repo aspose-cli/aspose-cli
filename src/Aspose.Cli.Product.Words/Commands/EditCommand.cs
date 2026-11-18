@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -40,7 +39,6 @@ internal static class EditCommand
                 TrackChanges = parse.GetValue(trackChanges),
                 Author = parse.GetValue(author),
             },
-            Table,
             checkUsage: parse =>
             {
                 if (parse.GetValue(trackChanges) && string.IsNullOrWhiteSpace(parse.GetValue(author)))
@@ -60,13 +58,6 @@ internal static class EditCommand
                 CommandHelpLink.Docs(WordsModule.Manifest, "editing", "addressing and operation recipes"),
                 CommandHelpLink.Schema<WordsOp>("the exact edit-batch contract"),
             ]);
-    }
-
-    internal static void Table(WordsEditResult result, TableSurface surface)
-    {
-        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied);
-        ResultText.Touched(surface, "pages", result.PagesTouched);
-        ResultText.Verification(surface, result.Verification);
     }
 
     private static WordsOp ParseSet(string value)

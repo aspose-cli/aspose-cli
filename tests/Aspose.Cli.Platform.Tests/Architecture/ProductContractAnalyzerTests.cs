@@ -399,8 +399,7 @@ public sealed class ProductContractAnalyzerTests
                 {
                     _ = System.IO.File.Exists("bind.txt");
                     return new RunRequest("input");
-                },
-                static (_, _) => { });
+                });
         }
 
         public static class Handlers

@@ -1,6 +1,5 @@
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -23,7 +22,6 @@ internal static class EditCommand
             },
             [],
             static (_, edit, _) => new SlidesEditRequest(edit),
-            Table,
             examples:
             [
                 "slides edit deck.pptx --ops deck-ops.json --out revised.pptx --verify",
@@ -35,11 +33,4 @@ internal static class EditCommand
                 CommandHelpLink.Schema<SlidesOp>("the operation JSON schema"),
                 CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "what --verify reads back"),
             ]);
-
-    internal static void Table(SlidesEditResult result, TableSurface surface)
-    {
-        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied);
-        ResultText.Touched(surface, "slides", result.SlidesTouched);
-        ResultText.Verification(surface, result.Verification);
-    }
 }

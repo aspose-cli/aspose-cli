@@ -4,10 +4,8 @@ using System.Text;
 namespace Aspose.Cli.Sdk.Extensibility.Output;
 
 /// <summary>
-/// Measures text by the terminal columns it occupies rather than by UTF-16 code units, so
-/// fixed-width output stays aligned with Chinese, Japanese and Korean text: East Asian Wide and
-/// Fullwidth characters take two columns, combining marks and format characters none, and a
-/// surrogate pair counts as one character.
+/// The terminal columns a character occupies: East Asian Wide and Fullwidth characters take two
+/// columns, combining marks and format characters none, and every other character one.
 /// </summary>
 public static class TextWidth
 {
@@ -29,19 +27,6 @@ public static class TextWidth
         (0x1F900, 0x1F9FF), (0x1FA70, 0x1FAFF), (0x20000, 0x2FFFD), (0x30000, 0x3FFFD),
     ];
 
-    /// <summary>Returns the number of terminal columns <paramref name="text"/> occupies.</summary>
-    public static int Of(string text)
-    {
-        ArgumentNullException.ThrowIfNull(text);
-        int width = 0;
-        foreach (Rune rune in text.EnumerateRunes())
-        {
-            width += Of(rune);
-        }
-
-        return width;
-    }
-
     /// <summary>Returns the number of terminal columns one character occupies: 0, 1 or 2.</summary>
     public static int Of(Rune rune)
     {
@@ -55,13 +40,6 @@ public static class TextWidth
         }
 
         return IsWide(rune.Value) ? 2 : 1;
-    }
-
-    /// <summary>Pads <paramref name="text"/> with spaces to <paramref name="width"/> columns.</summary>
-    public static string PadRight(string text, int width)
-    {
-        int missing = width - Of(text);
-        return missing > 0 ? text + new string(' ', missing) : text;
     }
 
     private static bool IsWide(int value)

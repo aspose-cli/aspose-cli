@@ -130,12 +130,10 @@ internal static class ProcessFailureBoundary
                 HostDiagnosticIds.ProcessUnhandled);
         try
         {
-            (OutputMode output, bool quiet) =
+            (OutputMode output, _) =
                 ResolveErrorOutput(host, args);
             IOutputWriter writer = OutputWriterFactory.Create(
                 output,
-                quiet,
-                host.Catalog,
                 host.ContractJson,
                 error: errorOutput);
             writer.WriteError(error.ToEnvelope());

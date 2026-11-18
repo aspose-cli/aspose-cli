@@ -1,16 +1,15 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
 /// <summary>
-/// One product command: its name, help, traits and own parameters, how the parsed command line
-/// becomes the request (<c>bind</c>), and how the result prints as a table (<c>table</c>). A
-/// product's menu pairs it with the static handler that turns the request into the result.
+/// One product command: its name, help, traits and own parameters, and how the parsed command
+/// line becomes the request (<c>bind</c>). A product's menu pairs it with the static handler
+/// that turns the request into the result.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -37,8 +36,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <item>A handler is any <c>static TResult Run(TSession session, TRequest request)</c> in the
 /// product's Engine; commands that share a body may point at one theme class. Handlers never see
 /// the command line, and commands never see the engine.</item>
-/// <item>The command file (<c>Commands/XxxCommand.cs</c>) holds the options, <c>bind</c> and the
-/// table renderer. Commands that share a result type pass the same renderer method.</item>
+/// <item>The command file (<c>Commands/XxxCommand.cs</c>) holds the options and <c>bind</c>.</item>
 /// <item>Every request declares <c>required string Input</c> (or the paths it reads), so a binding
 /// that forgets it does not compile.</item>
 /// <item>Tests call the handlers directly with a session and a request; there are no test shims
@@ -63,17 +61,12 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// Maps the parsed command line to the request: the product's usage checks first, then the
     /// inputs and secrets it reads through <see cref="StandardInvocation"/>.
     /// </param>
-    /// <param name="table">
-    /// Prints a <typeparamref name="TResult"/> as a table; null only when <typeparamref name="TResult"/>
-    /// is a base of the results the handler returns, whose renderers <see cref="Renderers"/> lists.
-    /// </param>
     public CommandDefinition(
         string name,
         string description,
         CommandTraits traits,
         IReadOnlyList<Symbol> parameters,
-        Func<ParseResult, StandardInvocation, TRequest> bind,
-        Action<TResult, TableSurface>? table)
+        Func<ParseResult, StandardInvocation, TRequest> bind)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
@@ -82,7 +75,6 @@ public sealed class CommandDefinition<TRequest, TResult>
         _traits = traits ?? throw new ArgumentNullException(nameof(traits));
         _parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         _bind = bind ?? throw new ArgumentNullException(nameof(bind));
-        Table = table;
     }
 
     /// <summary>The command name.</summary>
@@ -90,9 +82,6 @@ public sealed class CommandDefinition<TRequest, TResult>
 
     /// <summary>The command help.</summary>
     public string Description { get; }
-
-    /// <summary>The table renderer of <typeparamref name="TResult"/>, or null.</summary>
-    public Action<TResult, TableSurface>? Table { get; }
 
     /// <summary>
     /// Completes the result with what only the command line knows, such as the option values that
@@ -108,28 +97,10 @@ public sealed class CommandDefinition<TRequest, TResult>
     public IReadOnlyList<CommandHelpLink> Links { get; init; } = [];
 
     /// <summary>
-    /// Renderers of further result types the handler returns, for a command whose
-    /// <typeparamref name="TResult"/> is their common base.
-    /// </summary>
-    public IReadOnlyList<ProductOutputDefinition> Renderers { get; init; } = [];
-
-    /// <summary>
     /// Describes the operation documents the command applies, given its path below the product;
     /// <see cref="EditDefinition"/> sets it from the vocabulary's catalog.
     /// </summary>
     internal Func<string, ProductOperationCommand>? Operations { get; init; }
-
-    /// <summary>Every renderer the definition declares.</summary>
-    internal IEnumerable<ProductOutputDefinition> Outputs()
-    {
-        ProductOutputDefinition[] outputs = Table is null
-            ? [.. Renderers]
-            : [ProductOutputDefinition.Create(Table), .. Renderers];
-        return outputs.Length > 0
-            ? outputs
-            : throw new InvalidOperationException(
-                $"Command '{Name}' declares no table renderer; give it a table or its result types' renderers.");
-    }
 
     /// <summary>Creates the System.CommandLine command that runs <paramref name="handler"/>.</summary>
     internal Command Create<TSession>(MenuContext<TSession> context, Func<TSession, TRequest, TResult> handler)
@@ -206,7 +177,6 @@ public static class EditDefinition
     /// <param name="traits">The edited document, its output password and fonts; the edit publishes to a mutation output.</param>
     /// <param name="parameters">The product's own arguments and options, each kind in help order.</param>
     /// <param name="bind">Maps the batch and the command line to the request.</param>
-    /// <param name="table">Prints the result as a table.</param>
     /// <param name="checkUsage">
     /// Rejects a combination of the product's own options that needs no input; it runs once the
     /// input paths are resolved, before the document's content, the operation document, standard
@@ -221,7 +191,6 @@ public static class EditDefinition
         CommandTraits traits,
         IReadOnlyList<Symbol> parameters,
         Func<ParseResult, BoundedEditInvocation<TBatch>, StandardInvocation, TRequest> bind,
-        Action<TResult, TableSurface> table,
         Action<ParseResult>? checkUsage = null,
         string name = "edit",
         IReadOnlyList<string>? examples = null,
@@ -232,7 +201,6 @@ public static class EditDefinition
     {
         ArgumentNullException.ThrowIfNull(edit);
         ArgumentNullException.ThrowIfNull(bind);
-        ArgumentNullException.ThrowIfNull(table);
         return new CommandDefinition<TRequest, TResult>(
             name,
             description,
@@ -242,8 +210,7 @@ public static class EditDefinition
             {
                 checkUsage?.Invoke(parse);
                 return bind(parse, edit.Read(parse, standard, traits.Encrypt is not null), standard);
-            },
-            table)
+            })
         {
             Examples = examples ?? [],
             Links = links ?? [],

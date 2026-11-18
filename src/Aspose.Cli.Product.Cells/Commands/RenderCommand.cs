@@ -2,7 +2,6 @@ using System.CommandLine;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Cells.Commands;
@@ -59,8 +58,7 @@ internal static class RenderCommand
                     Dpi = resolution,
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -73,23 +71,5 @@ internal static class RenderCommand
                 CommandHelpLink.Docs(CellsModule.Manifest, "verification", "the spreadsheet delivery verification protocol"),
             ],
         };
-    }
-
-    internal static void Table(CellsRenderResult render, TableSurface surface)
-    {
-        var notes = new List<string>(2);
-        if (render.Range is { } range)
-        {
-            notes.Add($"range {range}");
-        }
-
-        if (render.Dpi is { } dpi)
-        {
-            notes.Add(TableText.Int(dpi) + " dpi");
-        }
-
-        string? note = notes.Count == 0 ? null : string.Join(", ", notes);
-        ResultText.Files(surface, "rendered", "sheet", [.. render.Outputs.Select(output =>
-            new ProducedFile(output.Sheet, output.Path, output.Format, output.SizeBytes, note))]);
     }
 }

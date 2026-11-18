@@ -83,8 +83,7 @@ Do not retry unchanged input.
   marks that an earlier save without a license wrote into its input; its
   message lists them. The license does not remove them, so tell the user and
   regenerate the deliverable from the original, unmarked inputs.
-- Detect evaluation from the JSON `warnings` array, never from human output:
-  `--quiet` hides warnings on stderr.
+- Detect evaluation from the JSON `warnings` array.
 - Installing a license does not clean files already produced. Regenerate the
   deliverable from the original, unmarked inputs.
 

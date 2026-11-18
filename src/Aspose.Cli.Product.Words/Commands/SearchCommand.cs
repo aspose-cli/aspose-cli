@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Words.Commands;
@@ -27,8 +26,7 @@ internal static class SearchCommand
                     Query = query,
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
             Examples =
@@ -42,22 +40,5 @@ internal static class SearchCommand
                 new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
         };
-    }
-
-    internal static void Table(WordsSearchResult result, TableSurface surface)
-    {
-        surface.Out.WriteLine($"{result.Hits.Count} hit(s) for '{result.Pattern}'");
-        var table = new TextTable("block", "section", "scope", "occurrence", "text");
-        foreach (WordsSearchHit hit in result.Hits)
-        {
-            table.AddRow(
-                WordsText.Block(hit.Block),
-                TableText.Int(hit.Section),
-                hit.Location is { } location ? $"{hit.Scope} ({location}, {hit.Kind})" : hit.Scope,
-                TableText.Int(hit.Occurrence),
-                hit.Context);
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
     }
 }

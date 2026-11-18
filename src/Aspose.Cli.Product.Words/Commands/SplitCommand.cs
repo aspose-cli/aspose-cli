@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -26,8 +25,7 @@ internal static class SplitCommand
                 Output = standard.DirectoryOutput,
                 Password = standard.InputPassword,
                 EncryptPassword = standard.EncryptPassword(),
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -40,19 +38,4 @@ internal static class SplitCommand
             ],
         };
     }
-
-    internal static void Table(WordsSplitResult result, TableSurface surface)
-    {
-        ResultText.Files(surface, "wrote", "part", [.. result.Outputs.Select(static output =>
-            new ProducedFile(Holds(output), output.Path, output.Format, output.SizeBytes))]);
-    }
-
-    /// <summary>What of the document a part holds, in the unit the split divided by.</summary>
-    private static string Holds(WordsPartOutput output) => output switch
-    {
-        { Section: { } section } => $"section {section}",
-        { Pages: { } pages } => $"pages {pages}",
-        { Blocks: { } blocks } => $"blocks {blocks}",
-        _ => "part",
-    };
 }

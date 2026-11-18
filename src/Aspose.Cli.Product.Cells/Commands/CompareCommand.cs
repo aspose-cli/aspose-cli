@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
@@ -50,8 +49,7 @@ internal static class CompareCommand
                     LeftPassword = standard.InputPassword,
                     RightPassword = standard.OtherPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -63,31 +61,5 @@ internal static class CompareCommand
                 CommandHelpLink.Docs(CellsModule.Manifest, "verification", "comparing a workbook before and after a change"),
             ],
         };
-    }
-
-    internal static void Table(CellsCompareResult diff, TableSurface surface)
-    {
-        if (diff.Identical)
-        {
-            surface.Out.WriteLine($"identical: {diff.Left.Path} == {diff.Right.Path} (within scope)");
-            return;
-        }
-
-        CellsCompareSummary summary = diff.Summary;
-        surface.Out.WriteLine(
-            $"{diff.Left.Path} vs {diff.Right.Path}: {summary.CellsDiffering} cell(s) differ across " +
-            $"{summary.SheetsModified} sheet(s); +{summary.SheetsAdded} -{summary.SheetsRemoved} sheet(s), {summary.SheetsRenamed} renamed");
-
-        if (diff.Sheets is { Count: > 0 } sheets)
-        {
-            surface.Out.WriteLine();
-            var table = new TextTable("sheet", "status", "cells");
-            foreach (CellsSheetDiff sheet in sheets)
-            {
-                table.AddRow(sheet.Name, sheet.From is null ? sheet.Status : $"renamed from {sheet.From}", sheet.Cells is { } changed ? TableText.Int(changed.Count) : null);
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
     }
 }

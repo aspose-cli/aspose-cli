@@ -63,20 +63,14 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Fact]
-    public void VersionWithCompactOrTableOutput_UsesTheOrdinaryResultWriter()
+    public void VersionWithCompactOutput_UsesTheOrdinaryResultWriter()
     {
         CliResult json = _workspace.Run("--version", "--output-format", "json");
         CliResult compact = _workspace.Run("--version", "--output-format", "compact");
-        CliResult table = _workspace.Run("--version", "--output-format", "table");
 
         Assert.Equal(0, compact.ExitCode);
         Assert.Single(compact.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries));
         Assert.True(JsonNode.DeepEquals(Parse(json.StdOut), Parse(compact.StdOut)));
-        Assert.Equal(0, table.ExitCode);
-        Assert.StartsWith(
-            "aspose-cli " + Parse(json.StdOut)["cliVersion"]!.GetValue<string>(),
-            table.StdOut,
-            StringComparison.Ordinal);
     }
 
     [Theory]
@@ -457,7 +451,7 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Fact]
-    public void SchemaList_UsesEnvelopeAndHumanRenderers()
+    public void SchemaList_UsesTheEnvelope()
     {
         CliResult json = _workspace.Run("schema", "--output-format", "json");
         Assert.Equal(0, json.ExitCode);
@@ -473,16 +467,6 @@ public sealed class CliContractTests : IDisposable
                         .Select(item => item!.GetValue<string>())
                         .Order(StringComparer.Ordinal),
                     StringComparer.Ordinal));
-
-        CliResult table = _workspace.Run("schema", "--output-format", "table");
-        Assert.Equal(0, table.ExitCode);
-        Assert.Contains("id", table.StdOut, StringComparison.Ordinal);
-        Assert.Contains("v2/common/schema-list", table.StdOut, StringComparison.Ordinal);
-
-        CliResult markdown = _workspace.Run("schema", "--output-format", "markdown");
-        Assert.Equal(0, markdown.ExitCode);
-        Assert.Contains("| id |", markdown.StdOut, StringComparison.Ordinal);
-        Assert.Contains("v2/common/schema-list", markdown.StdOut, StringComparison.Ordinal);
     }
 
     [Fact]

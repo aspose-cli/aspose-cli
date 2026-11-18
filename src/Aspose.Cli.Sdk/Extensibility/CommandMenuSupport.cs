@@ -76,9 +76,6 @@ internal interface IMenuEntry<TSession>
 {
     Command Create(MenuContext<TSession> context);
 
-    /// <summary>The table renderers the entry's command declares.</summary>
-    IEnumerable<ProductOutputDefinition> Outputs();
-
     /// <summary>The operation documents the entry's command applies, under its name.</summary>
     IEnumerable<ProductOperationCommand> Operations();
 }

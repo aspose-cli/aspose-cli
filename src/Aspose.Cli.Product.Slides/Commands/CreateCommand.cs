@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Slides.Commands;
@@ -38,8 +37,7 @@ internal static class CreateCommand
                     SlideSize = parse.GetValue(slideSize),
                     EncryptPassword = encryptPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -53,7 +51,4 @@ internal static class CreateCommand
             ],
         };
     }
-
-    internal static void Table(SlidesCreateResult result, TableSurface surface) =>
-        ResultText.Produced(surface, result.Output, $"{result.SlideCount} slide(s)");
 }

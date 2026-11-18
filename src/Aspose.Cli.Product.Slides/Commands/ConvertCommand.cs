@@ -1,6 +1,5 @@
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Slides.Commands;
@@ -34,8 +33,7 @@ internal static class ConvertCommand
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -48,16 +46,5 @@ internal static class ConvertCommand
                 CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "what each Slides command is for"),
             ],
         };
-    }
-
-    internal static void Table(SlidesConvertResult result, TableSurface surface)
-    {
-        ResultText.Files(surface, "wrote", "file", [.. result.Outputs.Select(output =>
-            new ProducedFile(
-                null,
-                output.Path,
-                output.Format,
-                output.SizeBytes,
-                result.Slides is null ? null : $"slides {result.Slides}"))]);
     }
 }

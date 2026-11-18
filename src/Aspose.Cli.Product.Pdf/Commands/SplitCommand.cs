@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -25,8 +24,7 @@ internal static class SplitCommand
                 Output = standard.DirectoryOutput,
                 Password = standard.InputPassword,
                 EncryptPassword = standard.EncryptPassword(),
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -39,16 +37,5 @@ internal static class SplitCommand
                 CommandHelpLink.Docs(PdfModule.Manifest, "assemble-review-report", "dividing and assembling PDFs"),
             ],
         };
-    }
-
-    internal static void Table(PdfSplitResult result, TableSurface surface)
-    {
-        ResultText.Files(surface, "wrote", "part", [.. result.Outputs.Select(static (output, index) =>
-            new ProducedFile(
-                $"part {index + 1}",
-                output.Path,
-                output.Format,
-                output.SizeBytes,
-                $"pages {output.Pages}"))]);
     }
 }

@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -34,8 +33,7 @@ internal static class ExtractCommand
                     ByteOrderMark = byteOrderMark,
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -48,11 +46,5 @@ internal static class ExtractCommand
                 CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
             ],
         };
-    }
-
-    internal static void Table(WordsExtractResult result, TableSurface surface)
-    {
-        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Outputs.Select(static item =>
-            new ProducedFile(item.Block is { } block ? $"block {block}" : null, item.Path, item.Format, item.SizeBytes))]);
     }
 }

@@ -52,23 +52,6 @@ public sealed class SlidesVerifyCoverageTests : IDisposable
         Assert.Null(whole["uncheckedOps"]);
     }
 
-    [Fact]
-    public void Verify_InTheTable_ListsWhatItCheckedAndAnOperationItDoesNotReadBack()
-    {
-        string input = _fixture.CreatePresentation(slides: 2);
-        string[] args =
-        [
-            "slides", "edit", input, "--out", "table.pptx", "--verify", "--output-format", "table",
-            "--ops", """{"ops":[{"id":"page","op":"insert_slide"},{"id":"box","op":"insert_shape","slide":1,"geometry":"rectangle","rect":{"x":10,"y":10,"width":100,"height":50}}]}""",
-        ];
-
-        CliResult table = _workspace.Run(TestLicense.Path is { } license ? [.. args, "--license", license] : args);
-
-        Assert.True(table.ExitCode == 0, table.StdErr + table.StdOut);
-        Assert.Contains("verification: ok; checked ops: page", table.StdOut, StringComparison.Ordinal);
-        Assert.Contains("not checked box: ", table.StdOut, StringComparison.Ordinal);
-    }
-
     /// <summary>An operation a later one of the batch changed again is named for that reason.</summary>
     [Fact]
     public void Verify_NamesAnOperationALaterOneChangedAgain()

@@ -3203,18 +3203,10 @@ C-R22 | cells edit --ops with a bare array
 C-R22 | pdf edit --ops with a bare array
 C-R22 | slides edit --ops with a bare array
 C-R22 | words edit --ops with a bare array
-C-R23 | cells inspect fails in table mode
 C-R23 | cells inspect succeeds in JSON mode
-C-R23 | cells inspect succeeds in table mode
-C-R23 | pdf inspect fails in table mode
 C-R23 | pdf inspect succeeds in JSON mode
-C-R23 | pdf inspect succeeds in table mode
-C-R23 | slides inspect fails in table mode
 C-R23 | slides inspect succeeds in JSON mode
-C-R23 | slides inspect succeeds in table mode
-C-R23 | words inspect fails in table mode
 C-R23 | words inspect succeeds in JSON mode
-C-R23 | words inspect succeeds in table mode
 C-R24 | cells exit codes follow their category
 C-R24 | common exit codes follow their category
 C-R24 | input file errors exit 3
@@ -4422,13 +4414,9 @@ C-R36 | words convert --to
 C-R36 | words formats
 C-R36 | words render --to
 C-R37 | cells inspect --quiet and --verbose in json mode
-C-R37 | cells inspect --quiet and --verbose in table mode
 C-R37 | pdf inspect --quiet and --verbose in json mode
-C-R37 | pdf inspect --quiet and --verbose in table mode
 C-R37 | slides inspect --quiet and --verbose in json mode
-C-R37 | slides inspect --quiet and --verbose in table mode
 C-R37 | words inspect --quiet and --verbose in json mode
-C-R37 | words inspect --quiet and --verbose in table mode
 C-R38 | KNOWN-ISSUES.md
 C-R38 | README.md
 C-R38 | src reading

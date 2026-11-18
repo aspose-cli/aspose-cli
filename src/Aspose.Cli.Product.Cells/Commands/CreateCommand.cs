@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Cells.Commands;
@@ -35,8 +34,7 @@ internal static class CreateCommand
                     SheetNames = sheetNames,
                     EncryptPassword = encryptPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -49,9 +47,6 @@ internal static class CreateCommand
             ],
         };
     }
-
-    internal static void Table(CellsCreateResult create, TableSurface surface) =>
-        ResultText.Produced(surface, create.Output, $"sheets: {string.Join(", ", create.Sheets)}");
 
     private static IReadOnlyList<string> ParseSheetNames(string? sheets)
     {

@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -25,8 +24,7 @@ internal static class InspectCommand
                 Input = standard.Input,
                 Details = detail.Read(parse),
                 Password = standard.InputPassword,
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -39,84 +37,5 @@ internal static class InspectCommand
                 new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
         };
-    }
-
-    internal static void Table(WordsInspectResult result, TableSurface surface)
-    {
-        WordsDocumentSummary document = result.Document;
-        ResultText.Input(surface, result.Input);
-        surface.Out.WriteLine(
-            $"sections: {document.SectionCount}   blocks: {document.BlockCount} "
-            + $"({document.ParagraphCount} paragraphs, {document.TableCount} tables)   "
-            + $"pages: {document.PageCount}   words: {document.WordCount}");
-        surface.Out.WriteLine($"revisions: {document.RevisionCount}   protection: {document.Protection ?? "none"}   signed: {TableText.YesNo(document.Signed)}   macros: {TableText.YesNo(document.HasMacros)}");
-        RenderDetails(result, surface);
-    }
-
-    /// <summary>Each section --detail asked for, under its own heading.</summary>
-    private static void RenderDetails(
-        WordsInspectResult result,
-        TableSurface surface)
-    {
-        RenderSections(result.Sections, surface);
-        ResultText.Table(surface, "outline", result.Outline, ["block", "level", "heading"],
-            static item => [TableText.Int(item.Block), TableText.Int(item.HeadingLevel), item.Text]);
-        ResultText.List(surface, "styles", result.Styles?.Select(static style => style.Name).ToArray());
-        ResultText.List(surface, "bookmarks", result.Bookmarks);
-        ResultText.List(surface, "fonts", result.Fonts);
-        ResultText.Table(surface, "fields", result.Fields, ["block", "kind", "code", "result"],
-            static field => [WordsText.Block(field.Block), field.Kind, field.Code, field.Result]);
-        ResultText.Table(surface, "comments", result.Comments, ["block", "author", "text"],
-            static comment => [WordsText.Block(comment.Block), comment.Author, comment.Text]);
-        ResultText.Table(surface, "revisions", result.Revisions, ["revision", "block", "kind", "author", "date", "text"],
-            static revision =>
-            [
-                TableText.Int(revision.Revision),
-                WordsText.Block(revision.Block),
-                revision.Kind,
-                revision.Author,
-                revision.Date?.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
-                revision.Text,
-            ]);
-        ResultText.Table(surface, "images", result.Images, ["block", "name", "size"],
-            static image => [WordsText.Block(image.Block), image.Name, $"{TableText.Points(image.Width)} x {TableText.Points(image.Height)} pt"]);
-        ResultText.Table(surface, "tables", result.Tables, ["block", "rows", "columns", "style"],
-            static item => [TableText.Int(item.Block), TableText.Int(item.RowCount), TableText.Int(item.ColumnCount), item.TableStyle]);
-        ResultText.Properties(surface, "properties", result.Properties);
-    }
-
-    // Page setup, then the header and footer paragraphs of every section that has any.
-    private static void RenderSections(IReadOnlyList<WordsSectionData>? sections, TableSurface surface)
-    {
-        if (sections is null || !ResultText.Section(surface, "sections", sections.Count == 0))
-        {
-            return;
-        }
-
-        var table = new TextTable("section", "orientation", "page size", "margins (t/r/b/l)");
-        foreach (WordsSectionData section in sections)
-        {
-            table.AddRow(
-                TableText.Int(section.Section),
-                section.Orientation,
-                $"{section.PageSize.Preset ?? "custom"} {TableText.Points(section.PageSize.Width)} x {TableText.Points(section.PageSize.Height)} pt",
-                $"{TableText.Points(section.Margins.Top)}/{TableText.Points(section.Margins.Right)}/"
-                + $"{TableText.Points(section.Margins.Bottom)}/{TableText.Points(section.Margins.Left)} pt");
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
-        var headersFooters = new TextTable("section", "location", "kind", "paragraphs");
-        foreach (WordsSectionData section in sections)
-        {
-            foreach (WordsHeaderFooterData item in section.HeadersFooters)
-            {
-                headersFooters.AddRow(TableText.Int(section.Section), item.Location, item.Kind, string.Join(" | ", item.Paragraphs.Select(static paragraph => paragraph.Text)));
-            }
-        }
-
-        if (sections.Any(static section => section.HeadersFooters.Count > 0))
-        {
-            headersFooters.WriteTo(surface.Out, surface.Format);
-        }
     }
 }

@@ -467,7 +467,7 @@ public sealed class BoundedEditCommandTests : IDisposable
         Action<ParseResult>? checkUsage = null) =>
         TestProducts.Command<object>(runner, product => product.Command(
                 () => EditDefinition.Create<TestOp, TestBatch, TestResult, TestResult>(
-                    edit, "Edits.", traits, parameters, bind, NoTable, checkUsage),
+                    edit, "Edits.", traits, parameters, bind, checkUsage),
                 static (_, request) => request))
             .Subcommands.Single();
 
@@ -476,10 +476,6 @@ public sealed class BoundedEditCommandTests : IDisposable
             _temp.Path,
             static context => TestBindings.Create(TestProducts.Manifest.Id, static () => new object(), context: context),
             readEnvironment ?? (static _ => null));
-
-    private static void NoTable(TestResult result, TableSurface table)
-    {
-    }
 
 #pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult() : TestResultEnvelope("result");

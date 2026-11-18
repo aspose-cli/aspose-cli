@@ -2,8 +2,6 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text;
 using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Host.Licensing;
-using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk.IO.Input;
 
 namespace Aspose.Cli.Host;
@@ -31,17 +29,9 @@ public static class CliHost
             return ProcessFailureBoundary.Run(host, args, arguments =>
             {
                 ParsedInvocation invocation = host.Parser.Parse(arguments);
-                if (invocation.LacksCommand
-                    && host.Parser.ResolveErrorOutput(arguments).OutputFormat is OutputMode.Table or OutputMode.Markdown)
-                {
-                    // A group run without a command answers with its help, before the error.
-                    host.Parser.WriteHelp(arguments, Console.Error);
-                }
-
                 invocation.EnsureValid();
                 // Every process that runs a command, a worker included, gets here first.
                 NetworkGate.Admit(invocation.NetworkAccess);
-                StartupLicenseNotice.Write(host, invocation, Console.Error);
                 return TimeoutWorkerSupervisor.Run(host, arguments, invocation,
                     () => RunInProcess(invocation));
             });
