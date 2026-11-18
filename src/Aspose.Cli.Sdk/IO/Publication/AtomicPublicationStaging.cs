@@ -13,22 +13,17 @@ internal sealed class AtomicPublicationStaging(
     public StagedOutput StagePrepared(
         string target,
         bool overwrite,
-        string? requestedBackup,
         FilePublicationSnapshot original,
         Action<string> write,
         FileWritePrecondition? inputPrecondition = null,
         Action<string>? verify = null)
     {
         ArgumentNullException.ThrowIfNull(write);
-        if (plan.Journal.State != PublicationTransactionState.Staging) { throw new InvalidOperationException("The output set is sealed."); }
+        if (plan.State != PublicationTransactionState.Staging) { throw new InvalidOperationException("The output set is sealed."); }
         plan.EnsureTarget(target);
         target = OutputPathValidator.NormalizeFile(target);
-        requestedBackup = requestedBackup is null
-            ? null
-            : OutputPathValidator.NormalizeFile(requestedBackup, phase: "backup");
-        EnsureUnique(target, requestedBackup);
+        EnsureUnique(target);
         plan.EnsureCapacityForEntry();
-        FilePublicationSnapshot? backupOriginal = requestedBackup is null ? null : FilePublicationSnapshot.Capture(requestedBackup);
         // Only an in-place edit, whose precondition names the target, replaces an input.
         if (inputPrecondition?.Targets(target) is not true)
         {
@@ -41,13 +36,8 @@ internal sealed class AtomicPublicationStaging(
         plan.EnsureOutputDirectory(Path.GetDirectoryName(target)!);
         FilePhysicalIdentity? targetParentIdentity = Directory.Exists(Path.GetDirectoryName(target))
             ? OutputPathValidator.CaptureParentIdentity(target) : null;
-        if (requestedBackup is not null) { plan.EnsureOutputDirectory(Path.GetDirectoryName(requestedBackup)!); }
-        FilePhysicalIdentity? requestedBackupParentIdentity =
-            requestedBackup is null || !Directory.Exists(Path.GetDirectoryName(requestedBackup))
-                ? null
-                : OutputPathValidator.CaptureParentIdentity(requestedBackup);
 
-        int index = plan.Journal.Entries.Count;
+        int index = plan.Entries.Count;
         string staged = plan.StagedPath(target, index);
         plan.CreatedStagingDirectories.Add(Path.GetDirectoryName(staged)!);
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
@@ -64,43 +54,34 @@ internal sealed class AtomicPublicationStaging(
         OutputPathValidator.EnsureParentUnchanged(
             target,
             targetParentIdentity);
-        if (requestedBackup is not null)
-        {
-            OutputPathValidator.EnsureParentUnchanged(
-                requestedBackup,
-                requestedBackupParentIdentity);
-        }
-        plan.Journal.Entries.Add(new PublicationJournalEntry
+        plan.Entries.Add(new PublicationEntry
         {
             Index = index,
             Target = target,
             Staged = staged,
             Overwrite = overwrite,
-            RequestedBackup = requestedBackup,
-            RequestedBackupOriginal = backupOriginal,
             InputPath = inputPrecondition?.Path,
             InputSnapshot = inputPrecondition?.Snapshot,
             Original = original,
             StagedSnapshot = stagedSnapshot,
             TargetParentIdentity = targetParentIdentity,
-            RequestedBackupParentIdentity = requestedBackupParentIdentity,
             Displaced = original.Exists
                 ? plan.DisplacedPath(index)
                 : null,
             Size = size,
         });
         temporary.MarkPublished();
-        return new StagedOutput(plan.Journal.Entries[^1]);
+        return new StagedOutput(plan.Entries[^1]);
     }
 
     public void StageDeletionPrepared(
         string target,
         FilePublicationSnapshot original)
     {
-        if (plan.Journal.State != PublicationTransactionState.Staging)
+        if (plan.State != PublicationTransactionState.Staging)
         {
             throw new InvalidOperationException(
-                $"Cannot stage a deletion while the transaction is {plan.Journal.State}.");
+                $"Cannot stage a deletion while the transaction is {plan.State}.");
         }
         if (!original.Exists)
         {
@@ -115,7 +96,7 @@ internal sealed class AtomicPublicationStaging(
         plan.EnsureOutputDirectory(Path.GetDirectoryName(target)!);
         FilePhysicalIdentity? targetParentIdentity = Directory.Exists(Path.GetDirectoryName(target))
             ? OutputPathValidator.CaptureParentIdentity(target) : null;
-        int index = plan.Journal.Entries.Count;
+        int index = plan.Entries.Count;
         string staged = plan.StagedPath(target, index);
         plan.CreatedStagingDirectories.Add(Path.GetDirectoryName(staged)!);
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
@@ -127,7 +108,7 @@ internal sealed class AtomicPublicationStaging(
             target,
             targetParentIdentity);
 
-        plan.Journal.Entries.Add(new PublicationJournalEntry
+        plan.Entries.Add(new PublicationEntry
         {
             Index = index,
             Target = target,
@@ -143,14 +124,9 @@ internal sealed class AtomicPublicationStaging(
         temporary.MarkPublished();
     }
 
-    private void EnsureUnique(string target, string? backup = null)
+    private void EnsureUnique(string target)
     {
-        if (plan.Journal.Entries.Any(
-                item => FilePaths.Same(item.Target, target)
-                    || item.RequestedBackup is not null && FilePaths.Same(item.RequestedBackup, target)
-                    || backup is not null && (FilePaths.Same(item.Target, backup)
-                        || item.RequestedBackup is not null && FilePaths.Same(item.RequestedBackup, backup)))
-            || backup is not null && FilePaths.Same(target, backup))
+        if (plan.Entries.Any(item => FilePaths.Same(item.Target, target)))
         {
             throw CliErrors.DuplicateOutput(target);
         }

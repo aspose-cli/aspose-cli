@@ -12,8 +12,8 @@ using Xunit;
 namespace Aspose.Cli.Sdk.Tests.IO;
 
 /// <summary>
-/// Fixes the bytes of every key derived from a path: the publication directory lock files and
-/// the publication journal mutex, which other Aspose CLI distributions share, the local service
+/// Fixes the bytes of every key derived from a path: the publication directory lock files, which
+/// other Aspose CLI distributions share, the local service
 /// marker lock, the license identity and the update status file name, which older versions of
 /// this CLI share. Each expected value is computed here from the literal rule, never through
 /// the code under test, so a change to how a key folds case, trims or hashes fails here.
@@ -75,30 +75,6 @@ public sealed class LockKeyBytesTests : IDisposable
         }
 
         if (OperatingSystem.IsWindows()) { Assert.False(IsHeld(leaf), "The released lease still holds its lock file."); }
-    }
-
-    [Theory]
-    [MemberData(nameof(Spellings))]
-    [InlineData("drive-root")]
-    public void PublicationJournalLock_OwnsTheMutexNamedForItsFoldedFullPath(string spelling)
-    {
-        string journal = spelling == "drive-root"
-            ? Path.GetPathRoot(_temp.Path)!
-            : Path.Combine(Spelled(spelling, create: false), "journal.json");
-        if (spelling == "trailing|") { journal = Spelled(spelling, create: false); }
-        // GetFullPath keeps a trailing separator, and so does the key.
-        string name = "aspose-publication-journal-" + Sha256Hex(Folded(Path.GetFullPath(journal)));
-        var options = new NamedWaitHandleOptions { CurrentUserOnly = true, CurrentSessionOnly = false };
-
-        using (PublicationJournalLock? held = PublicationJournalLock.TryAcquire(journal))
-        {
-            Assert.NotNull(held);
-            Assert.True(Mutex.TryOpenExisting(name, options, out Mutex? opened), $"No mutex {name} for '{journal}'.");
-            opened!.Dispose();
-        }
-
-        Assert.False(Mutex.TryOpenExisting(name, options, out Mutex? left), "The released journal lock left its mutex.");
-        left?.Dispose();
     }
 
     [Theory]

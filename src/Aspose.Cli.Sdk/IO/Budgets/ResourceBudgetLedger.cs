@@ -58,8 +58,6 @@ public static class ResourceBudgetDefaults
             PublicationLimits.MaximumEntries, PublicationLimits.MaximumEntries, "items", "output-set-admission"),
         ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.OutputSetDirectories,
             PublicationLimits.MaximumDirectories, PublicationLimits.MaximumDirectories, "items", "output-directory-admission"),
-        ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.PublicationMetadataBytes,
-            PublicationLimits.MaximumMetadataBytes, PublicationLimits.MaximumMetadataBytes, "bytes", "publication-seal"),
         ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.RasterPixels,
             RasterPixels, RasterPixels, "pixels", "pre-render"),
         ResourceBudgetCapabilities.Domain(

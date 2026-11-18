@@ -6,33 +6,25 @@ using Aspose.Cli.Sdk.IO.Paths;
 
 namespace Aspose.Cli.Sdk.IO.Publication;
 
-/// <summary>Owns one immutable publication location and its durable journal.</summary>
+/// <summary>Owns one immutable publication location and the entries staged there.</summary>
 internal sealed class AtomicPublicationPlan
 {
-    internal const string JournalName = "publication-journal.v1.json";
-
     private readonly IPublicationFaultInjector _faults;
     private PublicationDirectoryLease? _lease;
     private bool _sealed;
-    private PublicationTransactionState? _durableState;
     internal HashSet<string> CreatedStagingDirectories { get; } = [];
     private readonly OwnedOutputDirectories _outputDirectories;
     internal IEnumerable<string> OutputDirectories => _outputDirectories.Declared;
 
     private AtomicPublicationPlan(
         string stagingDirectory,
-        PublicationJournal journal,
         IPublicationFaultInjector faults,
-        PublicationDirectoryLease? lease,
         string targetDirectory,
-        OwnedOutputDirectories? outputDirectories = null)
+        OwnedOutputDirectories outputDirectories)
     {
         StagingDirectory = stagingDirectory;
-        JournalPath = Path.Combine(stagingDirectory, JournalName);
-        Journal = journal;
         _faults = faults;
-        _outputDirectories = outputDirectories ?? new OwnedOutputDirectories();
-        _lease = lease;
+        _outputDirectories = outputDirectories;
         TargetDirectory = targetDirectory;
         _initialDirectoryIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(targetDirectory);
     }
@@ -41,9 +33,9 @@ internal sealed class AtomicPublicationPlan
     public string TargetDirectory { get; }
     public string StagingDirectory { get; }
 
-    public string JournalPath { get; }
+    public List<PublicationEntry> Entries { get; } = [];
 
-    public PublicationJournal Journal { get; }
+    public PublicationTransactionState State { get; set; } = PublicationTransactionState.Staging;
 
     public IPublicationFaultInjector Faults => _faults;
 
@@ -57,13 +49,12 @@ internal sealed class AtomicPublicationPlan
         Path.Combine(StagingDirectory, "backups", $"{index + 1:000000}.displaced");
 
     public bool IsTerminal =>
-        Journal.State is PublicationTransactionState.Committed
+        State is PublicationTransactionState.Committed
             or PublicationTransactionState.RolledBack
             or PublicationTransactionState.Partial;
 
     public bool CanCleanUp =>
-        Journal.State is PublicationTransactionState.Committed or PublicationTransactionState.RolledBack
-        && (!_sealed || _durableState == Journal.State);
+        State is PublicationTransactionState.Committed or PublicationTransactionState.RolledBack;
 
     public static AtomicPublicationPlan Create(
         string targetDirectory,
@@ -73,27 +64,17 @@ internal sealed class AtomicPublicationPlan
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
         ArgumentException.ThrowIfNullOrEmpty(operation);
         string root = Path.GetFullPath(targetDirectory);
-        PublicationDirectoryLease? lease = null;
-        AtomicPublicationRecovery.RecoverPendingHierarchy(root, resourceBudgets?.Deadline);
         var directories = new OwnedOutputDirectories();
         try
         {
             directories.Ensure(root);
             string stagingDirectory = CreateLocalStagingDirectory(root);
-            var journal = new PublicationJournal
-            {
-                Operation = operation,
-                State = PublicationTransactionState.Staging,
-            };
             var plan = new AtomicPublicationPlan(
                 stagingDirectory,
-                journal,
                 faults,
-                lease,
                 root,
                 directories);
             plan.ResourceBudgets = resourceBudgets;
-            lease = null;
             return plan;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -102,25 +83,7 @@ internal sealed class AtomicPublicationPlan
             throw Aspose.Cli.Sdk.Errors.CliErrors.OutputUnwritable(root,
                 "the transaction directory could not be created", error, "output-set-admission");
         }
-        finally
-        {
-            lease?.Dispose();
-        }
     }
-
-    public static AtomicPublicationPlan Open(
-        string stagingDirectory,
-        PublicationJournal journal) =>
-        new(
-            stagingDirectory,
-            journal,
-            NoPublicationFaultInjector.Instance,
-            lease: null,
-            targetDirectory: Path.GetDirectoryName(stagingDirectory)!)
-        {
-            _sealed = true,
-            _durableState = journal.State,
-        };
 
     internal static string StagedPath(
         string transactionDirectory,
@@ -153,7 +116,7 @@ internal sealed class AtomicPublicationPlan
 
     internal void CleanUpOutputDirectories()
     {
-        if (Journal.State != PublicationTransactionState.Committed && CanCleanUp)
+        if (State != PublicationTransactionState.Committed && CanCleanUp)
         { _outputDirectories.CleanUp(); }
     }
 
@@ -161,50 +124,31 @@ internal sealed class AtomicPublicationPlan
     {
         if (_sealed) { throw new InvalidOperationException("The output set is already sealed."); }
         EnsureNoUnknownArtifacts();
-        int metadataBytes = Journal.EnsureLifecycleCapacity(JournalPath);
-        ResourceBudgets?.EnsureWithin(ResourceBudgetKinds.PublicationMetadataBytes, metadataBytes, "bytes", "publication-seal");
         ResourceBudgets?.EnsureWithin(ResourceBudgetKinds.OutputSetDirectories, OutputDirectories.Count(), "items", "output-directory-admission");
         _sealed = true;
-        Persist();
     }
 
     internal void EnsureCapacityForEntry()
     {
-        if (_sealed || Journal.State != PublicationTransactionState.Staging)
+        if (_sealed || State != PublicationTransactionState.Staging)
         { throw new InvalidOperationException("The output set is sealed."); }
-        ResourceBudgets?.EnsureWithin(ResourceBudgetKinds.OutputSetEntries, Journal.Entries.Count + 1L, "items", "output-set-admission");
-        if (Journal.Entries.Count >= PublicationLimits.MaximumEntries)
-        { throw Aspose.Cli.Sdk.Errors.CliErrors.OutputBudgetExceeded(ResourceBudgetKinds.OutputSetEntries, Journal.Entries.Count + 1L, PublicationLimits.MaximumEntries, "items", "output-set-admission"); }
+        ResourceBudgets?.EnsureWithin(ResourceBudgetKinds.OutputSetEntries, Entries.Count + 1L, "items", "output-set-admission");
+        if (Entries.Count >= PublicationLimits.MaximumEntries)
+        { throw Aspose.Cli.Sdk.Errors.CliErrors.OutputBudgetExceeded(ResourceBudgetKinds.OutputSetEntries, Entries.Count + 1L, PublicationLimits.MaximumEntries, "items", "output-set-admission"); }
     }
 
     internal void BeginCommit()
     {
         ResourceBudgets?.Deadline.ThrowIfExpired("publication-start");
-        for (int attempt = 0; attempt < 3; attempt++)
+        _lease = PublicationDirectoryLease.Acquire(TargetDirectory, ResourceDirectories(Entries), ResourceBudgets?.Deadline);
+        if (_initialDirectoryIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(TargetDirectory))
         {
-            // Create already recovered without a lease. A transaction that appeared since is
-            // recovered under the lease, unless it needs directories the lease does not cover;
-            // only then does a retry recover without the lease, which takes what it needs.
-            if (attempt > 0) { AtomicPublicationRecovery.RecoverPendingHierarchy(TargetDirectory, ResourceBudgets?.Deadline); }
-            _lease = PublicationDirectoryLease.Acquire(TargetDirectory, ResourceDirectories(Journal), ResourceBudgets?.Deadline);
-            try
-            {
-                if (_initialDirectoryIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(TargetDirectory))
-                {
-                    throw new IOException("The publication root changed during production.");
-                }
-                AtomicPublicationRecovery.RecoverPendingHierarchyUnderLease(TargetDirectory, _lease);
-                return;
-            }
-            catch (PublicationLeaseExpansionException) { ReleaseLease(); }
+            throw new IOException("The publication root changed during production.");
         }
-        throw new IOException("The recovery resource set kept changing; existing files were preserved.");
     }
 
-    internal static IEnumerable<string> ResourceDirectories(PublicationJournal journal) =>
-        journal.Entries.SelectMany(entry => entry.RequestedBackup is null
-            ? new[] { Path.GetDirectoryName(entry.Target)! }
-            : new[] { Path.GetDirectoryName(entry.Target)!, Path.GetDirectoryName(entry.RequestedBackup)! });
+    internal static IEnumerable<string> ResourceDirectories(IEnumerable<PublicationEntry> entries) =>
+        entries.Select(entry => Path.GetDirectoryName(entry.Target)!);
 
     public void ReleaseLease()
     {
@@ -212,43 +156,7 @@ internal sealed class AtomicPublicationPlan
         lease?.Dispose();
     }
 
-    public void Transition(PublicationTransactionState state)
-    {
-        Journal.State = state;
-        Persist();
-    }
-
-    public void Persist(OperationDeadline? deadline = null)
-    {
-        if (!_sealed) { return; }
-        _faults.Hit(new PublicationFaultPoint(
-            PublicationFaultKind.JournalWrite,
-            -1,
-            JournalPath));
-        Journal.Write(JournalPath, deadline: deadline ?? (Journal.State is PublicationTransactionState.RollingBack
-            or PublicationTransactionState.RolledBack or PublicationTransactionState.Partial ? null : ResourceBudgets?.Deadline));
-        _durableState = Journal.State;
-    }
-
-    public bool TryPersist(OperationDeadline? deadline = null)
-    {
-        try
-        {
-            Persist(deadline);
-            return true;
-        }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or Aspose.Cli.Sdk.Errors.CliException)
-        {
-            Trace.TraceWarning(
-                "Publication journal update failed for '{0}' ({1}).",
-                JournalPath,
-                exception.GetType().Name);
-            return false;
-        }
-    }
-
-    public void CleanUp(bool throwOnFailure = false)
+    public void CleanUp()
     {
         try
         {
@@ -257,7 +165,7 @@ internal sealed class AtomicPublicationPlan
                 -1,
                 StagingDirectory));
             EnsureNoUnknownArtifacts();
-            foreach (PublicationJournalEntry entry in Journal.Entries)
+            foreach (PublicationEntry entry in Entries)
             {
                 DeleteKnownFile(entry.Staged, entry.StagedSnapshot);
                 if (entry.Displaced is not null)
@@ -268,16 +176,12 @@ internal sealed class AtomicPublicationPlan
                 }
             }
 
-            foreach (string directory in Journal.Entries.Select(entry => Path.GetDirectoryName(entry.Staged)!).Concat(CreatedStagingDirectories).Distinct())
+            foreach (string directory in Entries.Select(entry => Path.GetDirectoryName(entry.Staged)!).Concat(CreatedStagingDirectories).Distinct())
             {
                 DeleteEmptyDirectory(directory);
             }
             string backups = Path.Combine(StagingDirectory, "backups");
             DeleteEmptyDirectory(backups);
-            if (File.Exists(JournalPath))
-            {
-                PublicationJournal.Delete(JournalPath);
-            }
             DeleteEmptyDirectory(StagingDirectory);
         }
         catch (DirectoryNotFoundException)
@@ -287,21 +191,17 @@ internal sealed class AtomicPublicationPlan
             exception is IOException or UnauthorizedAccessException)
         {
             Trace.TraceWarning(
-                "Publication cleanup failed for transaction journal '{0}' ({1}).",
-                JournalPath,
+                "Publication cleanup failed for staging directory '{0}' ({1}).",
+                StagingDirectory,
                 exception.GetType().Name);
-            if (throwOnFailure)
-            {
-                throw;
-            }
         }
     }
 
     internal void EnsureNoUnknownArtifacts()
     {
-        var allowedFiles = new HashSet<string>(FilePaths.Comparer) { Path.GetFullPath(JournalPath) };
+        var allowedFiles = new HashSet<string>(FilePaths.Comparer);
         var allowedDirectories = new HashSet<string>(FilePaths.Comparer) { Path.Combine(StagingDirectory, "backups") };
-        foreach (PublicationJournalEntry entry in Journal.Entries)
+        foreach (PublicationEntry entry in Entries)
         {
             allowedDirectories.Add(Path.GetDirectoryName(entry.Staged)!);
             foreach (string? file in new[] { entry.Staged, entry.Displaced })
@@ -367,7 +267,7 @@ internal sealed class AtomicPublicationPlan
     {
         string stagingDirectory = Path.Combine(
             root,
-            $".aspose-publication-{Environment.ProcessId}-{ProcessIdentity.CurrentStartUtcTicks}-{Guid.NewGuid():N}");
+            $".aspose-publication-{Guid.NewGuid():N}");
         return PublicationTransactionDirectory.Create(stagingDirectory);
     }
 }

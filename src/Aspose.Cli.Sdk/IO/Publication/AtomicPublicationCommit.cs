@@ -5,20 +5,23 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Aspose.Cli.Sdk.IO.Publication;
 
-/// <summary>Prepares requested backups and publishes every staged output in order.</summary>
+/// <summary>
+/// Publishes every staged output in order and, when that fails, puts the targets back in the
+/// reverse order.
+/// </summary>
 internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
 {
     public IReadOnlyList<long> Execute(Action? beforeCommit = null)
     {
-        if (plan.Journal.State != PublicationTransactionState.Staging)
+        if (plan.State != PublicationTransactionState.Staging)
         {
             throw new InvalidOperationException(
-                $"Cannot commit a transaction in state {plan.Journal.State}.");
+                $"Cannot commit a transaction in state {plan.State}.");
         }
 
         Prepare();
         RecordPublicationIntent();
-        foreach (PublicationJournalEntry entry in plan.Journal.Entries)
+        foreach (PublicationEntry entry in plan.Entries)
         {
             Publish(entry);
         }
@@ -26,33 +29,31 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-commit");
         beforeCommit?.Invoke();
         plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-commit-record");
-        plan.Transition(PublicationTransactionState.Committed);
+        plan.State = PublicationTransactionState.Committed;
         plan.ResourceBudgets?.MarkOutputsCommitted();
-        return plan.Journal.Entries
+        return plan.Entries
             .OrderBy(static entry => entry.Index)
             .Select(static entry => entry.Size)
             .ToArray();
     }
 
     /// <summary>
-    /// Writes one write-ahead record naming every target as possibly published before the
-    /// first swap. Recovery tells a target that was never swapped from one that was by the
-    /// staged and displaced files, so a record per target would only make an output set's
-    /// journal writes quadratic in its size.
+    /// Marks every target as possibly published before the first swap. The rollback tells a
+    /// target that was never swapped from one that was by the staged and displaced files.
     /// </summary>
     private void RecordPublicationIntent()
     {
-        foreach (PublicationJournalEntry entry in plan.Journal.Entries)
+        foreach (PublicationEntry entry in plan.Entries)
         {
             entry.State = PublicationEntryState.Publishing;
         }
-        plan.Transition(PublicationTransactionState.Publishing);
+        plan.State = PublicationTransactionState.Publishing;
     }
 
     private void Prepare()
     {
         CreateBackupDirectory();
-        foreach (PublicationJournalEntry entry in plan.Journal.Entries)
+        foreach (PublicationEntry entry in plan.Entries)
         {
             // An in-place edit's input is its target, so one snapshot serves both checks.
             FilePublicationSnapshot? target = null;
@@ -74,22 +75,13 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             }
             plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-prepare");
             EnsureTargetUnchanged(entry, target);
-            if (entry.RequestedBackup is { } backup && entry.RequestedBackupOriginal is { } expectedBackup)
-            {
-                FilePublicationSnapshot current = FilePublicationSnapshot.Capture(backup);
-                if (!expectedBackup.VersionEquals(current)) { throw PublicationErrors.OutputConflict(backup, expectedBackup, current); }
-            }
-            if (entry.Original.Exists)
-            {
-                PrepareRequestedBackup(entry);
-            }
 
             // The swap keeps each replaced target at its displaced path, the only copy of the
-            // original that recovery and, after a partial recovery, the user restore from.
+            // original that the rollback and, after a partial rollback, the user restore from.
             entry.State = PublicationEntryState.Prepared;
         }
 
-        plan.Transition(PublicationTransactionState.Prepared);
+        plan.State = PublicationTransactionState.Prepared;
     }
 
     /// <summary>Creates the directory that receives the displaced targets.</summary>
@@ -99,57 +91,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         Directory.CreateDirectory(backups);
     }
 
-    private void PrepareRequestedBackup(PublicationJournalEntry entry)
-    {
-        if (entry.RequestedBackup is not { } requestedBackup
-            || File.Exists(requestedBackup))
-        {
-            return;
-        }
-
-        OutputPathValidator.EnsureParentUnchanged(
-            requestedBackup,
-            entry.RequestedBackupParentIdentity);
-
-        string? requestedDirectory = Path.GetDirectoryName(requestedBackup);
-        if (requestedDirectory is not null)
-        {
-            Directory.CreateDirectory(requestedDirectory);
-        }
-
-        // The backup is created empty with the original's access rules and then filled, since a
-        // plain copy takes the folder's: a file its owner restricted is never readable through
-        // its backup, not even for a moment. Rules that cannot be read or given exactly fail the
-        // backup, and with it the edit, rather than leave a copy with other rules.
-        byte[] access;
-        try { access = FilePublicationInheritance.CaptureAccess(entry.Target); }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException
-            or InvalidOperationException or NotSupportedException)
-        {
-            throw CliErrors.OutputUnwritable(requestedBackup, "the original's access rules could not be read for its backup", error, "backup");
-        }
-        FilePublicationInheritance.CreateWithAccess(requestedBackup, access);
-        try
-        {
-            File.Copy(entry.Target, requestedBackup, overwrite: true);
-            plan.Faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Access, entry.Index, requestedBackup));
-            FilePublicationInheritance.ApplyAccess(requestedBackup, access);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException
-            or InvalidOperationException or NotSupportedException)
-        {
-            // The backup this transaction just created goes, so no copy keeps other rules.
-            File.Delete(requestedBackup);
-            throw CliErrors.OutputUnwritable(requestedBackup, "the backup could not be given the original's access rules", error, "backup");
-        }
-        DurableFile.Flush(requestedBackup);
-        entry.Original.Metadata?.Apply(requestedBackup);
-        OutputPathValidator.EnsureParentUnchanged(
-            requestedBackup,
-            entry.RequestedBackupParentIdentity);
-    }
-
-    private void Publish(PublicationJournalEntry entry)
+    private void Publish(PublicationEntry entry)
     {
         plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-file");
         plan.Faults.Hit(new PublicationFaultPoint(
@@ -197,11 +139,11 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         EnsureStillPublished(entry, published);
         plan.ResourceBudgets?.RefreshAdmissionAfterPublication(entry.Target);
 
-        // Recorded durably with the commit; until then recovery recognizes the swap by evidence.
+        // Until the commit, the rollback recognizes the swap by evidence.
         entry.State = PublicationEntryState.Published;
     }
 
-    private void PublishDeletion(PublicationJournalEntry entry)
+    private void PublishDeletion(PublicationEntry entry)
     {
         if (entry.Displaced is null)
         {
@@ -246,7 +188,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
     /// Restoring access rules changes neither content nor identity, so the file the swap verified
     /// is still the target when it has the same identity and length; anything else replaced it.
     /// </summary>
-    private static void EnsureStillPublished(PublicationJournalEntry entry, FilePublicationSnapshot published)
+    private static void EnsureStillPublished(PublicationEntry entry, FilePublicationSnapshot published)
     {
         bool same;
         try
@@ -262,7 +204,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         }
         if (!same)
         {
-            // Recovery then treats what took the target's place as this publication's to roll back.
+            // The rollback then treats what took the target's place as this publication's to roll back.
             entry.PublishedSnapshot = FilePublicationSnapshot.Capture(entry.Target);
             throw new IOException(
                 $"Published target '{entry.Target}' did not match its staged content.");
@@ -289,7 +231,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         }
     }
 
-    private static void EnsureTargetUnchanged(PublicationJournalEntry entry, FilePublicationSnapshot? captured)
+    private static void EnsureTargetUnchanged(PublicationEntry entry, FilePublicationSnapshot? captured)
     {
         OutputPathValidator.EnsureParentUnchanged(
             entry.Target,
@@ -304,4 +246,283 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
                 actual);
         }
     }
+
+    /// <summary>
+    /// Puts every target back, last first, and reports what it did to each. A target that was
+    /// not put back names where its original now is, when the publication moved it aside.
+    /// </summary>
+    public PublicationRecoveryReport RollBack()
+    {
+        plan.State = PublicationTransactionState.RollingBack;
+        var items = new List<PublicationRecoveryItem>();
+        foreach (PublicationEntry entry in plan.Entries
+                     .OrderByDescending(static item => item.Index))
+        {
+            items.Add(Located(RestoreOrReport(entry), entry));
+        }
+
+        items.Reverse();
+        bool complete = items.All(static item =>
+            item.Status is "restored" or "unchanged"
+            && item.ContentVerified
+            && item.MetadataVerified);
+        plan.State = complete
+            ? PublicationTransactionState.RolledBack
+            : PublicationTransactionState.Partial;
+        return new PublicationRecoveryReport(complete, items);
+    }
+
+    /// <summary>
+    /// The item of a target that was not put back, with the path of its original when the swap
+    /// moved the original aside and it is still there unchanged.
+    /// </summary>
+    internal static PublicationRecoveryItem Located(PublicationRecoveryItem item, PublicationEntry entry)
+    {
+        if (item.Status is "restored" or "unchanged" || entry.Displaced is null || !entry.Original.Exists)
+        {
+            return item;
+        }
+        try
+        {
+            return entry.Original.VersionEquals(FilePublicationSnapshot.Capture(entry.Displaced))
+                ? item with { OriginalPath = entry.Displaced }
+                : item;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return item;
+        }
+    }
+
+    private PublicationRecoveryItem RestoreOrReport(
+        PublicationEntry entry)
+    {
+        bool publicationAttempted =
+            entry.State is not (PublicationEntryState.Staged or PublicationEntryState.Prepared
+                or PublicationEntryState.Unchanged);
+        try
+        {
+            return RestoreEntry(entry, publicationAttempted);
+        }
+        catch (Exception exception) when (
+            exception is IOException
+                or UnauthorizedAccessException
+                or CliException)
+        {
+            entry.State = PublicationEntryState.Unknown;
+            return new PublicationRecoveryItem(
+                entry.Target,
+                entry.Original.Exists,
+                publicationAttempted,
+                "unknown",
+                ContentVerified: false,
+                MetadataVerified: false,
+                Failure: exception is CliException cli
+                    ? cli.Code.Name
+                    : exception.GetType().Name);
+        }
+    }
+
+    private PublicationRecoveryItem RestoreEntry(
+        PublicationEntry entry,
+        bool publicationAttempted)
+    {
+        FilePublicationSnapshot current =
+            FilePublicationSnapshot.Capture(entry.Target);
+        if (!publicationAttempted || SwapNeverStarted(entry, current))
+        {
+            entry.State = PublicationEntryState.Unchanged;
+            return RecoveryItem(
+                entry,
+                published: false,
+                "unchanged",
+                contentVerified: true,
+                metadataVerified: true);
+        }
+
+        if (entry.Original.VersionEquals(current))
+        {
+            if (!MetadataMatches(entry))
+            {
+                entry.Original.Metadata?.Apply(entry.Target);
+            }
+            bool metadataVerified = MetadataMatches(entry);
+            entry.State = PublicationEntryState.Restored;
+            return RecoveryItem(
+                entry,
+                published: true,
+                "restored",
+                contentVerified: true,
+                metadataVerified,
+                metadataVerified ? null : "metadata-mismatch");
+        }
+
+        FilePublicationSnapshot published = entry.PublishedSnapshot
+            ?? RecognizeInterruptedPublication(entry, current);
+        if (!published.VersionEquals(current))
+        {
+            throw new IOException(
+                $"Target '{entry.Target}' has content that belongs to neither the original nor staged transaction.");
+        }
+
+        RestoreOriginal(entry, current);
+        entry.Original.Metadata?.Apply(entry.Target);
+        bool contentVerified = entry.Original.VersionEquals(FilePublicationSnapshot.Capture(entry.Target));
+        bool restoredMetadata = MetadataMatches(entry);
+        bool restored = contentVerified && restoredMetadata;
+        entry.State = restored
+            ? PublicationEntryState.Restored
+            : PublicationEntryState.Unknown;
+        return RecoveryItem(
+            entry,
+            publicationAttempted,
+            restored ? "restored" : "unknown",
+            contentVerified,
+            restoredMetadata,
+            restored ? null : "verification-failed");
+    }
+
+    /// <summary>
+    /// Every swap first moves the target to its displaced path or moves the staged file onto
+    /// the target. With no displaced file and the staged path still occupied, the target was
+    /// never touched by this transaction when it is still the original file (as when the swap
+    /// refused a replaced stage), or when the staged file is still the admitted one and the
+    /// target does not hold its content. That content check keeps a copying move that was
+    /// interrupted before it removed its source from passing for an untouched target.
+    /// </summary>
+    private static bool SwapNeverStarted(PublicationEntry entry, FilePublicationSnapshot current)
+    {
+        if ((entry.Displaced is not null && FilePublicationOwnedDelete.TryGetAttributesNoFollow(entry.Displaced) is not null)
+            || !File.Exists(entry.Staged))
+        {
+            return false;
+        }
+        return entry.Original.VersionEquals(current)
+            || (entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged))
+                && !entry.StagedSnapshot.ContentEquals(current));
+    }
+
+    /// <summary>
+    /// Whether a replacement moved the target to its displaced path and then could not put the
+    /// staged file in its place, as ReplaceFile does when it fails with Win32 error 1177: the
+    /// target is gone and the staged file is still the admitted one.
+    /// </summary>
+    private static bool ReplacementStoppedHalfway(PublicationEntry entry, FilePublicationSnapshot current) =>
+        !entry.DeleteTarget
+        && !current.Exists
+        && entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged));
+
+    private static FilePublicationSnapshot RecognizeInterruptedPublication(
+        PublicationEntry entry,
+        FilePublicationSnapshot current)
+    {
+        bool displacedOriginal = entry.Original.Exists
+            && entry.Displaced is not null
+            && entry.Original.VersionEquals(
+                FilePublicationSnapshot.Capture(entry.Displaced));
+        if (displacedOriginal && ReplacementStoppedHalfway(entry, current))
+        {
+            // Nothing was published, so no published snapshot is recorded.
+            return current;
+        }
+
+        bool recognized = entry.DeleteTarget
+            ? !current.Exists && displacedOriginal
+            : entry.StagedSnapshot.VersionEquals(current)
+                && (!entry.Original.Exists || displacedOriginal);
+        if (!recognized)
+        {
+            throw new IOException(
+                $"Target '{entry.Target}' has no durable publication evidence.");
+        }
+
+        entry.PublishedSnapshot = current;
+        if (displacedOriginal)
+        {
+            entry.DisplacedSnapshot =
+                FilePublicationSnapshot.Capture(entry.Displaced!);
+        }
+        return current;
+    }
+
+    private void RestoreOriginal(
+        PublicationEntry entry,
+        FilePublicationSnapshot publishedTarget)
+    {
+        plan.Faults.Hit(new PublicationFaultPoint(
+            PublicationFaultKind.Rollback,
+            entry.Index,
+            entry.Target));
+        if (!entry.Original.Exists)
+        {
+            if (!FilePublicationOwnedDelete.TryDelete(
+                    entry.Target,
+                    publishedTarget))
+            {
+                throw new IOException(
+                    $"Published target '{entry.Target}' changed and was not deleted during recovery.");
+            }
+            return;
+        }
+
+        if (entry.Displaced is null
+            || !entry.Original.VersionEquals(
+                FilePublicationSnapshot.Capture(entry.Displaced)))
+        {
+            throw new IOException(
+                $"Verified displaced target is unavailable for '{entry.Target}'.");
+        }
+
+        plan.Faults.Hit(new PublicationFaultPoint(
+            PublicationFaultKind.Metadata,
+            entry.Index,
+            entry.Target));
+        if (!publishedTarget.Exists)
+        {
+            if (File.Exists(entry.Target) || Directory.Exists(entry.Target))
+            {
+                throw new IOException(
+                    $"Deleted target '{entry.Target}' was recreated during recovery.");
+            }
+            File.Move(entry.Displaced, entry.Target, overwrite: false);
+            return;
+        }
+
+        if (FilePublicationOwnedDelete.TryGetAttributesNoFollow(entry.Staged)
+            is not null)
+        {
+            throw new IOException(
+                $"Publication staging path '{entry.Staged}' is occupied during recovery.");
+        }
+
+        FilePublicationAtomicSwap.Publish(
+            entry.Displaced,
+            entry.Target,
+            overwrite: true,
+            expectedTarget: publishedTarget,
+            metadataSource: entry.Original,
+            displacedPath: entry.Staged,
+            expectedStage: entry.Original);
+    }
+
+    private static bool MetadataMatches(PublicationEntry entry) =>
+        !entry.Original.Exists
+        || entry.Original.Metadata is null
+        || entry.Original.Metadata.Matches(entry.Target);
+
+    private static PublicationRecoveryItem RecoveryItem(
+        PublicationEntry entry,
+        bool published,
+        string status,
+        bool contentVerified,
+        bool metadataVerified,
+        string? failure = null) =>
+        new(
+            entry.Target,
+            entry.Original.Exists,
+            published,
+            status,
+            contentVerified,
+            metadataVerified,
+            failure);
 }

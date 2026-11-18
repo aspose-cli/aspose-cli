@@ -10,9 +10,10 @@ namespace Aspose.Cli.Sdk.IO.Publication;
 /// idempotent. The wait is bounded and never outlives the caller's deadline.
 /// </summary>
 /// <remarks>
-/// Only renames of files the CLI itself writes, such as staging, manifest and state files,
-/// use this. A user-visible target swap reports a lock instead of waiting it out: a lock on a user document usually means an application
-/// holds it, and a replace that fails part-way is recovered, not repeated.
+/// Only renames of files the CLI itself writes, such as staging and state files, use this. A
+/// user-visible target swap reports a lock instead of waiting it out: a lock on a user document
+/// usually means an application holds it, and a replace that fails part-way is rolled back, not
+/// repeated.
 /// </remarks>
 public static class AtomicFileRename
 {

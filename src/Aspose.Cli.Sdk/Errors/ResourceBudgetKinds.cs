@@ -10,7 +10,6 @@ public static class ResourceBudgetKinds
     public const string OutputBytes = "output-bytes";
     public const string OutputSetEntries = "output-set-entries";
     public const string OutputSetDirectories = "output-set-directories";
-    public const string PublicationMetadataBytes = "publication-metadata-bytes";
     public const string RasterPixels = "raster-pixels";
     public const string SecretCharacters = "secret-characters";
 }

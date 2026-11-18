@@ -295,8 +295,7 @@ public static partial class CliErrors
             ResourceBudgetKinds.InputBytes => FileTooLarge(observed, limit, phase),
             ResourceBudgetKinds.OutputBytes
                 or ResourceBudgetKinds.OutputSetEntries
-                or ResourceBudgetKinds.OutputSetDirectories
-                or ResourceBudgetKinds.PublicationMetadataBytes => OutputBudgetExceeded(resource, observed, limit, unit, phase),
+                or ResourceBudgetKinds.OutputSetDirectories => OutputBudgetExceeded(resource, observed, limit, unit, phase),
             _ => InputBudgetExceeded(resource, observed, limit, unit, phase),
         };
 
