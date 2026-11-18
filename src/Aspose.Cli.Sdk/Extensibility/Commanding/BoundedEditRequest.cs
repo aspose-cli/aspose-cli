@@ -39,7 +39,7 @@ public abstract record BoundedEditRequest<TBatch>
     /// <summary>The validated operation batch to apply atomically.</summary>
     public required TBatch Batch { get; init; }
 
-    /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
+    /// <summary>The resolved output: its format, path, overwrite permission and in-place mode.</summary>
     public required ResolvedOutput Output { get; init; }
 
     /// <summary>Shared stale-input and dry-run semantics.</summary>

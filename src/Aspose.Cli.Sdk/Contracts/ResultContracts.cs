@@ -6,7 +6,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// the host publish under <c>v2/common/</c>, a product under <c>v2/&lt;product&gt;/</c>. A result
 /// states its id through its <see cref="ResultEnvelope"/> constructor instead.
 /// </summary>
-/// <param name="id">The relative schema id, such as <c>backup</c>.</param>
+/// <param name="id">The relative schema id, such as <c>operation-outcome</c>.</param>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class SchemaIdAttribute(string id) : Attribute
 {

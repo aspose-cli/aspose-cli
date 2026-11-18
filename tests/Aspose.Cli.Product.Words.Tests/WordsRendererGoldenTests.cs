@@ -234,7 +234,7 @@ public sealed class WordsRendererGoldenTests
     {
         var result = new WordsReadResult
         {
-            Input = new InputInfo { Path = "report.docx", Format = "docx", SizeBytes = 10_240, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = "report.docx", Format = "docx", SizeBytes = 10_240, Encrypted = false },
             Window = new ResultWindow { Unit = "block", Returned = 2, Total = 12, Truncated = true },
             Content = "text",
             BlockCount = 12,
@@ -264,7 +264,7 @@ public sealed class WordsRendererGoldenTests
     {
         var result = new WordsEditResult
         {
-            Input = new InputInfo { Path = "report.docx", Format = "docx", SizeBytes = 10_240, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = "report.docx", Format = "docx", SizeBytes = 10_240, Encrypted = false },
             Output = new OutputInfo { Path = "out.docx", Format = "docx", SizeBytes = 11_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } },
             DryRun = false,
             Applied =
@@ -298,7 +298,7 @@ public sealed class WordsRendererGoldenTests
 
     private static WordsInspectResult Info() => new()
     {
-        Input = new InputInfo { Path = @"C:\docs\report.docx", Format = "docx", SizeBytes = 10_240, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+        Input = new InputInfo { Path = @"C:\docs\report.docx", Format = "docx", SizeBytes = 10_240, Encrypted = false },
         Document = new WordsDocumentSummary
         {
             SectionCount = 2, BlockCount = 12, ParagraphCount = 10, TableCount = 2, PageCount = 3, WordCount = 456,

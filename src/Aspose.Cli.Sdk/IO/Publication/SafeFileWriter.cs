@@ -19,7 +19,7 @@ public sealed class SafeFileWriter
 
     /// <summary>Publishes one file atomically and returns its facts.</summary>
     public PublishedFile Write(string targetPath, bool overwrite, Action<string> writeToTemp) =>
-        Write(targetPath, overwrite, backupPath: null, writeToTemp).Published;
+        Write(targetPath, overwrite, inputPrecondition: null, writeToTemp).Published;
 
     /// <summary>
     /// Publishes a resolved output atomically and describes every file published, the output
@@ -38,7 +38,7 @@ public sealed class SafeFileWriter
         ArgumentNullException.ThrowIfNull(output);
         if (!output.Format.CompanionFiles)
         {
-            PublishedFile written = Write(output.Path, output.Overwrite, output.BackupPath, writeToTemp).Published;
+            PublishedFile written = Write(output.Path, output.Overwrite, inputPrecondition: null, writeToTemp).Published;
             return [FileObjects.Output(written, output.Format, encrypted)];
         }
 
@@ -60,28 +60,22 @@ public sealed class SafeFileWriter
             : FileObjects.Companion(file.Published))];
     }
 
-    public SafeWriteResult Write(string targetPath, bool overwrite, string? backupPath, Action<string> writeToTemp) =>
-        Write(targetPath, overwrite, backupPath, inputPrecondition: null, writeToTemp);
-
-    public SafeWriteResult Write(string targetPath, bool overwrite, string? backupPath,
+    public SafeWriteResult Write(string targetPath, bool overwrite,
         FileWritePrecondition? inputPrecondition, Action<string> writeToTemp)
     {
         string target = OutputPathValidator.NormalizeFile(targetPath);
-        string? backup = backupPath is null ? null : OutputPathValidator.NormalizeFile(backupPath, phase: "backup");
-        string directory = System.IO.Path.GetDirectoryName(target)!;
-        using var transaction = new AtomicOutputSetWriter(this,
-            backup is null ? [directory] : new[] { directory, System.IO.Path.GetDirectoryName(backup)! }, "write");
+        using var transaction = new AtomicOutputSetWriter(this, [System.IO.Path.GetDirectoryName(target)!], "write");
         StagedOutput staged;
         try
         {
-            staged = transaction.Stage(target, overwrite, backup, inputPrecondition, writeToTemp);
+            staged = transaction.Stage(target, overwrite, inputPrecondition, writeToTemp);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             throw CliErrors.OutputUnwritable(target, "the staged output could not be written", exception, "write");
         }
         transaction.Commit();
-        return new SafeWriteResult(staged.SizeBytes, staged.Backup)
+        return new SafeWriteResult(staged.SizeBytes)
         {
             PublishedSnapshot = staged.Snapshot,
             Published = staged.Published,
@@ -93,7 +87,7 @@ public sealed class SafeFileWriter
 }
 
 /// <summary>Outcome of one atomic file write.</summary>
-public sealed record SafeWriteResult(long SizeBytes, BackupInfo? Backup)
+public sealed record SafeWriteResult(long SizeBytes)
 {
     internal FilePublicationSnapshot PublishedSnapshot { get; init; } = FilePublicationSnapshot.Missing;
 

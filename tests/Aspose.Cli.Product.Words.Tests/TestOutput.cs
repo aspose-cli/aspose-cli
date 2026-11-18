@@ -6,6 +6,6 @@ namespace Aspose.Cli.Product.Words.Tests;
 internal static class TestOutput
 {
     /// <inheritdoc cref="ResolvedOutputs.At"/>
-    public static ResolvedOutput At(string path, string? format = null, bool overwrite = false, string? backup = null) =>
-        ResolvedOutputs.At(WordsFormats.Definitions, path, format, overwrite, backup);
+    public static ResolvedOutput At(string path, string? format = null, bool overwrite = false, bool inPlace = false) =>
+        ResolvedOutputs.At(WordsFormats.Definitions, path, format, overwrite, inPlace);
 }

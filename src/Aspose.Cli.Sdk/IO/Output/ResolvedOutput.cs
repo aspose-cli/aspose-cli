@@ -5,7 +5,7 @@ namespace Aspose.Cli.Sdk.IO.Output;
 /// <summary>
 /// The one file a command publishes, resolved once per invocation by the command template:
 /// its format, its absolute path, whether an existing file may be replaced and, for an edit, the
-/// in-place mode and its backup. The path always carries one of the format's extensions. A
+/// in-place mode. The path always carries one of the format's extensions. A
 /// product writes the output as given and names the files of an output written in parts with
 /// <see cref="Parts(IReadOnlyList{int})"/> or <see cref="Part(string)"/>.
 /// </summary>
@@ -18,9 +18,8 @@ public sealed record ResolvedOutput
     /// <param name="path">The output path; it is made absolute.</param>
     /// <param name="overwrite">Whether an existing file may be replaced.</param>
     /// <param name="inPlace">Whether the output replaces the edited input itself.</param>
-    /// <param name="backupPath">The backup an in-place edit writes first, or null.</param>
-    public ResolvedOutput(FormatDescriptor format, string path, bool overwrite = false, bool inPlace = false, string? backupPath = null)
-        : this(format, path, overwrite, inPlace, backupPath, [])
+    public ResolvedOutput(FormatDescriptor format, string path, bool overwrite = false, bool inPlace = false)
+        : this(format, path, overwrite, inPlace, [])
     {
     }
 
@@ -29,7 +28,6 @@ public sealed record ResolvedOutput
         string path,
         bool overwrite,
         bool inPlace,
-        string? backupPath,
         IReadOnlyList<FormatDescriptor> alternatives)
     {
         ArgumentNullException.ThrowIfNull(format);
@@ -38,7 +36,6 @@ public sealed record ResolvedOutput
         Path = System.IO.Path.GetFullPath(path);
         Overwrite = overwrite;
         InPlace = inPlace;
-        BackupPath = backupPath;
         _alternatives = alternatives;
     }
 
@@ -53,9 +50,6 @@ public sealed record ResolvedOutput
 
     /// <summary>Whether the output replaces the edited input itself.</summary>
     public bool InPlace { get; }
-
-    /// <summary>The backup an in-place edit writes before replacing its input, or null.</summary>
-    public string? BackupPath { get; }
 
     /// <summary>The directory the output is published in.</summary>
     public string Directory => System.IO.Path.GetDirectoryName(Path)!;

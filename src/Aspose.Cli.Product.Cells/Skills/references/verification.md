@@ -9,7 +9,6 @@ tiers and the render facts that decide what a Cells check can see.
 | 1 values | after every write |
 | 2 visual | anything visual changed, or a person will open the file |
 | 3 semantic | once, before delivery |
-| 4 session diff | you edited a user's file under `--backup` |
 
 Each tier catches what the previous one cannot see. Stop and fix at the first
 finding, then run the tier again. `cells edit --verify` already performs the
@@ -118,11 +117,7 @@ Formula errors are not the only wrong numbers: a `SUM` over the wrong range
 returns a plausible value, so spot-check two or three computed cells against
 what they should roughly be.
 
-## Tier 4: session diff
-
-```
-aspose-cli cells compare book.backup.xlsx book.xlsx --output-format json
-```
+## cells compare
 
 - It compares stored cell values and formula text only (`--content values`
   ignores formula text). Dates compare by their stored value and read as
@@ -158,4 +153,4 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output-format json
 - `--max-diffs` caps the listed cells; the summary still counts every
   difference and `LIST_TRUNCATED` reports the omission.
 - Report the summary (sheets modified, cells differing) as value and formula
-  changes, with the backup path.
+  changes.

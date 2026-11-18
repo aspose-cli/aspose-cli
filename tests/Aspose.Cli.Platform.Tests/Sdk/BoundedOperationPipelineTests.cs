@@ -156,9 +156,9 @@ public sealed class BoundedOperationPipelineTests
         Assert.Null(error.Details!["id"]);
         Assert.Equal("unknown-field", error.Details["reason"]!.GetValue<string>());
         Assert.Equal(reason["unknown field '".Length..^1], error.Details["field"]!.GetValue<string>());
-        Assert.Equal(["schema", "schemaVersion", "ifMatch", "ops"],
+        Assert.Equal(["schema", "schemaVersion", "ops"],
             error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.EndsWith($"{reason}. Must be one of: schema, schemaVersion, ifMatch, ops", error.Message, StringComparison.Ordinal);
+        Assert.EndsWith($"{reason}. Must be one of: schema, schemaVersion, ops", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]

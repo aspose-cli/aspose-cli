@@ -1,8 +1,8 @@
 # Cells edit operations
 
-Batches, `--dry-run`, ids, `--in-place`/`--out`, backups and
-secrets work as in every product: `aspose-cli docs editing`. The fields, types,
-defaults and allowed values of each operation come from the generated schema:
+Batches, `--dry-run`, ids, `--in-place`/`--out` and secrets work as in every
+product: `aspose-cli docs editing`. The fields, types, defaults and allowed
+values of each operation come from the generated schema:
 
 ```
 aspose-cli schema v2/cells/ops --operation insert_chart

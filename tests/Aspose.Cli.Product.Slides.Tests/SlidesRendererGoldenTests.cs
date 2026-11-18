@@ -206,7 +206,7 @@ public sealed class SlidesRendererGoldenTests
         var rect = new SlidesRect { X = 0, Y = 0, Width = 100, Height = 20 };
         var result = new SlidesReadResult
         {
-            Input = new InputInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 50_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 50_000, Encrypted = false },
             Window = new ResultWindow { Unit = "slide", Returned = 2, Total = 2, Truncated = false },
             Content = "text",
             SlideCount = 2,
@@ -249,7 +249,7 @@ public sealed class SlidesRendererGoldenTests
     {
         var result = new SlidesEditResult
         {
-            Input = new InputInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 50_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 50_000, Encrypted = false },
             Output = new OutputInfo { Path = "out.pptx", Format = "pptx", SizeBytes = 52_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } },
             DryRun = false,
             Applied = [new BoundedOperationOutcome { Id = "op-0001", Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 1 }],
@@ -269,7 +269,7 @@ public sealed class SlidesRendererGoldenTests
 
     private static SlidesInspectResult Info() => new()
     {
-        Input = new InputInfo { Path = @"C:\decks\deck.pptx", Format = "pptx", SizeBytes = 50_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+        Input = new InputInfo { Path = @"C:\decks\deck.pptx", Format = "pptx", SizeBytes = 50_000, Encrypted = false },
         Presentation = new SlidesPresentationSummary
         {
             SlideCount = 3, SlideSize = SlidesSlideSizeInfo.Of(960, 540.004), Orientation = "landscape",

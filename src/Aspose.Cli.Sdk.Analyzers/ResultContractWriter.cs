@@ -95,7 +95,7 @@ internal sealed class ResultContractWriter(
             if (attribute.ConstructorArguments.FirstOrDefault().Value is not string id || !RelativeId.IsMatch(id)
                 || AnalyzerTypes.Inherits(type, SdkMetadataNames.ResultEnvelope))
             {
-                Report(type, $"[SchemaId] on '{type.Name}' must name a relative id such as 'backup', on a record that is not a ResultEnvelope; a result states its id to the ResultEnvelope constructor.");
+                Report(type, $"[SchemaId] on '{type.Name}' must name a relative id such as 'operation-outcome', on a record that is not a ResultEnvelope; a result states its id to the ResultEnvelope constructor.");
                 return null;
             }
 

@@ -593,9 +593,9 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The differences of one file object from <c>{path, format, sizeBytes, fingerprint, encrypted}</c>,
-    /// all required but a produced file's <c>encrypted</c>; a <c>required</c> beside a reference
-    /// adds to the referenced schema's.
+    /// The differences of one file object from <c>{path, format, sizeBytes, encrypted}</c>, with
+    /// <c>fingerprint</c> for a produced file, all required but a produced file's <c>encrypted</c>;
+    /// a <c>required</c> beside a reference adds to the referenced schema's.
     /// </summary>
     private static IEnumerable<string> FileObject(string id, SchemaProperty property, bool producedFile)
     {
@@ -605,7 +605,7 @@ internal static partial class ContractRules
             yield return $"{property.Path}: a {string.Join("/", PublishedSchema.Types(node))}, not the file object";
             yield break;
         }
-        string[] expected = [.. FileCore, "encrypted"];
+        string[] expected = [.. FileCore.Where(name => producedFile || name != "fingerprint"), "encrypted"];
         string[] declared = [.. properties.Select(static pair => pair.Key)];
         HashSet<string> required = [.. PublishedSchema.Required(node), .. PublishedSchema.Required(property.Schema)];
         string[] missing = [.. expected.Where(name => !declared.Contains(name) && !(producedFile && name == "encrypted"))];

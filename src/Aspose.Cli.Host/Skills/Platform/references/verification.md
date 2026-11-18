@@ -15,7 +15,6 @@ overview adds the checks specific to its documents.
     placeholders
 [ ] Product checks: the semantic checks the product Skill names pass
 [ ] Visual: `<product> render` ran and every image it wrote was looked at
-[ ] Session diff: against the backup, only intended changes remain
 [ ] Warnings: evaluation marks, removed encryption and lossy conversion
     disclosed with the delivered file
 ```

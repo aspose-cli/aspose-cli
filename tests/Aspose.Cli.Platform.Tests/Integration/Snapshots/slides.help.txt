@@ -111,12 +111,10 @@ Arguments:
 
 Options:
   --ops <ops>                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/slides/ops.
-  --if-match <if-match>          Require the current input SHA-256 fingerprint before editing.
   --verify                       Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left; inserted pictures, shapes, tables and charts are not read back. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.
-  --backup                       Create a non-overwriting backup before an in-place write.
   --dry-run                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
   --password <password>          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the presentation.
@@ -131,7 +129,7 @@ Global options:
 
 Examples:
   aspose-cli slides edit deck.pptx --ops deck-ops.json --out revised.pptx --verify
-  aspose-cli slides edit deck.pptx --in-place --backup --ops deck-ops.json
+  aspose-cli slides edit deck.pptx --in-place --ops deck-ops.json
 
 Learn more:
   aspose-cli docs slides/editing       atomic presentation operations

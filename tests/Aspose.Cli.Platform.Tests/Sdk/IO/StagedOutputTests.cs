@@ -40,18 +40,4 @@ public sealed class StagedOutputTests
         Assert.False(File.Exists(target));
         Assert.Equal("same bytes", File.ReadAllText(staged.Path));
     }
-
-    [Fact]
-    public void TargetCannotReuseAnotherOutputsBackupName()
-    {
-        using var temp = new TempDirectory();
-        string original = temp.File("original.txt");
-        string backup = temp.File("backup.txt");
-        File.WriteAllText(original, "original");
-        using var transaction = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "conflict");
-        transaction.Stage(original, true, backup, null, path => File.WriteAllText(path, "replacement"));
-        Assert.Throws<CliException>(() => transaction.Stage(backup, true, path => File.WriteAllText(path, "unrelated")));
-        Assert.Equal("original", File.ReadAllText(original));
-        Assert.False(File.Exists(backup));
-    }
 }

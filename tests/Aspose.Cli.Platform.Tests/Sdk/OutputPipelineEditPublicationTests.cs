@@ -21,61 +21,35 @@ public sealed class OutputPipelineEditPublicationTests
     private const string Edited = "edited";
 
     [Fact]
-    public void DryRun_WritesNeitherOutputNorBackup()
+    public void DryRun_WritesNoOutput()
     {
         using var temp = new TempDirectory();
         string input = Input(temp);
-        string backup = temp.File("book.backup.pdf");
         bool saved = false;
 
         EditPublication<Checked> publication = Pipeline().PublishEdit<Checked>(
-            InPlace(input, backup), new object(), FileWritePrecondition.Capture(input), dryRun: true, encrypted: false,
+            InPlace(input), new object(), FileWritePrecondition.Capture(input), dryRun: true, encrypted: false,
             _ => saved = true, static path => new Checked(File.ReadAllText(path)), "test-edit");
 
-        Assert.Equal(new EditPublication<Checked>(null, null, null), publication);
-        Assert.Null(publication.BackupWarnings);
+        Assert.Equal(new EditPublication<Checked>(null, null), publication);
         Assert.False(saved);
         Assert.Equal(Original, File.ReadAllText(input));
-        Assert.False(File.Exists(backup));
         Assert.Equal([input], Directory.GetFiles(temp.Path));
     }
 
     [Fact]
-    public void InPlaceEdit_BacksUpTheReplacedFileAndPublishesTheEdit()
+    public void InPlaceEdit_PublishesTheEdit()
     {
         using var temp = new TempDirectory();
         string input = Input(temp);
-        string backup = temp.File("book.backup.pdf");
 
         EditPublication<Checked> publication = Pipeline().PublishEdit<Checked>(
-            InPlace(input, backup), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted: false,
+            InPlace(input), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted: false,
             Save, verify: null, "test-edit");
 
         Assert.Equal(Edited, File.ReadAllText(input));
-        Assert.Equal(Original, File.ReadAllText(backup));
         Assert.Equal(input, publication.Output!.Path);
-        Assert.Equal(backup, publication.Backup!.Path);
-        Assert.True(publication.Backup.Created);
-        Assert.True(publication.Backup.HoldsReplacedVersion);
-        Assert.Null(publication.BackupWarnings);
         Assert.Null(publication.Verification);
-    }
-
-    [Fact]
-    public void KeptBackupOfAnEarlierVersion_WarnsBackupPredatesEdit()
-    {
-        using var temp = new TempDirectory();
-        string input = Input(temp);
-        string backup = temp.File("book.backup.pdf");
-        File.WriteAllText(backup, "earlier");
-
-        EditPublication<Checked> publication = Pipeline().PublishEdit<Checked>(
-            InPlace(input, backup), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted: false,
-            Save, verify: null, "test-edit");
-
-        Assert.False(publication.Backup!.HoldsReplacedVersion);
-        Assert.Equal(WarningCodes.BackupPredatesEdit, Assert.Single(publication.BackupWarnings!).Code);
-        Assert.Equal("earlier", File.ReadAllText(backup));
     }
 
     [Fact]
@@ -86,7 +60,7 @@ public sealed class OutputPipelineEditPublicationTests
         string? targetDuringVerify = null;
 
         EditPublication<Checked> publication = Pipeline().PublishEdit(
-            InPlace(input, backup: null), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted: false,
+            InPlace(input), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted: false,
             Save,
             candidate =>
             {
@@ -105,14 +79,12 @@ public sealed class OutputPipelineEditPublicationTests
     {
         using var temp = new TempDirectory();
         string input = Input(temp);
-        string backup = temp.File("book.backup.pdf");
 
         Assert.Throws<InvalidOperationException>(() => Pipeline().PublishEdit<Checked>(
-            InPlace(input, backup), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted: false,
+            InPlace(input), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted: false,
             Save, static _ => throw new InvalidOperationException("read-back failed"), "test-edit"));
 
         Assert.Equal(Original, File.ReadAllText(input));
-        Assert.False(File.Exists(backup));
         Assert.Equal([input], Directory.GetFiles(temp.Path));
     }
 
@@ -127,7 +99,7 @@ public sealed class OutputPipelineEditPublicationTests
         pipeline.Opened(new InputProtection(true));
 
         EditPublication<Checked> publication = pipeline.PublishEdit<Checked>(
-            InPlace(input, backup: null), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted,
+            InPlace(input), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted,
             Save, verify: null, "test-edit");
 
         Assert.Equal(encrypted, publication.Output!.Encrypted);
@@ -145,8 +117,8 @@ public sealed class OutputPipelineEditPublicationTests
         return input;
     }
 
-    private static ResolvedOutput InPlace(string input, string? backup) =>
-        new(Pdf, input, overwrite: true, inPlace: true, backupPath: backup);
+    private static ResolvedOutput InPlace(string input) =>
+        new(Pdf, input, overwrite: true, inPlace: true);
 
     private static void Save(string path) => File.WriteAllText(path, Edited);
 

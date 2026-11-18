@@ -46,8 +46,7 @@ Read the product overview before the first command on that document type.
 2. **Edit in one batch.** Put related changes in one `edit --ops` file; the
    batch is atomic by default (`aspose-cli docs editing`).
 3. **Protect the user's file.** Write to `--out`, or replace the input with
-   `--in-place --backup --if-match <sha256>` using the fingerprint you read.
-   `--dry-run` checks a request without writing.
+   `--in-place`. `--dry-run` checks a request without writing.
 4. **Read back, then look.** Report values from a read after the edit, render
    it with `<product> render` and look at the images yourself
    (`aspose-cli docs verification`).
@@ -140,7 +139,7 @@ The CLI describes itself, and its answer is the truth about this build:
 | Topic | Read it when |
 |-------|--------------|
 | `aspose-cli docs reading` | Reading within budgets: windows, `window.next`, search paging, rendering |
-| `aspose-cli docs editing` | Editing with an ops batch: outcomes, outputs, backups, secrets, not-found recovery |
+| `aspose-cli docs editing` | Editing with an ops batch: outcomes, outputs, secrets, not-found recovery |
 | `aspose-cli docs verification` | Before delivery: the checklist, rendering to look, fonts |
 | `aspose-cli docs licensing` | License sources, status, install, evaluation disclosure |
 | `aspose-cli docs troubleshooting` | An error: the envelope, exit codes, recovery, PowerShell |

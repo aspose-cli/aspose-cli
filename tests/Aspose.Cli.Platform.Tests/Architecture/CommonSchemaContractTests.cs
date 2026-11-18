@@ -125,7 +125,6 @@ public sealed class CommonSchemaContractTests
     }
 
     [Theory]
-    [InlineData("v2/common/backup", typeof(BackupInfo))]
     [InlineData("v2/common/file-fingerprint", typeof(FileFingerprint))]
     [InlineData("v2/common/operation-outcome", typeof(BoundedOperationOutcome))]
     [InlineData("v2/common/verification-issue", typeof(VerificationIssue))]

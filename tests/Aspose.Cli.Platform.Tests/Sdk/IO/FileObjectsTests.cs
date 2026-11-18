@@ -28,7 +28,7 @@ public sealed class FileObjectsTests : IDisposable
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void Input_MakesThePathAbsolute_AndReadsSizeAndFingerprintFromTheFile(bool encrypted)
+    public void Input_MakesThePathAbsolute_AndReadsSizeFromTheFile(bool encrypted)
     {
         string path = _temp.File("in.doc");
         File.WriteAllText(path, "hello");
@@ -40,7 +40,6 @@ public sealed class FileObjectsTests : IDisposable
         Assert.True(Path.IsPathFullyQualified(input.Path));
         Assert.Equal("doc", input.Format);
         Assert.Equal(5, input.SizeBytes);
-        Assert.Equal(FileFingerprints.Capture(path), input.Fingerprint);
         Assert.Equal(encrypted, input.Encrypted);
     }
 

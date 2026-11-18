@@ -328,7 +328,7 @@ public static partial class CliErrors
         string expectedSha256,
         string actualSha256) => CliException.Create(
         ErrorCodes.InputChanged,
-        $"Input no longer matches the requested fingerprint: {path}",
+        $"Input changed while it was read: {path}",
         details: new JsonObject
         {
             ["path"] = path,
@@ -503,7 +503,7 @@ public static partial class CliErrors
 
     /// <summary>
     /// An explicit output resolves to an input document. Replacing the input is the in-place
-    /// mode's job, which alone carries its backup and fingerprint precondition.
+    /// mode's job alone.
     /// </summary>
     internal static CliException OutputIsInput(string parameter, string path) => CliException.Create(
         ErrorCodes.OptionInvalid,
@@ -536,7 +536,7 @@ public static partial class CliErrors
             details: new JsonObject { [ParameterKey(parameter)] = parameter });
     }
 
-    /// <summary>Two outputs of one operation, including a backup, resolve to the same path.</summary>
+    /// <summary>Two outputs of one operation resolve to the same path.</summary>
     internal static CliException DuplicateOutput(string path) => CliException.Create(
         ErrorCodes.UsageError,
         $"Two outputs of this operation resolve to the same path: {path}",

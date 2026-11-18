@@ -117,12 +117,10 @@ Arguments:
 
 Options:
   --ops <ops>                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/pdf/ops.
-  --if-match <if-match>          Require the current input SHA-256 fingerprint before editing.
   --verify                       Read the staged output back and check the effect of each form, redaction, bookmark, metadata, attachment and page operation. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.
-  --backup                       Create a non-overwriting backup before an in-place write.
   --dry-run                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
   --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the PDF.
@@ -137,7 +135,7 @@ Global options:
 
 Examples:
   aspose-cli pdf edit report.pdf --ops ops.json --out reviewed.pdf --verify
-  aspose-cli pdf edit report.pdf --in-place --backup --ops ops.json
+  aspose-cli pdf edit report.pdf --in-place --ops ops.json
 
 Learn more:
   aspose-cli docs pdf/editing       fixed-layout operations and safe mutation

@@ -22,9 +22,6 @@ public sealed record SlidesEditResult() : EngineResultEnvelope("edit-result"), I
     /// <summary>The outcome of every operation, in batch order.</summary>
     public required IReadOnlyList<BoundedOperationOutcome> Applied { get; init; }
 
-    /// <summary>The backup of the replaced presentation; only for an in-place edit that kept one.</summary>
-    public BackupInfo? Backup { get; init; }
-
     /// <summary>The 1-based numbers of the output's slides the batch changed, ascending; omitted when it changed none.</summary>
     [UniqueItems]
     [Minimum(1)]

@@ -12,9 +12,6 @@ public record BoundedOperationEnvelope<TOperation>
     /// <summary>Current envelope version; omitted input defaults to version 2.</summary>
     public int? SchemaVersion { get; init; } = 2;
 
-    /// <summary>Optional SHA-256 precondition copied from an input fingerprint.</summary>
-    public string? IfMatch { get; init; }
-
     /// <summary>
     /// Product-owned operations, executed in this order. A document may also be the bare array
     /// of operations, which reads as a document with only this field.

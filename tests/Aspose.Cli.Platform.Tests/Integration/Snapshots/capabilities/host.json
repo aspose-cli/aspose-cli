@@ -33,45 +33,6 @@
     "words"
   ],
   "schemas": {
-    "v2/common/backup": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json",
-      "description": "Stable, never-overwritten safety backup created before an in-place mutation.",
-      "type": "object",
-      "required": [
-        "path",
-        "created",
-        "sizeBytes",
-        "lastWriteUtc",
-        "holdsReplacedVersion"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "path": {
-          "description": "Absolute backup path.",
-          "type": "string"
-        },
-        "created": {
-          "description": "True when this invocation created the backup; false when it reused an existing one.",
-          "type": "boolean"
-        },
-        "sizeBytes": {
-          "description": "Backup file size in bytes.",
-          "type": "integer",
-          "minimum": 0
-        },
-        "lastWriteUtc": {
-          "description": "When the content the backup holds was last written, in UTC with the Z designator.",
-          "type": "string",
-          "format": "date-time",
-          "pattern": "Z$"
-        },
-        "holdsReplacedVersion": {
-          "description": "True when the backup holds exactly the version this invocation replaced; false when a reused backup holds an earlier version, which a BACKUP_PREDATES_EDIT warning discloses.",
-          "type": "boolean"
-        }
-      }
-    },
     "v2/common/capabilities": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/capabilities.schema.json",
@@ -1557,7 +1518,6 @@
         "path",
         "format",
         "sizeBytes",
-        "fingerprint",
         "encrypted"
       ],
       "additionalProperties": false,
@@ -1574,10 +1534,6 @@
           "description": "File size in bytes.",
           "type": "integer",
           "minimum": 0
-        },
-        "fingerprint": {
-          "description": "SHA-256 identity of the file as it was read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
         },
         "encrypted": {
           "description": "true when the file is encrypted and opens only with its password.",
@@ -2070,7 +2026,6 @@
         "path",
         "format",
         "sizeBytes",
-        "fingerprint",
         "encrypted",
         "option"
       ],
@@ -2088,10 +2043,6 @@
           "description": "File size in bytes.",
           "type": "integer",
           "minimum": 0
-        },
-        "fingerprint": {
-          "description": "SHA-256 identity of the file as it was read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
         },
         "encrypted": {
           "description": "true when the file is encrypted and opens only with its password.",
@@ -2967,13 +2918,6 @@
     }
   ],
   "diagnostics": [
-    {
-      "code": "BACKUP_PREDATES_EDIT",
-      "owner": "common",
-      "severity": "warning",
-      "category": "warning",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
     {
       "code": "BOOKMARK_NOT_FOUND",
       "owner": "common",

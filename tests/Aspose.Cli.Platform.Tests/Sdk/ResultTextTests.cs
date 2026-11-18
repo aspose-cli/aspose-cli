@@ -7,7 +7,7 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 public sealed class ResultTextTests
 {
     [Fact]
-    public void Edit_PrintsEveryOperationAndTheBackup()
+    public void Edit_PrintsEveryOperation()
     {
         var output = new OutputInfo { Path = "out.docx", Format = "docx", SizeBytes = 1_024, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } };
         BoundedOperationOutcome[] applied =
@@ -26,19 +26,13 @@ public sealed class ResultTextTests
             surface,
             dryRun: false,
             output,
-            applied,
-            new BackupInfo
-            {
-                Path = "in.backup.docx", Created = true, SizeBytes = 10,
-                LastWriteUtc = DateTimeOffset.UnixEpoch, HoldsReplacedVersion = true,
-            }));
+            applied));
 
         Assert.Equal(
             [
                 "wrote out.docx (docx, 1,024 bytes, 2 of 2 op(s) applied)",
                 "  [op-0001] set_text: ok (2 item(s))",
                 "  [title] delete_block: ok (0 item(s))",
-                "backup: in.backup.docx (created)",
             ],
             Lines(text));
     }
@@ -52,28 +46,13 @@ public sealed class ResultTextTests
     }
 
     [Fact]
-    public void Backup_SaysAKeptBackupHoldsAnEarlierVersion()
-    {
-        string text = Render(surface => ResultText.Backup(surface, new BackupInfo
-        {
-            Path = "in.backup.docx", Created = false, SizeBytes = 10,
-            LastWriteUtc = new DateTimeOffset(2026, 9, 28, 8, 30, 0, TimeSpan.Zero), HoldsReplacedVersion = false,
-        }));
-
-        Assert.Equal(
-            "backup: in.backup.docx (kept existing, an earlier version last written 2026-09-28 08:30:00 UTC)",
-            Lines(text)[0]);
-    }
-
-    [Fact]
     public void Edit_SaysADryRunWroteNothing()
     {
         string text = Render(surface => ResultText.Edit(
             surface,
             dryRun: true,
             output: null,
-            [new() { Id = "op-0001", Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 1 }],
-            backup: null));
+            [new() { Id = "op-0001", Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 1 }]));
 
         Assert.Equal("dry run: 1 of 1 op(s) applied; nothing was written", Lines(text)[0]);
     }
@@ -167,7 +146,7 @@ public sealed class ResultTextTests
     [Fact]
     public void Input_WritesThePathFormatAndSize()
     {
-        string text = Render(surface => ResultText.Input(surface, new InputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false }));
+        string text = Render(surface => ResultText.Input(surface, new InputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000, Encrypted = false }));
 
         Assert.Equal(["in.pdf (pdf, 20,000 bytes)"], Lines(text));
     }

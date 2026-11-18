@@ -17,8 +17,6 @@ public sealed class CellsCliTests : IDisposable
         CliResult inspected = _workspace.Run(
             "cells", "inspect", "book.xlsx", "--output-format", "json");
         Assert.True(inspected.ExitCode == 0, inspected.StdErr);
-        string fingerprint = JsonNode.Parse(inspected.StdOut)!["input"]![
-            "fingerprint"]!["sha256"]!.GetValue<string>();
         File.WriteAllText(
             _workspace.File("ops.json"),
             """
@@ -32,7 +30,7 @@ public sealed class CellsCliTests : IDisposable
 
         CliResult edited = _workspace.Run(
             "cells", "edit", "book.xlsx", "--ops", "ops.json",
-            "--if-match", fingerprint, "--in-place", "--output-format", "json");
+            "--in-place", "--output-format", "json");
         CliResult read = _workspace.Run(
             "cells", "read", "book.xlsx", "--sheet", "Data",
             "--range", "B2:B3", "--output-format", "json");
@@ -40,10 +38,6 @@ public sealed class CellsCliTests : IDisposable
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         Assert.True(read.ExitCode == 0, read.StdErr);
         JsonNode editPayload = JsonNode.Parse(edited.StdOut)!;
-        Assert.Equal(fingerprint, editPayload["input"]!["fingerprint"]!["sha256"]!.GetValue<string>());
-        Assert.NotEqual(
-            fingerprint,
-            editPayload["output"]!["fingerprint"]!["sha256"]!.GetValue<string>());
         Assert.Equal("op-0001", editPayload["applied"]![0]!["id"]!.GetValue<string>());
         Assert.Equal("double", editPayload["applied"]![1]!["id"]!.GetValue<string>());
         Assert.Equal(

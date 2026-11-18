@@ -150,12 +150,6 @@ internal sealed class OperationSchemaWriter
         {
             ["schema"] = new JsonObject { ["description"] = "Optional; checked when present.", ["const"] = schemaId },
             ["schemaVersion"] = new JsonObject { ["const"] = 2 },
-            ["ifMatch"] = new JsonObject
-            {
-                ["description"] = "The SHA-256 fingerprint the input must still have; the edit fails when it changed.",
-                ["type"] = "string",
-                ["pattern"] = "^[0-9A-Fa-f]{64}$",
-            },
             ["ops"] = new JsonObject
             {
                 ["description"] = "Operations applied in order.",

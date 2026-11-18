@@ -151,14 +151,12 @@ Arguments:
 Options:
   --ops <ops>                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/words/ops.
   --set <set>                    Replace a bookmark's text as bookmark:NAME=TEXT; repeatable, applied after the --ops document. Example: --set "bookmark:ClientName=Contoso Ltd.".
-  --if-match <if-match>          Require the current input SHA-256 fingerprint before editing.
   --verify                       Compare the staged document after save and reopen to report semantic verification. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
   --track-changes                Track this batch as revisions; only content insertions and deletions are tracked.
   --author <author>              Revision author; required with --track-changes.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.
-  --backup                       Create a non-overwriting backup before an in-place write.
   --dry-run                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
   --password <password>          Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the document.
@@ -172,8 +170,8 @@ Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words edit contract.docx --in-place --backup --verify --set "bookmark:Client=Contoso"
-  aspose-cli words edit contract.docx --in-place --backup --ops ops.json --verify
+  aspose-cli words edit contract.docx --in-place --verify --set "bookmark:Client=Contoso"
+  aspose-cli words edit contract.docx --in-place --ops ops.json --verify
 
 Learn more:
   aspose-cli docs words/editing   addressing and operation recipes

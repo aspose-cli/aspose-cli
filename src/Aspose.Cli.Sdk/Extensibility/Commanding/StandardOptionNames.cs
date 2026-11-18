@@ -19,8 +19,6 @@ internal static class StandardOptionNames
     public const string Ops = "--ops";
     public const string Set = "--set";
     public const string InPlace = "--in-place";
-    public const string Backup = "--backup";
-    public const string IfMatch = "--if-match";
     public const string DryRun = "--dry-run";
     public const string Verify = "--verify";
 
@@ -48,6 +46,6 @@ internal static class StandardOptionNames
         Password, Password + EnvironmentSuffix, Password + StandardInputSuffix,
         Encrypt, Encrypt + EnvironmentSuffix, Encrypt + StandardInputSuffix,
         FontDir,
-        Ops, Set, InPlace, Backup, IfMatch, DryRun, Verify,
+        Ops, Set, InPlace, DryRun, Verify,
     ];
 }

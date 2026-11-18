@@ -190,7 +190,6 @@ public sealed class ResourceBudgetLedgerTests
             new SafeFileWriter(budgets).Write(
                 path,
                 overwrite: true,
-                backupPath: null,
                 FileWritePrecondition.Capture(path),
                 temporary => File.WriteAllBytes(temporary, [4, 5, 6, 7]));
             Assert.Equal(

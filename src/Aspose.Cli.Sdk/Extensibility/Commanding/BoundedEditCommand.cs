@@ -53,7 +53,7 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 /// <param name="Input">The edited document.</param>
 /// <param name="Batch">The validated, identified and path-normalized operation document.</param>
 /// <param name="Output">Where, how and in which format the result is published.</param>
-/// <param name="Options">Precondition and dry-run semantics.</param>
+/// <param name="Options">Dry-run semantics.</param>
 /// <param name="Verify">Whether staged verification was requested.</param>
 /// <param name="Secrets">
 /// The operations' secrets by environment variable name; a missing or empty variable is absent,
@@ -77,9 +77,9 @@ public sealed record BoundedEditInvocation<TBatch>(
 /// <summary>
 /// The one command skeleton of every bounded, atomic product edit. It owns the operation
 /// document (<c>--ops</c>) and its composition with <c>--set</c> directives and the
-/// execution semantics (<c>--if-match</c>, <c>--dry-run</c>, <c>--verify</c>), so every product accepts and rejects the same combinations. Its
+/// execution semantics (<c>--dry-run</c>, <c>--verify</c>), so every product accepts and rejects the same combinations. Its
 /// command, defined through <see cref="EditDefinition"/>, publishes the edited document as a
-/// mutation output (<c>--out</c>, <c>--overwrite</c>, <c>--in-place</c>, <c>--backup</c>).
+/// mutation output (<c>--out</c>, <c>--overwrite</c>, <c>--in-place</c>).
 /// <c>--ops</c> is optional only together with <c>--set</c>: an edit needs one of them.
 /// </summary>
 public sealed class BoundedEditCommand<TOp, TBatch>
@@ -95,7 +95,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     private readonly BoundedEditDefinition<TOp, TBatch> _definition;
     private readonly Option<string?> _ops;
     private readonly Option<string[]>? _set;
-    private readonly Option<string?> _ifMatch;
     private readonly Option<bool>? _verify;
     private readonly IReadOnlyList<Option> _options;
 
@@ -124,10 +123,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             }.WithInput(InputKind.None);
         }
 
-        _ifMatch = new Option<string?>(StandardOptionNames.IfMatch)
-        {
-            Description = "Require the current input SHA-256 fingerprint before editing.",
-        }.WithInput(InputKind.None);
         if (definition.VerifyDescription is { } verify)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(verify);
@@ -138,7 +133,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         [
             _ops,
             .. _set is null ? [] : new Option[] { _set },
-            _ifMatch,
             .. _verify is null ? [] : new Option[] { _verify },
         ];
     }
@@ -229,7 +223,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
 
         var options = new EditCommandOptions
         {
-            IfMatch = ReconcileIfMatch(parse.GetValue(_ifMatch), batch.IfMatch),
             DryRun = dryRun,
         };
         IReadOnlyDictionary<string, Secret> secrets = ResolveSecrets(batch, standard.ReadEnvironment);
@@ -275,19 +268,5 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         // A document read from stdin is never quoted back: stdin may hold something else.
         return TOp.Catalog.Parse<TBatch>(text, _definition.Contracts,
             quotesContent: JsonInputSource.Classify(source, OpsOption) != JsonSourceKind.StandardInput);
-    }
-
-    private static string? ReconcileIfMatch(string? command, string? document)
-    {
-        if (command is not null
-            && document is not null
-            && !string.Equals(command.Trim(), document.Trim(), StringComparison.OrdinalIgnoreCase))
-        {
-            throw CliErrors.OptionInvalid(
-                StandardOptionNames.IfMatch,
-                "the command value differs from the operations document ifMatch value");
-        }
-
-        return command ?? document;
     }
 }

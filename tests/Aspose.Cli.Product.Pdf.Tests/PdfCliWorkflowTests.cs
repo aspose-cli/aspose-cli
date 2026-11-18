@@ -83,7 +83,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
         List<string> arguments =
         [
             "pdf", "edit", "source.pdf", "--ops", operations,
-            "--in-place", "--backup", "--output-format", "json",
+            "--in-place", "--output-format", "json",
         ];
 
         CliResult result = _workspace.Run(arguments.ToArray());

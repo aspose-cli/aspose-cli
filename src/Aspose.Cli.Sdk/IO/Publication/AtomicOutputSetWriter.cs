@@ -62,10 +62,10 @@ public sealed class AtomicOutputSetWriter : IDisposable
 
     /// <summary>Stages one unique target without making it user-visible.</summary>
     public StagedOutput Stage(string targetPath, bool overwrite, Action<string> write) =>
-        Stage(targetPath, overwrite, backupPath: null, inputPrecondition: null, write);
+        Stage(targetPath, overwrite, inputPrecondition: null, write);
 
-    /// <summary>Stages an output, binding its input, optional stable backup and check.</summary>
-    public StagedOutput Stage(string targetPath, bool overwrite, string? backupPath,
+    /// <summary>Stages an output, binding its input and check.</summary>
+    public StagedOutput Stage(string targetPath, bool overwrite,
         FileWritePrecondition? inputPrecondition, Action<string> write,
         Action<string>? verify = null)
     {
@@ -73,7 +73,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
         string target = OutputPathValidator.NormalizeFile(targetPath);
         FilePublicationSnapshot expected = inputPrecondition?.Targets(target) is true
             ? inputPrecondition.Snapshot : FilePublicationSnapshot.Capture(target);
-        return _staging.StagePrepared(target, overwrite, backupPath, expected, write,
+        return _staging.StagePrepared(target, overwrite, requestedBackup: null, expected, write,
             inputPrecondition, verify);
     }
 

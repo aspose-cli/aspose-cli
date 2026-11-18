@@ -21,8 +21,6 @@ public sealed class CellsSkillExampleTests
         Assert.Equal((1240d, 44.5d, 500d), (q3["B1"].DoubleValue, q3["B2"].DoubleValue, q3["B3"].DoubleValue));
         Assert.Equal("=B1*B2-B3", q3["B4"].Formula);
         Assert.Equal(54680d, q3["B4"].DoubleValue);
-        using var backup = new Workbook(Path.Combine(directory, "quarterly.backup.xlsx"));
-        Assert.Equal(1180d, backup.Worksheets["Q3"].Cells["B1"].DoubleValue);
     }
 
     [Fact]

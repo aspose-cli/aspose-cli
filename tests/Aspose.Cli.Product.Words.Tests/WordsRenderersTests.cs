@@ -18,7 +18,7 @@ public sealed class WordsRenderersTests
     {
         var result = new WordsInspectResult
         {
-            Input = new InputInfo { Path = "report.docx", Format = "docx", SizeBytes = 10, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Input = new InputInfo { Path = "report.docx", Format = "docx", SizeBytes = 10, Encrypted = false },
             Document = new WordsDocumentSummary
             {
                 SectionCount = 1, BlockCount = 1, ParagraphCount = 1, TableCount = 0, PageCount = 1, WordCount = 2,

@@ -498,13 +498,13 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         new(this, _profile, new AtomicOutputSetWriter(Writer, targetDirectories, operation));
 
     /// <summary>
-    /// Publishes an edited document: stages <paramref name="output"/> with its backup and the
-    /// input precondition, reads the staged file back through <paramref name="verify"/> before
+    /// Publishes an edited document: stages <paramref name="output"/> with the input
+    /// precondition, reads the staged file back through <paramref name="verify"/> before
     /// anything is published, and commits. A dry run publishes nothing. When saving, verifying or
     /// committing fails, nothing is published and the input is left as it was.
     /// </summary>
     /// <typeparam name="TVerification">The product's verification of the staged output.</typeparam>
-    /// <param name="output">The resolved output, with the backup an in-place edit writes first.</param>
+    /// <param name="output">The resolved output.</param>
     /// <param name="document">The edited document the output holds.</param>
     /// <param name="precondition">The input the output replaces, which must not change meanwhile.</param>
     /// <param name="dryRun">Whether the edit only reports what it would do.</param>
@@ -529,7 +529,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         ArgumentNullException.ThrowIfNull(save);
         if (dryRun)
         {
-            return new EditPublication<TVerification>(null, null, null);
+            return new EditPublication<TVerification>(null, null);
         }
 
         using OutputSet<TDocument> transaction = BeginSet([output.Directory], operation);
@@ -539,15 +539,13 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
             output.Overwrite,
             document,
             save,
-            backupPath: output.BackupPath,
             inputPrecondition: precondition,
             encrypted: encrypted,
             byteOrderMark: byteOrderMark);
-        BackupInfo? backup = staged.Backup;
         TVerification? verification = verify is null ? null : staged.Read(verify);
         transaction.Commit();
         return new EditPublication<TVerification>(
-            FileObjects.Output(staged.Published, output.Format, encrypted), backup, verification);
+            FileObjects.Output(staged.Published, output.Format, encrypted), verification);
     }
 
     /// <summary>
@@ -700,7 +698,7 @@ public sealed class OutputSet<TDocument> : IDisposable
     /// <param name="document">The document the output holds or shows, or null.</param>
     /// <param name="write">Writes the staged file.</param>
     /// <param name="rendering">Whether the output shows <paramref name="document"/>, as a page image does, rather than keeping a copy of it.</param>
-    /// <param name="backupPath">The stable backup of the file the output replaces, if requested.</param>
+
     /// <param name="inputPrecondition">The input the output replaces, which must not change meanwhile.</param>
     /// <param name="verify">Checks the staged file before it is published.</param>
     /// <param name="pages">The pages (or slides) of <paramref name="document"/> a rendering shows, numbered from 1; null for all of them.</param>
@@ -716,7 +714,7 @@ public sealed class OutputSet<TDocument> : IDisposable
     /// </param>
     /// <param name="byteOrderMark">Whether the output keeps the UTF-8 byte order mark <paramref name="write"/> starts it with (<see cref="ByteOrderMarks"/>).</param>
     public StagedOutput Stage(string targetPath, FormatDescriptor format, bool overwrite, TDocument? document, Action<string> write,
-        bool rendering = false, string? backupPath = null, FileWritePrecondition? inputPrecondition = null,
+        bool rendering = false, FileWritePrecondition? inputPrecondition = null,
         Action<string>? verify = null, IEnumerable<int>? pages = null, bool encrypted = false, bool saved = false,
         bool byteOrderMark = false)
     {
@@ -738,7 +736,7 @@ public sealed class OutputSet<TDocument> : IDisposable
         inspector?.Shows(pages);
 
         Action<string> unmarked = ByteOrderMarks.Unless(byteOrderMark, write);
-        StagedOutput staged = _transaction.Stage(targetPath, overwrite, backupPath, inputPrecondition,
+        StagedOutput staged = _transaction.Stage(targetPath, overwrite, inputPrecondition,
             inspector?.After(unmarked) ?? unmarked, verify);
         _staged.Add(staged);
         _copies.Add(new OutputPipeline.Copy(format.Id, format.Image, encrypted));

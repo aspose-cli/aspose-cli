@@ -479,7 +479,6 @@ C-R17 | v2/cells/ops#webLink
 C-R17 | v2/cells/read-result
 C-R17 | v2/cells/render-result
 C-R17 | v2/cells/search-result
-C-R17 | v2/common/backup
 C-R17 | v2/common/capabilities
 C-R17 | v2/common/capabilities-summary
 C-R17 | v2/common/diagnostic-details
@@ -759,7 +758,6 @@ C-R18 | v2/cells/ops#webLink
 C-R18 | v2/cells/read-result
 C-R18 | v2/cells/render-result
 C-R18 | v2/cells/search-result
-C-R18 | v2/common/backup
 C-R18 | v2/common/capabilities
 C-R18 | v2/common/capabilities-summary
 C-R18 | v2/common/diagnostic-details
@@ -1784,9 +1782,6 @@ C-R20 | v2/cells/render-result variants
 C-R20 | v2/cells/search-result fixednames
 C-R20 | v2/cells/search-result spelling
 C-R20 | v2/cells/search-result variants
-C-R20 | v2/common/backup fixednames
-C-R20 | v2/common/backup spelling
-C-R20 | v2/common/backup variants
 C-R20 | v2/common/capabilities fixednames
 C-R20 | v2/common/capabilities spelling
 C-R20 | v2/common/capabilities variants
@@ -3575,8 +3570,6 @@ C-R31 | v2/cells/render-result fields
 C-R31 | v2/cells/render-result outputs
 C-R31 | v2/cells/search-result fields
 C-R31 | v2/cells/search-result outputs
-C-R31 | v2/common/backup fields
-C-R31 | v2/common/backup outputs
 C-R31 | v2/common/capabilities fields
 C-R31 | v2/common/capabilities outputs
 C-R31 | v2/common/capabilities-summary fields
@@ -3895,9 +3888,6 @@ C-R33 | v2/cells/render-result none
 C-R33 | v2/cells/search-result envelope
 C-R33 | v2/cells/search-result names
 C-R33 | v2/cells/search-result none
-C-R33 | v2/common/backup envelope
-C-R33 | v2/common/backup names
-C-R33 | v2/common/backup none
 C-R33 | v2/common/capabilities envelope
 C-R33 | v2/common/capabilities names
 C-R33 | v2/common/capabilities none
@@ -4565,14 +4555,6 @@ C-R40 | read file shape
 C-R40 | render file shape
 C-R40 | search file shape
 C-R40 | split file shape
-C-R41 | cells edit --if-match malformed
-C-R41 | cells edit --if-match stale
-C-R41 | pdf edit --if-match malformed
-C-R41 | pdf edit --if-match stale
-C-R41 | slides edit --if-match malformed
-C-R41 | slides edit --if-match stale
-C-R41 | words edit --if-match malformed
-C-R41 | words edit --if-match stale
 C-R42 | cells convert xlsx -> csv
 C-R42 | cells convert xlsx -> html
 C-R42 | cells convert xlsx -> md
@@ -5001,7 +4983,6 @@ read-only | words inspect --detail tables
 read-only | words read
 read-only | words search
 same-name-option | --author
-same-name-option | --backup
 same-name-option | --bom
 same-name-option | --by
 same-name-option | --case-sensitive
@@ -5016,7 +4997,6 @@ same-name-option | --every
 same-name-option | --font-dir
 same-name-option | --from-markdown
 same-name-option | --from-text
-same-name-option | --if-match
 same-name-option | --in-place
 same-name-option | --left-password
 same-name-option | --left-password-env
@@ -5716,14 +5696,12 @@ unknown-option | cells create --encrypt-env as --ecnrypt-env
 unknown-option | cells create --encrypt-stdin as --ecnrypt-stdin
 unknown-option | cells create --overwrite as --oevrwrite
 unknown-option | cells create --sheet-names as --sehet-names
-unknown-option | cells edit --backup as --bcakup
 unknown-option | cells edit --bom as --bomm
 unknown-option | cells edit --dry-run as --dyr-run
 unknown-option | cells edit --encrypt as --ecnrypt
 unknown-option | cells edit --encrypt-env as --ecnrypt-env
 unknown-option | cells edit --encrypt-stdin as --ecnrypt-stdin
 unknown-option | cells edit --font-dir as --fnot-dir
-unknown-option | cells edit --if-match as --i-fmatch
 unknown-option | cells edit --in-place as --i-nplace
 unknown-option | cells edit --no-recalc as --n-orecalc
 unknown-option | cells edit --ops as --opss
@@ -5796,13 +5774,11 @@ unknown-option | pdf create --from-text as --form-text
 unknown-option | pdf create --margins as --mragins
 unknown-option | pdf create --overwrite as --oevrwrite
 unknown-option | pdf create --page-size as --pgae-size
-unknown-option | pdf edit --backup as --bcakup
 unknown-option | pdf edit --dry-run as --dyr-run
 unknown-option | pdf edit --encrypt as --ecnrypt
 unknown-option | pdf edit --encrypt-env as --ecnrypt-env
 unknown-option | pdf edit --encrypt-stdin as --ecnrypt-stdin
 unknown-option | pdf edit --font-dir as --fnot-dir
-unknown-option | pdf edit --if-match as --i-fmatch
 unknown-option | pdf edit --in-place as --i-nplace
 unknown-option | pdf edit --ops as --opss
 unknown-option | pdf edit --out as --outt
@@ -5922,13 +5898,11 @@ unknown-option | slides create --from-markdown as --form-markdown
 unknown-option | slides create --overwrite as --oevrwrite
 unknown-option | slides create --slide-size as --silde-size
 unknown-option | slides create --template as --tmeplate
-unknown-option | slides edit --backup as --bcakup
 unknown-option | slides edit --dry-run as --dyr-run
 unknown-option | slides edit --encrypt as --ecnrypt
 unknown-option | slides edit --encrypt-env as --ecnrypt-env
 unknown-option | slides edit --encrypt-stdin as --ecnrypt-stdin
 unknown-option | slides edit --font-dir as --fnot-dir
-unknown-option | slides edit --if-match as --i-fmatch
 unknown-option | slides edit --in-place as --i-nplace
 unknown-option | slides edit --ops as --opss
 unknown-option | slides edit --out as --outt
@@ -6013,13 +5987,11 @@ unknown-option | words create --overwrite as --oevrwrite
 unknown-option | words create --template as --tmeplate
 unknown-option | words create --title as --titlee
 unknown-option | words edit --author as --atuhor
-unknown-option | words edit --backup as --bcakup
 unknown-option | words edit --dry-run as --dyr-run
 unknown-option | words edit --encrypt as --ecnrypt
 unknown-option | words edit --encrypt-env as --ecnrypt-env
 unknown-option | words edit --encrypt-stdin as --ecnrypt-stdin
 unknown-option | words edit --font-dir as --fnot-dir
-unknown-option | words edit --if-match as --i-fmatch
 unknown-option | words edit --in-place as --i-nplace
 unknown-option | words edit --ops as --opss
 unknown-option | words edit --out as --outt
