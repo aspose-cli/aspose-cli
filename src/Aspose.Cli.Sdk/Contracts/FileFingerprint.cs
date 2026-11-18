@@ -1,7 +1,9 @@
 namespace Aspose.Cli.Sdk.Contracts;
 
-/// <summary>Content identity of one admitted input or published output file.</summary>
-[SchemaId("file-fingerprint")]
+/// <summary>
+/// Content identity of a file, which the write boundary compares to refuse an input that changed
+/// while it was read or before its output was published. No result reports it.
+/// </summary>
 public sealed record FileFingerprint
 {
     /// <summary>Lower-case SHA-256 digest of the complete file.</summary>

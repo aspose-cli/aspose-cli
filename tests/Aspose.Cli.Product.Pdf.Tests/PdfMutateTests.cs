@@ -365,7 +365,7 @@ public sealed class PdfMutateTests
             Output = TestOutput.At(output),
         });
 
-        Assert.NotNull(result.Output?.Fingerprint);
+        Assert.NotNull(result.Output);
         Assert.All(result.Applied, static operation =>
             Assert.Equal(OpStatuses.Ok, operation.Status));
         Assert.All(result.Applied, static operation => Assert.NotEmpty(operation.Targets));
@@ -518,7 +518,7 @@ public sealed class PdfMutateTests
             Output = TestOutput.At(filled),
         });
         Assert.Equal(["field/Customer"], Assert.Single(filledResult.Applied).Targets);
-        Assert.NotNull(filledResult.Output?.Fingerprint);
+        Assert.NotNull(filledResult.Output);
         Assert.Equal("Contoso", fixture.Forms(filled).Fields.Single().Value);
 
         PdfExtractResult exported = PdfExtract.Run(fixture.Session, new PdfExtractRequest

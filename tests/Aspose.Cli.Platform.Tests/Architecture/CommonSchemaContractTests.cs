@@ -105,27 +105,7 @@ public sealed class CommonSchemaContractTests
             operation.ToJsonString(new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
     }
 
-    [Fact]
-    public void BoundedEditFoundation_IsCataloguedAndValidatesCanonicalValues()
-    {
-        (string Id, string Json)[] contracts =
-        [
-            (
-                "v2/common/file-fingerprint",
-                """{"sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}"""),
-        ];
-
-        foreach ((string id, string json) in contracts)
-        {
-            Assert.Contains(id, SdkSchemaCatalog.Ids);
-            JsonSchema schema = CommonSchema(UriPrefix + id + ".schema.json");
-            using JsonDocument instance = JsonDocument.Parse(json);
-            Assert.True(schema.Evaluate(instance.RootElement).IsValid, id);
-        }
-    }
-
     [Theory]
-    [InlineData("v2/common/file-fingerprint", typeof(FileFingerprint))]
     [InlineData("v2/common/operation-outcome", typeof(BoundedOperationOutcome))]
     [InlineData("v2/common/verification-issue", typeof(VerificationIssue))]
     public void CommonResultSchema_RequiresExactlyTheRecordsNonNullableMembers(

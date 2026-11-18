@@ -99,7 +99,7 @@ internal static partial class ContractRules
     /// <summary>C-R33: names of timestamps, which are ISO-8601 strings with <c>format: date-time</c>.</summary>
     private static readonly Regex DateName = new("^(date|time|timestamp)$|[a-z](Date|Time|Utc|At|Timestamp)$", RegexOptions.CultureInvariant);
 
-    private static readonly string[] FileCore = ["path", "format", "sizeBytes", "fingerprint"];
+    private static readonly string[] FileCore = ["path", "format", "sizeBytes"];
 
     private const string OperationOutcome = "v2/common/operation-outcome";
 
@@ -593,8 +593,8 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The differences of one file object from <c>{path, format, sizeBytes, encrypted}</c>, with
-    /// <c>fingerprint</c> for a produced file, all required but a produced file's <c>encrypted</c>;
+    /// The differences of one file object from <c>{path, format, sizeBytes, encrypted}</c>, all
+    /// required but a produced file's <c>encrypted</c>;
     /// a <c>required</c> beside a reference adds to the referenced schema's.
     /// </summary>
     private static IEnumerable<string> FileObject(string id, SchemaProperty property, bool producedFile)
@@ -605,7 +605,7 @@ internal static partial class ContractRules
             yield return $"{property.Path}: a {string.Join("/", PublishedSchema.Types(node))}, not the file object";
             yield break;
         }
-        string[] expected = [.. FileCore.Where(name => producedFile || name != "fingerprint"), "encrypted"];
+        string[] expected = [.. FileCore, "encrypted"];
         string[] declared = [.. properties.Select(static pair => pair.Key)];
         HashSet<string> required = [.. PublishedSchema.Required(node), .. PublishedSchema.Required(property.Schema)];
         string[] missing = [.. expected.Where(name => !declared.Contains(name) && !(producedFile && name == "encrypted"))];
@@ -626,7 +626,7 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The differences of a multi-file list from a flat <c>{&lt;unit&gt;?, path, format, sizeBytes, fingerprint, encrypted?}</c>,
+    /// The differences of a multi-file list from a flat <c>{&lt;unit&gt;?, path, format, sizeBytes, encrypted?}</c>,
     /// all required but the unit and <c>encrypted</c>, which a file reports when its format can carry a password (C-B11).
     /// </summary>
     private static IEnumerable<string> Outputs(string id, SchemaProperty property)

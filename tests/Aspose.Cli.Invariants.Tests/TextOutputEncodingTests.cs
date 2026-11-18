@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
@@ -10,8 +9,8 @@ namespace Aspose.Cli.Invariants.Tests;
 /// <summary>
 /// The text a conversion writes is UTF-8 without a byte order mark, whichever engine writes it:
 /// the write pipeline removes the mark an engine starts text, Markdown or HTML with. So a page
-/// still says it is UTF-8, its non-English text reads back as UTF-8, and the size and fingerprint
-/// the result reports are those of the published file. Every step of a scenario or a generated
+/// still says it is UTF-8, its non-English text reads back as UTF-8, and the size the result
+/// reports is that of the published file. Every step of a scenario or a generated
 /// case is also checked for a mark it did not ask for (<see cref="ScenarioContract.ByteOrderMark"/>).
 /// </summary>
 public sealed class TextOutputEncodingTests : IDisposable
@@ -51,7 +50,6 @@ public sealed class TextOutputEncodingTests : IDisposable
             JsonNode published = (result["outputs"]?.AsArray() ?? [result["output"]]).Single(file =>
                 string.Equals(file?["path"]?.GetValue<string>(), _workspace.File(output), StringComparison.OrdinalIgnoreCase))!;
             Assert.Equal(bytes.LongLength, published["sizeBytes"]!.GetValue<long>());
-            Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(bytes)), published["fingerprint"]!["sha256"]!.GetValue<string>());
             if (target == "html")
             {
                 string page = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true).GetString(bytes);

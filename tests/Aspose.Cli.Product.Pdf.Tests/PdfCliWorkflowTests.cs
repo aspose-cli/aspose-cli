@@ -65,7 +65,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.True(File.Exists(_workspace.File(Path.Combine("form-data", "form.json"))));
         JsonNode data = Assert.Single(exported.Json()["outputs"]!.AsArray())!;
         Assert.Equal("json", data["format"]!.GetValue<string>());
-        Assert.NotNull(data["fingerprint"]);
     }
 
     [Fact]

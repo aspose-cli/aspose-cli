@@ -1399,23 +1399,6 @@
         }
       }
     },
-    "v2/common/file-fingerprint": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json",
-      "description": "Content identity of one admitted input or published output file.",
-      "type": "object",
-      "required": [
-        "sha256"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "sha256": {
-          "description": "Lower-case SHA-256 digest of the complete file.",
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
-        }
-      }
-    },
     "v2/common/font-list": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/font-list.schema.json",
@@ -1768,8 +1751,7 @@
       "required": [
         "path",
         "format",
-        "sizeBytes",
-        "fingerprint"
+        "sizeBytes"
       ],
       "additionalProperties": false,
       "properties": {
@@ -1785,10 +1767,6 @@
           "description": "File size in bytes.",
           "type": "integer",
           "minimum": 0
-        },
-        "fingerprint": {
-          "description": "SHA-256 identity of the published file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
         },
         "encrypted": {
           "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",

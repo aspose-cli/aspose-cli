@@ -93,5 +93,4 @@ public sealed record SafeWriteResult(long SizeBytes)
 
     /// <summary>The facts of the published file.</summary>
     public PublishedFile Published { get; init; } = null!;
-    public FileFingerprint Fingerprint => new() { Sha256 = PublishedSnapshot.Sha256!.ToLowerInvariant() };
 }

@@ -51,9 +51,6 @@ public sealed class WordsSplitExtractCliTests : IDisposable
             string path = output!["path"]!.GetValue<string>();
             Assert.False(output.AsObject().ContainsKey("kind"));
             Assert.Equal(new FileInfo(path).Length, output["sizeBytes"]!.GetValue<long>());
-            Assert.Equal(
-                Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path))),
-                output["fingerprint"]!["sha256"]!.GetValue<string>());
         });
         Assert.Contains(outputs, output => output!["format"]!.GetValue<string>() == format && output["block"]?.GetValue<int>() >= 1);
     }
