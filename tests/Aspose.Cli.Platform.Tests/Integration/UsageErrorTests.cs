@@ -80,18 +80,14 @@ public sealed class UsageErrorTests : IDisposable
     }
 
     [Fact]
-    public void AGroupGivenAnUnknownOption_ListsItsCommandsAndPrintsItsHelp()
+    public void AGroupGivenAnUnknownOption_ListsItsCommands()
     {
         JsonNode error = Refused("cells --bogus", "USAGE_ERROR");
-        CliResult table = _workspace.Run("cells", "--bogus", "--output-format", "table");
-        string help = _workspace.Run("cells", "--help").StdOut;
 
         Assert.Equal("--bogus", error["details"]!["option"]!.GetValue<string>());
         Assert.StartsWith("'--bogus' is not an option of 'aspose-cli cells'. 'aspose-cli cells' needs a command.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain("Required command was not provided", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.All(error["details"]!["available"]!.AsArray(), command => Assert.StartsWith("cells ", command!.GetValue<string>(), StringComparison.Ordinal));
-        Assert.Equal(2, table.ExitCode);
-        Assert.Contains(help.ReplaceLineEndings("\n").Trim(), table.StdErr.ReplaceLineEndings("\n"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -120,7 +116,7 @@ public sealed class UsageErrorTests : IDisposable
     [InlineData("cells read b.xlsx --content --password S3cretPw", "S3cretPw", "--content")]
     public void TheValueOfAnUnknownOption_IsNotRepeated(string commandLine, string value, string option)
     {
-        foreach (string[] extra in (string[][])[["--output-format", "json"], ["--output-format", "json", "-v"], ["--output-format", "compact", "-v"], ["--output-format", "table"]])
+        foreach (string[] extra in (string[][])[["--output-format", "json"], ["--output-format", "json", "-v"], ["--output-format", "compact", "-v"]])
         {
             CliResult result = _workspace.Run([.. commandLine.Split(' '), .. extra]);
 

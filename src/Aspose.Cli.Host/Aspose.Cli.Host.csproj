@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The renderer-coverage drift test constructs the internal TableOutputWriter. -->
+    <!-- Platform tests reach the Host's internal types. -->
     <InternalsVisibleTo Include="Aspose.Cli.Platform.Tests" />
   </ItemGroup>
 

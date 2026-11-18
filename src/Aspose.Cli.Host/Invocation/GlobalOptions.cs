@@ -26,16 +26,13 @@ internal sealed class GlobalOptions
         {
             ["json"] = OutputMode.Json,
             ["compact"] = OutputMode.Compact,
-            ["table"] = OutputMode.Table,
-            ["markdown"] = OutputMode.Markdown,
         };
 
     public GlobalOptions()
     {
         OutputFormat = new Option<string?>(GlobalOptionNames.OutputFormat)
         {
-            Description = "How results print: the contract envelope, indented or on one line, or human text. "
-                + "Default: human text on a terminal, the indented envelope when redirected.",
+            Description = "How results print: the contract envelope, indented or on one line. Default: json.",
             Recursive = true,
         }.WithInput(InputKind.None);
         OutputFormat.AcceptOnlyFromAmong([.. OutputModes.Keys]);
@@ -178,8 +175,8 @@ internal sealed class GlobalOptions
     /// <summary>
     /// Best-effort read of the output mode and quiet flag for rendering a parse
     /// error. Parsing has already failed, so an option may be unreadable (e.g.
-    /// <c>--output-format</c> itself carried the bad value); fall back to the redirect
-    /// heuristic so a usage error still honors <c>--output-format json</c> when it can.
+    /// <c>--output-format</c> itself carried the bad value); fall back to the default, the
+    /// indented envelope.
     /// </summary>
     public (OutputMode OutputFormat, bool Quiet) ResolveForErrorReporting(ParseResult parseResult)
     {
@@ -257,10 +254,9 @@ internal sealed class GlobalOptions
     /// <summary>Whether a value is one of the accepted <c>--output-format</c> modes.</summary>
     internal static bool IsOutputMode(string value) => OutputModes.ContainsKey(value);
 
-    // Agents typically read the CLI through a pipe; humans get a table.
     private static OutputMode MapOutputFormat(string? value) =>
         value is not null && OutputModes.TryGetValue(value, out OutputMode mode) ? mode
-        : Console.IsOutputRedirected ? OutputMode.Json : OutputMode.Table;
+        : OutputMode.Json;
 
     private static long ResolveMaxInputBytes(long? requested) =>
         requested ?? InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable);

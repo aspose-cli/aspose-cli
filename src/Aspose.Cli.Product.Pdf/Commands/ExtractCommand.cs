@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Output;
 
@@ -74,8 +73,7 @@ internal static class ExtractCommand
                     ByteOrderMark = byteOrderMark,
                     FormFormat = format,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -89,11 +87,5 @@ internal static class ExtractCommand
                 CommandHelpLink.Docs(PdfModule.Manifest, "forms-security", "form data export and import"),
             ],
         };
-    }
-
-    internal static void Table(PdfExtractResult result, TableSurface surface)
-    {
-        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Outputs.Select(static item =>
-            new ProducedFile(item.Page is { } page ? $"page {page}" : null, item.Path, item.Format, item.SizeBytes))]);
     }
 }

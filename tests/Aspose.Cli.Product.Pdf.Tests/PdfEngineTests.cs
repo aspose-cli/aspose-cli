@@ -15,45 +15,6 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 
 public sealed class PdfEngineTests
 {
-    [Theory]
-    [InlineData(Sdk.Extensibility.Output.TableFormat.Plain)]
-    [InlineData(Sdk.Extensibility.Output.TableFormat.Markdown)]
-    public void Info_TableAndMarkdown_ShowEveryRequestedDetail(Sdk.Extensibility.Output.TableFormat format)
-    {
-        using var fixture = new PdfEngineFixture();
-        string path = fixture.CreateDocument(pages: 2);
-        using (var document = new Document(path))
-        {
-            var chapter = new OutlineItemCollection(document.Outlines) { Title = "Chapter", Destination = new FitExplicitDestination(document.Pages[1]) };
-            chapter.Add(new OutlineItemCollection(document.Outlines) { Title = "Section", Destination = new FitExplicitDestination(document.Pages[2]) });
-            document.Outlines.Add(chapter);
-            document.EmbeddedFiles.Add("data.csv", new FileSpecification(new MemoryStream("a,b\n"u8.ToArray()), "data.csv", "Data") { Name = "data.csv", UnicodeName = "data.csv" });
-            document.Info.Title = "Annual report";
-            document.Save(path);
-        }
-
-        PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest
-        {
-            Input = path,
-            Details = ["outline", "links", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties"],
-        });
-        using var writer = new StringWriter();
-        Commands.InspectCommand.Table(info, new Sdk.Extensibility.Output.TableSurface(writer, format));
-        string text = writer.ToString();
-
-        string heading = format == Sdk.Extensibility.Output.TableFormat.Markdown ? "### " : string.Empty;
-        foreach (string section in new[] { "outline", "links", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties" })
-        {
-            Assert.Contains(heading + section, text, StringComparison.Ordinal);
-        }
-
-        Assert.Contains("1/1", text, StringComparison.Ordinal);
-        Assert.Contains("Section", text, StringComparison.Ordinal);
-        Assert.Contains("data.csv", text, StringComparison.Ordinal);
-        Assert.Contains(info.Fonts![0].Name, text, StringComparison.Ordinal);
-        Assert.Contains("Annual report", text, StringComparison.Ordinal);
-    }
-
     [Fact]
     public void Create_FromHtml_TakesTheTitleFromTheHtmlAndInventsNoOtherMetadata()
     {

@@ -22,8 +22,7 @@ public sealed class CliWorkerEvaluationLimitTests
     /// <summary>
     /// Inspecting a workbook more times than evaluation mode opens files in one process, in the
     /// workers of one evaluation lane, succeeds every time, and an inspection the first worker
-    /// refused ran again in a new worker. The inspections write the table format, whose error is a
-    /// line of text.
+    /// refused ran again in a new worker.
     /// </summary>
     [Fact]
     public void InspectionsPastTheEvaluationFileLimitOfAWorker_AllSucceed()
@@ -37,7 +36,7 @@ public sealed class CliWorkerEvaluationLimitTests
         var watch = Stopwatch.StartNew();
         for (int inspection = 1; inspection <= Inspections; inspection++)
         {
-            (CliResult result, int made) = lane.Run("cells", "inspect", "book.xlsx", "--output-format", "table");
+            (CliResult result, int made) = lane.Run("cells", "inspect", "book.xlsx", "--output-format", "json");
             runs += made;
             if (result.ExitCode != 0)
             {
@@ -54,7 +53,7 @@ public sealed class CliWorkerEvaluationLimitTests
     /// A command's own failure is its result: an <c>EVALUATION_LIMIT</c> that the first command of
     /// a worker reaches does not run again; one that a worker that ran other commands reaches runs
     /// again in a new worker, which reaches it too; and a license error that shares its exit code,
-    /// 7, does not run again in either output format.
+    /// 7, does not run again.
     /// </summary>
     [Fact]
     public void ACommandsOwnLicenseError_IsItsResult()
@@ -70,17 +69,14 @@ public sealed class CliWorkerEvaluationLimitTests
         (CliResult first, int firstRuns) = lane.Run(secondSheet);
         (CliResult again, int againRuns) = lane.Run(secondSheet);
         (CliResult json, int jsonRuns) = lane.Run("cells", "inspect", "book.xlsx", "--license", "missing.lic", "--output-format", "json");
-        (CliResult text, int textRuns) = lane.Run("cells", "inspect", "book.xlsx", "--license", "missing.lic", "--output-format", "table");
 
         Assert.Equal((7, "EVALUATION_LIMIT", 1), (first.ExitCode, Code(first), firstRuns));
         Assert.Equal((7, "EVALUATION_LIMIT", 2), (again.ExitCode, Code(again), againRuns));
         Assert.False(File.Exists(workspace.File("report.csv")));
         Assert.Equal((7, "LICENSE_FILE_NOT_FOUND", 1), (json.ExitCode, Code(json), jsonRuns));
-        Assert.Equal((7, 1), (text.ExitCode, textRuns));
-        Assert.Contains("error LICENSE_FILE_NOT_FOUND: ", text.StdErr, StringComparison.Ordinal);
     }
 
-    /// <summary>The code of the error envelope a command wrote to stderr in a JSON format.</summary>
+    /// <summary>The code of the error envelope a command wrote to stderr.</summary>
     private static string Code(CliResult result) => JsonNode.Parse(result.StdErr)?["error"]?["code"]?.GetValue<string>() ?? result.StdErr;
 
     /// <summary>A lane of its own for the evaluation environment of a workspace.</summary>

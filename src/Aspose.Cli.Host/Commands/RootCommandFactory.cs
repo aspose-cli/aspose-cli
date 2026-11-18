@@ -21,7 +21,7 @@ internal static class RootCommandFactory
 
         var root = new RootCommand(
             "Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. " +
-            "Structured commands support --output-format json for stable, machine-readable results; explicit schema and docs documents remain raw.");
+            "Structured commands print JSON contract envelopes; explicit schema and docs documents remain raw.");
         globals.AddTo(root);
         VersionOutput.Attach(root, executor, globals, catalog);
 

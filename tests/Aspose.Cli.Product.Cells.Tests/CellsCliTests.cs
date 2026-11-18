@@ -139,39 +139,6 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Theory]
-    [InlineData("table")]
-    [InlineData("markdown")]
-    public void Inspect_HumanOutputShowsTheRequestedDetails(string format)
-    {
-        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data").ExitCode);
-        File.WriteAllText(
-            _workspace.File("ops.json"),
-            """
-            { "ops": [
-              { "op": "set_values", "sheet": "Data", "range": "A1:B3", "values": [["Region","Sales"],["East",10],["West",20]] },
-              { "op": "set_formula", "sheet": "Data", "range": "C2", "formula": "=1/0" },
-              { "op": "define_name", "name": "SalesTotal", "refersTo": "=Data!$B$2:$B$3" },
-              { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "A1:B3", "at": "E2:J12", "title": "Sales" }
-            ] }
-            """);
-        CliResult edited = _workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json");
-        Assert.True(edited.ExitCode == 0, edited.StdErr);
-
-        CliResult inspected = _workspace.Run(
-            "cells", "inspect", "book.xlsx", "--detail", "names", "--detail", "errors", "--detail", "charts", "--output-format", format);
-
-        Assert.True(inspected.ExitCode == 0, inspected.StdErr);
-        string Heading(string title) => format == "markdown" ? $"### {title}" : $"{title}:";
-        Assert.Contains(Heading("charts"), inspected.StdOut, StringComparison.Ordinal);
-        Assert.Contains("column", inspected.StdOut, StringComparison.Ordinal);
-        Assert.Contains(Heading("names"), inspected.StdOut, StringComparison.Ordinal);
-        Assert.Contains("SalesTotal", inspected.StdOut, StringComparison.Ordinal);
-        Assert.Contains("=Data!$B$2:$B$3", inspected.StdOut, StringComparison.Ordinal);
-        Assert.Contains(Heading("formula errors"), inspected.StdOut, StringComparison.Ordinal);
-        Assert.Contains("#DIV/0!", inspected.StdOut, StringComparison.Ordinal);
-    }
-
-    [Theory]
     [InlineData("render", "x.png", "预算, 2026 H1")]
     [InlineData("convert", "x.pdf", "预算, 2026 H1")]
     [InlineData("render", "x.png", "lists")]

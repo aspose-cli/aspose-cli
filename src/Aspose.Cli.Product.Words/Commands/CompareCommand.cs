@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -49,8 +48,7 @@ internal static class CompareCommand
                     LeftPassword = standard.InputPassword,
                     RightPassword = standard.OtherPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -62,26 +60,5 @@ internal static class CompareCommand
                 CommandHelpLink.Docs(WordsModule.Manifest, "revisions", "tracked changes and redlines"),
             ],
         };
-    }
-
-    internal static void Table(WordsCompareResult result, TableSurface surface)
-    {
-        surface.Out.WriteLine(result.Identical ? "documents are identical" : "documents differ");
-        surface.Out.WriteLine($"insertions: {result.Revisions.InsertionCount}   deletions: {result.Revisions.DeletionCount}   formatting: {result.Revisions.FormatChangeCount}   moves: {result.Revisions.MoveCount}");
-        if (result.Samples.Count > 0)
-        {
-            var table = new TextTable("kind", "sample");
-            foreach (WordsRevisionSample sample in result.Samples)
-            {
-                table.AddRow(sample.Kind, sample.Text);
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (result.Output is { } output)
-        {
-            ResultText.Produced(surface, output, "redline");
-        }
     }
 }

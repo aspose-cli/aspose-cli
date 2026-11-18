@@ -137,8 +137,6 @@ internal sealed class CommandExecutor
         GlobalValues globals = globalOptions.Resolve(parseResult);
         IOutputWriter writer = OutputWriterFactory.Create(
             globals.OutputFormat,
-            globals.Quiet,
-            _host.Catalog,
             _host.ContractJson);
         var stopwatch = Stopwatch.StartNew();
         ExecutionScope? scope = null;

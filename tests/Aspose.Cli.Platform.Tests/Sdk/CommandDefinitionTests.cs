@@ -641,17 +641,13 @@ public sealed class CommandDefinitionTests : IDisposable
         IReadOnlyList<Symbol> parameters,
         Func<ParseResult, StandardInvocation, TestResult> bind) =>
         () => new CommandDefinition<TestResult, TestResult>(
-            name, description, traits, parameters, bind, NoTable);
+            name, description, traits, parameters, bind);
 
     private Command Product(
         Func<CommandDefinition<TestResult, TestResult>> definition,
         Func<TestEngine, TestResult, TestResult> handler) =>
         TestProducts.Command<TestEngine>(_runner, product => product.Command(definition, handler));
 
-
-    private static void NoTable(TestResult result, TableSurface table)
-    {
-    }
 
     private static Option<string> Mode() =>
         new Option<string>("--mode") { DefaultValueFactory = _ => "plain" }.WithInput(InputKind.None);

@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -50,8 +49,7 @@ internal static class CreateCommand
                     PageSize = parse.GetValue(pageSize) ?? PageSizePresets.A4,
                     Margins = ParseMargins(parse.GetValue(margins) ?? "36"),
                 };
-            },
-            static (result, surface) => ResultText.Produced(surface, result.Output, "create"))
+            })
         {
             Examples =
             [

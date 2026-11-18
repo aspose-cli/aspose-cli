@@ -10,7 +10,6 @@ public sealed class ProductCatalog
 {
     private readonly IReadOnlyDictionary<string, ProductDefinition> _byId;
     private readonly IReadOnlyDictionary<string, ProductDefinition> _defaultOwners;
-    private readonly IReadOnlyDictionary<Type, ProductOutputDefinition> _outputs;
     private readonly IReadOnlyDictionary<ProductDefinition, ProductCapabilities>
         _derivedCapabilities;
     private readonly IReadOnlyDictionary<string, string> _resolvedOwners;
@@ -41,9 +40,7 @@ public sealed class ProductCatalog
                 StringComparer.OrdinalIgnoreCase);
         _defaultOwnerExtensions = Array.AsReadOnly(
             _defaultOwners.Keys.Order(StringComparer.Ordinal).ToArray());
-        _outputs = Products
-            .SelectMany(static product => product.Outputs)
-            .ToFrozenDictionary(static output => output.ResultType);
+
         _derivedCapabilities = ProductCapabilityDeriver.Derive(
                 Products,
                 _resolvedOwners)
@@ -250,21 +247,6 @@ public sealed class ProductCatalog
     /// <summary>All extensions with a unique generic-routing owner.</summary>
     public IReadOnlyList<string> DefaultOwnerExtensions =>
         _defaultOwnerExtensions;
-
-    /// <summary>Renders a product-owned result when an exact registration exists.</summary>
-    public bool TryRender(
-        Aspose.Cli.Sdk.Contracts.ResultEnvelope result,
-        Output.TableSurface surface)
-    {
-        ArgumentNullException.ThrowIfNull(result);
-        if (!_outputs.TryGetValue(result.GetType(), out ProductOutputDefinition? output))
-        {
-            return false;
-        }
-
-        output.Render(result, surface);
-        return true;
-    }
 
     internal static string NormalizeExtension(string extension)
     {

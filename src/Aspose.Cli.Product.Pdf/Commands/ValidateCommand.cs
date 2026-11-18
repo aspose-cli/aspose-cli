@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -20,8 +19,7 @@ internal static class ValidateCommand
                 Input = standard.Input,
                 Profile = parse.GetRequiredValue(profile),
                 Password = standard.InputPassword,
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -33,15 +31,5 @@ internal static class ValidateCommand
                 CommandHelpLink.Docs(PdfModule.Manifest, "pdf-standards", "PDF/A profiles and conformance"),
             ],
         };
-    }
-
-    internal static void Table(PdfValidateResult result, TableSurface surface)
-    {
-        surface.Out.WriteLine($"{result.Profile}: {(result.Valid ? "valid" : "not valid")}");
-        foreach (PdfComplianceIssue issue in result.Issues)
-        {
-            string where = issue.Page is { } page ? $"{issue.Severity}, page {TableText.Int(page)}" : issue.Severity;
-            surface.Out.WriteLine(issue.Clause is { } clause ? $"  {clause} ({where}): {issue.Message}" : $"  ({where}): {issue.Message}");
-        }
     }
 }

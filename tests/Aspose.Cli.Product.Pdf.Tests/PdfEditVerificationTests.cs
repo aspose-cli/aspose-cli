@@ -177,12 +177,6 @@ public sealed class PdfEditVerificationTests
         // Redacted text left in the output is never published.
         Assert.Null(result.Output);
         Assert.False(File.Exists(fixture.File("readded.pdf")));
-
-        using var writer = new StringWriter();
-        Commands.EditCommand.Table(result, new Sdk.Extensibility.Output.TableSurface(writer, Sdk.Extensibility.Output.TableFormat.Plain));
-        string text = writer.ToString();
-        Assert.Contains("verification: needs attention", text, StringComparison.Ordinal);
-        Assert.Contains("REDACTED_TEXT_FOUND [page/1]: Operation 'op-0001' (redact_text)", text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -198,10 +192,7 @@ public sealed class PdfEditVerificationTests
         }, "watermark.pdf"));
 
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
-
-        using var writer = new StringWriter();
-        Commands.EditCommand.Table(result, new Sdk.Extensibility.Output.TableSurface(writer, Sdk.Extensibility.Output.TableFormat.Plain));
-        Assert.Contains("verification: ok; checked ops: op-0001", writer.ToString(), StringComparison.Ordinal);
+        Assert.Equal(["op-0001"], result.Verification.CheckedOps);
     }
 
     [Fact]

@@ -2246,7 +2246,7 @@
       "path": "aspose-cli",
       "name": "aspose-cli",
       "aliases": [],
-      "description": "Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. Structured commands support --output-format json for stable, machine-readable results; explicit schema and docs documents remain raw.",
+      "description": "Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. Structured commands print JSON contract envelopes; explicit schema and docs documents remain raw.",
       "options": [
         {
           "name": "--help",
@@ -2325,13 +2325,11 @@
           "hasDefault": false,
           "allowedValues": [
             "compact",
-            "json",
-            "markdown",
-            "table"
+            "json"
           ],
           "secret": false,
           "valueSource": "command-line",
-          "description": "How results print: the contract envelope, indented or on one line, or human text. Default: human text on a terminal, the indented envelope when redirected."
+          "description": "How results print: the contract envelope, indented or on one line. Default: json."
         },
         {
           "name": "--quiet",

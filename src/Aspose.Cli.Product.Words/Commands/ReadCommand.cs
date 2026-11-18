@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -38,8 +37,7 @@ internal static class ReadCommand
                     MaxBlocks = count,
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Finish = static (_, request, result, _) =>
                 result with { Window = result.Window with { Next = Next(request, result) } },
@@ -54,18 +52,6 @@ internal static class ReadCommand
                 new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
         };
-    }
-
-    internal static void Table(WordsReadResult result, TableSurface surface)
-    {
-        surface.Out.WriteLine($"{result.Input.Path} (content {result.Content}, {result.BlockCount} blocks in the document)");
-        var table = new TextTable("block", "kind", "section", "style", "text");
-        foreach (WordsBlockData block in result.Blocks)
-        {
-            table.AddRow(TableText.Int(block.Block), block.Kind, TableText.Int(block.Section), block.Style, block.Text ?? $"[{block.RowCount}x{block.ColumnCount} table]");
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
     }
 
     /// <summary>

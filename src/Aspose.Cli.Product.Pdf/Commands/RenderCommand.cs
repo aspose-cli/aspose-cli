@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -42,8 +41,7 @@ internal static class RenderCommand
                     Grid = parse.GetInRange(grid),
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -56,17 +54,5 @@ internal static class RenderCommand
                 CommandHelpLink.Docs(PdfModule.Manifest, "editing", "the page coordinates redact_area takes"),
             ],
         };
-    }
-
-    internal static void Table(PdfRenderResult result, TableSurface surface)
-    {
-        ResultText.Files(surface, "rendered", "page", [.. result.Outputs.Select(static output =>
-            new ProducedFile($"page {output.Page}", output.Path, output.Format, output.SizeBytes))]);
-
-        if (result.Grid is { } grid)
-        {
-            surface.Out.WriteLine(
-                $"grid: lines every {grid.Spacing} {grid.Unit}, labelled every {grid.LabelSpacing} {grid.Unit}, origin {grid.Origin}");
-        }
     }
 }

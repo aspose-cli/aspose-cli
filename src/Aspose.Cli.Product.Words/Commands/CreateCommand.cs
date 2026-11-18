@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
@@ -45,8 +44,7 @@ internal static class CreateCommand
                     Title = parse.GetValue(title),
                     EncryptPassword = encryptPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -61,6 +59,4 @@ internal static class CreateCommand
             ],
         };
     }
-
-    internal static void Table(WordsCreateResult result, TableSurface surface) => ResultText.Produced(surface, result.Output);
 }

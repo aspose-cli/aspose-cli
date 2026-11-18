@@ -39,8 +39,6 @@ internal sealed class MenuCommand<TSession, TRequest, TResult> : IMenuEntry<TSes
 
     public Command Create(MenuContext<TSession> context) => Definition().Create(context, _run);
 
-    public IEnumerable<ProductOutputDefinition> Outputs() => Definition().Outputs();
-
     public IEnumerable<ProductOperationCommand> Operations() =>
         Definition() is { Operations: { } describe } definition ? [describe(definition.Name)] : [];
 

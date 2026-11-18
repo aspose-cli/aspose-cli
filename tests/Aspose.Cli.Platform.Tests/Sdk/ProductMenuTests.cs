@@ -20,8 +20,7 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 
 /// <summary>
 /// A product menu pairs each command definition with its static handler; the SDK builds the
-/// command tree in menu order, runs every command in one fixed order, and registers each result
-/// type's table renderer once.
+/// command tree in menu order and runs every command in one fixed order.
 /// </summary>
 public sealed class ProductMenuTests : IDisposable
 {
@@ -124,16 +123,6 @@ public sealed class ProductMenuTests : IDisposable
     }
 
     [Fact]
-    public void Outputs_RegisterOneRendererPerResultTypeAndTheExtraTypesADefinitionNames()
-    {
-        ProductDefinition definition = Menu().Build();
-
-        Assert.Equal(
-            [typeof(TextResult), typeof(FoundResult), typeof(EditedResult)],
-            definition.Outputs.Select(static output => output.ResultType));
-    }
-
-    [Fact]
     public void Operations_ComeFromTheEditDefinitionsUnderTheirCommandNames()
     {
         ProductDefinition definition = ExtProduct.Define<TestSession>(Manifest)
@@ -149,20 +138,6 @@ public sealed class ProductMenuTests : IDisposable
             Assert.Equal(TestOp.Catalog.Names, command.Descriptor.Ops);
             Assert.Equal(TestOp.Catalog.MaximumOperationCount, command.Descriptor.MaximumOperationCount);
         });
-    }
-
-    [Fact]
-    public void Outputs_RefuseTwoDifferentRenderersOfOneResultType()
-    {
-        ProductDefinition definition = ExtProduct.Define<TestSession>(Manifest)
-            .Describe("A product in a menu.")
-            .Command(InspectCommand.Create, TestHandlers.Info)
-            .Command(OtherTextCommand.Create, TestHandlers.Info)
-            .Complete()
-            .Build();
-
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => definition.Outputs);
-        Assert.Contains(typeof(TextResult).FullName!, error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -342,21 +317,6 @@ public sealed class ProductMenuTests : IDisposable
         public static TextResult Protect(TestSession session, ProtectRequest request) => new(request.Password ?? string.Empty);
     }
 
-    private static class TestTables
-    {
-        public static void Text(TextResult result, TableSurface table)
-        {
-        }
-
-        public static void Found(FoundResult result, TableSurface table)
-        {
-        }
-
-        public static void Edited(EditedResult result, TableSurface table)
-        {
-        }
-    }
-
     private static class InspectCommand
     {
         public static CommandDefinition<InfoRequest, TextResult> Create()
@@ -373,8 +333,7 @@ public sealed class ProductMenuTests : IDisposable
                     return parse.GetValue(fail)
                         ? throw CliErrors.Usage(["--fail was given."])
                         : new InfoRequest { Input = standard.Input, Password = standard.InputPassword?.Reveal() };
-                },
-                TestTables.Text)
+                })
             {
                 Finish = static (_, _, result, _) =>
                 {
@@ -392,13 +351,12 @@ public sealed class ProductMenuTests : IDisposable
             "Reads the document.",
             new CommandTraits { Input = Document },
             [],
-            static (_, standard) => new InfoRequest { Input = standard.Input },
-            TestTables.Text)
+            static (_, standard) => new InfoRequest { Input = standard.Input })
         {
         };
     }
 
-    /// <summary>A command whose handler returns one of several result types, each with its own renderer.</summary>
+    /// <summary>A command whose handler returns one of several result types.</summary>
     private static class SearchCommand
     {
         public static CommandDefinition<InfoRequest, ResultEnvelope> Create() => new(
@@ -406,23 +364,7 @@ public sealed class ProductMenuTests : IDisposable
             "Searches the document.",
             new CommandTraits { Input = Document },
             [],
-            static (_, standard) => new InfoRequest { Input = standard.Input },
-            table: null)
-        {
-            Renderers = [ProductOutputDefinition.Create<TextResult>(TestTables.Text), ProductOutputDefinition.Create<FoundResult>(TestTables.Found)],
-        };
-    }
-
-    /// <summary>Renders the result type <see cref="InspectCommand"/> renders, with another method.</summary>
-    private static class OtherTextCommand
-    {
-        public static CommandDefinition<InfoRequest, TextResult> Create() => new(
-            "other",
-            "Reads the document again.",
-            new CommandTraits { Input = Document },
-            [],
-            static (_, standard) => new InfoRequest { Input = standard.Input },
-            static (_, _) => { });
+            static (_, standard) => new InfoRequest { Input = standard.Input });
     }
 
     private static class CompareCommand
@@ -436,8 +378,7 @@ public sealed class ProductMenuTests : IDisposable
                 Other = new InputDocument("Candidate.", "the candidate", "right"),
             },
             [],
-            static (_, standard) => new CompareRequest(standard.Input, standard.Other),
-            TestTables.Text);
+            static (_, standard) => new CompareRequest(standard.Input, standard.Other));
     }
 
     private static class EditCommand
@@ -456,7 +397,6 @@ public sealed class ProductMenuTests : IDisposable
                 new CommandTraits { Input = Document },
                 [strict],
                 static (_, batch, _) => new EditRequest(batch.Batch.Ops.Count, batch.Options.DryRun),
-                TestTables.Edited,
                 checkUsage: parse =>
                 {
                     if (parse.GetValue(strict))
@@ -486,8 +426,7 @@ public sealed class ProductMenuTests : IDisposable
                 Encrypt = new EncryptedOutput("the output document"),
             },
             [],
-            static (_, standard) => new ProtectRequest(standard.EncryptPassword()?.Reveal()),
-            TestTables.Text);
+            static (_, standard) => new ProtectRequest(standard.EncryptPassword()?.Reveal()));
     }
 
     /// <summary>A conversion to the same output formats, which does not keep its input's format.</summary>
@@ -503,8 +442,7 @@ public sealed class ProductMenuTests : IDisposable
                 Encrypt = new EncryptedOutput("the output document"),
             },
             [],
-            static (_, standard) => new ProtectRequest(standard.EncryptPassword()?.Reveal()),
-            TestTables.Text);
+            static (_, standard) => new ProtectRequest(standard.EncryptPassword()?.Reveal()));
     }
 
     private sealed class LoggingFonts : IFontEnvironment

@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -25,8 +24,7 @@ internal static class SearchCommand
                     Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
             Examples =
@@ -40,21 +38,5 @@ internal static class SearchCommand
                 new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
         };
-    }
-
-    internal static void Table(PdfSearchResult result, TableSurface surface)
-    {
-        surface.Out.WriteLine($"found {result.Hits.Count} hit(s)");
-        var table = new TextTable("page", "occurrence", "rectangle", "text");
-        foreach (PdfSearchHit hit in result.Hits)
-        {
-            table.AddRow(
-                TableText.Int(hit.Page),
-                TableText.Int(hit.Occurrence),
-                PdfText.Rectangle(hit.Rect),
-                hit.Context ?? hit.Text);
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
     }
 }

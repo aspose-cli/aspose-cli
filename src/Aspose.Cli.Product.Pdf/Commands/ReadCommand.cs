@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -32,8 +31,7 @@ internal static class ReadCommand
                     MaxCharacters = characters,
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Finish = (_, request, result, _) =>
                 result with { Window = result.Window with { Next = Next(pages.Name, request, result) } },
@@ -48,17 +46,6 @@ internal static class ReadCommand
                 new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
         };
-    }
-
-    internal static void Table(PdfReadResult result, TableSurface surface)
-    {
-        surface.Out.WriteLine($"{result.Input.Path}: {result.PageCount} page(s) ({result.Content})");
-        foreach (PdfPageText page in result.Pages)
-        {
-            surface.Out.WriteLine();
-            surface.Out.WriteLine($"--- page {page.Page}{(page.ContentTruncated ? " (truncated)" : string.Empty)} ---");
-            surface.Out.WriteLine(page.Text);
-        }
     }
 
     /// <summary>The option values of the read that resumes where this one stopped, or null when it covered the selection.</summary>

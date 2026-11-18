@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -74,8 +73,7 @@ internal static class SignCommand
                     Location = parse.GetValue(location),
                     Contact = parse.GetValue(contact),
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -87,14 +85,6 @@ internal static class SignCommand
                 CommandHelpLink.Docs(PdfModule.Manifest, "forms-security", "signatures, permissions and encryption"),
             ],
         };
-    }
-
-    internal static void Table(PdfSignResult result, TableSurface surface)
-    {
-        ResultText.Produced(surface, result.Output, "signed");
-        surface.Out.WriteLine($"  field: {result.Signature.Name}");
-        surface.Out.WriteLine($"  intact: {(result.Signature.Intact is bool intact ? TableText.YesNo(intact) : TableText.Missing)}");
-        surface.Out.WriteLine($"  appearance: {(result.Visible ? $"visible on page {result.Page}" : "invisible")}");
     }
 
     internal static PdfSignatureRect ParseRect(string text)

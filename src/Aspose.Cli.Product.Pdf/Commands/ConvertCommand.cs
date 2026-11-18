@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -30,8 +29,7 @@ internal static class ConvertCommand
                     Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -45,16 +43,5 @@ internal static class ConvertCommand
                 CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
             ],
         };
-    }
-
-    internal static void Table(PdfConvertResult result, TableSurface surface)
-    {
-        ResultText.Files(surface, "wrote", "file", [.. result.Outputs.Select(output =>
-            new ProducedFile(
-                null,
-                output.Path,
-                output.Format,
-                output.SizeBytes,
-                result.Pages is null ? null : $"pages {result.Pages}"))]);
     }
 }

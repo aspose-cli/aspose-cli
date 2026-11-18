@@ -25,11 +25,11 @@ public sealed class HostLayeringTests
     /// <list type="number">
     /// <item>Leaves: the Host result contracts, the owned child processes and the product
     /// routing over the catalog.</item>
-    /// <item>The table renderer and the Skill and docs catalogs, over the contracts.</item>
-    /// <item>Output: the writers for each output mode.</item>
+    /// <item>The Skill and docs catalogs, over the contracts.</item>
+    /// <item>Output: the JSON writer for each output mode.</item>
     /// <item>Invocation: parsing, the command context and composition root, execution and
     /// the process boundary every command runs under.</item>
-    /// <item>Services commands call: licensing (and the startup license notice).</item>
+    /// <item>Services commands call: licensing.</item>
     /// <item>The root: CliHost, the process entry, which reaches the commands only through
     /// HostContext.</item>
     /// <item>Commands: the command adapters, which compose everything below.</item>
@@ -38,7 +38,7 @@ public sealed class HostLayeringTests
     private static readonly string[][] Layers =
     [
         [$"{Root}.Contracts", $"{Root}.LocalServices", $"{Root}.Catalog"],
-        [$"{Root}.Output.Rendering", $"{Root}.Skills"],
+        [$"{Root}.Skills"],
         [$"{Root}.Output"],
         [$"{Root}.Invocation"],
         [$"{Root}.Licensing"],

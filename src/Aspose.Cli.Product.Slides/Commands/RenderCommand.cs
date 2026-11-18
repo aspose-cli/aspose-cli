@@ -2,7 +2,6 @@ using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Slides.Commands;
@@ -52,8 +51,7 @@ internal static class RenderCommand
                     Width = pixelWidth,
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -65,11 +63,5 @@ internal static class RenderCommand
                 CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "slide read-back and visual review"),
             ],
         };
-    }
-
-    internal static void Table(SlidesRenderResult result, TableSurface surface)
-    {
-        ResultText.Files(surface, "rendered", "slide", [.. result.Outputs.Select(static item =>
-            new ProducedFile($"slide {item.Slide}", item.Path, item.Format, item.SizeBytes))]);
     }
 }

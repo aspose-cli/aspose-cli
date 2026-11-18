@@ -57,25 +57,6 @@ public sealed class CellsVerifyCoverageTests : IDisposable
     }
 
     /// <summary>
-    /// The text a person reads counts every direct change, also when the result lists only the
-    /// first 100 of them.
-    /// </summary>
-    [Theory]
-    [InlineData("table")]
-    [InlineData("markdown")]
-    public void Verify_InText_CountsEveryDirectChange(string format)
-    {
-        string input = _fixture.CreateSalesWorkbook();
-        string rows = string.Join(",", Enumerable.Range(1, 1003).Select(static row => $"[{row}]"));
-
-        CliResult edited = Cli("cells", "edit", input, "--ops", $$"""{"ops":[{"op":"set_values","sheet":"Data","range":"K1","values":[{{rows}}]}]}""",
-            "--out", "out.xlsx", "--overwrite", "--verify", "--output-format", format);
-
-        Assert.True(edited.ExitCode == 0, $"exit {edited.ExitCode}: {edited.StdErr}{edited.StdOut}");
-        Assert.Contains("1003 direct,", edited.StdOut, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     /// Unlike a Word or PowerPoint link, a linked picture the load cannot read is gone from the
     /// output: the warning about it is an issue, and the output has no picture.
     /// </summary>

@@ -38,11 +38,10 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     /// <summary>
-    /// A title with a line break reads as two lines in JSON, as its shape's text does, and as one
-    /// line where people read it: the slide header of a read and the title column of an inspect.
+    /// A title with a line break reads as two lines in JSON, as its shape's text does.
     /// </summary>
     [Fact]
-    public void TitleWithALineBreak_ReadsAsLinesInJsonAndAsOneLineInTables()
+    public void TitleWithALineBreak_ReadsAsLinesInJson()
     {
         Assert.Equal(0, _workspace.Run("slides", "create", "deck.pptx", "--output-format", "json").ExitCode);
         File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_title","slide":1,"text":"A\u000bB"}]}""");
@@ -50,14 +49,8 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.True(edit.ExitCode == 0, edit.StdErr);
 
         CliResult json = _workspace.Run("slides", "read", "titled.pptx", "--output-format", "json");
-        CliResult read = _workspace.Run("slides", "read", "titled.pptx", "--output-format", "table");
-        CliResult inspect = _workspace.Run("slides", "inspect", "titled.pptx", "--sample", "--output-format", "table");
 
         Assert.Equal("A\nB", JsonNode.Parse(json.StdOut)!["slides"]![0]!["title"]!.GetValue<string>());
-        string header = Assert.Single(read.StdOut.ReplaceLineEndings("\n").Split('\n'), static line => line.StartsWith("--- slide 1 ", StringComparison.Ordinal));
-        Assert.EndsWith("] A B ---", header, StringComparison.Ordinal);
-        string row = Assert.Single(inspect.StdOut.ReplaceLineEndings("\n").Split('\n'), static line => line.Contains("Title Slide", StringComparison.Ordinal));
-        Assert.Contains("A B", row, StringComparison.Ordinal);
     }
 
     private static void CreateDeck(string path)

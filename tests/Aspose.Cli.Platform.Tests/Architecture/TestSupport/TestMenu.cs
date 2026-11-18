@@ -2,7 +2,6 @@ using System.CommandLine;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Architecture.Tests;
 
@@ -11,8 +10,7 @@ internal static class TestMenu
 {
     /// <summary>
     /// Describes the product and adds one command, <paramref name="name"/>, with the given
-    /// options; it returns a new <typeparamref name="TResult"/>, which prints as an empty table.
-    /// A catalog renders each result type once, so each product of one catalog names its own.
+    /// options; it returns a new <typeparamref name="TResult"/>.
     /// </summary>
     public static ProductDefinitionBuilder<TSession> WithCommand<TSession, TResult>(
         this ProductDefinitionBuilder<TSession> product,
@@ -28,13 +26,8 @@ internal static class TestMenu
                     "Runs.",
                     new CommandTraits(),
                     options,
-                    static (_, _) => new TestRequest(),
-                    NoTable),
+                    static (_, _) => new TestRequest()),
                 static (TSession _, TestRequest _) => new TResult());
-
-    private static void NoTable<TResult>(TResult result, TableSurface table)
-    {
-    }
 
     /// <summary>The request of a test command.</summary>
     public sealed record TestRequest;

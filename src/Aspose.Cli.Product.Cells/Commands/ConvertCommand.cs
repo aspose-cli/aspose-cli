@@ -2,7 +2,6 @@ using System.CommandLine;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Output;
 
@@ -77,8 +76,7 @@ internal static class ConvertCommand
                         : new CellsTextImportOptions { Encoding = encodingName, Culture = cultureName },
                     ByteOrderMark = byteOrderMark,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -96,8 +94,4 @@ internal static class ConvertCommand
             ],
         };
     }
-
-    internal static void Table(CellsConvertResult convert, TableSurface surface) =>
-        ResultText.Files(surface, "wrote", "file", [.. convert.Outputs.Select(output =>
-            new ProducedFile(null, output.Path, output.Format, output.SizeBytes, convert.Sheets is null ? null : $"sheets {string.Join(", ", convert.Sheets)}"))]);
 }

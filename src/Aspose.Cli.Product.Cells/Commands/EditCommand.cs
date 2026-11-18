@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
@@ -45,7 +44,6 @@ internal static class EditCommand
                 Recalculate = !parse.GetValue(noRecalc),
                 ByteOrderMark = CellsInputs.ReadBom(bom, parse, edit.Output.Format.Id),
             },
-            Table,
             checkUsage: parse =>
             {
                 if (parse.GetValue(noRecalc) && bounded.IsVerifyRequested(parse))
@@ -65,17 +63,5 @@ internal static class EditCommand
                 CommandHelpLink.Schema<CellsOp>("the operations JSON vocabulary"),
                 CommandHelpLink.Docs(CellsModule.Manifest, "verification", "verification before delivering the file"),
             ]);
-    }
-
-    internal static void Table(CellsEditResult edit, TableSurface surface)
-    {
-        ResultText.Edit(surface, edit.DryRun, edit.Output, edit.Applied);
-        ResultText.Verification(
-            surface,
-            edit.Verification,
-            edit.Verification is { } verification
-                ? $"{verification.DirectChangeCount ?? verification.DirectChanges.Count} direct, {verification.FormulaResultChanges.Count} formula-result, "
-                    + $"{verification.FormulaErrors.Count} formula error(s)"
-                : null);
     }
 }

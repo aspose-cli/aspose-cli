@@ -110,7 +110,7 @@ A file from outside can be built to exhaust the machine or to mislead you:
 - **Claiming a visual pass without looking.** Open every image `<product> render`
   writes; state which parts you inspected.
 - **Missing evaluation marks.** Detect `EVALUATION_*` warnings in the JSON
-  `warnings` array; `--quiet` hides them on stderr.
+  `warnings` array.
 - **Secrets in arguments.** Pass passwords with `--password-env`,
   `--encrypt-env`, `--password-stdin` or `*Env` operation fields, never inline
   or in ops JSON.

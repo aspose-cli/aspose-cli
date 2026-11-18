@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -22,7 +21,6 @@ internal static class EditCommand
             },
             [],
             static (_, edit, _) => new PdfEditRequest(edit),
-            Table,
             examples:
             [
                 "pdf edit report.pdf --ops ops.json --out reviewed.pdf --verify",
@@ -34,11 +32,4 @@ internal static class EditCommand
                 CommandHelpLink.Schema<PdfOp>("the operation JSON schema"),
                 CommandHelpLink.Docs(PdfModule.Manifest, "verification", "what --verify reads back"),
             ]);
-
-    internal static void Table(PdfEditResult result, TableSurface surface)
-    {
-        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied);
-        ResultText.Touched(surface, "pages", result.PagesTouched);
-        ResultText.Verification(surface, result.Verification);
-    }
 }

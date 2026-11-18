@@ -32,8 +32,8 @@ project by default or for the user with `--user`.
   No other command writes over one of its inputs.
 - **Verification.** `edit --verify` reads the staged output back and reports semantic evidence
   before publication.
-- **A stable contract.** In JSON mode a command writes one result to stdout or one error to
-  stderr, with a stable code and exit code; [Compatibility](#compatibility) says what stays stable.
+- **A stable contract.** A command writes one JSON result to stdout or one JSON error to stderr,
+  with a stable code and exit code; [Compatibility](#compatibility) says what stays stable.
 - **Bounded work.** Inputs, rendering and extraction are held to the budgets that `capabilities`
   lists; `--timeout` sets a deadline for the whole command.
 - **No network access.** A document never causes a network request unless you opt in, and each
@@ -53,8 +53,8 @@ A breaking change removes or renames any of these, changes its type or meaning, 
 input it accepts, or changes a default or an exit code; it happens only in a major version.
 A minor or patch release may add commands, options, operations, optional input fields, result
 fields, warning codes, error codes and enumeration values. Text is not part of the contract:
-messages, help, the bundled docs and Skill prose, the layout of human-readable output and
-the diagnostic output of `--verbose` can change in any release.
+messages, help, the bundled docs and Skill prose and the diagnostic output of `--verbose` can
+change in any release.
 
 A consumer must ignore result fields, warning codes and error codes it does not know. The result
 schemas describe the current build; validate against them ignoring unknown properties.

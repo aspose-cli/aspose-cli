@@ -195,10 +195,9 @@ public static class CliWorkers
     /// <summary>
     /// Whether a command failed with <c>EVALUATION_LIMIT</c>. Its exit code, 7, is also that of
     /// the other license errors, <c>LICENSE_FILE_NOT_FOUND</c> and <c>LICENSE_INVALID</c>, so the
-    /// code is read from the error the command wrote to stderr: in the JSON formats the
-    /// <c>error.code</c> of the error envelope, which comes before any JSON lines of diagnostics
-    /// such as the <c>{"event":"failed",...}</c> of <c>--verbose</c>, and in the table and
-    /// Markdown formats the line <c>error EVALUATION_LIMIT: ...</c>.
+    /// code is read from the error the command wrote to stderr: the <c>error.code</c> of the error
+    /// envelope, which comes before any JSON lines of diagnostics such as the
+    /// <c>{"event":"failed",...}</c> of <c>--verbose</c>.
     /// </summary>
     private static bool IsEvaluationLimit(CliResult result)
     {
@@ -207,11 +206,6 @@ public static class CliWorkers
             return false;
         }
         string code = ErrorCodes.EvaluationLimit.Name;
-        string line = $"error {code}: ";
-        if (result.StdErr.Split('\n').Any(text => text.StartsWith(line, StringComparison.Ordinal)))
-        {
-            return true;
-        }
         try
         {
             var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(result.StdErr), new JsonReaderOptions { AllowMultipleValues = true });

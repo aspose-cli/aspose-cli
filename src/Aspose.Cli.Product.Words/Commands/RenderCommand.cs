@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -33,8 +32,7 @@ internal static class RenderCommand
                     Dpi = resolution,
                     Password = standard.InputPassword,
                 };
-            },
-            Table)
+            })
         {
             Examples =
             [
@@ -46,11 +44,5 @@ internal static class RenderCommand
                 CommandHelpLink.Docs(WordsModule.Manifest, "verification", "read-back, semantic and visual verification"),
             ],
         };
-    }
-
-    internal static void Table(WordsRenderResult result, TableSurface surface)
-    {
-        ResultText.Files(surface, "rendered", "page", [.. result.Outputs.Select(static page =>
-            new ProducedFile($"page {page.Page}", page.Path, page.Format, page.SizeBytes))]);
     }
 }

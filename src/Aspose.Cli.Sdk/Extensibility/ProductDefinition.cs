@@ -19,7 +19,6 @@ public sealed class ProductDefinition
         FileRouteDefinition files,
         IReadOnlyList<FormatDescriptor> formats,
         ProductJsonDefinition json,
-        Func<IReadOnlyList<ProductOutputDefinition>> outputs,
         Func<IReadOnlyList<ProductOperationCommand>> operations,
         IReadOnlyList<DiagnosticDescriptor> diagnostics,
         Func<ProductCommandRunner, Command> commandFactory,
@@ -32,8 +31,7 @@ public sealed class ProductDefinition
         Files = files;
         Formats = formats;
         Json = json ?? throw new ArgumentNullException(nameof(json));
-        _outputs = new Lazy<IReadOnlyList<ProductOutputDefinition>>(
-            outputs ?? throw new ArgumentNullException(nameof(outputs)));
+
         _operations = new Lazy<IReadOnlyList<ProductOperationCommand>>(
             operations ?? throw new ArgumentNullException(nameof(operations)));
         Diagnostics = diagnostics;
@@ -57,14 +55,6 @@ public sealed class ProductDefinition
 
     /// <summary>Product-owned source-generated JSON metadata.</summary>
     public ProductJsonDefinition Json { get; }
-
-    /// <summary>
-    /// Human-readable result renderers owned by this product, one per result type; a menu's
-    /// renderers come from its command definitions, created on first access.
-    /// </summary>
-    public IReadOnlyList<ProductOutputDefinition> Outputs => _outputs.Value;
-
-    private readonly Lazy<IReadOnlyList<ProductOutputDefinition>> _outputs;
 
     /// <summary>
     /// The commands that apply this product's operation documents, in menu order; each comes
@@ -284,7 +274,6 @@ public sealed class ProductDefinitionBuilder<TSession>
             files,
             formats,
             _json,
-            Outputs,
             Operations,
             Array.AsReadOnly(_diagnostics.ToArray()),
             CreateCommand,
@@ -302,29 +291,6 @@ public sealed class ProductDefinitionBuilder<TSession>
 
         ProductReads.Declare(product, [.. _formats.Where(static format => format.Uses.HasFlag(FormatUse.Input))]);
         return _help?.Invoke() is { } help ? product.WithExamples(help.Examples, help.Links) : product;
-    }
-
-    // One renderer per result type: commands that share a result type share its renderer method.
-    private IReadOnlyList<ProductOutputDefinition> Outputs()
-    {
-        var byType = new Dictionary<Type, ProductOutputDefinition>();
-        var ordered = new List<ProductOutputDefinition>();
-        foreach (ProductOutputDefinition output in _menu.SelectMany(static entry => entry.Outputs()))
-        {
-            if (byType.TryGetValue(output.ResultType, out ProductOutputDefinition? registered))
-            {
-                if (!registered.Source.Equals(output.Source))
-                {
-                    throw new InvalidOperationException(
-                        $"Product '{_manifest.Id}' renders '{output.ResultType.FullName}' with two different renderers; "
-                        + "commands that share a result type share one renderer method.");
-                }
-                continue;
-            }
-            byType.Add(output.ResultType, output);
-            ordered.Add(output);
-        }
-        return Array.AsReadOnly(ordered.ToArray());
     }
 
     private IReadOnlyList<ProductOperationCommand> Operations() =>

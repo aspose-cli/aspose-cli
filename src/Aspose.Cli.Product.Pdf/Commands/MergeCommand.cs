@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -40,8 +39,7 @@ internal static class MergeCommand
                     Password = standard.InputPassword,
                     EncryptPassword = standard.EncryptPassword(),
                 };
-            },
-            static (result, surface) => ResultText.Produced(surface, result.Output, "merge"))
+            })
         {
             Examples =
             [

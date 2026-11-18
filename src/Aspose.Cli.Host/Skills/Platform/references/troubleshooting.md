@@ -33,9 +33,8 @@ exits non-zero:
 - `docs`, when present, names a topic for `aspose-cli docs <topic>`.
 
 Warnings do not fail a command. They appear in the result's `warnings` array
-with a `code`, `message` and, when there are any, `details`, and on stderr in
-human output. A warning with `affectsCompleteness: true` leaves the
-output incomplete; report it.
+with a `code`, `message` and, when there are any, `details`. A warning with
+`affectsCompleteness: true` leaves the output incomplete; report it.
 
 A `LOSSY_CONVERSION` that names what the output leaves out lists the kinds of
 content in `details.content`; one without it names no kind, such as one that
@@ -99,8 +98,7 @@ aspose-cli capabilities --output-format json
 - An unknown command, option, value, operation or field lists what exists in
   `details.available`. A
   command that only groups others, run without one, is a `USAGE_ERROR` that
-  lists its commands in `details.available`; with human output it prints its
-  help to stderr instead.
+  lists its commands in `details.available`.
 - A token starting with `--` is never taken as a file argument; pass such a
   file name after a `--` token, which ends the options.
 - `-` names standard input only: `--out -` is refused, so name a file. An

@@ -28,9 +28,8 @@ internal static partial class ContractRules
     };
 
     /// <summary>
-    /// Every group command run without a subcommand: in table mode it exits 2 and prints its help
-    /// to stderr, and in JSON mode its <c>USAGE_ERROR</c> lists the visible subcommands in
-    /// <c>details.available</c> and no <c>details.errors</c>. A group other than the root with
+    /// Every group command run without a subcommand exits 2 with a <c>USAGE_ERROR</c> that lists
+    /// the visible subcommands in <c>details.available</c> and no <c>details.errors</c>. A group other than the root with
     /// options or arguments of its own would run an action of its own, which C-R03's declared
     /// part reports instead.
     /// </summary>
@@ -48,20 +47,6 @@ internal static partial class ContractRules
 
     private static IEnumerable<string> R03Problems(RuleWorkspace session, string output, string[] subcommands)
     {
-        string help = Normalize(session.Run("--help").StdOut);
-        CliResult table = session.Run(output, "table");
-        if (table.ExitCode != 2)
-        {
-            yield return $"table mode exits {table.ExitCode}, expected 2";
-        }
-        if (table.StdOut.Length > 0)
-        {
-            yield return $"table mode writes to stdout: {Excerpt(table.StdOut)}";
-        }
-        if (help.Length == 0 || !Normalize(table.StdErr).Contains(help, StringComparison.Ordinal))
-        {
-            yield return $"table mode does not print the help to stderr: {Excerpt(table.StdErr)}";
-        }
         CliResult json = session.Run(output, "json");
         if (json.ExitCode != 2)
         {
@@ -369,13 +354,11 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The streams of a successful and a failed run of each product's <c>inspect</c>: a success
-    /// writes its result to stdout, in table and in JSON mode, and with
-    /// a license and no warning leaves stderr empty, and a licensed JSON result carries no license
-    /// block (C-R33); a failure in table mode leaves stdout empty.
-    /// A failure in JSON mode is the <c>error-envelope</c> check of every scenario. JSON-mode
-    /// warnings belong to the result on stdout, so evaluation runs, which may warn, are checked
-    /// for stdout only.
+    /// The streams of a successful run of each product's <c>inspect</c>: a success writes its
+    /// result to stdout, and with a license and no warning leaves stderr empty, and a licensed
+    /// result carries no license block (C-R33). A failure is the <c>error-envelope</c> check of
+    /// every scenario. Warnings belong to the result on stdout, so evaluation runs, which may
+    /// warn, are checked for stdout only.
     /// </summary>
     private static IEnumerable<InvariantCase> R23(CliCatalog catalog)
     {
@@ -383,24 +366,6 @@ internal static partial class ContractRules
         foreach ((string shard, CliCommand command) in R23Samples(catalog))
         {
             Invocation success = Invocation.For(command);
-            yield return Runs("C-R23", $"{command} succeeds in table mode", shard, slow: false, success, session =>
-            {
-                CliResult result = session.Run(output, "table");
-                var problems = new List<string>();
-                if (result.ExitCode != 0)
-                {
-                    problems.Add($"exit {result.ExitCode}: {Excerpt(result.StdErr)}");
-                }
-                else if (result.StdOut.Trim().Length == 0)
-                {
-                    problems.Add("stdout is empty");
-                }
-                if (result.ExitCode == 0 && ScenarioLicense.Licensed && result.StdErr.Trim().Length > 0)
-                {
-                    problems.Add($"stderr is not empty: {Excerpt(result.StdErr)}");
-                }
-                return problems;
-            });
             yield return Runs("C-R23", $"{command} succeeds in JSON mode", shard, slow: false, success, session =>
             {
                 CliResult result = session.Run(output, "json");
@@ -426,24 +391,6 @@ internal static partial class ContractRules
                 }
                 return problems;
             });
-            yield return Runs("C-R23", $"{command} fails in table mode", shard, slow: false, R23Failure(command), session =>
-            {
-                CliResult result = session.Run(output, "table");
-                var problems = new List<string>();
-                if (result.ExitCode == 0)
-                {
-                    problems.Add("the failure exits 0");
-                }
-                if (result.StdOut.Trim().Length > 0)
-                {
-                    problems.Add($"stdout is not empty: {Excerpt(result.StdOut)}");
-                }
-                if (result.StdErr.Trim().Length == 0)
-                {
-                    problems.Add("stderr is empty");
-                }
-                return problems;
-            });
         }
     }
 
@@ -457,19 +404,6 @@ internal static partial class ContractRules
                 yield return (product, inspect);
             }
         }
-    }
-
-    /// <summary>A failing run of a sample: a missing input, or an unknown option for a command that reads none.</summary>
-    private static Invocation R23Failure(CliCommand command)
-    {
-        Invocation invocation = Invocation.For(command);
-        if (invocation.Input is not { } input)
-        {
-            return invocation.Add("--invariant-unknown-option");
-        }
-        invocation.Files.Remove(input);
-        invocation.Replace(input, "missing" + Path.GetExtension(input));
-        return invocation;
     }
 
     /// <summary>
@@ -822,20 +756,17 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// <c>--quiet</c> and <c>--verbose</c> leave stdout and the exit code as they are, in table and
-    /// in JSON mode: <c>--quiet</c> leaves a successful run's stderr without warnings or notices,
-    /// so empty, and every line <c>--verbose</c> adds to stderr is a JSON object.
+    /// <c>--quiet</c> and <c>--verbose</c> leave stdout and the exit code as they are:
+    /// <c>--quiet</c> leaves a successful run's stderr without warnings or notices, so empty, and
+    /// every line <c>--verbose</c> adds to stderr is a JSON object.
     /// </summary>
     private static IEnumerable<InvariantCase> R37(CliCatalog catalog)
     {
         string output = OutputOption(catalog);
         foreach ((string shard, CliCommand command) in R23Samples(catalog))
         {
-            foreach (string format in new[] { "table", "json" })
-            {
-                yield return Runs("C-R37", $"{command} --quiet and --verbose in {format} mode", shard, slow: false, Invocation.For(command),
-                    session => R37Problems(session, output, format));
-            }
+            yield return Runs("C-R37", $"{command} --quiet and --verbose in json mode", shard, slow: false, Invocation.For(command),
+                session => R37Problems(session, output, "json"));
         }
     }
 

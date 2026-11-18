@@ -18,12 +18,5 @@ public sealed class TextWidthTests
     [InlineData("\U00020000", 2)]
     [InlineData("\uFF71", 1)]
     public void Of_CountsTerminalColumns(string text, int expected) =>
-        Assert.Equal(expected, TextWidth.Of(text));
-
-    [Fact]
-    public void PadRight_PadsToTheDisplayWidth()
-    {
-        Assert.Equal("汇总  ", TextWidth.PadRight("汇总", 6));
-        Assert.Equal("汇总", TextWidth.PadRight("汇总", 3));
-    }
+        Assert.Equal(expected, text.EnumerateRunes().Sum(static rune => TextWidth.Of(rune)));
 }
