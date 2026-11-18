@@ -33,6 +33,24 @@ public sealed class ProductPublicationTests
     }
 
     /// <summary>
+    /// An in-place edit whose engine still holds its input open when the edit commits leaves no
+    /// staging beside the file.
+    /// </summary>
+    [Theory]
+    [InlineData("slides", "pptx", "--from-markdown", "source.md", """{"ops":[{"op":"set_title","slide":1,"text":"Edited"}]}""")]
+    [InlineData("pdf", "pdf", "--from-text", "source.txt", """{"ops":[{"op":"set_properties","title":"Edited"}]}""")]
+    public void InPlaceEdit_WhoseEngineHoldsItsInput_LeavesNoStaging(string product, string extension,
+        string sourceOption, string source, string ops)
+    {
+        using var workspace = new TempWorkspace();
+        string input = CreateInput(workspace, product, extension, [sourceOption, source]);
+
+        workspace.Run([product, "edit", input, "--ops", ops, "--in-place", "--output-format", "json"]).Succeeded();
+
+        Assert.Empty(Directory.EnumerateDirectories(workspace.Path, ".aspose-publication-*"));
+    }
+
+    /// <summary>
     /// The reported size is that of the published files, for one written file, a page per file
     /// and a deck with its companion files.
     /// </summary>

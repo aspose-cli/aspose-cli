@@ -37,6 +37,27 @@ public sealed class InPlaceReadSharingTests
     }
 
     [Fact]
+    public void InPlaceReplace_WhileAnotherHandleReadsTheInput_LeavesNoStaging()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File("book.bin");
+        File.WriteAllText(target, "original");
+        FileWritePrecondition precondition = FileWritePrecondition.Capture(target);
+
+        using var open = new FileStream(target, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "edit"))
+        {
+            set.Stage(target, overwrite: true, precondition,
+                staged => File.WriteAllText(staged, "edited"));
+            set.Commit();
+        }
+
+        Assert.Equal("edited", File.ReadAllText(target));
+        Assert.Equal("original", new StreamReader(open).ReadToEnd());
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+    }
+
+    [Fact]
     public void Precondition_IsCapturedWhileAnotherProcessReplacesTheInput()
     {
         using var temp = new TempDirectory();

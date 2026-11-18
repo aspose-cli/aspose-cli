@@ -18,6 +18,12 @@ internal static class FilePublicationOwnedDelete
     private const uint FileWriteAttributes = 0x00000100;
     private const int FileBasicInfoClass = 0;
     private const int FileDispositionInfoClass = 4;
+    private const int FileDispositionInfoExClass = 21;
+    private const uint FileDispositionFlagDelete = 0x00000001;
+    private const uint FileDispositionFlagPosixSemantics = 0x00000002;
+    private const int ErrorInvalidFunction = 1;
+    private const int ErrorNotSupported = 50;
+    private const int ErrorInvalidParameter = 87;
 
     /// <summary>
     /// Deletes the file at <paramref name="path"/> when it is still the one
@@ -66,12 +72,7 @@ internal static class FilePublicationOwnedDelete
             return false;
         }
 
-        var disposition = new FileDispositionInfo { DeleteFile = true };
-        return SetFileInformationByHandle(
-            deleteHandle,
-            FileDispositionInfoClass,
-            ref disposition,
-            Marshal.SizeOf<FileDispositionInfo>());
+        return MarkFileForDeletion(deleteHandle);
     }
 
     public static bool TryDeleteDirectory(
@@ -224,12 +225,7 @@ internal static class FilePublicationOwnedDelete
                 ? OpenedFileBoundary.GetInformation(deleteHandle)?.Attributes : null;
             bool cleared = attributes is { } readOnly && readOnly.HasFlag(FileAttributes.ReadOnly)
                 && SetAttributes(deleteHandle, readOnly & ~FileAttributes.ReadOnly);
-            var disposition = new FileDispositionInfo { DeleteFile = true };
-            if (SetFileInformationByHandle(
-                deleteHandle,
-                FileDispositionInfoClass,
-                ref disposition,
-                Marshal.SizeOf<FileDispositionInfo>()))
+            if (MarkFileForDeletion(deleteHandle))
             {
                 return true;
             }
@@ -258,6 +254,31 @@ internal static class FilePublicationOwnedDelete
             readHandle?.Dispose();
             deleteHandle?.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Deletes the opened file with POSIX semantics, which take its name away at once even while
+    /// another handle keeps it open, such as the reader of an in-place edit's input, so the
+    /// directory that held it can be removed. As the system's <c>DeleteFile</c> does, a volume
+    /// that refuses them gets the plain disposition, which takes the name away only when the last
+    /// handle closes. The refusals are Win32 error 87, invalid parameter (the system or the file
+    /// system does not know the extended class or its flags), 50, not supported (a file system
+    /// without POSIX deletion, such as FAT), and 1, invalid function (a redirector that does not
+    /// pass the class on); any other failure fails the deletion.
+    /// </summary>
+    private static bool MarkFileForDeletion(SafeFileHandle handle)
+    {
+        var posix = new FileDispositionInfoEx { Flags = FileDispositionFlagDelete | FileDispositionFlagPosixSemantics };
+        if (SetFileInformationByHandle(handle, FileDispositionInfoExClass, ref posix, Marshal.SizeOf<FileDispositionInfoEx>()))
+        {
+            return true;
+        }
+        if (Marshal.GetLastPInvokeError() is not (ErrorInvalidParameter or ErrorNotSupported or ErrorInvalidFunction))
+        {
+            return false;
+        }
+        var disposition = new FileDispositionInfo { DeleteFile = true };
+        return SetFileInformationByHandle(handle, FileDispositionInfoClass, ref disposition, Marshal.SizeOf<FileDispositionInfo>());
     }
 
     // Zero times leave the file's times unchanged; zero attributes would too, so none is Normal.
@@ -315,6 +336,14 @@ internal static class FilePublicationOwnedDelete
     private static extern bool SetFileInformationByHandle(
         SafeFileHandle file,
         int informationClass,
+        ref FileDispositionInfoEx information,
+        int bufferSize);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetFileInformationByHandle(
+        SafeFileHandle file,
+        int informationClass,
         ref FileBasicInfo information,
         int bufferSize);
 
@@ -333,6 +362,12 @@ internal static class FilePublicationOwnedDelete
     {
         [MarshalAs(UnmanagedType.Bool)]
         public bool DeleteFile;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FileDispositionInfoEx
+    {
+        public uint Flags;
     }
 
 }
