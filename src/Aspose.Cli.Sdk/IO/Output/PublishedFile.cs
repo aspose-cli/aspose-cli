@@ -10,5 +10,4 @@ namespace Aspose.Cli.Sdk.IO.Output;
 /// </summary>
 /// <param name="Path">The absolute target path.</param>
 /// <param name="SizeBytes">The file size in bytes.</param>
-/// <param name="Fingerprint">The SHA-256 identity of the file's content.</param>
-public sealed record PublishedFile(string Path, long SizeBytes, FileFingerprint Fingerprint);
+public sealed record PublishedFile(string Path, long SizeBytes);

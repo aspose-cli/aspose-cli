@@ -42,10 +42,6 @@
           {
             "path": "outputs[0].sizeBytes",
             "equals": 13
-          },
-          {
-            "path": "outputs[0].fingerprint.sha256",
-            "equals": "6582488875fcc4ee09ed1284de6a8d2c16521d21384d0eadac5bbd72ed2af10d"
           }
         ],
         "files": {

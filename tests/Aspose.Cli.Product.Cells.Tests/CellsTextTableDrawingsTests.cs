@@ -159,8 +159,9 @@ public sealed class CellsTextTableDrawingsTests : IDisposable
                 $"'{member}' differs from the edit without drawings:\n{result[member]?.ToJsonString()}\n{baseline[member]?.ToJsonString()}");
         }
 
-        Assert.True(JsonNode.DeepEquals(baseline["output"]!["fingerprint"], result["output"]!["fingerprint"]),
-            "The csv differs from the one written without drawings.");
+        byte[] baselineCsv = File.ReadAllBytes(baseline["output"]!["path"]!.GetValue<string>());
+        byte[] csv = File.ReadAllBytes(result["output"]!["path"]!.GetValue<string>());
+        Assert.True(baselineCsv.AsSpan().SequenceEqual(csv), "The csv differs from the one written without drawings.");
     }
 
     /// <summary>

@@ -6,11 +6,11 @@ namespace Aspose.Cli.Sdk.IO.Output;
 /// <summary>
 /// The one factory of the file objects a result reports: the <see cref="InputInfo"/> of a file a
 /// command read, the <see cref="SourceInput"/> of a file an option named, and the
-/// <see cref="OutputInfo"/> of a file it produced. Each makes the path
-/// absolute and takes the size and the fingerprint from the file itself, or from the staged
-/// copy its publication wrote, so every result describes its files the same way; a product
-/// supplies only what the file cannot say, its format and whether it is encrypted. Several produced files become a flat <c>outputs</c> list
-/// of a product's <see cref="OutputItem"/> records, built from these descriptions.
+/// <see cref="OutputInfo"/> of a file it produced. Each makes the path absolute and takes the size
+/// from the file itself, or from the staged copy its publication wrote, so every result describes
+/// its files the same way; a product supplies only what the file cannot say, its format and
+/// whether it is encrypted. Several produced files become a flat <c>outputs</c> list of a
+/// product's <see cref="OutputItem"/> records, built from these descriptions.
 /// </summary>
 public static class FileObjects
 {
@@ -90,7 +90,6 @@ public static class FileObjects
             Path = Path.GetFullPath(file.Path),
             Format = format,
             SizeBytes = file.SizeBytes,
-            Fingerprint = file.Fingerprint,
             Encrypted = encrypted,
         };
     }

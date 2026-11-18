@@ -3,7 +3,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// <summary>Describes a file a command produced.</summary>
 /// <remarks>
 /// Products build it only with <c>FileObjects.Output</c>, which makes the path absolute and takes
-/// the size and fingerprint from the file its publication wrote.
+/// the size from the file its publication wrote.
 /// </remarks>
 [SchemaId("output")]
 public sealed record OutputInfo
@@ -20,9 +20,6 @@ public sealed record OutputInfo
     /// <summary>File size in bytes.</summary>
     [Minimum(0)]
     public required long SizeBytes { get; init; }
-
-    /// <summary>SHA-256 identity of the published file.</summary>
-    public required FileFingerprint Fingerprint { get; init; }
 
     /// <summary>
     /// <c>true</c> when the produced file is encrypted and opens only with its password;

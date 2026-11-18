@@ -26,7 +26,6 @@ public sealed class ResolvedOutputWriteTests
         Assert.Equal([temp.File("deck.html"), temp.File("app.js"), temp.File("style.css")], published.Select(static file => file.Path));
         // A companion file is no document of the format: its format is its extension.
         Assert.Equal(["page", "js", "css"], published.Select(static file => file.Format));
-        Assert.All(published, file => Assert.Equal(FileFingerprints.Capture(file.Path), file.Fingerprint));
         Assert.Equal("<html>", File.ReadAllText(temp.File("deck.html")));
         Assert.Equal("script", File.ReadAllText(temp.File("app.js")));
         Assert.Equal(["app.js", "deck.html", "style.css"], Directory.GetFileSystemEntries(temp.Path).Select(Path.GetFileName).Order(StringComparer.Ordinal));

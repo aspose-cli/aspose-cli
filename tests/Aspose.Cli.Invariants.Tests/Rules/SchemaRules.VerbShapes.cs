@@ -14,7 +14,6 @@ internal static partial class ContractRules
     private const string CommonInput = "v2/common/input";
     private const string CommonOutput = "v2/common/output";
     private const string CommonSourceInput = "v2/common/source-input";
-    private const string CommonFingerprint = "v2/common/file-fingerprint";
 
     private static IEnumerable<InvariantCase> R40(CliCatalog catalog)
     {
@@ -146,14 +145,12 @@ internal static partial class ContractRules
 
     private static JsonObject ItemsOf(JsonObject schema) => (JsonObject)schema["items"]!;
 
-    /// <summary>Whether a list item is an SDK <c>OutputItem</c>: the file fields with the SDK fingerprint, beside at most a unit.</summary>
+    /// <summary>Whether a list item is an SDK <c>OutputItem</c>: the file fields, beside the units it names.</summary>
     private static bool IsOutputItem(Func<string, JsonObject> documents, string id, JsonObject item)
     {
         JsonObject node = ResolveIn(documents, id, item).Node;
         return node["properties"] is JsonObject properties
-            && FileCore.Append("encrypted").All(properties.ContainsKey)
-            && properties["fingerprint"] is JsonObject fingerprint
-            && CommonId(fingerprint) == CommonFingerprint;
+            && FileCore.Append("encrypted").All(properties.ContainsKey);
     }
 
     /// <summary>The common schema a property references directly, or null.</summary>
@@ -191,7 +188,7 @@ internal static partial class ContractRules
         static JsonObject Copy(string id) => (JsonObject)PublishedSchema.Document(id).DeepClone();
         static JsonObject Reference(string id) => new() { ["$ref"] = $"https://schemas.aspose.com/aspose-cli/{id}.schema.json" };
 
-        // Slides and Words extract listed items[] of their own records, without format or fingerprint.
+        // Slides and Words extract listed items[] of their own records, without format or size.
         JsonObject extract = Copy("v2/slides/extract-result");
         JsonObject extractProperties = (JsonObject)extract["properties"]!;
         extractProperties.Remove("outputs");

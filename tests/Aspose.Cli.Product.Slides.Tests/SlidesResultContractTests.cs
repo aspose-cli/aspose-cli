@@ -82,15 +82,12 @@ public sealed class SlidesResultContractTests : IDisposable
         JsonNode item = extracted["outputs"]![0]!;
         // Each file names the one unit it holds beside its file fields: a media item or a slide.
         Assert.Equal(
-            new[] { "path", "format", "sizeBytes", "fingerprint", unit }.Order(StringComparer.Ordinal),
+            new[] { "path", "format", "sizeBytes", unit }.Order(StringComparer.Ordinal),
             item.AsObject().Select(static pair => pair.Key).Order(StringComparer.Ordinal));
         Assert.Equal(1, item[unit]!.GetValue<int>());
         string path = item["path"]!.GetValue<string>();
         Assert.Equal(Path.GetExtension(path).TrimStart('.'), item["format"]!.GetValue<string>());
         Assert.Equal(new FileInfo(path).Length, item["sizeBytes"]!.GetValue<long>());
-        Assert.Equal(
-            Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path))),
-            item["fingerprint"]!["sha256"]!.GetValue<string>());
     }
 
     private static void CreateDeck(string path)

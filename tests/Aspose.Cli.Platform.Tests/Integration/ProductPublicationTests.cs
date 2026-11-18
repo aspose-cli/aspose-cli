@@ -38,7 +38,7 @@ public sealed class ProductPublicationTests
 
     /// <summary>
     /// A supervised worker hands its outputs to the parent, which publishes them after the worker
-    /// has reported them; the reported size and fingerprint are still those of the published files,
+    /// has reported them; the reported size is still that of the published files,
     /// for one written file, a page per file and a deck with its companion files.
     /// </summary>
     [Category(TestCategory.Slow)]
@@ -69,15 +69,12 @@ public sealed class ProductPublicationTests
         Assert.All(files, static output => AssertDescribesThePublishedFile(output!));
     }
 
-    /// <summary>Checks that a reported file object states the path, size and SHA-256 of the file on disk.</summary>
+    /// <summary>Checks that a reported file object states the path and size of the file on disk.</summary>
     private static void AssertDescribesThePublishedFile(JsonNode file)
     {
         string path = file["path"]!.GetValue<string>();
         Assert.True(File.Exists(path), path);
         Assert.Equal(new FileInfo(path).Length, file["sizeBytes"]!.GetValue<long>());
-        Assert.Equal(
-            Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant(),
-            file["fingerprint"]!["sha256"]!.GetValue<string>());
     }
 
     [Category(TestCategory.Slow)]

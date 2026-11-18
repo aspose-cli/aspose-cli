@@ -25,7 +25,6 @@ public sealed class SafeFileWriterTests : IDisposable
 
         Assert.Equal(5, published.SizeBytes);
         Assert.Equal(target, published.Path);
-        Assert.Equal(FileFingerprints.Capture(target), published.Fingerprint);
         Assert.Equal("hello", File.ReadAllText(target));
     }
 

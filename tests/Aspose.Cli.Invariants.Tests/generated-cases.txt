@@ -485,7 +485,6 @@ C-R17 | v2/common/diagnostic-details
 C-R17 | v2/common/dry-run-result
 C-R17 | v2/common/error
 C-R17 | v2/common/error-payload
-C-R17 | v2/common/file-fingerprint
 C-R17 | v2/common/font-list
 C-R17 | v2/common/input
 C-R17 | v2/common/license
@@ -764,7 +763,6 @@ C-R18 | v2/common/diagnostic-details
 C-R18 | v2/common/dry-run-result
 C-R18 | v2/common/error
 C-R18 | v2/common/error-payload
-C-R18 | v2/common/file-fingerprint
 C-R18 | v2/common/font-list
 C-R18 | v2/common/input
 C-R18 | v2/common/license
@@ -1800,9 +1798,6 @@ C-R20 | v2/common/error variants
 C-R20 | v2/common/error-payload fixednames
 C-R20 | v2/common/error-payload spelling
 C-R20 | v2/common/error-payload variants
-C-R20 | v2/common/file-fingerprint fixednames
-C-R20 | v2/common/file-fingerprint spelling
-C-R20 | v2/common/file-fingerprint variants
 C-R20 | v2/common/font-list fixednames
 C-R20 | v2/common/font-list spelling
 C-R20 | v2/common/font-list variants
@@ -3574,8 +3569,6 @@ C-R31 | v2/common/error fields
 C-R31 | v2/common/error outputs
 C-R31 | v2/common/error-payload fields
 C-R31 | v2/common/error-payload outputs
-C-R31 | v2/common/file-fingerprint fields
-C-R31 | v2/common/file-fingerprint outputs
 C-R31 | v2/common/font-list fields
 C-R31 | v2/common/font-list outputs
 C-R31 | v2/common/input fields
@@ -3898,9 +3891,6 @@ C-R33 | v2/common/error none
 C-R33 | v2/common/error-payload envelope
 C-R33 | v2/common/error-payload names
 C-R33 | v2/common/error-payload none
-C-R33 | v2/common/file-fingerprint envelope
-C-R33 | v2/common/file-fingerprint names
-C-R33 | v2/common/file-fingerprint none
 C-R33 | v2/common/font-list envelope
 C-R33 | v2/common/font-list names
 C-R33 | v2/common/font-list none

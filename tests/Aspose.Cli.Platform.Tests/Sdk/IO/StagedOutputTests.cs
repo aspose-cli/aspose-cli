@@ -18,7 +18,6 @@ public sealed class StagedOutputTests
         Assert.False(File.Exists(target));
         Assert.Equal(target, staged.TargetPath);
         Assert.Equal("candidate bytes", staged.Read(File.ReadAllText));
-        Assert.Equal(FileFingerprints.Capture(staged.Path), staged.Fingerprint);
         transaction.Commit();
         Assert.Equal("candidate bytes", File.ReadAllText(target));
         Assert.False(File.Exists(staged.Path));

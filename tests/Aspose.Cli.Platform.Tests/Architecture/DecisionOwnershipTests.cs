@@ -191,7 +191,7 @@ public sealed partial class DecisionOwnershipTests
                 .Select(node => file.At(node, node.ToString().Split('\n')[0].Trim())))];
 
         AssertNone(violations,
-            "The input and output file objects a result reports come only from the SDK's FileObjects factory, which makes paths absolute and fingerprints every file:");
+            "The input and output file objects a result reports come only from the SDK's FileObjects factory, which makes paths absolute and reads each file's size:");
 
         static bool IsFileObject(TypeSyntax type) => LastIdentifier(type) is "InputInfo" or "SourceInput" or "OutputInfo";
 

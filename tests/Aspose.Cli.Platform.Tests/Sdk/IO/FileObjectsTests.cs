@@ -56,7 +56,6 @@ public sealed class FileObjectsTests : IDisposable
         Assert.Equal(path, output.Path);
         Assert.Equal("doc", output.Format);
         Assert.Equal(7, output.SizeBytes);
-        Assert.Equal(FileFingerprints.Capture(path), output.Fingerprint);
         Assert.Equal(encrypted, output.Encrypted);
     }
 
@@ -72,13 +71,12 @@ public sealed class FileObjectsTests : IDisposable
     public void Output_TakesItsFactsFromThePublication_NotFromTheTarget()
     {
         // A supervised worker hands its outputs to the parent, so the target may not exist yet.
-        var published = new PublishedFile(_temp.File("absent.png"), 3, new FileFingerprint { Sha256 = new string('a', 64) });
+        var published = new PublishedFile(_temp.File("absent.png"), 3);
 
         OutputInfo output = FileObjects.Output(published, Plain, encrypted: false);
 
         Assert.False(File.Exists(output.Path));
         Assert.Equal(3, output.SizeBytes);
-        Assert.Equal(new string('a', 64), output.Fingerprint.Sha256);
     }
 
     [Fact]
@@ -104,7 +102,6 @@ public sealed class FileObjectsTests : IDisposable
         Assert.Equal(file.Path, item.Path);
         Assert.Equal(file.Format, item.Format);
         Assert.Equal(file.SizeBytes, item.SizeBytes);
-        Assert.Equal(file.Fingerprint, item.Fingerprint);
     }
 
     /// <summary>A product's item of a flat <c>outputs</c> list: one rendered slide.</summary>

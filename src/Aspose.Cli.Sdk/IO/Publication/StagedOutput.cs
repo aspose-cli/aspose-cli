@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Output;
 
@@ -14,10 +13,9 @@ public sealed class StagedOutput
     public string Path => _entry.Staged;
     public string TargetPath => _entry.Target;
     public long SizeBytes => _entry.Size;
-    public FileFingerprint Fingerprint => new() { Sha256 = _entry.StagedSnapshot.Sha256!.ToLowerInvariant() };
 
     /// <summary>The facts of the file this output publishes.</summary>
-    public PublishedFile Published => new(TargetPath, SizeBytes, Fingerprint);
+    public PublishedFile Published => new(TargetPath, SizeBytes);
 
     internal FilePublicationSnapshot Snapshot => _entry.StagedSnapshot;
 

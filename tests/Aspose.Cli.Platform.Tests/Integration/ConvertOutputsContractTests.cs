@@ -7,11 +7,11 @@ namespace Aspose.Cli.IntegrationTests;
 
 /// <summary>
 /// Every product's <c>convert</c> reports what it wrote as <c>outputs[]</c>, even one file:
-/// <c>{&lt;unit&gt;?, path, format, sizeBytes, fingerprint, encrypted?}</c>, never an <c>output</c> object.
+/// <c>{&lt;unit&gt;?, path, format, sizeBytes, encrypted?}</c>, never an <c>output</c> object.
 /// </summary>
 public sealed class ConvertOutputsContractTests : IDisposable
 {
-    private static readonly string[] FileFields = ["path", "format", "sizeBytes", "fingerprint", "encrypted"];
+    private static readonly string[] FileFields = ["path", "format", "sizeBytes", "encrypted"];
     private readonly TempWorkspace _workspace = new();
 
     public void Dispose() => _workspace.Dispose();
@@ -39,7 +39,6 @@ public sealed class ConvertOutputsContractTests : IDisposable
         Assert.Equal(_workspace.File(output), item["path"]!.GetValue<string>());
         Assert.Equal(format, item["format"]!.GetValue<string>());
         Assert.Equal(new FileInfo(_workspace.File(output)).Length, item["sizeBytes"]!.GetValue<long>());
-        Assert.Equal(64, item["fingerprint"]!["sha256"]!.GetValue<string>().Length);
         Assert.All(item.Select(static pair => pair.Key), key => Assert.Contains(key, FileFields));
     }
 
