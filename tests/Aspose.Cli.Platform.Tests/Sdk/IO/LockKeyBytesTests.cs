@@ -12,10 +12,8 @@ using Xunit;
 namespace Aspose.Cli.Sdk.Tests.IO;
 
 /// <summary>
-/// Fixes the bytes of every key derived from a path: the publication directory lock files, which
-/// other Aspose CLI distributions share, the local service
-/// marker lock, the license identity and the update status file name, which older versions of
-/// this CLI share. Each expected value is computed here from the literal rule, never through
+/// Fixes the bytes of every key derived from a path: the local service marker lock, the license
+/// identity and the update status file name, which older versions of this CLI share. Each expected value is computed here from the literal rule, never through
 /// the code under test, so a change to how a key folds case, trims or hashes fails here.
 /// </summary>
 public sealed class LockKeyBytesTests : IDisposable
@@ -51,30 +49,6 @@ public sealed class LockKeyBytesTests : IDisposable
             "lower|case" => path.ToLowerInvariant(),
             _ => path,
         };
-    }
-
-    [Theory]
-    [MemberData(nameof(Spellings))]
-    public void PublicationDirectoryLease_HoldsTheFileNamedForItsFoldedTrimmedFullPath(string spelling)
-    {
-        string directory = Spelled(spelling, create: false);
-        string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory));
-        string lockRoot = Path.Combine(UserStorage.PublicationLockRoot(), "publication-locks");
-        string leaf = Path.Combine(lockRoot, Sha256Hex("directory:" + Folded(full)) + ".lock");
-        string driveRoot = Path.Combine(lockRoot, Sha256Hex("directory:" + Folded(Path.GetPathRoot(full)!)) + ".lock");
-
-        using (PublicationDirectoryLease.Acquire(directory))
-        {
-            Assert.True(File.Exists(leaf), $"No lock file {leaf} for '{directory}'.");
-            Assert.True(File.Exists(driveRoot), $"No lock file {driveRoot} for the drive root of '{directory}'.");
-            if (OperatingSystem.IsWindows())
-            {
-                Assert.True(IsHeld(leaf), "The lease does not hold the lock file of its directory.");
-                Assert.True(IsHeld(driveRoot), "The lease does not hold the lock file of its drive root.");
-            }
-        }
-
-        if (OperatingSystem.IsWindows()) { Assert.False(IsHeld(leaf), "The released lease still holds its lock file."); }
     }
 
     [Theory]

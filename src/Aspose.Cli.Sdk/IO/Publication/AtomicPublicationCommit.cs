@@ -104,7 +104,6 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             return;
         }
 
-        plan.Lease?.EnsureCovers(entry.Target);
         OutputPathValidator.EnsureParentUnchanged(
             entry.Target,
             entry.TargetParentIdentity);
@@ -150,7 +149,6 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             throw new InvalidOperationException(
                 $"Deletion transaction for '{entry.Target}' has no displaced path.");
         }
-        plan.Lease?.EnsureCovers(entry.Target);
         OutputPathValidator.EnsureParentUnchanged(
             entry.Target,
             entry.TargetParentIdentity);

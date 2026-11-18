@@ -10,7 +10,6 @@ namespace Aspose.Cli.Sdk.IO.Publication;
 internal sealed class AtomicPublicationPlan
 {
     private readonly IPublicationFaultInjector _faults;
-    private PublicationDirectoryLease? _lease;
     private bool _sealed;
     internal HashSet<string> CreatedStagingDirectories { get; } = [];
     private readonly OwnedOutputDirectories _outputDirectories;
@@ -38,8 +37,6 @@ internal sealed class AtomicPublicationPlan
     public PublicationTransactionState State { get; set; } = PublicationTransactionState.Staging;
 
     public IPublicationFaultInjector Faults => _faults;
-
-    public PublicationDirectoryLease? Lease => _lease;
 
     internal ResourceBudgetLedger? ResourceBudgets { get; set; }
 
@@ -140,20 +137,10 @@ internal sealed class AtomicPublicationPlan
     internal void BeginCommit()
     {
         ResourceBudgets?.Deadline.ThrowIfExpired("publication-start");
-        _lease = PublicationDirectoryLease.Acquire(TargetDirectory, ResourceDirectories(Entries), ResourceBudgets?.Deadline);
         if (_initialDirectoryIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(TargetDirectory))
         {
             throw new IOException("The publication root changed during production.");
         }
-    }
-
-    internal static IEnumerable<string> ResourceDirectories(IEnumerable<PublicationEntry> entries) =>
-        entries.Select(entry => Path.GetDirectoryName(entry.Target)!);
-
-    public void ReleaseLease()
-    {
-        PublicationDirectoryLease? lease = Interlocked.Exchange(ref _lease, null);
-        lease?.Dispose();
     }
 
     public void CleanUp()

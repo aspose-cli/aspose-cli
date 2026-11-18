@@ -199,8 +199,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
                 _plan.CleanUp();
             }
             _disposed = true;
-            try { _plan.CleanUpOutputDirectories(); }
-            finally { _plan.ReleaseLease(); }
+            _plan.CleanUpOutputDirectories();
         }
     }
 
@@ -249,8 +248,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
         }
         finally
         {
-            try { _plan.CleanUpOutputDirectories(); }
-            finally { _plan.ReleaseLease(); }
+            _plan.CleanUpOutputDirectories();
         }
     }
 

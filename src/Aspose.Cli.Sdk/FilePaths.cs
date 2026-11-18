@@ -19,9 +19,8 @@ public static class FilePaths
     public static bool Same(string? left, string? right) => string.Equals(left, right, Comparison);
 
     /// <summary>
-    /// The spelling of a path in a cross-process lock name or an identity hash: upper case
-    /// (invariant) on Windows, as spelled elsewhere. The publication locks of other Aspose CLI
-    /// distributions name their lock files and mutexes with these bytes, so they never change.
+    /// The spelling of a path in an identity hash: upper case (invariant) on Windows, as spelled
+    /// elsewhere. The license identity hashes these bytes, so they never change.
     /// </summary>
     public static string LockKey(string path) => LockKey(path, OperatingSystem.IsWindows());
 
