@@ -79,6 +79,7 @@ internal static class IsolationDocuments
         ["xltx"] = Family.Package,
         ["xlsm"] = Family.Package,
         ["xltm"] = Family.Package,
+        ["xlam"] = Family.Package,
         ["xlsb"] = Family.Package,
         ["docx"] = Family.Package,
         ["docm"] = Family.Package,
@@ -116,6 +117,7 @@ internal static class IsolationDocuments
         ["tsv"] = "Delimited text holds only values: no reference syntax.",
         ["txt"] = "Plain text holds no reference syntax.",
         ["xls"] = "Binary BIFF8 workbook: linked pictures are binary records, and the matrix has no BIFF writer.",
+        ["xlt"] = "Binary BIFF8 template: linked pictures are binary records, and the matrix has no BIFF writer.",
         ["doc"] = "Binary Word 97 document: linked pictures are INCLUDEPICTURE fields in binary records, and the matrix has no writer for them.",
         ["dot"] = "Binary Word 97 template: linked pictures are INCLUDEPICTURE fields in binary records, and the matrix has no writer for them.",
         ["rtf"] = "RTF links pictures only through INCLUDEPICTURE fields and \\pict properties, none of the matrix's reference forms (SVG, HTML, package relationships).",
@@ -279,7 +281,12 @@ internal static class IsolationDocuments
             Require(workspace.Run("cells", "create", file), "create the cells base workbook");
             string ops = System.Text.Json.JsonSerializer.Serialize(new
             {
-                ops = Enumerable.Range(0, count).Select(index => new { op = "insert_image", sheet = "Sheet1", at = $"B{2 + (index * 4)}", path = $"picture{index}.png" }).ToArray(),
+                ops = Enumerable.Range(0, count).Select(index => new
+                {
+                    add = "picture",
+                    @in = "sheet/Sheet1",
+                    args = new { upperLeftCell = $"B{2 + (index * 4)}", image = $"picture{index}.png" },
+                }).ToArray(),
             });
             File.WriteAllText(workspace.File("ops.json"), ops);
             Require(workspace.Run("cells", "edit", file, "--ops", "ops.json", "--in-place"), "insert the cells base pictures");

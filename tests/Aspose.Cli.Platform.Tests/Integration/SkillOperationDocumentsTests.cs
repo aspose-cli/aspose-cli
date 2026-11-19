@@ -10,9 +10,9 @@ namespace Aspose.Cli.IntegrationTests;
 /// </summary>
 public sealed class SkillOperationDocumentsTests
 {
-    private const string MissingValues = """{"ops":[{"op":"set_values","sheet":"Sheet1","range":"A1"}]}""";
+    private const string MissingProps = """{"ops":[{"set":"sheet/Sheet1/cell/A1"}]}""";
 
-    private const string UnknownOperation = """{"ops":[{"op":"set_valuez","sheet":"Sheet1"}]}""";
+    private const string UnknownOperation = """{"ops":[{"sett":"sheet/Sheet1/cell/A1","props":{"value":1}}]}""";
 
     [Fact]
     public void StandardInputDocuments_AreReadWithTheirProduct()
@@ -23,7 +23,7 @@ public sealed class SkillOperationDocumentsTests
 
             ```bash
             aspose-cli cells edit book.xlsx --ops - --out edited.xlsx <<'EOF'
-            {{MissingValues}}
+            {{MissingProps}}
             EOF
             ```
 
@@ -39,7 +39,7 @@ public sealed class SkillOperationDocumentsTests
         (IReadOnlyList<SkillOperationDocument> documents, IReadOnlyList<string> problems) = SkillOperationDocuments.Collect(directory.Path);
 
         Assert.Empty(problems);
-        Assert.Equal([MissingValues, UnknownOperation], documents.Select(static document => document.Json.Trim()));
+        Assert.Equal([MissingProps, UnknownOperation], documents.Select(static document => document.Json.Trim()));
         Assert.Equal([5, 11], documents.Select(static document => document.Line));
         Assert.All(documents, static document => Assert.Equal("cells", document.Command));
         Json.Schema.JsonSchema schema = PublishedSchemas.Schema("v2/cells/ops");

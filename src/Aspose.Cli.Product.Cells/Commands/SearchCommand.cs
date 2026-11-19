@@ -1,62 +1,22 @@
-using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
-/// <summary>
-/// <c>cells search</c>: finds cells whose value or formula matches a
-/// pattern, without dumping whole sheets. Hits are budgeted (<c>--max-hits</c>)
-/// so a search over a 40-sheet workbook stays affordable for an agent.
-/// </summary>
 internal static class SearchCommand
 {
-    private const string InValues = "values";
-    private const string InFormulas = "formulas";
-    private const string InAll = "all";
-
-    public static CommandDefinition<CellsSearchRequest, CellsSearchResult> Create()
-    {
-        var search = new SearchOptions(new SearchScopeGrammar(
-            "What to search: what a reader sees (cell results, comments, headers and footers, chart and drawing text), the formula text or all of both.",
-            [InValues, InFormulas, InAll],
-            InValues,
-            "--content"));
-        var sheet = new Option<string?>("--sheet") { Description = "Restrict to one sheet. Default: all sheets." }.WithInput(InputKind.None);
-        return new(
-            "search",
-            "Find the text of cells, formulas, comments, headers and footers, charts and drawings that matches a pattern.",
-            new CommandTraits { Input = CellsInputs.Workbook("Workbook to search.") },
-            [.. search.Options, sheet],
-            (parse, standard) =>
-            {
-                SearchQuery query = search.Read(parse);
-                return new CellsSearchRequest
-                {
-                    Input = standard.Input,
-                    Query = query,
-                    In = query.Scope switch
-                    {
-                        InFormulas => CellsSearchIn.Formulas,
-                        InAll => CellsSearchIn.All,
-                        _ => CellsSearchIn.Values,
-                    },
-                    SheetName = parse.GetValue(sheet),
-                    Password = standard.InputPassword,
-                };
-            })
-        {
-            Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
-            Examples =
+    public static CommandDefinition<CellsSearchRequest, CellsSearchResult> Create() =>
+        TableCommands.Search<CellsSearchRequest, CellsSearchResult>(
+            "Search the text of a workbook's cells, as their number formats show it, their formulas and their comments; each hit names the object's address and row.",
+            new CommandTraits { Input = CellsInputs.Workbook },
+            static search => new CellsSearchRequest { Input = search.Input, Password = search.Password, Query = search.Query },
+            static (request, result) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
+            examples:
             [
-                "cells search book.xlsx --pattern TODO --output-format json",
-                "cells search book.xlsx --pattern SUM --content formulas --max-hits 10",
+                "cells search book.xlsx --pattern Total",
+                "cells search book.xlsx --pattern \"SUM\\(\" --regex",
             ],
-            Links =
+            links:
             [
                 CommandHelpLink.Docs(CellsModule.Manifest, "overview", "what each Cells command is for"),
-                new("aspose-cli docs reading", "reading every product within bounded windows"),
-            ],
-        };
-    }
+            ]);
 }

@@ -16,7 +16,7 @@ Options:
   --version                            Show version information
 
 Commands:
-  cells                             Spreadsheet operations (Excel and friends) with engine-grade fidelity.
+  cells                             Read, edit, convert and render workbooks through the Aspose.Cells object model.
   pdf                               PDF automation with page, security and fixed-layout semantics.
   slides                            Read, edit, convert and render presentations through the Aspose.Slides object model.
   words                             Word-processing document automation with layout fidelity.

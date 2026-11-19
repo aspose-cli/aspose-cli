@@ -24,26 +24,26 @@ public sealed class RepeatableOptionTests : IDisposable
     public void Dispose() => _workspace.Dispose();
 
     [Fact]
-    public void Detail_BeforeTheFile_ReportsEveryRepeatedSection()
+    public void Kind_BeforeTheFile_ListsEveryRepeatedKind()
     {
-        Require(_workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Data"));
+        Require(_workspace.Run("cells", "create", "book.xlsx"));
         File.WriteAllText(
             _workspace.File("ops.json"),
             """
             { "ops": [
-              { "op": "set_values", "sheet": "Data", "range": "A1:B3", "values": [["Region","Sales"],["East",10],["West",20]] },
-              { "op": "define_name", "name": "SalesTotal", "refersTo": "=Data!$B$2:$B$3" },
-              { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "A1:B3", "at": "E2:J12", "title": "Sales" }
+              { "set": "sheet/Sheet1/range/A1:B3", "props": { "value": [["Region","Sales"],["East",10],["West",20]] } },
+              { "add": "name", "args": { "text": "SalesTotal" }, "props": { "refersTo": "=Sheet1!$B$2:$B$3" } },
+              { "add": "chart", "in": "sheet/Sheet1", "args": { "type": "Column", "area": "E2:J12" }, "props": { "title.text": "Sales" } }
             ] }
             """);
         Require(_workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place"));
 
-        CliResult inspected = Require(_workspace.Run(
-            "cells", "inspect", "--detail", "charts", "--detail", "names", "book.xlsx", "--output-format", "json"));
+        CliResult read = Require(_workspace.Run(
+            "cells", "read", "--kind", "chart", "--kind", "name", "book.xlsx", "--output-format", "json"));
 
-        JsonNode workbook = JsonNode.Parse(inspected.StdOut)!["workbook"]!;
-        Assert.Single(workbook["charts"]!.AsArray());
-        Assert.Equal("SalesTotal", Assert.Single(workbook["definedNames"]!.AsArray())!["name"]!.GetValue<string>());
+        JsonArray objects = JsonNode.Parse(read.StdOut)!["objects"]!.AsArray();
+        Assert.Single(objects, static item => item!["kind"]!.GetValue<string>() == "chart");
+        Assert.Equal("SalesTotal", Assert.Single(objects, static item => item!["kind"]!.GetValue<string>() == "name")!["props"]!["fullText"]!.GetValue<string>());
     }
 
     [Fact]

@@ -212,7 +212,7 @@ internal sealed class ParsedInvocation
     private string[] VisibleCommands() =>
         [.. Command.Subcommands.Where(static command => !command.Hidden).Select(static command => command.Name)];
 
-    /// <summary>A command of this one by its path below the root, such as <c>cells inspect</c>.</summary>
+    /// <summary>A command of this one by its path below the root, such as <c>cells read</c>.</summary>
     private string Below(string name) => string.Join(' ', [.. CommandPath.Select(static command => command.Name), name]);
 
     /// <summary>
@@ -422,7 +422,7 @@ internal sealed class ParsedInvocation
 
     /// <summary>
     /// The option <paramref name="leftOver"/> follows with the value it already holds, as
-    /// <c>B2</c> follows <c>--range A1</c>, directly or after other tokens left over like it: it
+    /// <c>due</c> follows <c>--pattern total</c>, directly or after other tokens left over like it: it
     /// is one value too many for that option. It may be a secret when that option holds one or
     /// the value it follows names a secret option, as <c>--password</c> given to <c>--content</c>
     /// does. Null for a token that follows no option's value.

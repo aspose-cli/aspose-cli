@@ -15,7 +15,7 @@ Each boundary names the tests that check it, and `SecurityClaimsTests` keeps tho
   http and https for that command alone. External resources are read only from ordinary local
   files beneath the input directory, and each omitted or blocked resource is reported; see
   [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
-  Checked by: `PdfResourceLoadingTests`, `CellsResourceLoadingTests`, `CellsSvgPictureTests`,
+  Checked by: `PdfResourceLoadingTests`, `CellsResourceTests`,
   `SlidesResourceLoadingTests`, `WordsResourceLoadingTests`, `SvgReferencesTests`,
   `NetworkGateTests`, `LocalDocumentResourceLoaderTests`, `VerifiedResourceReadTests`,
   `IsolationMatrixTests`, `OutputScanTests`.

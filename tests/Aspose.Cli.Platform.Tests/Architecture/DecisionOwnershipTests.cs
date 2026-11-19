@@ -348,32 +348,6 @@ public sealed partial class DecisionOwnershipTests
             "A command with subcommands takes no positional argument, so a mistyped subcommand is a usage error that lists the commands:");
     }
 
-    [Theory]
-    [InlineData("cells read", "--scan-range")]
-    public void D3_Capabilities_MarkAHiddenOptionHidden(string command, string option)
-    {
-        JsonObject[] declared = [.. CommandOptions(command).Where(item => item["name"]?.GetValue<string>() == option)];
-
-        Assert.NotEmpty(declared);
-        Assert.All(declared, item => Assert.True(
-            item["hidden"]?.GetValue<bool>() == true,
-            $"capabilities publishes {option} of {command} without hidden: true: {item.ToJsonString()}"));
-        Assert.All(
-            CommandOptions("cells convert").Where(static item => item["name"]?.GetValue<string>() == "--out"),
-            static item => Assert.NotEqual(true, item["hidden"]?.GetValue<bool>()));
-    }
-
-    [Fact]
-    public void D3_AHiddenOption_IsNeverListed()
-    {
-        using var workspace = new TempWorkspace();
-
-        CliResult result = workspace.Run("cells", "read", "missing.xlsx", "--scan-rang", "A1", "--output-format", "json");
-
-        Assert.Equal(2, result.ExitCode);
-        Assert.DoesNotContain("--scan-range", result.StdErr, StringComparison.Ordinal);
-    }
-
     // -- D4 Errors ---------------------------------------------------------------------------
 
     [Fact]
@@ -661,13 +635,6 @@ public sealed partial class DecisionOwnershipTests
             ?? throw new InvalidOperationException($"{secret.FullName} has no constructor or static factory that takes the secret text.");
         return factory.Invoke(null, [text])!;
     }
-
-    private static IEnumerable<JsonObject> CommandOptions(string words) =>
-        CliCatalog.Current.Document["commands"]!.AsArray()
-            .OfType<JsonObject>()
-            .Where(command => command["path"]?.GetValue<string>() is { } path
-                && (path == "aspose-cli " + words || path.StartsWith("aspose-cli " + words + " ", StringComparison.Ordinal)))
-            .SelectMany(static command => command["options"]!.AsArray().OfType<JsonObject>());
 
     /// <summary>Assignments and initializers that set a JSON member with the given literal name.</summary>
     private static IEnumerable<SyntaxNode> DetailWrites(SourceFile file, string key) =>

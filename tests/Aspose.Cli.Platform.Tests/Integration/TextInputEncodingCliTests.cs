@@ -15,8 +15,8 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 /// </summary>
 public sealed class TextInputEncodingCliTests
 {
-    private const string Before = """{"ops":[{"op":"set_values","sheet":"Sheet1","range":"A1","values":[["a""";
-    private const string After = """b"]]}]}""";
+    private const string Before = """{"ops":[{"set":"sheet/Sheet1/cell/A1","props":{"value":"a""";
+    private const string After = """b"}}]}""";
     private static readonly byte[] Mark = [0xEF, 0xBB, 0xBF];
     // The first character of the Chinese for "password" in GBK: not UTF-8.
     private static readonly byte[] NotUtf8 = [0xC3, 0xDC];
@@ -70,8 +70,8 @@ public sealed class TextInputEncodingCliTests
         CliResult edited = standardInput ? Piped(workspace, ops, args) : workspace.Run(args);
 
         Assert.True(edited.ExitCode == 0, edited.StdOut + edited.StdErr);
-        JsonNode read = workspace.Run("cells", "read", "out.xlsx", "--range", "A1", "--output-format", "json").Json();
-        Assert.Equal("a汉b", read["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<string>());
+        JsonNode read = workspace.Run("cells", "read", "out.xlsx", "--at", "sheet/Sheet1/cell/A1", "--output-format", "json").Json();
+        Assert.Equal("a汉b", read["objects"]![0]!["props"]!["value"]!.GetValue<string>());
     }
 
     private static TempWorkspace Workspace()

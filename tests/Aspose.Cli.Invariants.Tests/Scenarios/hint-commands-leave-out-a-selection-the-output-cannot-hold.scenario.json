@@ -48,7 +48,7 @@
       "expect": { "exitCode": 0, "files": { "present": ["x.docx"] } }
     },
     {
-      "args": ["cells", "render", "book.xlsx", "--sheets", "1", "--out", "c.html"],
+      "args": ["cells", "render", "book.xlsx", "--sheet", "Sheet1", "--out", "c.html"],
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID"
@@ -92,12 +92,12 @@
       }
     },
     {
-      "args": ["cells", "convert", "book.xlsx", "--sheets", "1", "--to", "html"],
+      "args": ["cells", "convert", "book.xlsx", "--sheet", "Sheet1", "--to", "html"],
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
         "json": [
-          { "path": "error.message", "contains": "Invalid use of --sheets: the 'html' format always converts the whole workbook" }
+          { "path": "error.message", "contains": "Invalid use of --sheet: a html output holds the whole workbook" }
         ],
         "files": { "nothingWritten": true }
       }

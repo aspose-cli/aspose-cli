@@ -90,7 +90,7 @@ public static partial class CliErrors
     /// command; the first one is stated in <c>details.option</c>.
     /// </summary>
     /// <param name="command">The group as the caller typed it, such as <c>aspose-cli cells</c>.</param>
-    /// <param name="commands">Its visible commands by their path below the root, such as <c>cells inspect</c>.</param>
+    /// <param name="commands">Its visible commands by their path below the root, such as <c>cells read</c>.</param>
     /// <param name="unknownOptions">The tokens given to the group that name none of its options, in order.</param>
     public static CliException CommandRequired(
         string command,

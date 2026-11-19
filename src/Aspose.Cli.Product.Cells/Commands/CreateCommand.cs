@@ -1,73 +1,39 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
-/// <summary><c>cells create</c> — create a blank workbook.</summary>
+/// <summary><c>cells create</c>: the engine's new workbook, or a template saved as a new workbook.</summary>
 internal static class CreateCommand
 {
     public static CommandDefinition<CellsCreateRequest, CellsCreateResult> Create()
     {
-        var sheets = new Option<string?>("--sheet-names")
-        {
-            Description = "Comma-separated sheet names, e.g. \"Data,Summary\". Default: one sheet named Sheet1.",
-        }.WithInput(InputKind.None);
+        var template = new Option<string?>("--template") { Description = "A workbook to save as the new one. Default: the engine's new workbook, with one sheet." }.WithInput(InputKind.File);
         return new(
             "create",
-            "Create a new workbook.",
+            "Create a workbook: the engine's new workbook, or a copy of a template saved in the output's format.",
             new CommandTraits
             {
                 Output = OutputTarget.CreatedFile("Path of the workbook to create, e.g. report.xlsx.", CellsFormats.Editable),
                 Encrypt = CellsInputs.EncryptedWorkbook,
             },
-            [sheets],
-            (parse, standard) =>
+            [template],
+            (parse, standard) => new CellsCreateRequest
             {
-                IReadOnlyList<string> sheetNames = ParseSheetNames(parse.GetValue(sheets));
-                ResolvedOutput output = standard.Output;
-                Secret? encryptPassword = standard.EncryptPassword();
-                return new CellsCreateRequest
-                {
-                    Output = output,
-                    SheetNames = sheetNames,
-                    EncryptPassword = encryptPassword,
-                };
+                Output = standard.Output,
+                Template = standard.Source(template),
+                EncryptPassword = standard.EncryptPassword(),
             })
         {
             Examples =
             [
-                "cells create book.xlsx --sheet-names \"Data,Summary\"",
-                "cells create budget.xlsx --overwrite",
+                "cells create book.xlsx",
+                "cells create report.xlsx --template brand.xltx",
             ],
             Links =
             [
-                CommandHelpLink.Docs(CellsModule.Manifest, "workbook-standards", "professional workbook construction guidance"),
+                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "what each Cells command is for"),
             ],
         };
-    }
-
-    private static IReadOnlyList<string> ParseSheetNames(string? sheets)
-    {
-        if (string.IsNullOrWhiteSpace(sheets))
-        {
-            return ["Sheet1"];
-        }
-
-        string[] names = sheets.Split(',', StringSplitOptions.TrimEntries);
-        if (names.Any(string.IsNullOrEmpty))
-        {
-            throw CliErrors.OptionInvalid(
-                "--sheet-names", "sheet names must not be empty");
-        }
-
-        if (names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Length)
-        {
-            throw CliErrors.OptionInvalid(
-                "--sheet-names", "sheet names must be unique (case-insensitive)");
-        }
-
-        return names;
     }
 }

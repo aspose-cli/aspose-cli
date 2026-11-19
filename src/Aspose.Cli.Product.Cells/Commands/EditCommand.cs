@@ -1,67 +1,35 @@
-using System.CommandLine;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
-/// <summary>
-/// <c>cells edit</c>: applies one atomic batch from an <c>--ops</c> document
-/// and/or one-cell <c>--set</c> directives through the shared bounded-edit skeleton.
-/// </summary>
 internal static class EditCommand
 {
-    private static readonly BoundedEditDefinition<CellsOp, CellsOpsBatch> Definition = new()
-    {
-        Contracts = ProductJsonContext.Definition,
-        SetDirectives = new(
-            "Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. "
-                + "A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and "
-                + "anything else is text, as is a number with leading zeros, a leading '+' or over 15 integer digits. Quote sheet names that need it: --set \"'My Sheet'!A1=5\". "
-                + "Example: --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\".",
-            SetDirectiveParser.Parse,
-            static ops => new CellsOpsBatch { Ops = ops }),
-        VerifyDescription = "Verify the staged output and report its cell changes and formula errors.",
-        Writes = CellsFormats.Editable,
-    };
-
-    public static CommandDefinition<CellsEditRequest, CellsEditResult> Create()
-    {
-        var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
-        BomOption bom = CellsInputs.EditedTextBom();
-        var bounded = new BoundedEditCommand<CellsOp, CellsOpsBatch>(Definition);
-        return EditDefinition.Create<CellsOp, CellsOpsBatch, CellsEditRequest, CellsEditResult>(
-            bounded,
-            $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.Editable.Select(static format => format.Id))}.",
+    public static CommandDefinition<CellsEditRequest, CellsEditResult> Create() =>
+        TableCommands.Edit<CellsEditRequest, CellsEditResult>(
+            CellsModule.Table,
+            "Apply a batch of set, add, delete, move and do operations to a workbook; nothing is written when one fails.",
             new CommandTraits
             {
-                Input = CellsInputs.Workbook("Workbook to edit."),
+                Input = CellsInputs.Workbook,
                 Encrypt = CellsInputs.EncryptedWorkbook,
                 UsesFonts = true,
             },
-            [noRecalc, .. bom.Options],
-            (parse, edit, _) => new CellsEditRequest(edit)
+            CellsFormats.Editable,
+            static edit => new CellsEditRequest
             {
-                Recalculate = !parse.GetValue(noRecalc),
-                ByteOrderMark = CellsInputs.ReadBom(bom, parse, edit.Output.Format.Id),
-            },
-            checkUsage: parse =>
-            {
-                if (parse.GetValue(noRecalc) && bounded.IsVerifyRequested(parse))
-                {
-                    throw CliErrors.OptionInvalid("--verify", "cannot be combined with --no-recalc");
-                }
+                Input = edit.Input,
+                Batch = edit.Batch,
+                Output = edit.Output,
+                Password = edit.Password,
+                EncryptPassword = edit.EncryptPassword,
             },
             examples:
             [
-                "cells edit book.xlsx --in-place --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\"",
-                "cells edit book.xlsx --in-place --ops '{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sales\",\"range\":\"A1\",\"values\":[[1]]}]}'",
-                "cells edit book.xlsx --in-place --verify --ops ops.json",
+                "cells edit book.xlsx --ops ops.json --out revised.xlsx",
+                "cells edit book.xlsx --in-place --ops ops.json",
             ],
             links:
             [
-                CommandHelpLink.Docs(CellsModule.Manifest, "editing", "recipes for every operation family"),
-                CommandHelpLink.Schema<CellsOp>("the operations JSON vocabulary"),
-                CommandHelpLink.Docs(CellsModule.Manifest, "verification", "verification before delivering the file"),
+                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "addresses, the five operation shapes and the read-back"),
             ]);
-    }
 }

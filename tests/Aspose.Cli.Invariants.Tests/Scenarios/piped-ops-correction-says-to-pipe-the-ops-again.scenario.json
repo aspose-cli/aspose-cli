@@ -7,21 +7,21 @@
     },
     {
       "args": ["edit", "plain.xlsx", "--ops", "-", "--out", "x.xlsx"],
-      "stdin": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[1]]}]}",
+      "stdin": "{\"ops\":[{\"set\":\"sheet/Sheet1/cell/A1\",\"props\":{\"value\":1}}]}",
       "expect": {
         "error": "USAGE_ERROR"
       }
     },
     {
       "args": ["cells", "edit", "file", "plain.xlsx", "--ops", "-", "--out", "y.xlsx"],
-      "stdin": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[1]]}]}",
+      "stdin": "{\"ops\":[{\"set\":\"sheet/Sheet1/cell/A1\",\"props\":{\"value\":1}}]}",
       "expect": {
         "error": "USAGE_ERROR"
       }
     },
     {
       "args": ["cells", "edit", "file", "plain.xlsx", "--ops", "-", "--password-stdin", "--out", "z.xlsx"],
-      "stdin": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[1]]}]}",
+      "stdin": "{\"ops\":[{\"set\":\"sheet/Sheet1/cell/A1\",\"props\":{\"value\":1}}]}",
       "expect": {
         "error": "USAGE_ERROR"
       }

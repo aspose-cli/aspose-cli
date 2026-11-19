@@ -1,4 +1,5 @@
-using Aspose.Cli.Sdk.Addressing;
+using System.Globalization;
+using System.Text;
 using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
@@ -6,51 +7,39 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// <summary>Options of <c>cells convert</c>.</summary>
 public sealed record CellsConvertRequest
 {
-    /// <summary>The workbook to convert.</summary>
+    /// <summary>The workbook, or CSV or TSV text, to convert.</summary>
     public required string Input { get; init; }
 
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
 
-    /// <summary>
-    /// The sheets to convert by 1-based position, where the format supports a selection: one
-    /// for a text format, any for PDF. Null converts the workbook.
-    /// </summary>
-    public PageRange? Sheets { get; init; }
+    /// <summary>The sheets written, by name (<c>--sheet</c>): one for a CSV, TSV or Markdown output, any for PDF; null writes what the engine writes for the format.</summary>
+    public IReadOnlyList<string>? Sheets { get; init; }
 
-    /// <summary>
-    /// The <c>--sheets</c> value as given when it may name a sheet: with no <see cref="Sheets"/>
-    /// it names one, such as <c>Summary</c>, and is refused once the workbook is open, with each
-    /// sheet and its position; a selection past the last sheet that a sheet has as its name,
-    /// such as <c>2024</c>, is refused the same way.
-    /// </summary>
-    public string? SheetsText { get; init; }
-
-    /// <summary>Password for encrypted files.</summary>
+    /// <summary>Password for an encrypted input.</summary>
     public Secret? Password { get; init; }
 
-    /// <summary>New output password; null preserves source encryption where the target format supports it.</summary>
+    /// <summary>The password the output opens with, or null.</summary>
     public Secret? EncryptPassword { get; init; }
 
-    /// <summary>How a delimited text input is decoded and its numbers and dates parsed.</summary>
-    public CellsTextImportOptions? TextImport { get; init; }
+    /// <summary>How a CSV or TSV input is read; null for a workbook input.</summary>
+    public CellsTextInput? TextInput { get; init; }
 
-    /// <summary>Whether a CSV or TSV output starts with a UTF-8 byte order mark.</summary>
+    /// <summary>
+    /// How a CSV, TSV or Markdown output writes its values, the engine's <c>CellValueFormatStrategy</c>
+    /// member name (<c>--format-strategy</c>); null for any other output.
+    /// </summary>
+    public string? FormatStrategy { get; init; }
+
+    /// <summary>Whether a CSV or TSV output starts with a UTF-8 byte order mark (<c>--bom</c>): <c>TxtSaveOptions.Encoding</c> is UTF-8 with its mark.</summary>
     public bool ByteOrderMark { get; init; }
 }
 
-/// <summary>
-/// How <c>cells convert</c> reads a delimited text input. Other commands read text inputs as
-/// UTF-8 with invariant number and date formats and refuse inputs that need these choices.
-/// </summary>
-public sealed record CellsTextImportOptions
-{
-    /// <summary>Text encoding name, such as <c>gb18030</c>; null reads a byte order mark or UTF-8.</summary>
-    public string? Encoding { get; init; }
-
-    /// <summary>
-    /// Culture name for numbers and dates, such as <c>de-DE</c>; null reads invariant formats and
-    /// keeps a number, a date or a boolean only where it shows as written, and any other value as text.
-    /// </summary>
-    public string? Culture { get; init; }
-}
+/// <summary>How <c>cells convert</c> reads a CSV or TSV input: every engine option the caller states.</summary>
+/// <param name="Format">The input's format by its name: <c>tsv</c> for a .tsv file, <c>csv</c> otherwise.</param>
+/// <param name="Separator">The separator (<c>TxtLoadOptions.Separator</c>): the one stated, or the format's own, the tab of TSV.</param>
+/// <param name="Encoding">The text encoding (<c>TxtLoadOptions.Encoding</c>).</param>
+/// <param name="ConvertNumbers">Whether numbers become numbers (<c>TxtLoadOptions.ConvertNumericData</c>).</param>
+/// <param name="ConvertDates">Whether dates become dates (<c>TxtLoadOptions.ConvertDateTimeData</c>).</param>
+/// <param name="Culture">The culture numbers and dates are read in (<c>LoadOptions.CultureInfo</c>); given when either is converted.</param>
+public sealed record CellsTextInput(string Format, char Separator, Encoding Encoding, bool ConvertNumbers, bool ConvertDates, CultureInfo? Culture);

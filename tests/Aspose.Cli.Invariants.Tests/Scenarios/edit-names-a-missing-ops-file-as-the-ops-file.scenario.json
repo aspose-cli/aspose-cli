@@ -3,7 +3,7 @@
   "files": {
     "book.xlsx": { "fixture": "cells.xlsx" },
     "doc.docx": { "fixture": "words.docx" },
-    "ops.json": { "text": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"A1\",\"values\":[[\"x\"]]}]}" }
+    "ops.json": { "text": "{\"ops\":[{\"set\":\"sheet/Sheet1/cell/A1\",\"props\":{\"value\":\"x\"}}]}" }
   },
   "steps": [
     {

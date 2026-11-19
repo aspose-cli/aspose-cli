@@ -41,6 +41,8 @@
         "cells",
         "render",
         "a.xlsx",
+        "--sheet",
+        "Sheet1",
         "--out",
         "x.xlsx"
       ],

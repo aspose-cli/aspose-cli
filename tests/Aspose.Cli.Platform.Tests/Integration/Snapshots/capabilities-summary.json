@@ -6,7 +6,7 @@
     {
       "id": "cells",
       "name": "Cells",
-      "description": "Spreadsheet operations (Excel and friends) with engine-grade fidelity.",
+      "description": "Read, edit, convert and render workbooks through the Aspose.Cells object model.",
       "engine": "aspose",
       "engineVersion": "<build>",
       "loadFormats": [
@@ -14,9 +14,10 @@
         "xltx",
         "xlsm",
         "xltm",
+        "xlam",
         "xlsb",
         "xls",
-        "ods",
+        "xlt",
         "csv",
         "tsv"
       ],
@@ -25,11 +26,13 @@
         "xltx",
         "xlsm",
         "xltm",
+        "xlam",
         "xlsb",
         "xls",
-        "ods",
+        "xlt",
         "csv",
         "tsv",
+        "ods",
         "html",
         "mhtml",
         "pdf",
@@ -44,109 +47,31 @@
       ],
       "commands": [
         {
-          "command": "compare",
-          "description": "Compare stored workbook values and optional formula text; dates are ISO 8601."
-        },
-        {
           "command": "convert",
-          "description": "Convert a workbook to another format."
+          "description": "Convert a workbook, or CSV or TSV text, to another format with the engine's options for it. An html, mhtml or md output is one file: it holds its images itself (SaveAsSingleFile, ExportImagesAsBase64)."
         },
         {
           "command": "create",
-          "description": "Create a new workbook."
+          "description": "Create a workbook: the engine's new workbook, or a copy of a template saved in the output's format."
         },
         {
           "command": "edit",
-          "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv."
-        },
-        {
-          "command": "inspect",
-          "description": "Show structure and metadata of a workbook."
+          "description": "Apply a batch of set, add, delete, move and do operations to a workbook; nothing is written when one fails."
         },
         {
           "command": "read",
-          "description": "Read cell data of one sheet as a windowed projection."
+          "description": "Read a workbook's objects, each with every row of the object table, and its inventory."
         },
         {
           "command": "render",
-          "description": "Render sheets, or a range of one, to images."
+          "description": "Render sheets, or an area of one, to images as the engine draws them."
         },
         {
           "command": "search",
-          "description": "Find the text of cells, formulas, comments, headers and footers, charts and drawings that matches a pattern."
+          "description": "Search the text of a workbook's cells, as their number formats show it, their formulas and their comments; each hit names the object's address and row."
         }
       ],
-      "operations": [
-        {
-          "command": "edit",
-          "ops": [
-            "add_comment",
-            "add_conditional_format",
-            "add_sparkline",
-            "clear_autofilter",
-            "clear_conditional_formats",
-            "clear_print_area",
-            "clear_range",
-            "clear_tab_color",
-            "clear_validation",
-            "copy_range",
-            "define_name",
-            "define_table",
-            "delete_chart",
-            "delete_columns",
-            "delete_comment",
-            "delete_duplicates",
-            "delete_hyperlink",
-            "delete_name",
-            "delete_rows",
-            "delete_sheet",
-            "format_range",
-            "freeze_panes",
-            "group_columns",
-            "group_rows",
-            "import_range",
-            "import_sheet",
-            "insert_chart",
-            "insert_columns",
-            "insert_image",
-            "insert_pivot",
-            "insert_rows",
-            "insert_sheet",
-            "merge_cells",
-            "move_sheet",
-            "protect_sheet",
-            "protect_workbook",
-            "refresh_pivot",
-            "rename_sheet",
-            "replace_text",
-            "resize_columns",
-            "resize_rows",
-            "resize_table",
-            "set_active_sheet",
-            "set_autofilter",
-            "set_borders",
-            "set_chart",
-            "set_comment",
-            "set_default_font",
-            "set_formula",
-            "set_hyperlink",
-            "set_page_setup",
-            "set_print_area",
-            "set_sheet_view",
-            "set_sheet_visibility",
-            "set_tab_color",
-            "set_validation",
-            "set_values",
-            "sort_range",
-            "unfreeze_panes",
-            "ungroup_columns",
-            "ungroup_rows",
-            "unmerge_cells",
-            "unprotect_sheet",
-            "unprotect_workbook"
-          ]
-        }
-      ]
+      "operations": []
     },
     {
       "id": "pdf",

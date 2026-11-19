@@ -44,20 +44,6 @@ internal static partial class ContractRules
     /// </summary>
     internal static IReadOnlyDictionary<string, RoundTripExemption> RoundTripExempt { get; } = new Dictionary<string, RoundTripExemption>(StringComparer.Ordinal)
     {
-        ["cells add_comment"] = new(Both, "Adds a note to the cell's comment: applied again, it appends another."),
-        ["cells add_conditional_format"] = new(Both, Adds),
-        ["cells add_sparkline"] = new(RoundTripPart.OneChange, "A cell holds one sparkline: another group drawn at the same cell is refused."),
-        ["cells define_table"] = new(Both, Unique),
-        ["cells format_range style.borders"] = new(RoundTripPart.ReadBack, "An edit draws each side it lists and leaves the other sides as they are, so a read also lists the sides an earlier edit drew."),
-        ["cells format_range style.locked"] = new(RoundTripPart.ReadBack, "A read reports locked only when it is false, the default being true, so true reads back as nothing."),
-        ["cells set_validation kind"] = new(RoundTripPart.OneChange, "Another kind needs fields of its own, such as a list's items."),
-        ["cells group_columns"] = new(RoundTripPart.SameValue, "Grouping the same columns again nests them one outline level deeper."),
-        ["cells group_rows"] = new(RoundTripPart.SameValue, "Grouping the same rows again nests them one outline level deeper."),
-        ["cells import_sheet"] = new(Both, Unique),
-        ["cells insert_chart"] = new(RoundTripPart.SameValue, AddsAgain),
-        ["cells insert_image"] = new(Both, Adds),
-        ["cells insert_pivot"] = new(Both, Unique),
-        ["cells insert_sheet"] = new(Both, Unique),
         ["pdf add_attachment"] = new(RoundTripPart.SameValue, AddsAgain),
         ["pdf add_bookmark"] = new(Both, Adds),
         ["pdf add_hyperlink"] = new(RoundTripPart.SameValue, AddsAgain),

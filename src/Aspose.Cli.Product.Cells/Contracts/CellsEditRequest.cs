@@ -1,29 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
 
-/// <summary>
-/// Options of <c>cells edit</c>. The edit command admits <c>Verify</c> only for a published,
-/// recalculated edit; a null <c>EncryptPassword</c> preserves the source encryption where the
-/// target format supports it.
-/// </summary>
-public sealed record CellsEditRequest : BoundedEditRequest<CellsOpsBatch>
-{
-    /// <summary>Creates a request whose fields an object initializer sets.</summary>
-    public CellsEditRequest()
-    {
-    }
-
-    /// <summary>Creates the request of one resolved edit invocation.</summary>
-    [SetsRequiredMembers]
-    public CellsEditRequest(BoundedEditInvocation<CellsOpsBatch> edit)
-        : base(edit)
-    {
-    }
-
-    /// <summary>Recalculate formulas after applying the ops.</summary>
-    public bool Recalculate { get; init; } = true;
-
-    /// <summary>Whether a CSV or TSV output starts with a UTF-8 byte order mark.</summary>
-    public bool ByteOrderMark { get; init; }
-}
+/// <summary>One <c>cells edit</c>: the workbook, the checked operation batch and where the result goes.</summary>
+public sealed record CellsEditRequest : TableEditRequest;

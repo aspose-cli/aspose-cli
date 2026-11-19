@@ -16,7 +16,7 @@ public sealed class CellsModule : IProductModule
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Sheets, 1_000, 10_000, "items", "post-load"),
-                ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Cells, 1_000_000, 10_000_000, "items", "projection"),
+                ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Cells, 10_000_000, 100_000_000, "items", "post-load"),
                 ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Objects, 100_000, 1_000_000, "items", "post-load"),
             ],
             Engine = new ProductEngineCapabilities
@@ -28,30 +28,32 @@ public sealed class CellsModule : IProductModule
             AvailableEngines = ["aspose"],
     };
 
+    /// <summary>Loads the Cells object table, which names engine types: the commands call it only when they run.</summary>
+    internal static Aspose.Cli.Sdk.Tables.DocumentTable Table() => Engine.Mapping.CellsTable.Definition;
+
     /// <summary>Returns the pure, immutable Cells product definition.</summary>
     public ProductDefinition Define() =>
         Aspose.Cli.Sdk.Extensibility.Product.Define<CellsSession>(Manifest)
             .Formats(CellsFormats.Definitions)
             .Diagnostics(CellsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
-            .Describe("Spreadsheet operations (Excel and friends) with engine-grade fidelity.", Help)
-            .Command(InspectCommand.Create, CellsInfo.Run)
+            .Describe("Read, edit, convert and render workbooks through the Aspose.Cells object model.", Help)
             .Command(ReadCommand.Create, CellsRead.Run)
             .Command(SearchCommand.Create, CellsSearch.Run)
             .Command(CreateCommand.Create, CellsCreate.Run)
             .Command(EditCommand.Create, CellsEdit.Run)
-            .Command(CompareCommand.Create, CellsDiff.Run)
             .Command(ConvertCommand.Create, CellsConvert.Run)
             .Command(RenderCommand.Create, CellsRender.Run)
             .Activator(CellsActivation.Activate)
             .Build();
 
     private static CommandHelp Help() => new(
-        ["cells inspect book.xlsx --output-format json"],
         [
-            CommandHelpLink.Docs(Manifest, "editing", "the edit-operation vocabulary and recipes"),
-            CommandHelpLink.Docs(Manifest, "workbook-standards", "professional workbook construction guidance"),
-            CommandHelpLink.Docs(Manifest, "verification", "the spreadsheet delivery verification protocol"),
-            CommandHelpLink.Schema<CellsOp>("the operations JSON Schema"),
+            "cells read book.xlsx",
+            "cells read book.xlsx --at \"sheet/Sales 2026/range/A1:F6\"",
+            "cells edit book.xlsx --ops ops.json --out revised.xlsx",
+        ],
+        [
+            new("aspose-cli schema v2/cells/ops --operation directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

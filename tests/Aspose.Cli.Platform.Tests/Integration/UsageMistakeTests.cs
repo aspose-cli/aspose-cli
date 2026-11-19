@@ -28,7 +28,7 @@ public sealed class UsageMistakeTests : IDisposable
     {
         Created("cells", "b.xlsx");
 
-        CliResult result = _workspace.Run("cells", "read", "b.xlsx", "--content", "--verbose", "--output-format", "json");
+        CliResult result = _workspace.Run("cells", "read", "b.xlsx", "--kind", "--verbose", "--output-format", "json");
 
         Error(result, "OPTION_INVALID");
     }
@@ -36,10 +36,10 @@ public sealed class UsageMistakeTests : IDisposable
     [Fact]
     public void AnOptionAtTheEndOfTheLine_NeedsAValue()
     {
-        CliResult result = _workspace.Run("cells", "read", "b.xlsx", "--content");
+        CliResult result = _workspace.Run("cells", "read", "b.xlsx", "--kind");
 
         JsonNode error = Error(result, "USAGE_ERROR");
-        Assert.Contains("--content", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("--kind", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>A value that starts with a dash, even one that names an option, stays the value when the command line parses.</summary>
@@ -51,16 +51,18 @@ public sealed class UsageMistakeTests : IDisposable
     public void AValueStartingWithADash_StaysTheValueOfItsOption(string pattern)
     {
         Created("cells", "b.xlsx");
+        Assert.Equal(0, _workspace.Run("cells", "edit", "b.xlsx", "--in-place", "--ops",
+            """{"ops":[{"set":"sheet/Sheet1/cell/A1","props":{"value":"a -x --regex --verbose --max-hits b"}}]}""").ExitCode);
 
         CliResult result = _workspace.Run("cells", "search", "b.xlsx", "--pattern", pattern, "--output-format", "json");
 
         Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.Equal(pattern, JsonNode.Parse(result.StdOut)!["pattern"]!.GetValue<string>());
+        Assert.Equal(pattern, JsonNode.Parse(result.StdOut)!["hits"]![0]!["text"]!.GetValue<string>());
     }
 
     /// <summary>A switch takes a value only when one is written, and an option beside it keeps its own.</summary>
     [Theory]
-    [InlineData("cells create s1.xlsx --overwrite --sheet-names Data", "s1.xlsx")]
+    [InlineData("words create s1.docx --overwrite --title Data", "s1.docx")]
     [InlineData("cells create s2.xlsx --overwrite true", "s2.xlsx")]
     public void ASwitch_StaysOptional(string commandLine, string file)
     {
@@ -83,8 +85,8 @@ public sealed class UsageMistakeTests : IDisposable
     // -- An option with more values than it takes ------------------------------------------------
 
     [Theory]
-    [InlineData("cells read b.xlsx --range A1 B2", "--range", "--range takes one value; 'B2' is one too many.")]
-    [InlineData("cells read b.xlsx --range A1 A1", "--range", "--range takes one value; 'A1' is one too many.")]
+    [InlineData("cells read b.xlsx --at sheet/Sheet1 sheet/Sheet2", "--at", "--at takes one value; 'sheet/Sheet2' is one too many.")]
+    [InlineData("cells read b.xlsx --at sheet/Sheet1 sheet/Sheet1", "--at", "--at takes one value; 'sheet/Sheet1' is one too many.")]
     [InlineData("pdf search c.pdf --pattern total due", "--pattern", "--pattern takes one value; 'due' is one too many.")]
     [InlineData("pdf create new.pdf --from-images a.png b.png", "--from-images", "--from-images takes one value each time it is given; 'b.png' is left over.")]
     public void AnOptionGivenAnExtraValue_SaysHowManyItTakesAndNamesTheExtra(string commandLine, string option, string message)
@@ -98,10 +100,10 @@ public sealed class UsageMistakeTests : IDisposable
     [Fact]
     public void EveryExtraValue_IsNamed()
     {
-        JsonNode error = Refused("cells read b.xlsx --range A1 B2 C3", "USAGE_ERROR");
+        JsonNode error = Refused("cells read b.xlsx --at sheet/Sheet1 sheet/Sheet2 sheet/Sheet3", "USAGE_ERROR");
 
         Assert.Equal(
-            ["--range takes one value; 'B2' is one too many.", "--range takes one value; 'C3' is one too many."],
+            ["--at takes one value; 'sheet/Sheet2' is one too many.", "--at takes one value; 'sheet/Sheet3' is one too many."],
             error["details"]!["errors"]!.AsArray().Select(static problem => problem!.GetValue<string>()));
     }
 
@@ -123,8 +125,8 @@ public sealed class UsageMistakeTests : IDisposable
 
     [Theory]
     [InlineData("--help --output-format compact")]
-    [InlineData("cells inspect --help --max-input-bytes 5")]
-    [InlineData("cells inspect -h")]
+    [InlineData("cells read --help --max-input-bytes 5")]
+    [InlineData("cells read -h")]
     public void HelpBesideAcceptedGlobalValues_PrintsHelp(string commandLine)
     {
         CliResult result = _workspace.Run(commandLine.Split(' '));
@@ -135,7 +137,7 @@ public sealed class UsageMistakeTests : IDisposable
 
     /// <summary>The parser gives help without checking values, so a value outside its option's list beside --help is not refused.</summary>
     [Theory]
-    [InlineData("cells read --help --content bogus")]
+    [InlineData("cells convert --help --to bogus")]
     [InlineData("--help --output-format bogus")]
     public void HelpBesideAValueOutsideItsList_PrintsHelp(string commandLine)
     {

@@ -228,6 +228,13 @@ internal static partial class OperationRuns
         && command.Arguments.Any(static argument => argument.Required && argument.InputKind == "file")
         && !command.Has("--pattern") && !command.Has("--out") && !command.Has("--out-dir");
 
+    /// <summary>The names of the sheets a read of an object table lists.</summary>
+    public static IEnumerable<string> SheetObjects(JsonNode? read) =>
+        (read?["objects"] as JsonArray ?? [])
+            .Where(static item => item?["kind"]?.GetValue<string>() == "sheet")
+            .Select(static item => item?["props"]?["name"]?.GetValue<string>())
+            .OfType<string>();
+
     public static IEnumerable<string> Sheets(JsonNode? inspected) =>
         Walk(inspected, string.Empty)
             .Where(static item => item.Name == "sheets" && item.Value is JsonArray)

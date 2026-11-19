@@ -1,13 +1,13 @@
 {
-  "name": "cells convert refuses --sheets for a format that converts the whole workbook",
+  "name": "cells convert refuses --sheet for a format that converts the whole workbook",
   "steps": [
-    { "args": ["cells", "create", "book.xlsx", "--sheet-names", "Data"], "expect": { "exitCode": 0 } },
+    { "args": ["cells", "create", "book.xlsx"], "expect": { "exitCode": 0 } },
     {
-      "args": ["cells", "convert", "book.xlsx", "--to", "xlsx", "--sheets", "1", "--out", "copy.xlsx"],
+      "args": ["cells", "convert", "book.xlsx", "--to", "xlsx", "--sheet", "Sheet1", "--out", "copy.xlsx"],
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "json": [{ "path": "error.message", "contains": "--sheets" }],
+        "json": [{ "path": "error.message", "contains": "--sheet" }],
         "files": { "absent": ["copy.xlsx"], "nothingWritten": true }
       }
     }

@@ -48,7 +48,7 @@ public static class ScenarioFixtures
 
     private static readonly Dictionary<string, string> Operations = new(StringComparer.Ordinal)
     {
-        ["cells"] = """{"ops":[{"op":"set_values","sheet":"Sheet1","range":"D1","values":[["edited"]]}]}""",
+        ["cells"] = """{"ops":[{"set":"sheet/Sheet1/cell/D1","props":{"value":"edited"}}]}""",
         ["pdf"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
         ["slides"] = """{"ops":[{"set":"presentation","props":{"title":"Edited"}}]}""",
         ["words"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
@@ -156,7 +156,7 @@ public static class ScenarioFixtures
             case "cells":
                 Require(workspace.Run("cells", "create", file, "--output-format", "json"));
                 File.WriteAllText(workspace.File("ops.json"),
-                    $$"""{"ops":[{"op":"set_values","sheet":"Sheet1","range":"A1","values":[["Item","Amount"],["{{SampleText}}",1],["Second row",2]]}]}""");
+                    $$$"""{"ops":[{"set":"sheet/Sheet1/range/A1:B3","props":{"value":[["Item","Amount"],["{{{SampleText}}}",1],["Second row",2]]}}]}""");
                 Require(workspace.Run("cells", "edit", file, "--ops", "ops.json", "--in-place", "--output-format", "json"));
                 break;
             case "pdf":
@@ -265,12 +265,26 @@ public static class ScenarioFixtures
         switch (product)
         {
             case "cells":
+                // The chart's series is added at the address its add reports; the conditional
+                // formatting and the pivot table are the first of their sheet.
                 Require(workspace.Run("cells", "create", file, "--output-format", "json"));
-                operations = $$"""
-                    [{"op":"set_values","sheet":"Sheet1","range":"A1","values":[["Item","Amount"],["{{Marker("body")}}",1],["Second row",2]]},
-                    {"op":"add_comment","sheet":"Sheet1","cell":"B2","text":"{{Marker("comment")}}"},
-                    {"op":"set_page_setup","sheet":"Sheet1","headerCenter":"{{Marker("header")}}","footerCenter":"{{Marker("footer")}}"},
-                    {"op":"insert_chart","sheet":"Sheet1","kind":"column","dataRange":"A1:B3","at":"D2:I12","title":"{{Marker("chart title")}}"}]
+                File.WriteAllText(workspace.File("content.ops.json"), $$$"""
+                    {"ops":[{"set":"sheet/Sheet1/range/A1:B3","props":{"value":[["Item","Amount"],["{{{Marker("body")}}}",1],["Second row",2]]}},
+                    {"add":"comment","in":"sheet/Sheet1","args":{"cellName":"B2"},"props":{"note":"{{{Marker("comment")}}}"}},
+                    {"set":"sheet/Sheet1/pageSetup","props":{"header.center":"{{{Marker("header")}}}","footer.center":"{{{Marker("footer")}}}"}},
+                    {"add":"chart","in":"sheet/Sheet1","args":{"type":"Column","area":"D2:I12"},"props":{"title.text":"{{{Marker("chart title")}}}"}},
+                    {"add":"conditionalFormatting","in":"sheet/Sheet1"},
+                    {"do":"add_conditional_format_area","args":{"conditionalFormatting":"sheet/Sheet1/conditionalFormatting/0","area":"B2:B3"}},
+                    {"add":"rule","in":"sheet/Sheet1/conditionalFormatting/0","args":{"type":"CellValue","operatorType":"GreaterThan","formula1":"1"}},
+                    {"add":"pivot","in":"sheet/Sheet1","args":{"sourceData":"=Sheet1!A1:B3","destCellName":"K2","tableName":"Pivot"}},
+                    {"do":"add_pivot_field","args":{"pivot":"sheet/Sheet1/pivot/0","fieldType":"Row","fieldName":"Item"}},
+                    {"do":"add_pivot_field","args":{"pivot":"sheet/Sheet1/pivot/0","fieldType":"Data","fieldName":"Amount"}},
+                    {"do":"calculate_pivot","args":{"pivot":"sheet/Sheet1/pivot/0"}}]}
+                    """);
+                string sheetChart = Require(workspace.Run("cells", "edit", file, "--ops", "content.ops.json", "--in-place", "--output-format", "json"))["ops"]![3]!["at"]!.GetValue<string>();
+                operations = $$$"""
+                    [{"add":"series","in":"{{{sheetChart}}}","args":{"area":"Sheet1!B2:B3","isVertical":true}},
+                    {"set":"{{{sheetChart}}}","props":{"nSeries.categoryData":"Sheet1!A2:A3"}}]
                     """;
                 break;
             case "pdf":

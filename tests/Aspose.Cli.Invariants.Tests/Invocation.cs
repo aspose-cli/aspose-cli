@@ -179,6 +179,10 @@ internal sealed class Invocation
             case "--pattern":
                 Add(option.Name, "Hello");
                 return;
+            case "--sheet":
+                // The sheet every workbook fixture has.
+                Add(option.Name, "Sheet1");
+                return;
             case "--out":
                 Add(option.Name, "output." + extension);
                 return;

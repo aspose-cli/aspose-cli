@@ -106,12 +106,15 @@ public sealed class ProductPublicationTests
     public void AllSheetsFailureDoesNotLeaveEarlierOutputFiles()
     {
         using var workspace = new TempWorkspace();
-        workspace.Run("cells", "create", "input.xlsx", "--sheet-names", "First,Second").Succeeded();
-        workspace.Run("cells", "edit", "input.xlsx", "--set", "First!A1=1", "--set", "Second!A1=2", "--in-place").Succeeded();
+        workspace.Run("cells", "create", "input.xlsx").Succeeded();
+        workspace.Run("cells", "edit", "input.xlsx", "--in-place", "--ops", """
+            {"ops":[{"add":"sheet","args":{"index":1,"sheetType":"Worksheet","sheetName":"Second"}},
+            {"set":"sheet/Sheet1/cell/A1","props":{"value":1}},{"set":"sheet/Second/cell/A1","props":{"value":2}}]}
+            """).Succeeded();
         File.WriteAllText(workspace.File("render.Second.png"), "existing second sheet");
-        CliResult result = workspace.Run(["cells", "render", "input.xlsx", "--sheets", "all", "--out", "render.png", "--output-format", "json"]);
+        CliResult result = workspace.Run(["cells", "render", "input.xlsx", "--sheet", "Sheet1", "--sheet", "Second", "--out", "render.png", "--output-format", "json"]);
         Assert.Equal(5, result.ExitCode);
-        Assert.False(File.Exists(workspace.File("render.First.png")));
+        Assert.False(File.Exists(workspace.File("render.Sheet1.png")));
         Assert.Equal("existing second sheet", File.ReadAllText(workspace.File("render.Second.png")));
     }
 

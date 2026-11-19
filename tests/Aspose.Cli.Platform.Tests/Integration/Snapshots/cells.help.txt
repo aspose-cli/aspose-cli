@@ -1,111 +1,77 @@
 ## aspose-cli cells --help
 Description:
-  Spreadsheet operations (Excel and friends) with engine-grade fidelity.
+  Read, edit, convert and render workbooks through the Aspose.Cells object model.
 
 Usage:
   aspose-cli cells [command]
 
 Commands:
-  inspect <file>          Show structure and metadata of a workbook.
-  read <file>             Read cell data of one sheet as a windowed projection.
-  search <file>           Find the text of cells, formulas, comments, headers and footers, charts and drawings that matches a pattern.
-  create <file>           Create a new workbook.
-  edit <file>             Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv.
-  compare <left> <right>  Compare stored workbook values and optional formula text; dates are ISO 8601.
-  convert <file>          Convert a workbook to another format.
-  render <file>           Render sheets, or a range of one, to images.
+  read <file>     Read a workbook's objects, each with every row of the object table, and its inventory.
+  search <file>   Search the text of a workbook's cells, as their number formats show it, their formulas and their comments; each hit names the object's address and row.
+  create <file>   Create a workbook: the engine's new workbook, or a copy of a template saved in the output's format.
+  edit <file>     Apply a batch of set, add, delete, move and do operations to a workbook; nothing is written when one fails.
+  convert <file>  Convert a workbook, or CSV or TSV text, to another format with the engine's options for it. An html, mhtml or md output is one file: it holds its images itself (SaveAsSingleFile, ExportImagesAsBase64).
+  render <file>   Render sheets, or an area of one, to images as the engine draws them.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli cells inspect book.xlsx --output-format json
+  aspose-cli cells read book.xlsx
+  aspose-cli cells read book.xlsx --at "sheet/Sales 2026/range/A1:F6"
+  aspose-cli cells edit book.xlsx --ops ops.json --out revised.xlsx
 
 Learn more:
-  aspose-cli docs cells/editing             the edit-operation vocabulary and recipes
-  aspose-cli docs cells/workbook-standards  professional workbook construction guidance
-  aspose-cli docs cells/verification        the spreadsheet delivery verification protocol
-  aspose-cli schema v2/cells/ops            the operations JSON Schema
-
-
-## aspose-cli cells compare --help
-Description:
-  Compare stored workbook values and optional formula text; dates are ISO 8601.
-
-Usage:
-  aspose-cli cells compare <left> <right> [options]
-
-Arguments:
-  <left>   Baseline workbook.
-  <right>  Candidate workbook to compare against the baseline.
-
-Options:
-  --content <formulas|values>                What to compare; formulas adds the formula text to the cell results. [default: formulas]
-  --max-diffs <max-diffs>                    Maximum differing cells to list across the entire workbook. Range: 1-1000000. [default: 1000]
-  --left-password <left-password>            Password for the baseline file. Discouraged: visible in the process list; prefer --left-password-env.
-  --left-password-env <left-password-env>    Name of an environment variable holding the password for the baseline file.
-  --left-password-stdin                      Read the password for the baseline file from the first line of stdin.
-  --right-password <right-password>          Password for the candidate file. Discouraged: visible in the process list; prefer --right-password-env.
-  --right-password-env <right-password-env>  Name of an environment variable holding the password for the candidate file.
-  --right-password-stdin                     Read the password for the candidate file from the first line of stdin.
-
-Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli cells compare old.xlsx new.xlsx --output-format json
-  aspose-cli cells compare old.xlsx new.xlsx --content values --max-diffs 50
-
-Learn more:
-  aspose-cli docs cells/verification  comparing a workbook before and after a change
+  aspose-cli schema v2/cells/ops --operation directory  the object table: kinds, addresses, rows, adds and actions
 
 
 ## aspose-cli cells convert --help
 Description:
-  Convert a workbook to another format.
+  Convert a workbook, or CSV or TSV text, to another format with the engine's options for it. An html, mhtml or md output is one file: it holds its images itself (SaveAsSingleFile, ExportImagesAsBase64).
 
 Usage:
   aspose-cli cells convert <file> [options]
 
 Arguments:
-  <file>  Workbook to convert.
+  <file>  Workbook file path.
 
 Options:
-  --to <to>                      Target format: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md. Default: the --out extension's format.
-  --sheets <sheets>              Sheets to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every sheet, except a CSV, TSV or Markdown output, which holds the active sheet and takes one selected sheet; a PDF takes any selection.
-  --encoding <encoding>          Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. Default: its byte order mark, else UTF-8 (other bytes are refused).
-  --culture <culture>            Culture whose number and date formats a CSV or TSV input uses: de-DE for '1.234,56', en-US for '1/2/2026'. Default: a value is a number, date or boolean only where it shows as written ('19.90', '1,234.50', '50%', '2026-01-05', 'TRUE') and is written back so; '007', '1/2/2026', '1E5' and 'True' stay text, and in a file that writes a decimal comma ('2,71') every number with a comma or a point does (NUMBERS_READ_AS_TEXT).
-  --bom                          Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one.
-  -o, --out <out>                Output path. Default: the input path with the target extension (with '.out' inserted when that would overwrite the input).
-  --overwrite                    Replace the output file if it already exists.
-  --dry-run                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --password <password>          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>  Name of an environment variable holding the password for the workbook.
-  --password-stdin               Read the password for the workbook from the first line of stdin.
-  --encrypt <encrypt>            Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>    Name of an environment variable holding the password for the output file.
-  --encrypt-stdin                Read the password for the output file from the first line of stdin.
-  --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
+  --to <to>                            Target format: xlsx, xltx, xlsm, xltm, xlam, xlsb, xls, xlt, csv, tsv, ods, html, mhtml, pdf, xps, json, md. Default: the --out extension's format.
+  --sheet <sheet>                      A sheet to write, by its name: one for a csv, tsv or md output, which otherwise holds the sheet the engine writes, the active sheet; any for pdf, repeated. Other formats write the whole workbook.
+  --format-strategy <format-strategy>  How a csv, tsv or md output writes cell values, a member name of the engine's CellValueFormatStrategy: None writes the values as they are stored, DisplayString as the number formats show them. Default: the engine's.
+  --separator <separator>              The separator of a .csv or .txt input, one character (TxtLoadOptions.Separator). Required for such an input; a .tsv input is tab-separated.
+  --encoding <encoding>                The text encoding of a .csv, .tsv or .txt input, such as utf-8, gb18030 or windows-1252 (TxtLoadOptions.Encoding). Required for such an input.
+  --convert-numbers                    true or false: whether a .csv, .tsv or .txt input's numbers become numbers (TxtLoadOptions.ConvertNumericData). Required for such an input.
+  --convert-dates                      true or false: whether a .csv, .tsv or .txt input's dates become dates (TxtLoadOptions.ConvertDateTimeData). Required for such an input.
+  --culture <culture>                  The culture a text input's numbers and dates are read in, such as en-US or de-DE (LoadOptions.CultureInfo). Required when --convert-numbers or --convert-dates is true.
+  --bom                                Start a csv or tsv output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one.
+  -o, --out <out>                      Output path. Default: the input path with the target extension (with '.out' inserted when that would overwrite the input).
+  --overwrite                          Replace the output file if it already exists.
+  --dry-run                            Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --password <password>                Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>        Name of an environment variable holding the password for the workbook.
+  --password-stdin                     Read the password for the workbook from the first line of stdin.
+  --encrypt <encrypt>                  Password for the output workbook. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>          Name of an environment variable holding the password for the output workbook.
+  --encrypt-stdin                      Read the password for the output workbook from the first line of stdin.
+  --font-dir <font-dir>                Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli cells convert sales.csv --to xlsx
-  aspose-cli cells convert erp-export.csv --to xlsx --encoding gb18030
-  aspose-cli cells convert partner-orders.csv --to xlsx --culture de-DE
-  aspose-cli cells convert book.xlsx --to csv --bom --out for-excel.csv
   aspose-cli cells convert book.xlsx --out report.pdf
-  aspose-cli cells convert book.xlsx --to pdf --font-dir fonts --out report.pdf
+  aspose-cli cells convert book.xlsx --to csv --sheet Sales --format-strategy None --out sales.csv
+  aspose-cli cells convert sales.csv --to xlsx --separator , --encoding utf-8 --convert-numbers true --convert-dates false
+  aspose-cli cells convert export.csv --to xlsx --separator ; --encoding windows-1252 --convert-numbers true --convert-dates true --culture de-DE
 
 Learn more:
-  aspose-cli docs cells/report-from-csv  importing CSV into a workbook
-  aspose-cli docs cells/overview         what each Cells command is for
+  aspose-cli docs cells/overview  what each Cells command is for
 
 
 ## aspose-cli cells create --help
 Description:
-  Create a new workbook.
+  Create a workbook: the engine's new workbook, or a copy of a template saved in the output's format.
 
 Usage:
   aspose-cli cells create <file> [options]
@@ -114,80 +80,75 @@ Arguments:
   <file>  Path of the workbook to create, e.g. report.xlsx.
 
 Options:
-  --sheet-names <sheet-names>  Comma-separated sheet names, e.g. "Data,Summary". Default: one sheet named Sheet1.
+  --template <template>        A workbook to save as the new one. Default: the engine's new workbook, with one sheet.
   --overwrite                  Replace the output file if it already exists.
   --dry-run                    Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --encrypt <encrypt>          Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>  Name of an environment variable holding the password for the output file.
-  --encrypt-stdin              Read the password for the output file from the first line of stdin.
+  --encrypt <encrypt>          Password for the output workbook. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>  Name of an environment variable holding the password for the output workbook.
+  --encrypt-stdin              Read the password for the output workbook from the first line of stdin.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli cells create book.xlsx --sheet-names "Data,Summary"
-  aspose-cli cells create budget.xlsx --overwrite
+  aspose-cli cells create book.xlsx
+  aspose-cli cells create report.xlsx --template brand.xltx
 
 Learn more:
-  aspose-cli docs cells/workbook-standards  professional workbook construction guidance
+  aspose-cli docs cells/overview  what each Cells command is for
 
 
 ## aspose-cli cells edit --help
 Description:
-  Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv.
+  Apply a batch of set, add, delete, move and do operations to a workbook; nothing is written when one fails.
 
 Usage:
-  aspose-cli cells edit <file> [options]
+  aspose-cli cells edit <file> --ops <ops> [options]
 
 Arguments:
-  <file>  Workbook to edit.
+  <file>  Workbook file path.
 
 Options:
-  --ops <ops>                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/cells/ops.
-  --set <set>                    Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and anything else is text, as is a number with leading zeros, a leading '+' or over 15 integer digits. Quote sheet names that need it: --set "'My Sheet'!A1=5". Example: --set "Sales!B3=42" --set "Sales!G2==E2*F2".
-  --verify                       Verify the staged output and report its cell changes and formula errors. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
-  --no-recalc                    Skip the automatic formula recalculation after applying the ops.
-  --bom                          Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: the input's encoding and mark when a CSV or TSV input is written back in its own format, as in place; otherwise UTF-8 without one.
+  --ops <ops> (REQUIRED)         The operation document, {"ops": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/cells/ops --operation directory; one of them in full: aspose-cli schema v2/cells/ops --operation <name>.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.
-  --dry-run                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
   --password <password>          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the workbook.
   --password-stdin               Read the password for the workbook from the first line of stdin.
-  --encrypt <encrypt>            Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>    Name of an environment variable holding the password for the output file.
-  --encrypt-stdin                Read the password for the output file from the first line of stdin.
+  --encrypt <encrypt>            Password for the output workbook. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>    Name of an environment variable holding the password for the output workbook.
+  --encrypt-stdin                Read the password for the output workbook from the first line of stdin.
   --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==E2*F2"
-  aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[{"op":"set_values","sheet":"Sales","range":"A1","values":[[1]]}]}'
-  aspose-cli cells edit book.xlsx --in-place --verify --ops ops.json
+  aspose-cli cells edit book.xlsx --ops ops.json --out revised.xlsx
+  aspose-cli cells edit book.xlsx --in-place --ops ops.json
 
 Learn more:
-  aspose-cli docs cells/editing       recipes for every operation family
-  aspose-cli schema v2/cells/ops      the operations JSON vocabulary
-  aspose-cli docs cells/verification  verification before delivering the file
+  aspose-cli schema v2/cells/ops --operation directory  the kinds and their rows, the adds and the actions an operation names
+  aspose-cli schema v2/cells/ops --operation <name>     one kind, add or action in full
+  aspose-cli docs cells/overview                        addresses, the five operation shapes and the read-back
 
 
-## aspose-cli cells inspect --help
+## aspose-cli cells read --help
 Description:
-  Show structure and metadata of a workbook.
+  Read a workbook's objects, each with every row of the object table, and its inventory.
 
 Usage:
-  aspose-cli cells inspect <file> [options]
+  aspose-cli cells read <file> [options]
 
 Arguments:
-  <file>  Workbook to inspect (xlsx, xlsm, xlsb, xls, ods, csv, ...).
+  <file>  Workbook file path.
 
 Options:
-  --sample                       Include a bounded sample: display values of the first --sample-rows rows and up to 20 columns of each sheet, from A1. Default: off.
-  --sample-rows <sample-rows>    Number of sample rows per sheet. Only with --sample. Range: 1-100. [default: 5]
-  --detail <detail>              Extra sections to include; repeat for more. names: defined names; errors: formula-error scan; conditional-formats: conditional-formatting rules; layout: view, tab color, frozen panes, sizes, outline groups, filter, protection, print area and page setup of each sheet. Values: charts, comments, conditional-formats, errors, fonts, hyperlinks, images, layout, merges, names, pivots, sparklines, tables, validation.
+  --at <at>                      The address of the object to read with everything below it, as read gives it in at. Default: the whole document.
+  --from <from>                  The address of the object the window starts at; a truncated read's window.next gives it.
+  --kind <kind>                  List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind. Objects of the kinds row, column, cell, style, point are listed only when --kind names them; window.notListedUnlessNamed names those a read left out.
+  --max-objects <max-objects>    The most objects one window lists. Range: 1-10000. [default: 200]
   --password <password>          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the workbook.
   --password-stdin               Read the password for the workbook from the first line of stdin.
@@ -196,59 +157,29 @@ Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli cells inspect book.xlsx --output-format json
-  aspose-cli cells inspect book.xlsx --detail charts --detail names --sample
+  aspose-cli cells read book.xlsx
+  aspose-cli cells read book.xlsx --at "sheet/Sales 2026/range/A1:F6"
+  aspose-cli cells read book.xlsx --at "sheet/Sales 2026" --kind cell
 
 Learn more:
-  aspose-cli docs cells/overview  what each Cells command is for
-  aspose-cli docs reading         reading every product within bounded windows
-
-
-## aspose-cli cells read --help
-Description:
-  Read cell data of one sheet as a windowed projection.
-
-Usage:
-  aspose-cli cells read <file> [options]
-
-Arguments:
-  <file>  Workbook to read.
-
-Options:
-  --sheet <sheet>                          Sheet to read. Default: the active sheet.
-  --range <range>                          Window to read, e.g. A1:F50 or Sales!A1:F50, or all. Default: the used range, subject to --max-cells.
-  --content <formulas|full|styles|values>  What each cell carries besides its value and type: its formula f, its styleId and the style pool, or both. [default: values]
-  --max-cells <max-cells>                  Cell budget per call. Range: 1-1000000. [default: 10000]
-  --password <password>                    Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>            Name of an environment variable holding the password for the workbook.
-  --password-stdin                         Read the password for the workbook from the first line of stdin.
-
-Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli cells read book.xlsx --range Sales!A1:D10 --content values --output-format json
-  aspose-cli cells read book.xlsx --sheet Sales --content formulas --output-format json
-
-Learn more:
-  aspose-cli docs cells/overview  what each Cells command is for
-  aspose-cli docs reading         reading every product within bounded windows
+  aspose-cli schema v2/cells/ops --operation directory  the kinds an address and --kind name, with their rows
+  aspose-cli docs cells/overview                        addresses, windows and the inventory
 
 
 ## aspose-cli cells render --help
 Description:
-  Render sheets, or a range of one, to images.
+  Render sheets, or an area of one, to images as the engine draws them.
 
 Usage:
   aspose-cli cells render <file> [options]
 
 Arguments:
-  <file>  Workbook to render.
+  <file>  Workbook file path.
 
 Options:
   --to <jpeg|png|svg>            Image format. Default: the --out extension's format, else png.
-  --sheets <sheets>              Sheets to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every visible sheet, at most 20 per run.
-  --range <range>                Render only this range of one sheet, e.g. A1:G20 or Sales!A1:G20, or all.
+  --sheet <sheet>                A sheet to render, by its name; repeat for several. Default: every sheet of the workbook. Several sheets are each written to <stem>.<sheet>.<ext>.
+  --area <area>                  An area of the one sheet named, such as A1:G20, set as its print area and drawn alone. Default: the whole sheet.
   --dpi <dpi>                    Raster resolution; refused for vector output such as svg. Range: 36-1200. [default: 192]
   -o, --out <out>                Output path. Default: the input path with the image extension. Several sheets write <stem>.<sheet>.<ext> beside it.
   --overwrite                    Replace the output file if it already exists.
@@ -262,45 +193,42 @@ Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli cells render book.xlsx --range Sales!A1:G20 --out sales.png
-  aspose-cli cells render book.xlsx --sheets 2 --out dashboard.png
-  aspose-cli cells render book.xlsx --sheets all --out check.png
+  aspose-cli cells render book.xlsx --out book.png
+  aspose-cli cells render book.xlsx --sheet Dashboard --area A1:H30 --out dashboard.png
+  aspose-cli cells render book.xlsx --sheet Data --sheet Summary --out check.png
 
 Learn more:
-  aspose-cli docs cells/verification  the spreadsheet delivery verification protocol
+  aspose-cli docs cells/overview  what each Cells command is for
 
 
 ## aspose-cli cells search --help
 Description:
-  Find the text of cells, formulas, comments, headers and footers, charts and drawings that matches a pattern.
+  Search the text of a workbook's cells, as their number formats show it, their formulas and their comments; each hit names the object's address and row.
 
 Usage:
   aspose-cli cells search <file> --pattern <pattern> [options]
 
 Arguments:
-  <file>  Workbook to search.
+  <file>  Workbook file path.
 
 Options:
-  --pattern <pattern> (REQUIRED)   Text to find, or a regular expression with --regex.
-  --regex                          Treat the pattern as a culture-invariant regular expression with a one-second budget.
-  --case-sensitive                 Match letter case exactly.
-  --content <all|formulas|values>  What to search: what a reader sees (cell results, comments, headers and footers, chart and drawing text), the formula text or all of both. [default: values]
-  --max-hits <max-hits>            Maximum returned hits. Range: 1-10000. [default: 100]
-  --skip <skip>                    Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
-  --sheet <sheet>                  Restrict to one sheet. Default: all sheets.
-  --password <password>            Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>    Name of an environment variable holding the password for the workbook.
-  --password-stdin                 Read the password for the workbook from the first line of stdin.
+  --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
+  --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
+  --case-sensitive                Match letter case exactly.
+  --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
+  --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
+  --password <password>           Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>   Name of an environment variable holding the password for the workbook.
+  --password-stdin                Read the password for the workbook from the first line of stdin.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli cells search book.xlsx --pattern TODO --output-format json
-  aspose-cli cells search book.xlsx --pattern SUM --content formulas --max-hits 10
+  aspose-cli cells search book.xlsx --pattern Total
+  aspose-cli cells search book.xlsx --pattern "SUM\(" --regex
 
 Learn more:
   aspose-cli docs cells/overview  what each Cells command is for
-  aspose-cli docs reading         reading every product within bounded windows
 
 

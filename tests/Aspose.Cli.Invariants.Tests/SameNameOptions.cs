@@ -55,11 +55,9 @@ internal static class SameNameOptions
     [
         new("--by", OptionAspect.AllowedValues,
             "C-R07: each split divides at its own product's boundaries, a subset of pages, bookmarks, sections and heading1."),
-        new("--content", OptionAspect.AllowedValues | OptionAspect.Default,
-            "C-R07: what each unit a read, search or compare carries is the product's own, and so is its default: "
-            + "a cells read projects styles too, a search looks in values, formulas or all of both, and a compare "
-            + "compares formulas by default; a pdf read gives a page's text in reading order or with its spacing kept, "
-            + "a words read each block as an outline, its text or its full formatting."),
+        new("--content", OptionAspect.AllowedValues,
+            "C-R07: what each unit a read carries is the product's own: a pdf read gives a page's text in reading order "
+            + "or with its spacing kept, a words read each block as an outline, its text or its full formatting."),
         new("--detail", OptionAspect.AllowedValues,
             "C-R07: each product's inspect lists its own sections."),
         new("--to", OptionAspect.AllowedValues,
@@ -71,8 +69,11 @@ internal static class SameNameOptions
             "C-R07: merge has no single input to name a default output after, so its --out is required.",
             "pdf merge"),
         new("--ops", OptionAspect.Required,
-            "C-R07: Slides edit has no other source of operations, such as the --set of the cells and words edits, so its --ops is required.",
+            "C-R07: Slides edit has no other source of operations, such as the --set of the words edit, so its --ops is required.",
             "slides edit"),
+        new("--ops", OptionAspect.Required,
+            "C-R07: Cells edit has no other source of operations, such as the --set of the words edit, so its --ops is required.",
+            "cells edit"),
     ];
     // rule-exemptions: end
 
@@ -156,11 +157,12 @@ internal static class SameNameOptions
             foreach (OptionAspect aspect in Compared.Where(candidate => exemption.Aspects.HasFlag(candidate)))
             {
                 // A command-wide exemption is needed while the commands differ; one command's while
-                // its option differs from every other command's.
+                // its option differs from that of every command no exemption of the aspect names.
                 bool differs = exemption.Command is null
                     ? declared.Select(option => option.Read(aspect)).Distinct(StringComparer.Ordinal).Count() > 1
                     : declared.Where(option => option.Command == exemption.Command).Select(option => option.Read(aspect))
-                        .Except(declared.Where(option => option.Command != exemption.Command).Select(option => option.Read(aspect)), StringComparer.Ordinal)
+                        .Except(declared.Where(option => !exemptions.Any(other => other.Command == option.Command && other.Aspects.HasFlag(aspect)))
+                            .Select(option => option.Read(aspect)), StringComparer.Ordinal)
                         .Any();
                 if (!differs)
                 {

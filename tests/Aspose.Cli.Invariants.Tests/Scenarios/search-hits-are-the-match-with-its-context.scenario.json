@@ -1,5 +1,5 @@
 {
-  "name": "every product's search hit is the match itself: in Cells, PDF and Words with the text around it as context, in Slides with the address of the object, the row and the offset in that row's text where it was found",
+  "name": "every product's search hit is the match itself: in PDF and Words with the text around it as context, in Cells and Slides with the address of the object, the row and the offset in that row's text where it was found",
   "files": {
     "book.xlsx": { "fixture": "cells.xlsx" },
     "doc.pdf": { "fixture": "pdf.pdf" },
@@ -13,7 +13,10 @@
         "exitCode": 0,
         "json": [
           { "path": "hits[0].text", "equals": "invariant" },
-          { "path": "hits[0].context", "equals": "Hello invariant world" }
+          { "path": "hits[0].at", "equals": "sheet/Sheet1/cell/A2" },
+          { "path": "hits[0].row", "equals": "stringValue" },
+          { "path": "hits[0].offset", "equals": 6 },
+          { "path": "hits[0].length", "equals": 9 }
         ]
       }
     },

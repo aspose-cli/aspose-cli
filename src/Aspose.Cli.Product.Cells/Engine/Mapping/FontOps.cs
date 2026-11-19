@@ -36,16 +36,6 @@ internal static class FontOps
             return () => FontConfigs.SetFontSources(ambient);
         });
 
-    /// <summary>The distinct font names a workbook uses, sorted — the input to
-    /// <c>cells inspect --detail fonts</c>.</summary>
-    public static IReadOnlyList<string> UsedFonts(Workbook workbook) =>
-        workbook.GetFonts()
-            .Select(font => font.Name)
-            .Where(name => !string.IsNullOrEmpty(name))
-            .Distinct(StringComparer.Ordinal)
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToArray();
-
     private static FontSource ToSource(FontSourceBase source) => source switch
     {
         FolderFontSource folder => new FontSource { Kind = "folder", Location = folder.FolderPath },

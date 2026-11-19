@@ -22,7 +22,7 @@
       }
     },
     {
-      "args": ["cells", "render", "missing.xlsx", "--out", "page.png", "--font-dir", "missing-fonts"],
+      "args": ["cells", "render", "missing.xlsx", "--sheet", "Sheet1", "--out", "page.png", "--font-dir", "missing-fonts"],
       "expect": {
         "exitCode": 3,
         "error": "FILE_NOT_FOUND",

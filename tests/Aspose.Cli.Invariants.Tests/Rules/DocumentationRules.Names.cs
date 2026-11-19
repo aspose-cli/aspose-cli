@@ -45,7 +45,6 @@ internal static partial class ContractRules
         ["REG_BINARY"] = "a Windows registry value type, in a KNOWN-ISSUES.md entry",
         ["REG_DWORD"] = "a Windows registry value type, in a KNOWN-ISSUES.md entry",
         ["SCREAMING_SNAKE_CASE"] = "the name of a naming style",
-        ["shift_jis"] = "a text encoding name that cells convert --encoding accepts",
         ["--certificate-password"] = "the prefix of the --certificate-password-env and -stdin option family, as a parameter describes it",
     };
 
@@ -99,15 +98,18 @@ internal static partial class ContractRules
         {
             SourceFindings[] findings = [.. projects.Select(names.Of), .. documents.Select(names.Of)];
             HashSet<string> used = [.. findings.SelectMany(static finding => finding.Exempted)];
-            (string Group, SourceFindings[] Findings)[] groups =
+            // No C# source writes an operation as JSON: an edit's help names its ops document by
+            // file, and the object table's operations are no operations of this reading.
+            (string Group, SourceFindings[] Findings, string[] Without)[] groups =
             [
-                ("the C# sources", [.. projects.Select(names.Of)]),
-                ("the Markdown files", [.. documents.Select(names.Of)]),
+                ("the C# sources", [.. projects.Select(names.Of)], ["operation json"]),
+                ("the Markdown files", [.. documents.Select(names.Of)], []),
             ];
             string[] silent = [.. documents.Where(document => names.Of(document).Kinds.Length == 0).Select(static document => document.Subject)];
             return NotNames.Keys.Concat(ProsePhrases.Keys).Where(name => !used.Contains(name)).Order(StringComparer.Ordinal)
                 .Select(static name => $"'{name}' is exempted as no name, but no source writes it any more; delete the exemption")
                 .Concat(groups.SelectMany(group => NameKinds
+                    .Where(kind => !group.Without.Contains(kind, StringComparer.Ordinal))
                     .Where(kind => !group.Findings.Any(finding => finding.Kinds.Contains(kind, StringComparer.Ordinal)))
                     .Select(kind => $"{group.Group} name no {kind} that the reading recognizes, so it checks nothing there; its rules stopped matching")))
                 .Concat(silent.Select(static subject => $"the reading names nothing in {subject}, so it checks nothing there"));
@@ -142,8 +144,6 @@ internal static partial class ContractRules
                 "'set_page_setup' has no field 'size'"),
             ("words", """{"op":"insert_paragraphs","at":{"block":2},"paragraphs":[{"text":"a","level":2}]}""", """{"op":"insert_paragraphs","at":{"block":2},"paragraphs":[{"text":"a","list":{"level":2}}]}""",
                 "'insert_paragraphs' has no field 'paragraphs.level'"),
-            ("cells", """{"op":"set_style","sheet":"S","range":"A1"}""", """{"op":"format_range","sheet":"S","range":"A1"}""",
-                "'set_style' is no operation of cells"),
             (null, "aspose-cli slides read deck.pptx --scope shapes", "aspose-cli slides read deck.pptx --kind shape",
                 "'slides read' has no option '--scope'"),
             (null, "aspose-cli pdf inspect report.pdf --detail outlines", "aspose-cli pdf inspect report.pdf --detail outline",
@@ -155,11 +155,11 @@ internal static partial class ContractRules
             (null, "docs licencing", "docs licensing", "'docs' has no topic 'licencing'"),
             (null, "schema v2/cells/opz", "schema v2/cells/ops", "'schema' has no schema 'v2/cells/opz'"),
             (null, "capabilities --sumary", "capabilities --summary", "'capabilities' has no option '--sumary'"),
-            (null, "cells inspect book.xlsx --version", "cells inspect book.xlsx --verbose", "'cells inspect' has no option '--version'"),
+            (null, "cells read book.xlsx --version", "cells read book.xlsx --verbose", "'cells read' has no option '--version'"),
             (null, "license status extra", "license status --product pdf", "'license status' has no command 'extra'"),
             (null, "words merge a.docx", "words edit a.docx --ops ops.json --in-place", "'words' has no command 'merge'"),
-            (null, "cells inspect --detail charts names book.xlsx", "cells inspect --detail charts --detail names book.xlsx",
-                "'cells inspect --detail' takes one value per occurrence, so 'names' after '--detail charts' is an argument"),
+            (null, "cells read book.xlsx --kind chart name", "cells read book.xlsx --kind chart --kind name",
+                "'cells read --kind' takes one value per occurrence, so 'name' after '--kind chart' is an argument"),
             (null, "pdf create scans.pdf --from-images a.png b.png", "pdf create scans.pdf --from-images a.png --from-images b.png",
                 "'pdf create --from-images' takes one value per occurrence, so 'b.png' after '--from-images a.png' is an argument"),
             (null, "pdf split report.pdf --by pages --groups 1-3 4-6", "pdf split report.pdf --by pages --groups 1-3 --groups 4-6",
@@ -169,8 +169,6 @@ internal static partial class ContractRules
         // operation, and a repeatable option written with two of its values.
         (string? Product, string Wrong, string Right, string Problem)[] prose =
         [
-            ("cells", "import_sheet.sheet", "import_sheet.sourceSheet",
-                "'import_sheet' has no field 'sheet'"),
             ("words", "insert_paragraphs.paragraphs.level", "insert_paragraphs.paragraphs.list.level",
                 "'insert_paragraphs' has no field 'paragraphs.level'"),
             ("words", "inspect --detail sections fields", "inspect --detail sections --detail fields",
@@ -572,9 +570,9 @@ internal static partial class ContractRules
             var tokens = new List<string>();
             foreach (string word in Word().Matches(written).Select(static match => match.Value))
             {
-                if (word.StartsWith('\'') && word.Length > 1)
+                if ((word.StartsWith('\'') || word.StartsWith('"')) && word.Length > 1)
                 {
-                    // A single-quoted value, such as the JSON of --ops, is one word of no name.
+                    // A quoted value, such as the JSON of --ops or a sheet name with a space, is one word of no name.
                     tokens.Add(Hole);
                     continue;
                 }
@@ -750,8 +748,8 @@ internal static partial class ContractRules
         [GeneratedRegex(@"(?<![\w-])aspose-cli(?<command>(?: (?:'[^'\n]*'(?=\s|$)|[^\s'`]+))*)")]
         private static partial Regex Prefixed();
 
-        /// <summary>A word of a written command: a single-quoted value that a space or the end follows, or a run of non-space.</summary>
-        [GeneratedRegex(@"'[^'\n]*'(?=\s|$)|\S+")]
+        /// <summary>A word of a written command: a single- or double-quoted value that a space or the end follows, or a run of non-space.</summary>
+        [GeneratedRegex(@"'[^'\n]*'(?=\s|$)|""[^""\n]*""(?=\s|$)|\S+")]
         private static partial Regex Word();
 
         /// <summary>An option name, unless an interpolation or a placeholder completes it (<c>--all-{part}s</c>).</summary>
