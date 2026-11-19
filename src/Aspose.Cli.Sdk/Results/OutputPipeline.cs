@@ -513,6 +513,10 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// <param name="verify">Reads the staged file back, or null when the edit is not verified. Issues are reported, not refused.</param>
     /// <param name="operation">The name of the publication, such as <c>pdf-edit</c>.</param>
     /// <param name="byteOrderMark">Whether the output keeps the UTF-8 byte order mark <paramref name="save"/> starts it with (<see cref="ByteOrderMarks"/>).</param>
+    /// <param name="beforeCommit">
+    /// Runs after the staged file is read back and before it is published, such as closing the
+    /// input document so the publication replaces a file no handle of the command holds; null runs nothing.
+    /// </param>
     public EditPublication<TVerification> PublishEdit<TVerification>(
         ResolvedOutput output,
         TDocument document,
@@ -522,7 +526,8 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         Action<string> save,
         Func<string, TVerification>? verify,
         string operation,
-        bool byteOrderMark = false)
+        bool byteOrderMark = false,
+        Action? beforeCommit = null)
         where TVerification : class
     {
         ArgumentNullException.ThrowIfNull(output);
@@ -543,6 +548,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
             encrypted: encrypted,
             byteOrderMark: byteOrderMark);
         TVerification? verification = verify is null ? null : staged.Read(verify);
+        beforeCommit?.Invoke();
         transaction.Commit();
         return new EditPublication<TVerification>(
             FileObjects.Output(staged.Published, output.Format, encrypted), verification);

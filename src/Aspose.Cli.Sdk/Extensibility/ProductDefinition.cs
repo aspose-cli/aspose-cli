@@ -20,6 +20,7 @@ public sealed class ProductDefinition
         IReadOnlyList<FormatDescriptor> formats,
         ProductJsonDefinition json,
         Func<IReadOnlyList<ProductOperationCommand>> operations,
+        Func<IReadOnlyList<Func<Tables.DocumentTable>>> tables,
         IReadOnlyList<DiagnosticDescriptor> diagnostics,
         Func<ProductCommandRunner, Command> commandFactory,
         Func<
@@ -34,6 +35,8 @@ public sealed class ProductDefinition
 
         _operations = new Lazy<IReadOnlyList<ProductOperationCommand>>(
             operations ?? throw new ArgumentNullException(nameof(operations)));
+        _tables = new Lazy<IReadOnlyList<Func<Tables.DocumentTable>>>(
+            tables ?? throw new ArgumentNullException(nameof(tables)));
         Diagnostics = diagnostics;
         CommandFactory = commandFactory
             ?? throw new ArgumentNullException(nameof(commandFactory));
@@ -63,6 +66,11 @@ public sealed class ProductDefinition
     public IReadOnlyList<ProductOperationCommand> Operations => _operations.Value;
 
     private readonly Lazy<IReadOnlyList<ProductOperationCommand>> _operations;
+
+    /// <summary>Loads the object tables whose operation documents the product's commands apply; the table loads the engine's types.</summary>
+    public IReadOnlyList<Func<Tables.DocumentTable>> Tables => _tables.Value;
+
+    private readonly Lazy<IReadOnlyList<Func<Tables.DocumentTable>>> _tables;
 
     /// <summary>Immutable error and warning descriptors owned by this product.</summary>
     public IReadOnlyList<DiagnosticDescriptor> Diagnostics { get; }
@@ -275,6 +283,7 @@ public sealed class ProductDefinitionBuilder<TSession>
             formats,
             _json,
             Operations,
+            Tables,
             Array.AsReadOnly(_diagnostics.ToArray()),
             CreateCommand,
             _bindingFactory);
@@ -295,6 +304,9 @@ public sealed class ProductDefinitionBuilder<TSession>
 
     private IReadOnlyList<ProductOperationCommand> Operations() =>
         Array.AsReadOnly(_menu.SelectMany(static entry => entry.Operations()).ToArray());
+
+    private IReadOnlyList<Func<Tables.DocumentTable>> Tables() =>
+        Array.AsReadOnly(_menu.SelectMany(static entry => entry.Tables()).ToArray());
 
     private static FileRouteDefinition CreateFileRoutes(
         IReadOnlyList<FormatDescriptor> formats)

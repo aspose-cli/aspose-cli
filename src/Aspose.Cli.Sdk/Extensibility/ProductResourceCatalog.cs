@@ -16,12 +16,14 @@ public sealed class ProductResourceCatalog
 {
     private readonly IReadOnlyDictionary<string, Func<string>> _schemas;
     private readonly IReadOnlyDictionary<string, GeneratedOperationSchema> _operationSchemas;
+    private readonly IReadOnlyDictionary<string, Lazy<Tables.TableSchema>> _tableSchemas;
     private readonly IReadOnlyDictionary<string, ProductPackageResources> _byProduct;
 
     private ProductResourceCatalog(
         IReadOnlyList<ProductPackageResources> products,
         IReadOnlyDictionary<string, Func<string>> schemas,
-        IReadOnlyDictionary<string, GeneratedOperationSchema> operationSchemas)
+        IReadOnlyDictionary<string, GeneratedOperationSchema> operationSchemas,
+        IReadOnlyDictionary<string, Lazy<Tables.TableSchema>> tableSchemas)
     {
         Products = products;
         _byProduct = Products.ToFrozenDictionary(
@@ -35,6 +37,7 @@ public sealed class ProductResourceCatalog
             static item => item.Key,
             static item => item.Value,
             StringComparer.Ordinal);
+        _tableSchemas = tableSchemas.ToFrozenDictionary(StringComparer.Ordinal);
         SchemaIds = Array.AsReadOnly(
             _schemas.Keys.Order(StringComparer.Ordinal).ToArray());
     }
@@ -46,14 +49,15 @@ public sealed class ProductResourceCatalog
     public IReadOnlyList<ProductPackageResources> Products { get; }
 
     internal static ProductResourceCatalog Build(
-        IEnumerable<(ProductPackageResources Package, IReadOnlyList<ProductOperationCommand> Operations, IReadOnlyList<ResultRecord> Results)> products)
+        IEnumerable<(ProductPackageResources Package, IReadOnlyList<ProductOperationCommand> Operations, IReadOnlyList<Func<Tables.DocumentTable>> Tables, IReadOnlyList<ResultRecord> Results)> products)
     {
         ArgumentNullException.ThrowIfNull(products);
         var packages = new List<ProductPackageResources>();
         // Schemas and their views are written on first use: most invocations never read one.
         var schemas = new Dictionary<string, Func<string>>(StringComparer.Ordinal);
         var operationSchemas = new Dictionary<string, GeneratedOperationSchema>(StringComparer.Ordinal);
-        foreach ((ProductPackageResources package, IReadOnlyList<ProductOperationCommand> operations, IReadOnlyList<ResultRecord> results) in products)
+        var tableSchemas = new Dictionary<string, Lazy<Tables.TableSchema>>(StringComparer.Ordinal);
+        foreach ((ProductPackageResources package, IReadOnlyList<ProductOperationCommand> operations, IReadOnlyList<Func<Tables.DocumentTable>> tables, IReadOnlyList<ResultRecord> results) in products)
         {
             var published = new List<string>();
             foreach (ProductOperationCommand command in operations)
@@ -65,6 +69,18 @@ public sealed class ProductResourceCatalog
                     AddSchema(schemas, id, () => schema.Document);
                     published.Add(id);
                 }
+            }
+
+            foreach (Func<Tables.DocumentTable> table in tables.Take(1))
+            {
+                // A table's operation document schema is written from the table on first use,
+                // which loads the engine's types only then.
+                string id = ResultEnvelope.CatalogId(package.ProductId, Tables.DocumentTable.SchemaId);
+                string product = package.ProductId;
+                var schema = new Lazy<Tables.TableSchema>(() => Tables.TableSchema.Of(product, table()));
+                tableSchemas.Add(id, schema);
+                AddSchema(schemas, id, () => schema.Value.Document);
+                published.Add(id);
             }
 
             var resultSchemas = new ResultSchemaSet(package.ProductId, results, SdkSchemaCatalog.Schemas);
@@ -82,7 +98,8 @@ public sealed class ProductResourceCatalog
         return new ProductResourceCatalog(
             packages.AsReadOnly(),
             schemas,
-            operationSchemas);
+            operationSchemas,
+            tableSchemas);
     }
 
     /// <summary>Returns the resources indexed for one product.</summary>
@@ -121,7 +138,9 @@ public sealed class ProductResourceCatalog
 
     /// <summary>Returns operation IDs indexed for one schema.</summary>
     public IReadOnlyList<string> GetOperations(string schemaId) =>
-        _operationSchemas.TryGetValue(schemaId, out GeneratedOperationSchema? schema) ? schema.Names : [];
+        _operationSchemas.TryGetValue(schemaId, out GeneratedOperationSchema? schema) ? schema.Names
+        : _tableSchemas.TryGetValue(schemaId, out Lazy<Tables.TableSchema>? table) ? table.Value.Names
+        : [];
 
     /// <summary>Attempts to read one exact, self-contained operation schema view.</summary>
     public bool TryReadOperation(
@@ -131,7 +150,8 @@ public sealed class ProductResourceCatalog
     {
         document = null;
         return _operationSchemas.TryGetValue(schemaId, out GeneratedOperationSchema? schema)
-            && schema.Operations.TryGetValue(operationId, out document);
+            ? schema.Operations.TryGetValue(operationId, out document)
+            : _tableSchemas.TryGetValue(schemaId, out Lazy<Tables.TableSchema>? table) && table.Value.Views.TryGetValue(operationId, out document);
     }
 
     private static void AddSchema(Dictionary<string, Func<string>> schemas, string id, Func<string> read)

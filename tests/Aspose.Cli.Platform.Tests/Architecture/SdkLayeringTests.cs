@@ -55,6 +55,9 @@ public sealed class SdkLayeringTests
     /// services the products bind: licensing, diagnostics and fonts. They take product
     /// data as values, never a Product* type from Extensibility.</item>
     /// <item>Results: the write pipeline (OutputPipeline, OutputSet) and the envelope parts it fills.</item>
+    /// <item>Tables: the object table (rows, kinds, addresses, adds and actions), its operation
+    /// batch, the edit that reads each operation back from the saved file, the read and the
+    /// search, and the schema written from the table.</item>
     /// <item>Extensibility: product modules, definitions and the catalog, which compose
     /// everything below.</item>
     /// <item>Commanding: the System.CommandLine vocabulary product commands share, built on
@@ -77,6 +80,7 @@ public sealed class SdkLayeringTests
         [$"{Root}.Rendering", $"{Root}.Serialization"],
         [$"{Root}.Operations", $"{Root}.Licensing", $"{Root}.Diagnostics"],
         [$"{Root}.Results"],
+        [$"{Root}.Tables"],
         [$"{Root}.Extensibility"],
         [$"{Root}.Extensibility.Commanding"],
     ];

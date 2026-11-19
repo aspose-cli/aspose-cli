@@ -66,4 +66,11 @@ public sealed record NotFoundDetails
 
     /// <summary>The failing operation's op name; present only for an operation error that states one.</summary>
     public string? Op { get; init; }
+
+    /// <summary>The position of the failing operation in an object table batch, from 0; present only for such an operation.</summary>
+    [Minimum(0)]
+    public int? Index { get; init; }
+
+    /// <summary>The object table address that was looked up; present only for an object table address.</summary>
+    public string? At { get; init; }
 }

@@ -102,6 +102,12 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// </summary>
     internal Func<string, ProductOperationCommand>? Operations { get; init; }
 
+    /// <summary>
+    /// Loads the object table whose operation documents the command applies; <see cref="TableCommands"/>
+    /// sets it. The table names engine types, so nothing calls it to build help or capabilities.
+    /// </summary>
+    internal Func<Tables.DocumentTable>? Table { get; init; }
+
     /// <summary>Creates the System.CommandLine command that runs <paramref name="handler"/>.</summary>
     internal Command Create<TSession>(MenuContext<TSession> context, Func<TSession, TRequest, TResult> handler)
         where TSession : class

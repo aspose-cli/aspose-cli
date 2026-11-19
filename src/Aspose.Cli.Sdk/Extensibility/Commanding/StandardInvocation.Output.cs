@@ -248,7 +248,9 @@ public partial class StandardInvocation
         {
             return ChosenBy(writes, option, output) is [var first, ..] alternatives
                 ? (first, alternatives)
-                : throw NamesNoFormatWritten(option, output, writes, derived: false);
+                : target.FollowsInput
+                    ? (writes[0], writes)
+                    : throw NamesNoFormatWritten(option, output, writes, derived: false);
         }
 
         if (target.Kind == OutputKind.Mutation)
@@ -256,7 +258,9 @@ public partial class StandardInvocation
             string input = _parse.GetRequiredValue(_options.Input!);
             return Writing(writes, input) is [var first, ..] alternatives
                 ? (first, alternatives)
-                : throw NamesNoFormatWritten(StandardOptionNames.Out, input, writes, derived: true);
+                : target.FollowsInput
+                    ? (writes[0], writes)
+                    : throw NamesNoFormatWritten(StandardOptionNames.Out, input, writes, derived: true);
         }
 
         if (_options.Target?.Default is { } fallback)
