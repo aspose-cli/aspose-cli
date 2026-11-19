@@ -1,20 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
-using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Slides.Contracts;
 
-/// <summary>Options for one atomic presentation edit batch.</summary>
-public sealed record SlidesEditRequest : BoundedEditRequest<SlidesOpsBatch>
-{
-    /// <summary>Creates a request whose fields an object initializer sets.</summary>
-    public SlidesEditRequest()
-    {
-    }
-
-    /// <summary>Creates the request of one resolved edit invocation.</summary>
-    [SetsRequiredMembers]
-    public SlidesEditRequest(BoundedEditInvocation<SlidesOpsBatch> edit)
-        : base(edit)
-    {
-    }
-}
+/// <summary>One <c>slides edit</c>: the presentation, the checked operation batch and where the result goes.</summary>
+public sealed record SlidesEditRequest : TableEditRequest;

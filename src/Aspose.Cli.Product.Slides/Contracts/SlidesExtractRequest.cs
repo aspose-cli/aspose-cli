@@ -18,7 +18,5 @@ public sealed record SlidesExtractRequest
 public static class SlidesExtractKinds
 {
     public const string Media = "media";
-    public const string Notes = "notes";
-    public const string Text = "text";
-    public static IReadOnlyList<string> All { get; } = [Media, Notes, Text];
+    public static IReadOnlyList<string> All { get; } = [Media];
 }

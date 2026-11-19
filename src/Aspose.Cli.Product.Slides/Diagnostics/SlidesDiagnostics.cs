@@ -1,73 +1,9 @@
 using Aspose.Cli.Sdk.Diagnostics;
-using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Slides;
 
+/// <summary>Slides declares no error or warning code of its own: every error is one of the SDK's, and the engine's warnings are passed on as it reported them.</summary>
 internal static class SlidesDiagnostics
 {
-    internal static readonly ErrorCode SlideNotFound = ErrorCode.NotFound("SLIDE_NOT_FOUND");
-    internal static readonly ErrorCode PlaceholderNotFound = ErrorCode.NotFound("PLACEHOLDER_NOT_FOUND");
-    internal static readonly ErrorCode ChartDataInvalid = Validation("CHART_DATA_INVALID");
-    internal static readonly ErrorCode ShapeNotFound = ErrorCode.NotFound("SHAPE_NOT_FOUND");
-    internal static readonly ErrorCode LayoutNotFound = ErrorCode.NotFound("LAYOUT_NOT_FOUND");
-
-    /// <summary>An output draws a chart's implicit automatic title over its plot.</summary>
-    internal static readonly WarningCode ChartTitleOverlaid = new("CHART_TITLE_OVERLAID");
-
-    /// <summary>An authored table is taller than the area it was placed in.</summary>
-    internal static readonly WarningCode TableOverflow = new("TABLE_OVERFLOW");
-
-    /// <summary>A conversion of every slide to an export format left the hidden slides out.</summary>
-    internal static readonly WarningCode HiddenSlidesSkipped = new("HIDDEN_SLIDES_SKIPPED");
-
-    /// <summary>A render drew slides that a slide show and a conversion of every slide leave out.</summary>
-    internal static readonly WarningCode HiddenSlidesRendered = new("HIDDEN_SLIDES_RENDERED");
-
-    /// <summary>A slide that took another design lost its own background.</summary>
-    internal static readonly WarningCode SlideBackgroundReset = new("SLIDE_BACKGROUND_RESET");
-
-    /// <summary>A placeholder of a slide that took another layout stands for another role.</summary>
-    internal static readonly WarningCode PlaceholderRoleChanged = new("PLACEHOLDER_ROLE_CHANGED");
-
-    /// <summary>A slide took a layout of another master, since its own, or for insert_slide the one of the slide beside it, has none of the name the operation gave.</summary>
-    internal static readonly WarningCode SlideMasterChanged = new("SLIDE_MASTER_CHANGED");
-
-    /// <summary>A slide shows no footer text, slide number or date that set_footer was given, since its layout has no placeholder for it.</summary>
-    internal static readonly WarningCode FooterNotShown = new("FOOTER_NOT_SHOWN");
-
-    /// <summary>Alternative text insert_image was given holds a tab, which the saved presentation does not keep.</summary>
-    internal static readonly WarningCode AltTextTabsDropped = new("ALT_TEXT_TABS_DROPPED");
-
-    /// <summary>The verified output does not hold the slides in the order the batch left them.</summary>
-    internal static readonly DiagnosticDescriptor SlideOrderMismatch = DiagnosticDescriptor.Verification("SLIDE_ORDER_MISMATCH");
-
-    /// <summary>A slide of the verified output does not show the title, text, notes, layout, visibility or sections the batch set.</summary>
-    internal static readonly DiagnosticDescriptor SlideContentMismatch = DiagnosticDescriptor.Verification("SLIDE_CONTENT_MISMATCH");
-
-    /// <summary>The verified output does not hold the document properties or slide size the batch set.</summary>
-    internal static readonly DiagnosticDescriptor PresentationSettingMismatch = DiagnosticDescriptor.Verification("PRESENTATION_SETTING_MISMATCH");
-
-    internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
-    [
-        DiagnosticDescriptor.Error(SlideNotFound),
-        DiagnosticDescriptor.Error(PlaceholderNotFound),
-        DiagnosticDescriptor.Error(ChartDataInvalid),
-        DiagnosticDescriptor.Error(ShapeNotFound),
-        DiagnosticDescriptor.Error(LayoutNotFound),
-        DiagnosticDescriptor.Warning(ChartTitleOverlaid),
-        DiagnosticDescriptor.Warning(TableOverflow),
-        DiagnosticDescriptor.Warning(SlideBackgroundReset),
-        DiagnosticDescriptor.Warning(PlaceholderRoleChanged),
-        DiagnosticDescriptor.Warning(FooterNotShown),
-        DiagnosticDescriptor.Warning(AltTextTabsDropped),
-        DiagnosticDescriptor.Warning(SlideMasterChanged),
-        DiagnosticDescriptor.Warning(HiddenSlidesSkipped),
-        DiagnosticDescriptor.Warning(HiddenSlidesRendered),
-        SlideOrderMismatch,
-        SlideContentMismatch,
-        PresentationSettingMismatch,
-    ];
-
-    private static ErrorCode Validation(string code) =>
-        new(code, ExitCode.ValidationError);
+    internal static IReadOnlyList<DiagnosticDescriptor> All { get; } = [];
 }

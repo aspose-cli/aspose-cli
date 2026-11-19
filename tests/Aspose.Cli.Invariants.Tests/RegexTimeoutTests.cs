@@ -7,7 +7,7 @@ namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
 /// A regular expression that backtracks past its execution budget is one fact, so every product
-/// reports it with the same code and exit code (C-R28).
+/// reports it with the same code and exit code (C-R28), from an edit or a search alike.
 /// </summary>
 public sealed class RegexTimeoutTests
 {
@@ -17,8 +17,8 @@ public sealed class RegexTimeoutTests
     private static readonly string Text = new string('a', 40) + "!";
 
     /// <summary>
-    /// Every product of the catalog, each with its text edit that takes a regular expression over a
-    /// document holding <see cref="Text"/>, so a new product fails until its edit is placed here.
+    /// Every product of the catalog, each with its command that takes a regular expression over a
+    /// document holding <see cref="Text"/>, so a new product fails until its command is placed here.
     /// </summary>
     public static TheoryData<string> Products() => [.. CliCatalog.Current.Products.Select(static product => product.Id)];
 
@@ -31,28 +31,31 @@ public sealed class RegexTimeoutTests
             TestLicense.Require("Aspose.Slides evaluation mode reads text longer than five characters cut short, so the pattern never meets the long text.");
         }
 
-        (string document, JsonObject files, JsonArray create, JsonObject op) = product switch
+        (string document, JsonObject files, JsonArray[] setup, JsonArray run) = product switch
         {
-            "cells" => ("text.csv", new JsonObject { ["text.csv"] = Source(Text + "\n") }, null!, ReplaceText()),
+            "cells" => ("text.csv", new JsonObject { ["text.csv"] = Source(Text + "\n") }, Array.Empty<JsonArray>(), Edit("cells", "text.csv", ReplaceText())),
             "pdf" => ("text.pdf", new JsonObject { ["text.txt"] = Source(Text + "\n") },
-                new JsonArray("pdf", "create", "text.pdf", "--from-text", "text.txt"),
-                new JsonObject { ["op"] = "redact_text", ["find"] = Pattern, ["regex"] = true }),
-            "slides" => ("text.pptx", new JsonObject { ["title.md"] = Source("# " + Text + "\n") },
-                new JsonArray("slides", "create", "text.pptx", "--from-markdown", "title.md"), ReplaceText()),
+                new[] { new JsonArray("pdf", "create", "text.pdf", "--from-text", "text.txt") },
+                Edit("pdf", "text.pdf", new JsonObject { ["op"] = "redact_text", ["find"] = Pattern, ["regex"] = true })),
+            // Slides takes a regular expression in its search; its edit's replace_text matches text as
+            // it is. The text is a shape's on the one slide of the engine's new presentation, slide 256.
+            "slides" => ("text.pptx", new JsonObject(),
+                new[] { new JsonArray("slides", "create", "text.pptx"), new JsonArray("slides", "edit", "text.pptx", "--in-place", "--ops", TextBox()) },
+                new JsonArray("slides", "search", "text.pptx", "--regex", "--pattern", Pattern)),
             "words" => ("text.docx", new JsonObject { ["text.txt"] = Source(Text + "\n") },
-                new JsonArray("words", "create", "text.docx", "--from-text", "text.txt"), ReplaceText()),
+                new[] { new JsonArray("words", "create", "text.docx", "--from-text", "text.txt") }, Edit("words", "text.docx", ReplaceText())),
             _ => throw new ArgumentOutOfRangeException(nameof(product), product, null),
         };
         string output = Path.GetFileNameWithoutExtension(document) + ".out" + Path.GetExtension(document);
         var steps = new JsonArray();
-        if (create is not null)
+        foreach (JsonArray args in setup)
         {
-            steps.Add(new JsonObject { ["args"] = create, ["expect"] = new JsonObject { ["exitCode"] = 0 } });
+            steps.Add(new JsonObject { ["args"] = args, ["expect"] = new JsonObject { ["exitCode"] = 0 } });
         }
 
         steps.Add(new JsonObject
         {
-            ["args"] = new JsonArray(product, "edit", document, "--ops", new JsonArray(op).ToJsonString()),
+            ["args"] = run,
             ["expect"] = new JsonObject
             {
                 ["exitCode"] = 9,
@@ -70,6 +73,21 @@ public sealed class RegexTimeoutTests
 
         ScenarioRunner.Run(Scenario.Parse(scenario.ToJsonString())).AssertPassed();
     }
+
+    private static JsonArray Edit(string product, string document, JsonObject op) =>
+        new(product, "edit", document, "--ops", new JsonArray(op).ToJsonString());
+
+    private static string TextBox() =>
+        new JsonObject
+        {
+            ["ops"] = new JsonArray(new JsonObject
+            {
+                ["add"] = "autoShape",
+                ["in"] = "slide/256",
+                ["args"] = new JsonObject { ["shapeType"] = "Rectangle", ["x"] = 36, ["y"] = 36, ["width"] = 600, ["height"] = 80 },
+                ["props"] = new JsonObject { ["text"] = Text },
+            }),
+        }.ToJsonString();
 
     private static JsonObject Source(string text) => new() { ["text"] = text };
 

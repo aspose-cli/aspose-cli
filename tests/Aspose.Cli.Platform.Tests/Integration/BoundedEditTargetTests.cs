@@ -12,10 +12,10 @@ namespace Aspose.Cli.IntegrationTests;
 /// The <c>targets</c> of an edit outcome are bounded once, by the SDK, for every product: an
 /// operation that changed at most 100 parts lists each of them, and one that changed more lists
 /// the product's degenerate form instead: one range per unit of the objects the SDK snapshots
-/// (<c>page/1-101</c>, <c>slide/1-101</c>, <c>block/1-101</c>) or, for a unit whose addresses are
-/// not numbers, the unit (<c>cell/all</c>), never a truncated prefix of the parts. PDF pages and
-/// bookmarks, slides, cells and Word blocks are the parts a single operation can change by the
-/// hundred.
+/// (<c>page/1-101</c>, <c>block/1-101</c>) or, for a unit whose addresses are not numbers, the
+/// unit (<c>cell/all</c>), never a truncated prefix of the parts. PDF pages and bookmarks, cells
+/// and Word blocks are the parts a single operation can change by the hundred. A product on the
+/// object table reports no targets.
 /// </summary>
 public sealed partial class BoundedEditTargetTests
 {
@@ -55,13 +55,11 @@ public sealed partial class BoundedEditTargetTests
 
     /// <summary>
     /// The degenerate form of each product's case past the bound: the range of the PDF pages it
-    /// rotated, of the slides whose shapes it changed or of the Words blocks it changed, or the cell
-    /// unit of the Cells cells it changed.
+    /// rotated or of the Words blocks it changed, or the cell unit of the Cells cells it changed.
     /// </summary>
     private static readonly IReadOnlyDictionary<string, string> Roots = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["pdf"] = "page/1-101",
-        ["slides"] = "slide/1-101",
         ["cells"] = "cell/all",
         ["words"] = "block/1-101",
     };
@@ -99,9 +97,6 @@ public sealed partial class BoundedEditTargetTests
             ops.Add(new JsonObject { ["op"] = "rotate_pages", ["pages"] = "1-", ["rotation"] = 180 });
             return ("input.pdf", ops);
         });
-        yield return ("slides", workspace => (Create(workspace, "slides", "input.pptx", "--from-markdown",
-            string.Join("\n\n", Enumerable.Range(1, Bound + 1).Select(static slide =>
-                $"# Slide {slide}\n\n- Hello {slide}{(slide <= Bound ? " Mark" : string.Empty)}"))), Replacements()));
         yield return ("cells", static workspace =>
         {
             CliResult created = workspace.Run("cells", "create", "input.xlsx", "--output-format", "json");

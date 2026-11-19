@@ -32,18 +32,18 @@ public sealed class InputLoadingAlikeTests
     {
         using var workspace = new TempWorkspace();
         ScenarioLicense.Project(workspace.Path);
-        // Every input has its own file, so the inspections run at the same time.
+        // Every input has its own file, so the reads run at the same time.
         string[] codes = new string[LegacyInputs.Length];
         Parallel.For(0, LegacyInputs.Length, index =>
         {
             (string product, string fixture) = LegacyInputs[index];
             string input = $"{fixture.Replace('.', '-')}.{ScenarioFixtures.PrimaryFormat(product)}";
             File.WriteAllBytes(workspace.File(input), ScenarioFixtures.Read(fixture));
-            CliResult result = workspace.Run(product, "inspect", input, "--output-format", "json");
+            CliResult result = workspace.Run(product, "read", input, "--output-format", "json");
             string code = result.ExitCode == 0
                 ? "(opened)"
                 : JsonNode.Parse(result.StdErr)?["error"]?["code"]?.GetValue<string>() ?? $"(exit {result.ExitCode})";
-            codes[index] = $"{product} inspect {input}: {code}";
+            codes[index] = $"{product} read {input}: {code}";
         });
 
         string report = string.Join(Environment.NewLine, codes);

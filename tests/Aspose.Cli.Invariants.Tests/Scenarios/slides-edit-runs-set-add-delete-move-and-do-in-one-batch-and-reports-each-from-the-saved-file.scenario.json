@@ -1,0 +1,137 @@
+{
+  "name": "slides edit runs one batch of a set, an add, a delete, a move and a do in order and reports each from the saved file opened again: a set or an add by the canonical address of its object, with exists true and every row as read after the whole batch, so the title set to Plan reads Goal after replace_text; a delete by the address it had, with exists false and no now; a move with the slide's new index; an action with the engine's return value; and the inventory counts that changed",
+  "files": {
+    "deck.pptx": {
+      "fixture": "slides.pptx"
+    },
+    "dot.png": {
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAAAMElEQVR4nO3NMQ0AAAgDsCmZfynIwgQJT5P+zbQvIhaLxWKxWCwWi8VisVgsFvcsXhHvWVsvWSOBAAAAAElFTkSuQmCC"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "slides",
+        "edit",
+        "deck.pptx",
+        "--out",
+        "out.pptx",
+        "--ops",
+        "{\"ops\":[{\"set\":\"slide/258/placeholder/Title\",\"props\":{\"text\":\"Plan\"}},{\"add\":\"pictureFrame\",\"in\":\"slide/258\",\"args\":{\"image\":\"dot.png\",\"shapeType\":\"Rectangle\",\"x\":400,\"y\":300,\"width\":40,\"height\":40}},{\"delete\":\"slide/257/placeholder/Subtitle\"},{\"move\":\"slide/258\",\"to\":0},{\"do\":\"replace_text\",\"args\":{\"oldText\":\"Plan\",\"newText\":\"Goal\"}}]}"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "ops[0].at",
+            "equals": "slide/258/shape/2"
+          },
+          {
+            "path": "ops[0].exists",
+            "equals": true
+          },
+          {
+            "path": "ops[0].now.text",
+            "equals": "Goal"
+          },
+          {
+            "path": "ops[1].at",
+            "startsWith": "slide/258/shape/"
+          },
+          {
+            "path": "ops[1].exists",
+            "equals": true
+          },
+          {
+            "path": "ops[1].now.type",
+            "equals": "IPictureFrame"
+          },
+          {
+            "path": "ops[1].now.picture",
+            "equals": 0
+          },
+          {
+            "path": "ops[2].at",
+            "equals": "slide/257/shape/3"
+          },
+          {
+            "path": "ops[2].exists",
+            "equals": false
+          },
+          {
+            "path": "ops[2].now",
+            "exists": false
+          },
+          {
+            "path": "ops[3].at",
+            "equals": "slide/258"
+          },
+          {
+            "path": "ops[3].now.index",
+            "equals": 0
+          },
+          {
+            "path": "ops[4].do",
+            "equals": "replace_text"
+          },
+          {
+            "path": "ops[4].returned[0].at",
+            "equals": "slide/258/shape/2"
+          },
+          {
+            "path": "ops[4].returned[0].foundText",
+            "equals": "Plan"
+          },
+          {
+            "path": "ops[4].returned[1]",
+            "exists": false
+          },
+          {
+            "path": "ops[5]",
+            "exists": false
+          },
+          {
+            "path": "counts.images",
+            "equals": [
+              0,
+              1
+            ]
+          }
+        ],
+        "files": {
+          "present": [
+            "out.pptx"
+          ],
+          "unchanged": [
+            "deck.pptx"
+          ]
+        },
+        "reopens": [
+          "out.pptx"
+        ]
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "read",
+        "out.pptx",
+        "--kind",
+        "slide"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "objects[0].at",
+            "equals": "slide/258"
+          },
+          {
+            "path": "objects[1].at",
+            "equals": "slide/257"
+          }
+        ]
+      }
+    }
+  ]
+}

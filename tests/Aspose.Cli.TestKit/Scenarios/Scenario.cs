@@ -129,8 +129,9 @@ public sealed record ScenarioExpectation
     public ScenarioFiles? Files { get; init; }
 
     /// <summary>
-    /// Files that must open again: each is inspected with the product routing assigns to it, else
-    /// the command's own product when it reads it, or checked for its file signature otherwise. <c>product:path</c> names the product;
+    /// Files that must open again: each is inspected (read, by a product without inspect) with the
+    /// product routing assigns to it, else the command's own product when it reads it, or checked
+    /// for its file signature otherwise. <c>product:path</c> names the product;
     /// <c>@result</c> stands for every file the result lists in <c>output.path</c>,
     /// <c>outputs[].path</c> or, for a render, <c>outputs[].output.path</c>.
     /// </summary>
@@ -160,7 +161,11 @@ public sealed record ScenarioFiles
     /// <summary>Files that must exist.</summary>
     public IReadOnlyList<string>? Present { get; init; }
 
-    /// <summary>Files that must not exist.</summary>
+    /// <summary>
+    /// Files that must not exist. A path with <c>*</c>, which stands for any characters but
+    /// <c>/</c>, is a pattern that no file or directory of the workspace may match, such as
+    /// <c>.aspose-publication-*</c>.
+    /// </summary>
     public IReadOnlyList<string>? Absent { get; init; }
 
     /// <summary>Files whose bytes must equal what they were before the step.</summary>

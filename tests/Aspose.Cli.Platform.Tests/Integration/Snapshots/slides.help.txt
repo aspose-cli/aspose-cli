@@ -1,33 +1,30 @@
 ## aspose-cli slides --help
 Description:
-  Presentation automation with slide, layout and notes semantics.
+  Read, edit, convert and render presentations through the Aspose.Slides object model.
 
 Usage:
   aspose-cli slides [command]
 
 Commands:
-  inspect <file>  Show presentation structure, stable slide ids and metadata.
-  read <file>     Read a bounded slide-content window.
-  search <file>   Search the text of a presentation's shapes, notes, comments, layouts and masters.
+  read <file>     Read a presentation's objects, each with every row of the object table, and its inventory.
+  search <file>   Search the text of a presentation's shapes, table cells, notes and chart titles; each hit names the object's address.
   convert <file>  Convert a presentation or selected slides.
   render <file>   Render one or more slides for visual verification.
-  create <file>   Create a blank, template-based or Markdown-authored presentation.
-  edit <file>     Apply one validated, atomic presentation operation batch.
-  extract <file>  Extract bounded presentation media, notes or text.
+  create <file>   Create a presentation: the engine's new presentation, or a copy of a template saved in the output's format.
+  edit <file>     Apply a batch of set, add, delete, move and do operations to a presentation; nothing is written when one fails.
+  extract <file>  Extract the media a presentation embeds, byte for byte.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx
-  aspose-cli slides inspect deck.pptx --sample --detail masters --detail layouts --detail fonts --detail notes
-  aspose-cli slides read deck.pptx --slides 1-5 --content full --notes --output-format json
-  aspose-cli slides edit deck.pptx --ops deck-ops.json --out revised.pptx
+  aspose-cli slides create deck.pptx --template brand.potx
+  aspose-cli slides read deck.pptx --kind slide --kind shape
+  aspose-cli slides read deck.pptx --at slide/256
+  aspose-cli slides edit deck.pptx --ops ops.json --out revised.pptx
 
 Learn more:
-  aspose-cli docs slides/editing       atomic presentation operations
-  aspose-cli docs slides/verification  slide read-back and visual review
-  aspose-cli schema v2/slides/ops      the operation JSON schema
+  aspose-cli schema v2/slides/ops --operation directory  the object table: kinds, addresses, rows, adds and actions
 
 
 ## aspose-cli slides convert --help
@@ -68,54 +65,49 @@ Learn more:
 
 ## aspose-cli slides create --help
 Description:
-  Create a blank, template-based or Markdown-authored presentation.
+  Create a presentation: the engine's new presentation, or a copy of a template saved in the output's format.
 
 Usage:
   aspose-cli slides create <file> [options]
 
 Arguments:
-  <file>  PPTX or PPTM path to create.
+  <file>  Presentation path to create.
 
 Options:
-  --from-markdown <from-markdown>  Markdown outline to author.
-  --template <template>            Presentation whose masters, layouts and theme are reused.
-  --slide-size <16x9|4x3>          Slide aspect ratio, at a width of 720 points; the template size is kept when omitted. Set any other size, such as 960 by 540 points, with the set_slide_size operation of 'slides edit'.
-  --overwrite                      Replace the output file if it already exists.
-  --dry-run                        Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --encrypt <encrypt>              Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>      Name of an environment variable holding the password for the output presentation.
-  --encrypt-stdin                  Read the password for the output presentation from the first line of stdin.
-  --font-dir <font-dir>            Local font directory searched in addition to the system fonts; repeat for more.
+  --template <template>        A presentation to save as the new one. Default: the engine's new, empty presentation.
+  --overwrite                  Replace the output file if it already exists.
+  --dry-run                    Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --encrypt <encrypt>          Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>  Name of an environment variable holding the password for the output presentation.
+  --encrypt-stdin              Read the password for the output presentation from the first line of stdin.
+  --font-dir <font-dir>        Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx
-  aspose-cli slides create blank.pptx --slide-size 4x3
+  aspose-cli slides create blank.pptx
+  aspose-cli slides create deck.pptx --template brand.potx
 
 Learn more:
-  aspose-cli docs slides/deck-from-outline  a deck from a Markdown outline
-  aspose-cli docs slides/outline-authoring  the outline grammar
+  aspose-cli docs slides/build-a-slide  a new deck built in two batches
 
 
 ## aspose-cli slides edit --help
 Description:
-  Apply one validated, atomic presentation operation batch.
+  Apply a batch of set, add, delete, move and do operations to a presentation; nothing is written when one fails.
 
 Usage:
-  aspose-cli slides edit <file> [options]
+  aspose-cli slides edit <file> --ops <ops> [options]
 
 Arguments:
   <file>  Presentation file path.
 
 Options:
-  --ops <ops>                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/slides/ops.
-  --verify                       Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left; inserted pictures, shapes, tables and charts are not read back. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
+  --ops <ops> (REQUIRED)         The operation document, {"ops": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/slides/ops --operation directory; one of them in full: aspose-cli schema v2/slides/ops --operation <name>.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.
-  --dry-run                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
   --password <password>          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the presentation.
   --password-stdin               Read the password for the presentation from the first line of stdin.
@@ -128,18 +120,19 @@ Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli slides edit deck.pptx --ops deck-ops.json --out revised.pptx --verify
-  aspose-cli slides edit deck.pptx --in-place --ops deck-ops.json
+  aspose-cli slides edit deck.pptx --ops ops.json --out revised.pptx
+  aspose-cli slides edit deck.pptx --in-place --ops ops.json
 
 Learn more:
-  aspose-cli docs slides/editing       atomic presentation operations
-  aspose-cli schema v2/slides/ops      the operation JSON schema
-  aspose-cli docs slides/verification  what --verify reads back
+  aspose-cli schema v2/slides/ops --operation directory  the kinds and their rows, the adds and the actions an operation names
+  aspose-cli schema v2/slides/ops --operation <name>     one kind, add or action in full
+  aspose-cli docs slides/overview                        addresses, the five operation shapes and the read-back
+  aspose-cli docs slides/build-a-slide                   a new deck built in two batches
 
 
 ## aspose-cli slides extract --help
 Description:
-  Extract bounded presentation media, notes or text.
+  Extract the media a presentation embeds, byte for byte.
 
 Usage:
   aspose-cli slides extract <file> --what <what> --out-dir <out-dir> [options]
@@ -148,58 +141,29 @@ Arguments:
   <file>  Presentation file path.
 
 Options:
-  --what <media|notes|text> (REQUIRED)  What to extract; media includes audio and video.
-  --slides <slides>                     Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every slide.
-  --out-dir <out-dir> (REQUIRED)        Safe extraction directory.
-  --overwrite                           Replace the output file if it already exists.
-  --dry-run                             Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --password <password>                 Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>         Name of an environment variable holding the password for the presentation.
-  --password-stdin                      Read the password for the presentation from the first line of stdin.
+  --what <media> (REQUIRED)       What to extract: media, the pictures, audio and video the presentation embeds.
+  --slides <slides>               Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every slide.
+  --out-dir <out-dir> (REQUIRED)  Safe extraction directory.
+  --overwrite                     Replace the output file if it already exists.
+  --dry-run                       Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --password <password>           Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>   Name of an environment variable holding the password for the presentation.
+  --password-stdin                Read the password for the presentation from the first line of stdin.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli slides extract deck.pptx --what notes --out-dir notes
+  aspose-cli slides extract deck.pptx --what media --out-dir media
   aspose-cli slides extract deck.pptx --what media --slides 2-4 --out-dir media
 
 Learn more:
   aspose-cli docs slides/overview  what each Slides command is for
 
 
-## aspose-cli slides inspect --help
-Description:
-  Show presentation structure, stable slide ids and metadata.
-
-Usage:
-  aspose-cli slides inspect <file> [options]
-
-Arguments:
-  <file>  Presentation file path.
-
-Options:
-  --sample                       Include a bounded sample: each slide's title and up to 240 characters of its text. Default: off.
-  --detail <detail>              Extra sections to include; repeat for more. notes: presence and character count, with the text from 'slides read --notes'. Values: comments, fonts, layouts, masters, media, notes, properties, sections.
-  --password <password>          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>  Name of an environment variable holding the password for the presentation.
-  --password-stdin               Read the password for the presentation from the first line of stdin.
-
-Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli slides inspect deck.pptx --output-format json
-  aspose-cli slides inspect deck.pptx --sample --detail layouts --detail notes
-
-Learn more:
-  aspose-cli docs slides/overview  what each Slides command is for
-  aspose-cli docs reading          reading every product within bounded windows
-
-
 ## aspose-cli slides read --help
 Description:
-  Read a bounded slide-content window.
+  Read a presentation's objects, each with every row of the object table, and its inventory.
 
 Usage:
   aspose-cli slides read <file> [options]
@@ -208,10 +172,10 @@ Arguments:
   <file>  Presentation file path.
 
 Options:
-  --slides <slides>              Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: the first 10 slides.
-  --content <full|shapes|text>   Projection depth: how much of each slide to return. [default: shapes]
-  --max-chars <max-chars>        Maximum characters returned, counting every returned title, text, run, paragraph, table cell, chart label, footer, note and comment, repeats included. Range: 1-10000000. [default: 20000]
-  --notes                        Include speaker notes for returned slides.
+  --at <at>                      The address of the object to read with everything below it, as read gives it in at. Default: the whole document.
+  --from <from>                  The address of the object the window starts at; a truncated read's window.next gives it.
+  --kind <kind>                  List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind.
+  --max-objects <max-objects>    The most objects one window lists. Range: 1-10000. [default: 200]
   --password <password>          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the presentation.
   --password-stdin               Read the password for the presentation from the first line of stdin.
@@ -220,12 +184,12 @@ Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli slides read deck.pptx --slides 1-5 --output-format json
-  aspose-cli slides read deck.pptx --slides 2 --content full --notes --output-format json
+  aspose-cli slides read deck.pptx
+  aspose-cli slides read deck.pptx --at slide/256 --kind shape
 
 Learn more:
-  aspose-cli docs slides/verification  slide read-back and visual review
-  aspose-cli docs reading              reading every product within bounded windows
+  aspose-cli schema v2/slides/ops --operation directory  the kinds an address and --kind name, with their rows
+  aspose-cli docs slides/overview                        addresses, windows and the inventory
 
 
 ## aspose-cli slides render --help
@@ -259,12 +223,12 @@ Examples:
   aspose-cli slides render deck.pptx --slides 2 --width 1920 --out hero.png
 
 Learn more:
-  aspose-cli docs slides/verification  slide read-back and visual review
+  aspose-cli docs slides/engine-behavior  what the engine draws and saves as it is
 
 
 ## aspose-cli slides search --help
 Description:
-  Search the text of a presentation's shapes, notes, comments, layouts and masters.
+  Search the text of a presentation's shapes, table cells, notes and chart titles; each hit names the object's address.
 
 Usage:
   aspose-cli slides search <file> --pattern <pattern> [options]
@@ -276,7 +240,6 @@ Options:
   --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
   --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
   --case-sensitive                Match letter case exactly.
-  --scope <scope>                 Search scope: the shape text (with alternative and chart text), the speaker notes, the comments, the layouts or masters the slides show, or all of them. Values: all, comments, layouts, masters, notes, shapes. [default: all]
   --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
   --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
   --password <password>           Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
@@ -287,11 +250,10 @@ Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli slides search deck.pptx --pattern TODO --output-format json
-  aspose-cli slides search deck.pptx --pattern "Q[1-4]" --regex --scope notes
+  aspose-cli slides search deck.pptx --pattern TODO
+  aspose-cli slides search deck.pptx --pattern "Q[1-4]" --regex
 
 Learn more:
-  aspose-cli docs slides/verification  slide read-back and visual review
-  aspose-cli docs reading              reading every product within bounded windows
+  aspose-cli docs slides/overview  what each Slides command is for
 
 

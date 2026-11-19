@@ -138,18 +138,18 @@ internal static partial class ContractRules
     {
         (string? Product, string Wrong, string Right, string Problem)[] samples =
         [
-            ("slides", """{"op":"set_slide_size","size":{"preset":"16x9"}}""", """{"op":"set_slide_size","slideSize":{"preset":"16x9"}}""",
-                "'set_slide_size' has no field 'size'"),
-            ("slides", """{"op":"set_body","slide":1,"paragraphs":[{"text":"a","level":2}]}""", """{"op":"set_body","slide":1,"paragraphs":[{"text":"a","list":{"level":2}}]}""",
-                "'set_body' has no field 'paragraphs.level'"),
+            ("words", """{"op":"set_page_setup","size":{"preset":"letter"}}""", """{"op":"set_page_setup","pageSize":{"preset":"letter"}}""",
+                "'set_page_setup' has no field 'size'"),
+            ("words", """{"op":"insert_paragraphs","at":{"block":2},"paragraphs":[{"text":"a","level":2}]}""", """{"op":"insert_paragraphs","at":{"block":2},"paragraphs":[{"text":"a","list":{"level":2}}]}""",
+                "'insert_paragraphs' has no field 'paragraphs.level'"),
             ("cells", """{"op":"set_style","sheet":"S","range":"A1"}""", """{"op":"format_range","sheet":"S","range":"A1"}""",
                 "'set_style' is no operation of cells"),
-            (null, "aspose-cli slides read deck.pptx --scope shapes", "aspose-cli slides read deck.pptx --content shapes",
+            (null, "aspose-cli slides read deck.pptx --scope shapes", "aspose-cli slides read deck.pptx --kind shape",
                 "'slides read' has no option '--scope'"),
             (null, "aspose-cli pdf inspect report.pdf --detail outlines", "aspose-cli pdf inspect report.pdf --detail outline",
                 "'pdf inspect --detail' has no value 'outlines'"),
-            ("slides", """{"op":"set_slide_size", ..., "size":{"preset":"16x9"}}""", """{"op":"set_slide_size", ..., "slideSize":{"preset":"16x9"}}""",
-                "'set_slide_size' has no field 'size'"),
+            ("words", """{"op":"set_page_setup", ..., "size":{"preset":"letter"}}""", """{"op":"set_page_setup", ..., "pageSize":{"preset":"letter"}}""",
+                "'set_page_setup' has no field 'size'"),
             (null, "slides query deck.pptx", "slides read deck.pptx", "'slides' has no command 'query'"),
             (null, "license frobnicate", "license status", "'license' has no command 'frobnicate'"),
             (null, "docs licencing", "docs licensing", "'docs' has no topic 'licencing'"),
@@ -171,8 +171,8 @@ internal static partial class ContractRules
         [
             ("cells", "import_sheet.sheet", "import_sheet.sourceSheet",
                 "'import_sheet' has no field 'sheet'"),
-            ("slides", "set_body.paragraphs.level", "set_body.paragraphs.list.level",
-                "'set_body' has no field 'paragraphs.level'"),
+            ("words", "insert_paragraphs.paragraphs.level", "insert_paragraphs.paragraphs.list.level",
+                "'insert_paragraphs' has no field 'paragraphs.level'"),
             ("words", "inspect --detail sections fields", "inspect --detail sections --detail fields",
                 "'--detail' takes one value per occurrence; repeat the option: '--detail sections --detail fields'"),
         ];
@@ -288,11 +288,16 @@ internal static partial class ContractRules
                     static group => new HashSet<string>(group.SelectMany(static option => option.AllowedValues), StringComparer.Ordinal),
                     StringComparer.Ordinal);
             _codes = [.. catalog.Diagnostics.Keys];
+            // The operations capabilities lists, and the actions of each object table (do.<name> in its ops schema).
             _operations =
             [
                 .. catalog.Document["products"]!.AsArray()
                     .SelectMany(static product => product!["operations"]?.AsArray() ?? [])
                     .SelectMany(static operation => operation!["ops"]!.AsArray().Select(static op => op!.GetValue<string>())),
+                .. PublishedSchema.Ids(catalog).Where(PublishedSchema.IsOps)
+                    .SelectMany(static id => PublishedSchema.Definitions(id))
+                    .Where(static name => name.StartsWith("do.", StringComparison.Ordinal))
+                    .Select(static name => name["do.".Length..]),
             ];
             string roots = string.Join('|', catalog.Command(string.Empty).Subcommands.Select(Regex.Escape));
             _products = [.. catalog.Products.Select(static product => product.Id)];

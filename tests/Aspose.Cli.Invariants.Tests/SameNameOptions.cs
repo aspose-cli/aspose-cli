@@ -47,8 +47,9 @@ internal static class SameNameOptions
     // rule-exemptions: begin
     /// <summary>
     /// The differences C-R07 permits: the values of <see cref="ProductValues"/> and their defaults
-    /// (a default is one of the values), and a required
-    /// <c>--out</c> on a merge, which has no single input to name a default output after.
+    /// (a default is one of the values), a required <c>--out</c> on a merge, which has no single
+    /// input to name a default output after, and a required <c>--ops</c> on an edit that has no
+    /// other source of operations.
     /// </summary>
     public static IReadOnlyList<SameNameExemption> Exemptions { get; } =
     [
@@ -58,12 +59,9 @@ internal static class SameNameOptions
             "C-R07: what each unit a read, search or compare carries is the product's own, and so is its default: "
             + "a cells read projects styles too, a search looks in values, formulas or all of both, and a compare "
             + "compares formulas by default; a pdf read gives a page's text in reading order or with its spacing kept, "
-            + "a slides read each slide to a depth of its own, a words read each block as an outline, its text or its full formatting."),
+            + "a words read each block as an outline, its text or its full formatting."),
         new("--detail", OptionAspect.AllowedValues,
-            "C-R07: each product's inspect lists its own sections. Kept on purpose: slides media covers audio and video, "
-            + "so it stays apart from the images of words."),
-        new("--scope", OptionAspect.AllowedValues | OptionAspect.Default,
-            "C-R07: the part of the document a command reads or searches is the product's own, and so is its default."),
+            "C-R07: each product's inspect lists its own sections."),
         new("--to", OptionAspect.AllowedValues,
             "C-R07: each convert, extract and render lists its own product's formats (C-R36 checks the lists)."),
         new("--what", OptionAspect.AllowedValues,
@@ -72,6 +70,9 @@ internal static class SameNameOptions
         new("--out", OptionAspect.Required,
             "C-R07: merge has no single input to name a default output after, so its --out is required.",
             "pdf merge"),
+        new("--ops", OptionAspect.Required,
+            "C-R07: Slides edit has no other source of operations, such as the --set of the cells and words edits, so its --ops is required.",
+            "slides edit"),
     ];
     // rule-exemptions: end
 
@@ -80,7 +81,8 @@ internal static class SameNameOptions
     {
         OptionAspect.AllowedValues or OptionAspect.Default or (OptionAspect.AllowedValues | OptionAspect.Default) =>
             exemption.Command is null && ProductValues.Contains(exemption.Option),
-        OptionAspect.Required => exemption.Option == "--out" && exemption.Command?.Split(' ')[^1] == "merge",
+        OptionAspect.Required => (exemption.Option == "--out" && exemption.Command?.Split(' ')[^1] == "merge")
+            || (exemption.Option == "--ops" && exemption.Command?.Split(' ')[^1] == "edit"),
         _ => false,
     };
 

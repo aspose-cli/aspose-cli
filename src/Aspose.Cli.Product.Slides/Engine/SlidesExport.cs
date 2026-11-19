@@ -1,380 +1,140 @@
-using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Slides;
 using Aspose.Slides.Export;
 using static Aspose.Cli.Product.Slides.Engine.SlidesRenderSizing;
 using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
-using static Aspose.Cli.Product.Slides.Engine.SlidesShapeText;
 using static Aspose.Cli.Product.Slides.Engine.SlidesSlideSelection;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Conversion and rendering of a presentation or selected slides.</summary>
-internal static partial class SlidesExport
+/// <summary>
+/// Conversion and rendering of a presentation or selected slides: the engine's save and the
+/// engine's slide images, with the engine's default options except those a command names.
+/// </summary>
+internal static class SlidesExport
 {
     internal static SlidesConvertResult Convert(SlidesSession session, SlidesConvertRequest request)
     {
         LicenseState state = session.Outputs.License;
-        using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
+        var log = new EngineWarningLog();
+        using LoadedPresentation loaded = session.Loader.OpenTable(request.Input, request.Password, log);
         Presentation presentation = loaded.Presentation;
-        string formatId = request.Output.Format.Id;
-        // A slide selection converts every slide it names, hidden or not. Without one, an export
-        // leaves the hidden slides out, as PowerPoint's own export does, unless nothing would be
-        // left; a presentation format keeps them, hidden as they were.
-        IReadOnlyList<int>? slides = request.Slides is null
-            ? null
-            : ResolveSlideRange(request.Slides, presentation.Slides.Count);
-        int[] skipped = slides is null && !KeepsHiddenSlides(SlidesEngineFormats.SaveFormatOf(formatId))
-            ? [.. AllSlides(presentation.Slides.Count).Where(number => presentation.Slides[number - 1].Hidden)]
-            : [];
-        if (skipped.Length == presentation.Slides.Count)
-        {
-            skipped = [];
-        }
-
-        IReadOnlyList<int>? selection = skipped.Length == 0 ? slides : [.. AllSlides(presentation.Slides.Count).Except(skipped)];
-        IReadOnlyList<int> shown = selection ?? AllSlides(presentation.Slides.Count);
-        // Read before the save, which removes the unselected slides from this private copy for a
-        // presentation format, so the slides keep their numbers in the deck.
-        Warning? lost = ContentLost(presentation, formatId, shown);
-        Warning? pictures = PicturesLeftOut(loaded, request, shown);
-        IReadOnlyList<SlidesConvertOutput> outputs = ConvertOutputs(session, loaded, request, selection);
-        List<Warning> warnings = BuildConvertWarnings(loaded, formatId, skipped, shown, lost);
-        if (pictures is not null)
-        {
-            warnings.Add(pictures);
-        }
-
-        return new SlidesConvertResult
-        {
-            Input = Source(request.Input, loaded),
-            Outputs = outputs,
-            Slides = request.Slides?.Text,
-            License = EnvelopeParts.License(state),
-            Warnings = warnings.Count == 0 ? null : warnings,
-        };
-    }
-
-    // Whether a conversion to the format keeps the hidden slides: a presentation format carries
-    // them hidden, while an export shows only what a slide show shows.
-    private static bool KeepsHiddenSlides(SaveFormat format) =>
-        format is SaveFormat.Ppt or SaveFormat.Pptx or SaveFormat.Pptm or SaveFormat.Odp;
-
-    private static IReadOnlyList<SlidesConvertOutput> ConvertOutputs(
-        SlidesSession session,
-        LoadedPresentation loaded,
-        SlidesConvertRequest request,
-        IReadOnlyList<int>? slides)
-    {
-        Presentation presentation = loaded.Presentation;
+        IReadOnlyList<int>? slides = request.Slides is null ? null : ResolveSlideRange(request.Slides, presentation.Slides.Count);
         SaveFormat format = SlidesEngineFormats.SaveFormatOf(request.Output.Format.Id);
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
         SlidesOutputProtection.Protect(presentation, protection);
-
-        if (format == SaveFormat.Md)
-        {
-            IReadOnlyList<int> shown = slides ?? AllSlides(presentation.Slides.Count);
-            StateInheritedBullets(presentation, shown);
-            JoinHeadingLines(presentation, shown);
-        }
-
-        if (slides is not null && Exports(format))
-        {
-            // A selected slide is converted even when it is hidden; every export but HTML5 and
-            // GIF could show it by option, so it is shown in this private copy for all of them.
-            foreach (int number in slides)
-            {
-                presentation.Slides[number - 1].Hidden = false;
-            }
-        }
-
-        // An export of selected slides shows those slides alone, numbered as in the deck, so only
-        // their evaluation marks are its own.
         IReadOnlyList<OutputInfo> written = session.Outputs.Write(request.Output, presentation, protection.Encrypted, temp =>
         {
-            Save(temp);
-            if (format == SaveFormat.Odp)
-            {
-                SlidesOdfPackage.PutMimeTypeFirst(temp);
-            }
-
+            log.During = "save";
+            Save(presentation, temp, format, slides, log);
             loaded.Resources.ThrowIfFailed();
         }, pages: slides is not null && Exports(format) ? slides : null);
-        return [.. written.Select(static file => new SlidesConvertOutput(file))];
-
-        void Save(string temp)
+        return new SlidesConvertResult
         {
-            if (slides is null)
-            {
-                if (format == SaveFormat.Md)
-                {
-                    SaveMarkdown(presentation, temp, null);
-                    return;
-                }
-
-                presentation.Save(temp, format);
-                return;
-            }
-
-            if (Exports(format))
-            {
-                SaveSlides(presentation, temp, slides, format);
-                return;
-            }
-
-            // Editable formats keep the source's size, properties, masters and protection:
-            // the unselected slides leave this private loaded copy instead of cloning into a new deck.
-            RemoveUnselectedSlides(presentation, slides);
-            presentation.Save(temp, format);
-        }
+            Input = Source(request.Input, loaded),
+            Outputs = [.. written.Select(static file => new SlidesConvertOutput(file))],
+            Slides = request.Slides?.Text,
+            EngineWarnings = log.Warnings.Count == 0 ? null : log.Warnings,
+            License = EnvelopeParts.License(state),
+            Warnings = InputWarnings(loaded),
+        };
     }
 
-    private static void SaveSlides(Presentation presentation, string temp, IReadOnlyList<int> slides, SaveFormat format)
-    {
-        if (format == SaveFormat.Md)
-        {
-            SaveMarkdown(presentation, temp, slides);
-            return;
-        }
+    /// <summary>Saves the whole presentation in <paramref name="format"/>, the engine's options set only for its warning callback.</summary>
+    internal static void Save(Presentation presentation, string temp, SaveFormat format, EngineWarningLog log) =>
+        Save(presentation, temp, format, slides: null, log);
 
-        presentation.Save(temp, [.. slides], format);
-    }
-
-    /// <summary>
-    /// Writes the bullet each paragraph inherits from its layout or master as its own, in this
-    /// private loaded copy, because the Markdown export lists only a paragraph's own bullet and
-    /// would write a placeholder's inherited list as plain lines (SLIDES-MD-INHERITED-BULLETS).
-    /// </summary>
-    private static void StateInheritedBullets(Presentation presentation, IReadOnlyList<int> slides)
+    private static void Save(Presentation presentation, string temp, SaveFormat format, IReadOnlyList<int>? slides, EngineWarningLog log)
     {
-        foreach (int number in slides)
-        {
-            foreach (IParagraph paragraph in presentation.Slides[number - 1].Shapes
-                .SelectMany(TextFrames)
-                .SelectMany(static frame => frame.Paragraphs)
-                .Where(static paragraph => paragraph.ParagraphFormat.Bullet.Type == BulletType.NotDefined && !string.IsNullOrWhiteSpace(paragraph.Text)))
-            {
-                IBulletFormatEffectiveData inherited = paragraph.ParagraphFormat.GetEffective().Bullet;
-                IBulletFormat bullet = paragraph.ParagraphFormat.Bullet;
-                switch (inherited.Type)
-                {
-                    case BulletType.Symbol:
-                        bullet.Type = BulletType.Symbol;
-                        bullet.Char = inherited.Char;
-                        break;
-                    case BulletType.Numbered:
-                        bullet.Type = BulletType.Numbered;
-                        bullet.NumberedBulletStyle = inherited.NumberedBulletStyle;
-                        bullet.NumberedBulletStartWith = inherited.NumberedBulletStartWith;
-                        break;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Saves Markdown that starts each slide with a comment naming its number in the deck,
-    /// selected or not; a comment stays out of the rendered text and is not taken for the
-    /// slide's heading. The export puts a separator line before every slide's comment; the one
-    /// that would open the file goes, since many Markdown tools take a file that opens with
-    /// "---" for YAML front matter and hide the first slide's comment in it.
-    /// </summary>
-    private static void SaveMarkdown(Presentation presentation, string temp, IReadOnlyList<int>? slides)
-    {
-        // The export makes its image folder under BasePath, the process's working directory
-        // unless set, even when it writes no image; a private folder keeps it out of there.
-        DirectoryInfo scratch = Directory.CreateTempSubdirectory("aspose-cli-md-");
+        // The Markdown export makes its image folder under its base path even when it writes no
+        // image; a private folder keeps it out of the working directory.
+        DirectoryInfo? scratch = format == SaveFormat.Md ? Directory.CreateTempSubdirectory("aspose-cli-md-") : null;
         try
         {
-            var options = new MarkdownSaveOptions
-            {
-                ExportType = MarkdownExportType.TextOnly,
-                ShowSlideNumber = true,
-                SlideNumberFormat = "<!-- slide {0} -->",
-                BasePath = scratch.FullName,
-            };
-            if (slides is null)
-            {
-                presentation.Save(temp, SaveFormat.Md, options);
-            }
-            else
-            {
-                presentation.Save(temp, [.. slides], SaveFormat.Md, options);
-            }
+            Save(presentation, temp, format, slides, Options(format, log, scratch?.FullName));
         }
         finally
         {
-            scratch.Delete(recursive: true);
+            scratch?.Delete(recursive: true);
         }
-
-        string markdown = File.ReadAllText(temp).TrimStart();
-        if (markdown.StartsWith("---", StringComparison.Ordinal))
-        {
-            int lineEnd = markdown.IndexOf('\n', StringComparison.Ordinal);
-            markdown = lineEnd < 0 ? string.Empty : markdown[(lineEnd + 1)..];
-        }
-
-        File.WriteAllText(temp, SeparatorAfterMarker().Replace(markdown, "$1"));
     }
 
-    // The export also puts a separator line after every slide's comment, parting the comment
-    // from its slide; without it each slide after the first is a separator, its comment and its
-    // content.
-    [GeneratedRegex(@"^(<!-- slide \d+ -->\r?\n)---[ \t]*\r?\n", RegexOptions.Multiline)]
-    private static partial Regex SeparatorAfterMarker();
-
-    /// <summary>
-    /// Writes the lines of each title and subtitle as one paragraph, its lines joined by " / ",
-    /// in this private loaded copy: the Markdown export writes each paragraph of one as a
-    /// heading of its own and runs the lines of a paragraph together where they break.
-    /// </summary>
-    private static void JoinHeadingLines(Presentation presentation, IReadOnlyList<int> slides)
+    private static void Save(Presentation presentation, string temp, SaveFormat format, IReadOnlyList<int>? slides, ISaveOptions? options)
     {
-        foreach (int number in slides)
+        if (slides is not null && Exports(format))
         {
-            foreach (ITextFrame frame in presentation.Slides[number - 1].Shapes.OfType<IAutoShape>()
-                .Where(static shape => shape.Placeholder?.Type is PlaceholderType.Title or PlaceholderType.CenteredTitle or PlaceholderType.Subtitle)
-                .Select(static shape => shape.TextFrame)
-                .OfType<ITextFrame>())
+            if (options is null)
             {
-                string[] lines = [.. frame.Paragraphs
-                    .SelectMany(static paragraph => paragraph.Text.Split('\v'))
-                    .Select(static line => line.Trim())
-                    .Where(static line => line.Length > 0)];
-                IParagraph? first = frame.Paragraphs.FirstOrDefault(static paragraph => !string.IsNullOrWhiteSpace(paragraph.Text));
-                if (lines.Length < 2 || first is null)
-                {
-                    continue;
-                }
-
-                first.Text = string.Join(" / ", lines);
-                foreach (IParagraph other in frame.Paragraphs.Where(paragraph => !ReferenceEquals(paragraph, first)).ToArray())
-                {
-                    frame.Paragraphs.Remove(other);
-                }
+                presentation.Save(temp, [.. slides], format);
             }
+            else
+            {
+                presentation.Save(temp, [.. slides], format, options);
+            }
+
+            return;
         }
-    }
 
-    // Whether the format is an export, which can show selected slides alone; a presentation
-    // format keeps them by removing the others.
-    private static bool Exports(SaveFormat format) =>
-        format is SaveFormat.Pdf or SaveFormat.Xps or SaveFormat.Html or SaveFormat.Html5
-            or SaveFormat.Gif or SaveFormat.Md;
-
-    private static List<Warning> BuildConvertWarnings(
-        LoadedPresentation loaded,
-        string targetFormatId,
-        IReadOnlyList<int> skipped,
-        IReadOnlyList<int> shown,
-        Warning? lost)
-    {
-        var warnings = WrittenWarnings(loaded, shown)?.ToList() ?? [];
-        if (skipped.Count > 0)
+        if (slides is not null)
         {
-            string numbers = string.Join(", ", skipped);
-            warnings.Add(new Warning(SlidesDiagnostics.HiddenSlidesSkipped,
-                $"The {targetFormatId} output leaves out the hidden slide(s) {numbers}, as a slide show and PowerPoint's export do."));
+            // A presentation format keeps the selected slides with the deck's size, properties,
+            // masters and protection: the others leave this private loaded copy.
+            RemoveUnselectedSlides(presentation, slides);
         }
 
-        // An export holds the slides alone, with no notes pages, so the speaker notes of the
-        // slides it shows are not in it; a presentation format keeps them.
-        int[] noted = Exports(SlidesEngineFormats.SaveFormatOf(targetFormatId))
-            ? [.. shown.Where(number => Notes(loaded.Presentation.Slides[number - 1]) is not null)]
-            : [];
-        if (noted.Length > 0)
+        if (options is null)
         {
-            warnings.Add(ContentLoss.Warning([ContentKind.SpeakerNotes],
-                $"The {targetFormatId} output does not include the speaker notes of slide(s) {string.Join(", ", noted)}: an export holds the slides alone."));
+            presentation.Save(temp, format);
         }
-
-        if (lost is not null)
+        else
         {
-            warnings.Add(lost);
+            presentation.Save(temp, format, options);
         }
-
-        if (SlidesEngineFormats.IsLossy(targetFormatId))
-        {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Slides conversion to {targetFormatId} may not preserve every presentation feature."));
-        }
-
-        return warnings;
     }
 
     /// <summary>
-    /// The warning that an output of the slides' text holds none of the pictures they show
-    /// (<see cref="SlidesContentLoss.Pictures"/>), counted as 'slides extract --what media' writes
-    /// them, each once (<see cref="SlidesExtract.ShownMedia"/>); null when the format keeps them or
-    /// the shown slides have none.
+    /// The engine's save options of a format, with nothing set but the warning callback; null for
+    /// a format the engine has no options for, which reports no warning. A Markdown export writes
+    /// its images under its base path, so it gets a private folder and writes the text alone.
     /// </summary>
-    private static Warning? PicturesLeftOut(LoadedPresentation loaded, SlidesConvertRequest request, IReadOnlyList<int> shown)
+    private static ISaveOptions? Options(SaveFormat format, EngineWarningLog log, string? basePath)
     {
-        string format = request.Output.Format.Id;
-        int[] pictured = SlidesEngineFormats.Losses(format).HasFlag(SlidesContentLoss.Pictures)
-            ? [.. shown.Where(number => SlidesExtract.ShownMedia(loaded.Presentation, [number]).OfType<IPPImage>().Any())]
-            : [];
-        if (pictured.Length == 0)
+        ISaveOptions? options = format switch
         {
-            return null;
+            SaveFormat.Ppt => new PptOptions(),
+            SaveFormat.Pptx or SaveFormat.Pptm => new PptxOptions(),
+            SaveFormat.Pdf => new PdfOptions(),
+            SaveFormat.Xps => new XpsOptions(),
+            SaveFormat.Html => new HtmlOptions(),
+            SaveFormat.Html5 => new Html5Options(),
+            SaveFormat.Gif => new GifOptions(),
+            SaveFormat.Md => new MarkdownSaveOptions { ExportType = MarkdownExportType.TextOnly, BasePath = basePath },
+            _ => null,
+        };
+        if (options is not null)
+        {
+            options.WarningCallback = new SlidesWarnings(log);
         }
 
-        return ContentLoss.Warning([ContentKind.Pictures],
-            $"The {format} output holds the slides' text alone and leaves out the {SlidesExtract.ShownMedia(loaded.Presentation, pictured).OfType<IPPImage>().Count()} picture(s) shown on slide(s) {string.Join(", ", pictured)}.");
+        return options;
     }
 
-    // What a save in the format does not keep of the slides it shows (SlidesEngineFormat.Loses),
-    // named by their numbers in the deck: an ODP save (SLIDES-ODP-NATIVE-CONTENT) turns their
-    // native charts into pictures and drops the transitions and the sections; a PPT save
-    // (SLIDES-PPT-NATIVE-CONTENT) turns the charts into pictures and drops the table styles, and
-    // the format holds no sections; an HTML5 export draws the charts as pictures, with no text a
-    // reader finds. A selection keeps every section, so the sections are the deck's. Null when the
-    // shown slides have none of what the format loses. The slides look as in the deck unless a
-    // table loses its style.
-    private static Warning? ContentLost(Presentation presentation, string format, IReadOnlyList<int> shown)
-    {
-        SlidesContentLoss loses = SlidesEngineFormats.Losses(format);
-        if (loses == SlidesContentLoss.None)
-        {
-            return null;
-        }
-
-        int[] charts = Slides(SlidesContentLoss.Charts, static slide => Has(slide.Shapes, static shape => shape is Aspose.Slides.Charts.IChart));
-        int[] transitions = Slides(SlidesContentLoss.Transitions, static slide => slide.SlideShowTransition.Type != Aspose.Slides.SlideShow.TransitionType.None);
-        int sections = loses.HasFlag(SlidesContentLoss.Sections) ? presentation.Sections.Count : 0;
-        // A table without a style, or with the style that draws nothing, has nothing to lose.
-        int[] tables = Slides(SlidesContentLoss.TableStyles, static slide => Has(slide.Shapes, static shape =>
-            shape is ITable { StylePreset: not (TableStylePreset.None or TableStylePreset.NoStyleNoGrid) }));
-        (string Text, ContentKind Kind)[] lost =
-        [
-            .. charts.Length == 0 ? [] : new[] { ($"the native charts of slide(s) {string.Join(", ", charts)}, which become pictures", ContentKind.Charts) },
-            .. transitions.Length == 0 ? [] : new[] { ($"the transitions of slide(s) {string.Join(", ", transitions)}", ContentKind.Transitions) },
-            .. sections == 0 ? [] : new[] { ($"the {sections} section(s)", ContentKind.Sections) },
-            .. tables.Length == 0 ? [] : new[] { ($"the table styles of slide(s) {string.Join(", ", tables)}, so those tables lose the fills, borders and text formatting of their style", ContentKind.TableStyles) },
-        ];
-        if (lost.Length == 0)
-        {
-            return null;
-        }
-
-        return ContentLoss.Warning([.. lost.Select(static item => item.Kind)],
-            $"The {format} output does not keep {string.Join("; ", lost.Select(static item => item.Text))}{(tables.Length == 0 ? ", though its slides look as in the deck." : ".")}");
-
-        int[] Slides(SlidesContentLoss kind, Func<ISlide, bool> holds) => loses.HasFlag(kind)
-            ? [.. shown.Where(number => holds(presentation.Slides[number - 1]))]
-            : [];
-
-        static bool Has(IShapeCollection shapes, Func<IShape, bool> kind) => SlidesTextUnits.Shapes(shapes).Any(found => kind(found.Shape));
-    }
+    // Whether the format is an export, which the engine saves selected slides of.
+    private static bool Exports(SaveFormat format) =>
+        format is SaveFormat.Pdf or SaveFormat.Xps or SaveFormat.Html or SaveFormat.Html5 or SaveFormat.Gif or SaveFormat.Md;
 
     internal static SlidesRenderResult Render(SlidesSession session, SlidesRenderRequest request)
     {
         LicenseState state = session.Outputs.License;
-        using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
-        IReadOnlyList<int> slides = RenderSelection.Resolve(request.Slides, loaded.Presentation.Slides.Count, SlidesDiagnostics.SlideNotFound, "slide");
-        IReadOnlyList<SlidesSlideOutput> outputs = RenderImages(session, loaded, request, slides);
+        var log = new EngineWarningLog();
+        using LoadedPresentation loaded = session.Loader.OpenTable(request.Input, request.Password, log);
+        IReadOnlyList<int> slides = RenderSelection.Resolve(request.Slides, loaded.Presentation.Slides.Count, Sdk.Errors.ErrorCodes.AddressNotFound, "slide");
+        log.During = "save";
+        IReadOnlyList<SlidesSlideOutput> outputs = RenderImages(session, loaded, request, slides, log);
         return new SlidesRenderResult
         {
             Input = Source(request.Input, loaded),
@@ -383,29 +143,18 @@ internal static partial class SlidesExport
                 ? null
                 : request.Dpi ?? RenderPixelGuard.DefaultDpi,
             Width = request.Output.Format.Raster ? request.Width : null,
+            EngineWarnings = log.Warnings.Count == 0 ? null : log.Warnings,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, slides), HiddenRendered(loaded.Presentation, slides)),
+            Warnings = InputWarnings(loaded),
         };
     }
 
-    /// <summary>
-    /// The warning that a render drew hidden slides, which a slide show and a
-    /// conversion of every slide leave out; null when none of the drawn slides is hidden.
-    /// </summary>
-    internal static IReadOnlyList<Warning>? HiddenRendered(Presentation presentation, IEnumerable<int> slides)
-    {
-        int[] hidden = [.. slides.Where(number => presentation.Slides[number - 1].Hidden)];
-        return hidden.Length == 0
-            ? null
-            : [new Warning(SlidesDiagnostics.HiddenSlidesRendered,
-                $"The rendered slide(s) {string.Join(", ", hidden)} are hidden: a slide show and a convert of every slide leave them out.")];
-    }
-
-    private static IReadOnlyList<SlidesSlideOutput> RenderImages(
+    private static List<SlidesSlideOutput> RenderImages(
         SlidesSession session,
         LoadedPresentation loaded,
         SlidesRenderRequest request,
-        IReadOnlyList<int> slides)
+        IReadOnlyList<int> slides,
+        EngineWarningLog log)
     {
         Presentation presentation = loaded.Presentation;
         float scale = RenderScale(presentation, request);
@@ -424,6 +173,7 @@ internal static partial class SlidesExport
         using OutputSet<Presentation> transaction = session.Outputs.BeginSet([directory], "slides-render");
         var targets = new List<int>(slides.Count);
         ImageFormat? image = SlidesEngineFormats.SlideImageOf(request.Output.Format.Id);
+        var options = new RenderingOptions { WarningCallback = new SlidesWarnings(log) };
         foreach ((int number, string path) in slides.Zip(request.Output.Parts(slides)))
         {
             ISlide slide = presentation.Slides[number - 1];
@@ -437,7 +187,7 @@ internal static partial class SlidesExport
                     return;
                 }
 
-                using IImage drawn = slide.GetImage(scale, scale);
+                using IImage drawn = slide.GetImage(options, scale, scale);
                 using FileStream outputStream = File.Create(temp);
                 drawn.Save(outputStream, bitmap, quality: 92);
             }, rendering: true, pages: [number]);

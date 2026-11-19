@@ -312,7 +312,7 @@ internal static partial class ContractRules
     /// <summary>
     /// The smallest invocation that applies a selection: a convert that can write PDF writes it,
     /// since a flow format has no pages to select; a split selects pages <c>--by pages</c>; and an extract selects the
-    /// units of the text it extracts.
+    /// units of the text it extracts, or of the first part kind it lists where it extracts no text.
     /// </summary>
     private static Invocation R16Selection(CliCommand command, string option, string value)
     {
@@ -330,14 +330,22 @@ internal static partial class ContractRules
         }
         else if (omit == "--what")
         {
-            invocation.Add("--what", "text");
+            IReadOnlyList<string> parts = command.Option("--what")!.AllowedValues;
+            invocation.Add("--what", parts.Count == 0 || parts.Contains("text") ? "text" : parts[0]);
         }
         return invocation.Add(option, value);
     }
 
-    /// <summary>Every edit accepts its operations as a bare JSON array as well as an <c>{ops:[...]}</c> document.</summary>
+    /// <summary>
+    /// Every edit accepts its operations as a bare JSON array as well as an <c>{ops:[...]}</c>
+    /// document, except an edit through an object table
+    /// (<see cref="PublishedSchema.IsObjectTableProduct"/>), whose batch is one document,
+    /// <c>{ops:[...]}</c>, with no second spelling: it refuses the bare array with
+    /// <c>OPS_INVALID</c> and writes nothing.
+    /// </summary>
     private static IEnumerable<InvariantCase> R22Run(CliCatalog catalog)
     {
+        int[] invalid = [catalog.Diagnostics["OPS_INVALID"].ExitCode!.Value];
         foreach (CliCommand edit in catalog.Commands.Where(static command => command.Verb == "edit" && command.Has("--ops")
             && command.Product is { } product && ScenarioFixtures.Products.Contains(product)))
         {
@@ -349,7 +357,9 @@ internal static partial class ContractRules
                 invocation.Add("--dry-run");
             }
             yield return InvariantCases.Case("C-R22", $"{edit} --ops with a bare array", edit.Product!, slow: false, invocation,
-                new ScenarioExpectation { ExitCode = [0] });
+                PublishedSchema.IsObjectTableProduct(catalog, edit.Product!)
+                    ? new ScenarioExpectation { ExitCode = invalid, Error = ["OPS_INVALID"], Files = new ScenarioFiles { NothingWritten = true } }
+                    : new ScenarioExpectation { ExitCode = [0] });
         }
     }
 

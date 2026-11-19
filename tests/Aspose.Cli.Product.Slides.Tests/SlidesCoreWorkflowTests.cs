@@ -1,6 +1,6 @@
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Slides;
+using Aspose.Slides.Export;
 using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
@@ -8,36 +8,19 @@ namespace Aspose.Cli.Product.Slides.Tests;
 public sealed class SlidesCoreWorkflowTests
 {
     [Fact]
-    public void Parse_AcceptsVersionTwoAndRejectsVersionOne()
-    {
-        SlidesOpsBatch batch = ParseOps(
-            """{"schemaVersion":2,"ops":[{"op":"set_properties","title":"Briefing"}]}""");
-
-        Assert.Equal(2, batch.SchemaVersion);
-        Assert.Equal(
-            ErrorCodes.OpsInvalid,
-            Assert.Throws<CliException>(() => ParseOps(
-                """{"schemaVersion":1,"ops":[{"op":"set_properties","title":"Briefing"}]}""")).Code);
-    }
-
-    [Fact]
     public void CreateSearchAndExtract_CoverCoreArtifactFlows()
     {
         using var fixture = new SlidesEngineFixture();
-        string markdown = fixture.File("briefing.md");
-        File.WriteAllText(
-            markdown,
-            "# Revenue briefing\n\nRevenue grew in the current quarter.");
         string presentation = fixture.File("briefing.pptx");
 
         SlidesCreateResult created = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
         {
             Output = TestOutput.At(presentation),
-            Markdown = new SourceFile("--from-markdown", markdown),
         });
 
         Assert.True(File.Exists(presentation));
-        Assert.True(created.SlideCount > 0);
+        Assert.Equal(1, created.SlideCount);
+        Assert.Empty(created.Inputs);
 
         string searchable = fixture.CreatePresentation("searchable.pptx", slides: 1);
 
@@ -46,28 +29,69 @@ public sealed class SlidesCoreWorkflowTests
             new SlidesSearchRequest
             {
                 Input = searchable,
-                Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: false), 1, Scope: null),
+                Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: true), 1, Scope: null),
             });
-        SlidesSearchHit hit = Assert.Single(search.Hits);
-        Assert.Contains("Slide", hit.Text, StringComparison.Ordinal);
+        TableHit hit = Assert.Single(search.Hits);
+        Assert.Equal("Slide", hit.Text);
+        Assert.Equal("text", hit.Row);
+
+        string media = fixture.File("media.pptx");
+        using (var deck = new Presentation())
+        {
+            IPPImage image = deck.Images.AddImage(SlidesEngineFixture.Png(16));
+            deck.Slides[0].Shapes.AddPictureFrame(ShapeType.Rectangle, 10, 10, 50, 50, image);
+            deck.Save(media, SaveFormat.Pptx);
+        }
 
         SlidesExtractResult extracted = SlidesExtract.Run(
             fixture.Session,
             new SlidesExtractRequest
             {
-                Input = searchable,
-                Output = new ResolvedDirectory(fixture.File("text")),
-                What = SlidesExtractKinds.Text,
+                Input = media,
+                Output = new ResolvedDirectory(fixture.File("media")),
+                What = SlidesExtractKinds.Media,
             });
-        Assert.NotEmpty(extracted.Outputs);
-        Assert.All(extracted.Outputs, item =>
+        SlidesExtractedOutput item = Assert.Single(extracted.Outputs);
+        Assert.Equal(1, item.Index);
+        Assert.True(File.Exists(item.Path));
+    }
+
+    [Fact]
+    public void ExtractMedia_WithSlides_WritesOnlyTheMediaThoseSlidesShow()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("media.pptx", slides: 2);
+        byte[] first = SlidesEngineFixture.Png(100);
+        byte[] second = SlidesEngineFixture.Png(200);
+        using (var deck = new Presentation(input))
         {
-            Assert.NotNull(item.Slide);
-            Assert.True(File.Exists(item.Path));
+            IPPImage picture = deck.Images.AddImage(first);
+            deck.Slides[0].Shapes.AddPictureFrame(ShapeType.Rectangle, 10, 10, 50, 50, picture);
+            IPPImage background = deck.Images.AddImage(second);
+            deck.Slides[1].Background.Type = BackgroundType.OwnBackground;
+            deck.Slides[1].Background.FillFormat.FillType = FillType.Picture;
+            deck.Slides[1].Background.FillFormat.PictureFillFormat.Picture.Image = background;
+            deck.Save(input, SaveFormat.Pptx);
+        }
+
+        SlidesExtractResult all = SlidesExtract.Run(fixture.Session, new SlidesExtractRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(fixture.File("all")),
+            What = SlidesExtractKinds.Media,
         });
-        Assert.Contains(
-            extracted.Outputs,
-            item => File.ReadAllText(item.Path).Contains("Slide", StringComparison.Ordinal));
+        SlidesExtractResult selected = SlidesExtract.Run(fixture.Session, new SlidesExtractRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(fixture.File("selected")),
+            What = SlidesExtractKinds.Media,
+            Slides = PageRange.Parse("2"),
+        });
+
+        Assert.Equal(2, all.Outputs.Count);
+        SlidesExtractedOutput item = Assert.Single(selected.Outputs);
+        Assert.Equal(2, item.Index);
+        Assert.Equal(File.ReadAllBytes(all.Outputs[1].Path), File.ReadAllBytes(item.Path));
     }
 
     [Theory]
@@ -101,11 +125,4 @@ public sealed class SlidesCoreWorkflowTests
                 static warning => warning.Code == WarningCodes.EvaluationMode);
         }
     }
-
-    private static bool IsPng(byte[] content) =>
-        content.AsSpan().StartsWith(
-            new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a });
-
-    private static SlidesOpsBatch ParseOps(string json) =>
-        SlidesOp.Catalog.Parse<SlidesOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

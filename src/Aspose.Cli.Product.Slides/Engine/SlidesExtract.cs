@@ -1,57 +1,27 @@
-using System.Text;
 using Aspose.Cli.Sdk.IO.Extraction;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
 using static Aspose.Cli.Product.Slides.Engine.SlidesSlideSelection;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Bounded extraction of embedded media, speaker notes and slide text.</summary>
+/// <summary>Bounded extraction of the media a presentation embeds, byte for byte.</summary>
 internal static class SlidesExtract
 {
     internal static SlidesExtractResult Run(SlidesSession session, SlidesExtractRequest request)
     {
         LicenseState state = session.Outputs.License;
-        using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
-        IReadOnlyList<int> slides = request.Slides is null
-            ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
-            : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        // Media is copied as the presentation stores it; notes and text are what the engine reads.
-        using ExtractionGuard guard = session.Outputs.BeginExtraction(
-            request.Output.Path,
-            request.Output.Overwrite,
-            request.What == SlidesExtractKinds.Media ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived);
+        var log = new EngineWarningLog();
+        using LoadedPresentation loaded = session.Loader.OpenTable(request.Input, request.Password, log);
+        IReadOnlyList<int>? slides = request.Slides is null ? null : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
+        // Media is copied as the presentation stores it.
+        using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite, ExtractionContent.EmbeddedFiles);
         var items = new List<SlidesExtractedOutput>();
-
-        if (request.What == SlidesExtractKinds.Media)
-        {
-            ExtractMedia(loaded.Presentation, request.Slides is null ? null : slides, guard, items);
-        }
-        else
-        {
-            session.Outputs.ReadInput(loaded.Presentation);
-            foreach (int number in slides)
-            {
-                string text = string.Join("\n", SlidesTextUnits
-                    .Of(loaded.Presentation.Slides[number - 1], number, request.What == SlidesExtractKinds.Notes ? SlidesSearchScopes.Notes : SlidesSearchScopes.Shapes)
-                    .Where(static unit => unit.Part is null).Select(static unit => unit.Text).OfType<string>());
-                if (string.IsNullOrWhiteSpace(text))
-                {
-                    continue;
-                }
-
-                string suffix = request.What == SlidesExtractKinds.Notes ? "notes" : "text";
-                byte[] bytes = Encoding.UTF8.GetBytes(text);
-                items.Add(new SlidesExtractedOutput(FileObjects.Companion(guard.StageAllBytes($"slide.s{number}.{suffix}.txt", bytes)))
-                {
-                    Slide = number,
-                });
-            }
-        }
-
+        ExtractMedia(loaded.Presentation, slides, guard, items);
         loaded.Resources.ThrowIfFailed();
         guard.Commit();
         return new SlidesExtractResult
@@ -59,11 +29,11 @@ internal static class SlidesExtract
             Input = Source(request.Input, loaded),
             What = request.What,
             Outputs = items,
+            EngineWarnings = log.Warnings.Count == 0 ? null : log.Warnings,
             License = EnvelopeParts.License(state),
-            Warnings = WrittenWarnings(loaded),
+            Warnings = InputWarnings(loaded),
         };
     }
-
     /// <summary>
     /// Extracts embedded media. With a slide selection only the media those slides show
     /// (pictures, picture fills, backgrounds, audio and video) is extracted; indexes stay the
@@ -111,7 +81,6 @@ internal static class SlidesExtract
     /// <summary>
     /// The media the slides show, each once: the pictures, picture fills and own background of each
     /// slide, a group's included, and its audio and video, but not what its layout or master shows.
-    /// A convert that leaves the pictures out counts the pictures here, as many as this extracts.
     /// </summary>
     internal static HashSet<object> ShownMedia(Presentation presentation, IReadOnlyList<int> slides)
     {

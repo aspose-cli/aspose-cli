@@ -1053,6 +1053,37 @@
         }
       }
     },
+    "v2/common/engine-warning": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json",
+      "description": "A warning the document engine reported through its warning callback, as it reported it.",
+      "type": "object",
+      "required": [
+        "during",
+        "type",
+        "description"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "during": {
+          "description": "When the engine reported it: load (opening the input), save (writing the output) or reopen (opening the saved output again).",
+          "type": "string",
+          "enum": [
+            "load",
+            "save",
+            "reopen"
+          ]
+        },
+        "type": {
+          "description": "The engine's warning type, by its member name.",
+          "type": "string"
+        },
+        "description": {
+          "description": "The engine's description, as it is.",
+          "type": "string"
+        }
+      }
+    },
     "v2/common/error": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
@@ -1118,6 +1149,9 @@
             },
             "argument": {
               "description": "The positional argument the error is about, such as file."
+            },
+            "at": {
+              "description": "The object table address the error is about, such as slide/256/shape/3."
             },
             "available": {
               "description": "The names or values that exist or are accepted, at most 50."
@@ -1219,6 +1253,9 @@
             "dpi": {
               "description": "The resolution of a render, in dots per inch."
             },
+            "engineException": {
+              "description": "The type of the exception the document engine threw, such as System.ArgumentException."
+            },
             "engineMessage": {
               "description": "The document engine's own message."
             },
@@ -1254,6 +1291,9 @@
             },
             "id": {
               "description": "The id of the failing operation, as its applied[] entry states it."
+            },
+            "index": {
+              "description": "The position of the failing operation in an object table batch's ops, from 0."
             },
             "limit": {
               "description": "The budget's limit, in unit."
@@ -1360,6 +1400,9 @@
             },
             "resource": {
               "description": "The budget's resource kind."
+            },
+            "row": {
+              "description": "The object table row the error is about, such as fill.color."
             },
             "sheet": {
               "description": "The worksheet the error is about."
@@ -1691,6 +1734,15 @@
         },
         "op": {
           "description": "The failing operation's op name; present only for an operation error that states one.",
+          "type": "string"
+        },
+        "index": {
+          "description": "The position of the failing operation in an object table batch, from 0; present only for such an operation.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "at": {
+          "description": "The object table address that was looked up; present only for an object table address.",
           "type": "string"
         }
       }
@@ -2027,6 +2079,125 @@
           "description": "The option that named the file, e.g. --template.",
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "v2/common/table-hit": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/table-hit.schema.json",
+      "description": "One match of a search in a text row of the object table.",
+      "type": "object",
+      "required": [
+        "at",
+        "row",
+        "offset",
+        "length",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "description": "The address of the object whose row holds the match.",
+          "type": "string"
+        },
+        "row": {
+          "description": "The text row that holds the match, such as text.",
+          "type": "string"
+        },
+        "offset": {
+          "description": "Where the match starts in the row's text, counted in UTF-16 code units from 0.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "length": {
+          "description": "The match's length in UTF-16 code units.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "text": {
+          "description": "The matched text, as the row holds it.",
+          "type": "string"
+        }
+      }
+    },
+    "v2/common/table-inventory": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/table-inventory.schema.json",
+      "description": "How many objects of each kind of content a document holds, counted with the engine's own collections: read for the kinds the object table addresses, which read lists, and notRead for the kinds it does not.",
+      "type": "object",
+      "required": [
+        "read",
+        "notRead"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "read": {
+          "description": "The counts of the kinds read lists, by inventory key.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "notRead": {
+          "description": "The counts of the kinds read does not list, by inventory key.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "v2/common/table-object": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/table-object.schema.json",
+      "description": "One object of a document, as the object table reads it.",
+      "type": "object",
+      "required": [
+        "at",
+        "kind",
+        "props"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "description": "The object's address, such as slide/256/shape/3; edit and read --at take it as it is.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "The object's kind, one of the kinds the product's ops schema lists.",
+          "type": "string"
+        },
+        "props": {
+          "description": "Every row of the table the object has, by row name, as the engine gives it.",
+          "type": "object"
+        }
+      }
+    },
+    "v2/common/table-op-report": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/table-op-report.schema.json",
+      "description": "What one operation of an edit left, read from the saved file after it was opened again: the object at the operation's address, or the value an action's engine call returned.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "description": "The address the operation named or created, in its canonical form; omitted for an action that returns no object. A position in it (a paragraph's, a run's, a cell's, a series', a point's) is the position the object had when the operation ran; a later operation of the batch can move what is at that position.",
+          "type": "string"
+        },
+        "do": {
+          "description": "The action the operation ran; omitted for set, add, delete and move.",
+          "type": "string"
+        },
+        "exists": {
+          "description": "Whether an object is at the address in the saved file; omitted where there is no address. An address by id is false after a delete that removed it. An address by position names the position: after a delete, true with the rows of the object that moved into it, false only when nothing is there; neither says whether the delete removed what it named.",
+          "type": "boolean"
+        },
+        "now": {
+          "description": "Every row of the object that is at the address in the saved file, after the whole batch; omitted when no object is there. At a position, this is what the saved file holds there, which a later operation of the batch may have put there.",
+          "type": "object"
+        },
+        "returned": {
+          "description": "The value the action's engine call returned; omitted for set, add, delete and move and for a call that returns nothing."
         }
       }
     },
@@ -2849,6 +3020,22 @@
   ],
   "diagnostics": [
     {
+      "code": "ADDRESS_AMBIGUOUS",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "ADDRESS_NOT_FOUND",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
       "code": "BOOKMARK_NOT_FOUND",
       "owner": "common",
       "severity": "error",
@@ -2861,6 +3048,14 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "ENGINE_ERROR",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 6,
+      "category": "format",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

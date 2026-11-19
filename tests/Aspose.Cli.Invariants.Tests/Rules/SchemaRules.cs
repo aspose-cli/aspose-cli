@@ -82,8 +82,6 @@ internal static partial class ContractRules
     /// </summary>
     private static readonly Dictionary<(string Schema, string Path), string> RealNoneChoices = new()
     {
-        [("v2/slides/ops", "set_transition.kind")] = "a transition of kind none removes the slide's transition; the rule names it",
-        [("v2/slides/read-result", "slidesTransitionData.kind")] = "reads back the transition kind none that set_transition writes",
         [("v2/pdf/ops", "pdfPageLabelRange.numberStyle")] = "a page-label range of style none labels its pages with the prefix alone, a numbering style of its own",
         [("v2/pdf/inspect-result", "pdfPageLabelInfo.numberStyle")] = "reads back the page-label style none that set_page_labels writes",
         [("v2/words/ops", "set_page_numbers.numberStyle")] = "a numberStyle of none numbers the pages without a visible number, a numbering style of its own as PageNumberStyles names it",
@@ -106,6 +104,18 @@ internal static partial class ContractRules
     /// <summary>The license mode block a result carries only when it ran unlicensed (C-R33).</summary>
     private const string LicenseMode = "v2/common/license";
 
+    /// <summary>
+    /// The schema subjects whose names and values C-R17, C-R18, C-R20 and C-R33 judge: every one but
+    /// those of a schema generated from a product's object table (<see cref="PublishedSchema.IsObjectTable"/>).
+    /// There a kind, a row, an argument and each of their values is the engine's own name, its
+    /// positions count as the engine counts them, and a row path joins the engine's members with
+    /// dots, because "a name, a value and a unit follow the engine's object model" (AGENTS.md,
+    /// Contract). The SDK's table contracts (<c>v2/common/table-*</c>) are not generated from a
+    /// table: their names are ours, and the rules judge them like any other schema.
+    /// </summary>
+    private static IEnumerable<SchemaSubject> NamedByUs(CliCatalog catalog) =>
+        PublishedSchema.Subjects(catalog).Where(static subject => !PublishedSchema.IsObjectTable(subject.SchemaId));
+
     private static IEnumerable<InvariantCase> R17Schemas(CliCatalog catalog)
     {
         // Format ids and check codes keep their own spelling (C-R17's exceptions).
@@ -113,7 +123,7 @@ internal static partial class ContractRules
             catalog.Products.SelectMany(static product => product.LoadFormats.Concat(product.ConvertFormats).Concat(product.RenderFormats))
                 .Concat(catalog.Diagnostics.Keys),
             StringComparer.Ordinal);
-        foreach (SchemaSubject subject in PublishedSchema.Subjects(catalog))
+        foreach (SchemaSubject subject in NamedByUs(catalog))
         {
             yield return Check("C-R17", subject.Name, () =>
                 from node in subject.Nodes()
@@ -127,10 +137,13 @@ internal static partial class ContractRules
 
     private static IEnumerable<InvariantCase> R18(CliCatalog catalog)
     {
-        foreach (SchemaSubject subject in PublishedSchema.Subjects(catalog))
+        foreach (SchemaSubject subject in NamedByUs(catalog))
         {
+            // An error's details.index is an operation's position in its batch, which counts from 0
+            // as the ops array it indexes does (ops[0]); the other one-based names of details stay judged.
+            bool details = subject.SchemaId.StartsWith(ErrorSchema, StringComparison.Ordinal) || subject.SchemaId.EndsWith("-details", StringComparison.Ordinal);
             yield return Check("C-R18", subject.Name, () =>
-                subject.Properties().Where(static property => OneBasedNames.Contains(property.Name)).SelectMany(OneBased));
+                subject.Properties().Where(property => OneBasedNames.Contains(property.Name) && !(details && property.Name == "index")).SelectMany(OneBased));
         }
 
         static IEnumerable<string> OneBased(SchemaProperty property)
@@ -172,8 +185,16 @@ internal static partial class ContractRules
     {
         foreach (SchemaSubject subject in PublishedSchema.Subjects(catalog))
         {
+            // A schema generated from an object table spells its kinds, rows and arguments as the
+            // engine does (NamedByUs); the from-to ranges and the secrets of its operations are
+            // names of ours, so those two aspects stay judged there.
+            bool table = PublishedSchema.IsObjectTable(subject.SchemaId);
             foreach (NameAspect aspect in Enum.GetValues<NameAspect>())
             {
+                if (table && aspect is not (NameAspect.Ranges or NameAspect.Secrets))
+                {
+                    continue;
+                }
                 if (PublishedSchema.IsOps(subject.SchemaId) || aspect is NameAspect.Spelling or NameAspect.FixedNames or NameAspect.Variants)
                 {
                     yield return Check("C-R20", $"{subject.Name} {aspect.ToString().ToLowerInvariant()}", () =>
@@ -387,10 +408,7 @@ internal static partial class ContractRules
             "last ends a span of rows or of columns (user, 2026-10-12): a row number or a column letter"),
         [("v2/words/ops", "at")] = (
             ["insert_break", "insert_field", "insert_hyperlink", "insert_image", "insert_markdown", "insert_paragraphs", "insert_section", "insert_table", "insert_toc"],
-            "at names where the new content goes in the object it addresses: a block address for the content of a section's body, the 1-based section number for insert_section, as slides insert_section names a slide"),
-        [("v2/slides/ops", "values")] = (
-            ["insert_table", "slidesChartSeriesInput"],
-            "values are the values of the object they name, shaped as that object is: a table's a two-dimensional grid, a chart series' a one-dimensional array"),
+            "at names where the new content goes in the object it addresses: a block address for the content of a section's body, the 1-based section number for insert_section"),
     };
 
     /// <summary>
@@ -401,8 +419,8 @@ internal static partial class ContractRules
     private static readonly Dictionary<string, (string[] Places, string Reason)> ShapedByTheirObjectAcrossProducts = new(StringComparer.Ordinal)
     {
         ["values"] = (
-            ["cells insert_pivot", "cells set_values", "slides insert_table", "slides slidesChartSeriesInput", "words insert_table"],
-            "values are the values of the object they name, shaped as that object is: a range's or a table's a two-dimensional grid, a chart series' a one-dimensional array, a pivot's its value fields"),
+            ["cells insert_pivot", "cells set_values", "words insert_table"],
+            "values are the values of the object they name, shaped as that object is: a range's or a table's a two-dimensional grid, a pivot's its value fields"),
     };
 
     /// <summary>
@@ -412,14 +430,7 @@ internal static partial class ContractRules
     /// and why (user decision 2026-10-12). The shared fields of the objects keep their own
     /// cross-product cases, such as <c>list</c> with its <c>kind</c> and <c>level</c>.
     /// </summary>
-    private static readonly Dictionary<string, (string[] Places, string Product, string Field, string Reason)> OwnFieldAcrossProducts = new(StringComparer.Ordinal)
-    {
-        ["paragraphs"] = (
-            ["slides set_body", "words insert_paragraphs", "words set_footer", "words set_header"],
-            "words",
-            "style",
-            "a Words paragraph names its paragraph style, which a slide paragraph has no model for; text and list are the same in both"),
-    };
+    private static readonly Dictionary<string, (string[] Places, string Product, string Field, string Reason)> OwnFieldAcrossProducts = new(StringComparer.Ordinal);
     // rule-exemptions: end
 
     /// <summary>The products whose fields of one name agree among themselves but not with another product's; a product that disagrees with itself has its own case.</summary>
@@ -700,11 +711,6 @@ internal static partial class ContractRules
     {
         [("v2/words/split-result", "outputs")] = new("words split", "--by", ["section", "pages", "blocks"],
             "words split divides by sections, pages or Heading 1 paragraphs, and each part names the section, pages or blocks it holds (user decision 2026-10-12)"),
-        [("v2/slides/extract-result", "outputs")] = new("slides extract", "--what", ["index", "slide"],
-            "slides extract names each media item by its inspect index and each slide's text or notes by its slide number; --what chooses which (prerelease A12, 2026-10-15)")
-        {
-            Fixture = "slides.media",
-        },
         [("v2/pdf/extract-result", "outputs")] = new("pdf extract", "--what", ["page", "name"],
             "pdf extract names each image or table by the page it comes from and each attachment by the name the document gives it, never used as its file name; the text and the form data name neither; --what chooses which (security fixes S9, 2026-10-21)")
         {
@@ -730,23 +736,34 @@ internal static partial class ContractRules
         public IReadOnlyDictionary<string, string[]> Arguments { get; init; } = new Dictionary<string, string[]>(StringComparer.Ordinal);
     }
 
+    /// <summary>
+    /// C-R32: a read requires its input and window and lists its units with their count; a search
+    /// requires its input, pattern, hits and window, and a hit is the matched text with the text
+    /// around it as context. A product that reads and searches through its object table
+    /// (<see cref="PublishedSchema.IsObjectTableProduct"/>) reads objects, which its window
+    /// counts (<c>window.total</c>), and its hit is the matched text at an object's row, at an
+    /// offset into that row's text, which a read of the address returns: there a read requires
+    /// <c>objects</c> beside its input and window, and a search its input, hits and window, and
+    /// each hit the matched text, the address and the row.
+    /// </summary>
     private static IEnumerable<InvariantCase> R32(CliCatalog catalog)
     {
         foreach (string id in PublishedSchema.ResultIds(catalog))
         {
+            bool table = id.Split('/') is [_, var product, ..] && PublishedSchema.IsObjectTableProduct(catalog, product);
             if (id.EndsWith("-read", StringComparison.Ordinal) || id.EndsWith("/read-result", StringComparison.Ordinal))
             {
-                yield return Check("C-R32", $"{id} input", () => ReadShape(id, units: false));
-                yield return Check("C-R32", $"{id} units", () => ReadShape(id, units: true));
+                yield return Check("C-R32", $"{id} input", () => ReadShape(id, units: false, table));
+                yield return Check("C-R32", $"{id} units", () => ReadShape(id, units: true, table));
             }
             else if (id.EndsWith("search-result", StringComparison.Ordinal))
             {
-                yield return Check("C-R32", $"{id} input", () => SearchShape(id, hits: false));
-                yield return Check("C-R32", $"{id} hits", () => SearchShape(id, hits: true));
+                yield return Check("C-R32", $"{id} input", () => SearchShape(id, hits: false, table));
+                yield return Check("C-R32", $"{id} hits", () => SearchShape(id, hits: true, table));
             }
         }
 
-        static IEnumerable<string> ReadShape(string id, bool units)
+        static IEnumerable<string> ReadShape(string id, bool units, bool table)
         {
             JsonObject root = PublishedSchema.Document(id);
             string[] required = PublishedSchema.Required(root);
@@ -755,6 +772,14 @@ internal static partial class ContractRules
                 foreach (string name in new[] { "input", "window" }.Where(name => !required.Contains(name)))
                 {
                     yield return $"does not require {name}";
+                }
+                yield break;
+            }
+            if (table)
+            {
+                if (!required.Contains("objects"))
+                {
+                    yield return "does not require objects";
                 }
                 yield break;
             }
@@ -778,13 +803,14 @@ internal static partial class ContractRules
             }
         }
 
-        static IEnumerable<string> SearchShape(string id, bool hits)
+        static IEnumerable<string> SearchShape(string id, bool hits, bool table)
         {
             JsonObject root = PublishedSchema.Document(id);
             string[] required = PublishedSchema.Required(root);
             if (!hits)
             {
-                foreach (string name in new[] { "input", "pattern", "hits", "window" }.Where(name => !required.Contains(name)))
+                string[] names = table ? ["input", "hits", "window"] : ["input", "pattern", "hits", "window"];
+                foreach (string name in names.Where(name => !required.Contains(name)))
                 {
                     yield return $"does not require {name}";
                 }
@@ -799,6 +825,14 @@ internal static partial class ContractRules
             {
                 string[] instead = [.. PublishedSchema.Required(hit).Where(static name => name is "snippet" or "value" or "match")];
                 yield return $"hits[] does not require text{(instead.Length > 0 ? $" (it has {string.Join(", ", instead)})" : string.Empty)}";
+            }
+            if (table)
+            {
+                foreach (string name in new[] { "at", "row" }.Where(name => !PublishedSchema.Required(hit).Contains(name)))
+                {
+                    yield return $"hits[] does not require {name}, the object and the row whose text it was found in";
+                }
+                yield break;
             }
             // text is the match itself and context the text around it, never offsets into a text the hit does not return.
             if (hit["properties"]?["context"] is null)
@@ -815,7 +849,7 @@ internal static partial class ContractRules
 
     private static IEnumerable<InvariantCase> R33(CliCatalog catalog)
     {
-        foreach (SchemaSubject subject in PublishedSchema.Subjects(catalog))
+        foreach (SchemaSubject subject in NamedByUs(catalog))
         {
             if (!PublishedSchema.IsOps(subject.SchemaId))
             {
@@ -826,11 +860,16 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>C-R33: a result has no top-level <c>kind</c> and does not require the license mode block.</summary>
+    /// <summary>
+    /// C-R33: a result has no top-level <c>kind</c> and does not require the license mode block. A
+    /// result is a schema whose top level declares <c>schema</c>, as every command's result does; an
+    /// item schema such as <c>v2/common/table-object</c>, whose <c>kind</c> names the kind of
+    /// the object it reads, is no result.
+    /// </summary>
     private static IEnumerable<string> Envelope(string id)
     {
         JsonObject root = PublishedSchema.Document(id);
-        if (root["properties"]?["kind"] is not null)
+        if (root["properties"]?["kind"] is not null && root["properties"]?["schema"] is not null)
         {
             yield return "top-level kind";
         }

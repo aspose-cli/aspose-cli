@@ -3,11 +3,15 @@ using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Slides;
-using Aspose.Slides.Export;
 
 namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 
+/// <summary>
+/// Opens presentations as Aspose.Slides loads them, under the document resource policy and the
+/// invocation's budgets, passing every warning the engine reports to the invocation's log.
+/// </summary>
 internal sealed class SlidesPresentationLoader
 {
     private readonly ResourceBudgetLedger _resourceBudgets;
@@ -40,45 +44,19 @@ internal sealed class SlidesPresentationLoader
         _ => LoadFailureKind.Other,
     };
 
-    public LoadedPresentation Open(string path, PasswordSource password) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password));
+    /// <summary>Opens a user input with the password its options give, if any.</summary>
+    public LoadedPresentation OpenTable(string path, Secret? password, EngineWarningLog warnings) =>
+        Open(path, PasswordSource.Option(password), warnings);
 
-    /// <summary>Opens a user input with the password from the command's <c>--password-env</c>, if any.</summary>
-    public LoadedPresentation Open(string path, Secret? password) => Open(path, PasswordSource.Option(password));
+    /// <summary>Opens a user input, such as a template, with the password <paramref name="password"/> gives.</summary>
+    public LoadedPresentation Open(string path, PasswordSource password, EngineWarningLog warnings) =>
+        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, warnings));
 
-    /// <summary>
-    /// Opens a presentation that new slides are added to on its layouts. A PowerPoint 97-2003
-    /// binary file (PPT, PPS or POT) is first saved as PPTX in memory and reopened
-    /// (SLIDES-PPT-TEMPLATE-LAYOUTS): the engine lists layouts from such a file that a PPTX save
-    /// cannot reference, and that save drops them, as <c>slides convert</c> to PPTX does.
-    /// </summary>
-    public LoadedPresentation OpenToWrite(string path, PasswordSource password) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, throughPptx: true));
+    /// <summary>Opens an output this invocation just saved, to read it back; its size is bounded by publication.</summary>
+    internal LoadedPresentation ReopenTable(string path, Secret? password, EngineWarningLog warnings) =>
+        InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password), warnings));
 
-    /// <summary>Opens a presentation to write, with the password from the command's <c>--password-env</c>, if any.</summary>
-    public LoadedPresentation OpenToWrite(string path, Secret? password) => OpenToWrite(path, PasswordSource.Option(password));
-
-    // Generated candidates are bounded by publication, not a second user-input admission.
-    internal LoadedPresentation OpenPublishedCandidate(string path, Secret? password) =>
-        InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password)));
-
-    /// <summary>
-    /// Opens the built-in 16:9 design that new presentations use without a template. It has no
-    /// source directory, so it loads under a policy that denies every external resource.
-    /// </summary>
-    internal static LoadedPresentation OpenDefaultTemplate()
-    {
-        using Stream stream = typeof(SlidesPresentationLoader).Assembly.GetManifestResourceStream(DefaultTemplateResource)
-            ?? throw new InvalidOperationException($"The built-in resource {DefaultTemplateResource} is missing.");
-        var resources = SlidesResourcePolicy.DenyAll();
-        var presentation = new Presentation(stream, new LoadOptions { ResourceLoadingCallback = resources });
-        SlidesCjkFallback.Apply(presentation);
-        return new LoadedPresentation(presentation, "pptx", resources);
-    }
-
-    private const string DefaultTemplateResource = "Templates/default-16x9.pptx";
-
-    private LoadedPresentation OpenCore(string path, PasswordSource passwordSource, bool throughPptx = false)
+    private LoadedPresentation OpenCore(string path, PasswordSource passwordSource, EngineWarningLog warnings)
     {
         string? password = passwordSource.Password?.Reveal();
         FileStream? source = null;
@@ -118,30 +96,31 @@ internal sealed class SlidesPresentationLoader
                 throw InputLoading.PasswordRefused(path, passwordSource);
             }
 
-            // Engine code creates presentations only here or from the default template: without a
-            // resource policy, rendering or saving fetches linked media from any address.
+            // Engine code creates presentations only here: without a resource policy, rendering
+            // or saving fetches linked media from any address.
             var resources = SlidesResourcePolicy.Beside(path, _resourceBudgets);
             Presentation presentation;
             try
             {
-                presentation = new Presentation(source, new LoadOptions { Password = password, ResourceLoadingCallback = resources });
+                presentation = new Presentation(source, new LoadOptions
+                {
+                    Password = password,
+                    ResourceLoadingCallback = resources,
+                    WarningCallback = new SlidesWarnings(warnings),
+                });
             }
             catch
             {
                 resources.Dispose();
                 throw;
             }
+
             try
             {
-                _resourceBudgets.EnsureWithin(
-                    SlidesBudgetDomains.Slides,
-                    presentation.Slides.Count,
-                    "items",
-                    "post-load");
+                _resourceBudgets.EnsureWithin(SlidesBudgetDomains.Slides, presentation.Slides.Count, "items", "post-load");
                 _resourceBudgets.EnsureWithin(
                     SlidesBudgetDomains.Shapes,
-                    presentation.Slides.Sum(
-                        static slide => (long)slide.Shapes.Count),
+                    presentation.Slides.Sum(static slide => (long)slide.Shapes.Count),
                     "items",
                     "projection");
             }
@@ -151,22 +130,12 @@ internal sealed class SlidesPresentationLoader
                 resources.Dispose();
                 throw;
             }
-            bool encrypted = presentation.ProtectionManager.IsEncrypted;
-            Stream held = source;
-            if (throughPptx && SlidesEngineFormats.IsBinaryPpt(format))
-            {
-                (presentation, held) = ThroughPptx(presentation, password, resources);
-            }
-            else
-            {
-                source = null;
-            }
 
-            SlidesCjkFallback.Apply(presentation);
+            Stream held = source;
+            source = null;
             return new LoadedPresentation(presentation, format, resources)
             {
-                Encrypted = encrypted,
-                ImplicitTitleCharts = ImplicitTitleCharts(presentation),
+                Encrypted = presentation.ProtectionManager.IsEncrypted,
                 Source = held,
             };
         }
@@ -179,78 +148,23 @@ internal sealed class SlidesPresentationLoader
             source?.Dispose();
         }
     }
-
-    /// <summary>
-    /// The presentation saved as PPTX in memory and reopened from it (SLIDES-PPT-TEMPLATE-LAYOUTS),
-    /// with the stream it reads from. An evaluation save adds a watermark box to every slide; the
-    /// boxes beyond those the slide had are removed, so the copy holds what the file holds.
-    /// </summary>
-    private static (Presentation Presentation, Stream Source) ThroughPptx(
-        Presentation presentation,
-        string? password,
-        SlidesResourcePolicy resources)
-    {
-        var pptx = new MemoryStream();
-        try
-        {
-            int[] watermarks;
-            using (presentation)
-            {
-                watermarks = [.. presentation.Slides.Select(static slide => slide.Shapes.Count(SlidesEvaluationMarks.IsEvaluationWatermark))];
-                presentation.Save(pptx, SaveFormat.Pptx);
-            }
-
-            pptx.Position = 0;
-            var reopened = new Presentation(pptx, new LoadOptions { Password = password, ResourceLoadingCallback = resources });
-            try
-            {
-                for (int index = 0; index < reopened.Slides.Count; index++)
-                {
-                    IShapeCollection shapes = reopened.Slides[index].Shapes;
-                    foreach (IShape added in shapes.Where(SlidesEvaluationMarks.IsEvaluationWatermark).Skip(watermarks[index]).ToArray())
-                    {
-                        shapes.Remove(added);
-                    }
-                }
-            }
-            catch
-            {
-                reopened.Dispose();
-                throw;
-            }
-
-            return (reopened, pptx);
-        }
-        catch
-        {
-            pptx.Dispose();
-            resources.Dispose();
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// The charts, as loaded, whose implicit automatic title the engine turns into one drawn over
-    /// the plot (known issue SLIDES-CHART-TITLE in KNOWN-ISSUES.md): it reports a title that
-    /// overlays the plot and has no text of its own.
-    /// </summary>
-    private static IReadOnlyList<(int Slide, string Chart)> ImplicitTitleCharts(Presentation presentation) =>
-        [.. presentation.Slides.SelectMany((slide, index) => SlidesTextUnits.Charts(slide.Shapes)
-            .Where(static found => found.Chart is { HasTitle: true, ChartTitle: { Overlay: true, TextFrameForOverriding: null } })
-            .Select(found => (index + 1, found.Chart.Name)))];
 }
 
+/// <summary>A presentation Aspose.Slides opened, with the resource policy it loads under and the file it reads from.</summary>
 internal sealed record LoadedPresentation(Presentation Presentation, string FormatId, SlidesResourcePolicy Resources)
-    : IOpenedInput, IDisposable
+    : IOpenedDocument<Presentation>
 {
+    /// <inheritdoc />
+    public Presentation Document => Presentation;
+
+    /// <inheritdoc />
+    public IReadOnlyList<Warning> Warnings => Resources.Warning is { } omitted ? [omitted] : [];
+
     /// <summary>Whether the file is encrypted, as it was opened; a later encryption does not change it.</summary>
     public bool Encrypted { get; init; } = Presentation.ProtectionManager.IsEncrypted;
 
     /// <inheritdoc />
     public InputProtection Protection => new(Encrypted);
-
-    /// <summary>The charts whose implicit automatic title an output draws over the plot.</summary>
-    public IReadOnlyList<(int Slide, string Chart)> ImplicitTitleCharts { get; init; } = [];
 
     /// <summary>The input file the presentation was read from, held until it is disposed.</summary>
     public Stream? Source { get; init; }

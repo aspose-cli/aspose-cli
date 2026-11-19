@@ -69,7 +69,7 @@ public sealed partial class EncryptedOutputContractTests
         ScenarioLicense.Project(workspace.Path);
         var variables = new Dictionary<string, string?> { [PasswordVariable] = "output-secret" };
         File.WriteAllText(workspace.File("content.md"), "# One\n\nFirst part.\n");
-        CliResult created = workspace.Run([product, "create", input, .. product == "cells" ? Array.Empty<string>() : ["--from-markdown", "content.md"], "--output-format", "json"]);
+        CliResult created = workspace.Run([product, "create", input, .. product == "words" ? ["--from-markdown", "content.md"] : Array.Empty<string>(), "--output-format", "json"]);
         Assert.True(created.ExitCode == 0, created.StdErr);
 
         CliResult refused = workspace.RunWithEnv(variables,

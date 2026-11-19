@@ -1,5 +1,4 @@
 using System.Text.Json.Nodes;
-using Aspose.Cli.TestKit;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
@@ -60,7 +59,6 @@ public sealed class TextReplacementTests
     public void ReplaceText_GivesTheSameTextAndCountInEveryProduct(string product, string name)
     {
         Case replacement = Cases[name];
-        RequireFullText(product);
         (string document, JsonObject files, JsonArray? create) = Document(product, replacement.Text);
         string output = "out" + Path.GetExtension(document);
         var steps = new JsonArray();
@@ -108,7 +106,6 @@ public sealed class TextReplacementTests
     [MemberData(nameof(EmptyMatchProducts))]
     public void ReplaceText_RefusesAnExpressionThatMatchesAnEmptyString(string product)
     {
-        RequireFullText(product);
         (string document, JsonObject files, JsonArray? create) = Document(product, "ab");
         var steps = new JsonArray();
         if (create is not null)
@@ -124,19 +121,9 @@ public sealed class TextReplacementTests
         Run($"{product} replace_text refuses an empty match", files, steps);
     }
 
-    private static void RequireFullText(string product)
-    {
-        if (product == "slides")
-        {
-            TestLicense.Require("Aspose.Slides evaluation mode reads text longer than five characters cut short.");
-        }
-    }
-
     private static (string Document, JsonObject Files, JsonArray? Create) Document(string product, string text) => product switch
     {
         "cells" => ("text.csv", new JsonObject { ["text.csv"] = Source(text + "\n") }, null),
-        "slides" => ("text.pptx", new JsonObject { ["title.md"] = Source("# " + text + "\n") },
-            new JsonArray("slides", "create", "text.pptx", "--from-markdown", "title.md")),
         "words" => ("text.docx", new JsonObject { ["text.txt"] = Source(text + "\n") },
             new JsonArray("words", "create", "text.docx", "--from-text", "text.txt")),
         _ => throw new ArgumentOutOfRangeException(nameof(product), product, null),

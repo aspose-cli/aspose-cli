@@ -47,6 +47,16 @@ public sealed partial class SkillNameTests : IDisposable
             .SelectMany(static product => (product!["operations"]?.AsArray() ?? [])
                 .Select(operation => (Product: product["id"]!.GetValue<string>(), Schema: operation!["inputSchema"]!.GetValue<string>())))
             .ToDictionary(static pair => pair.Product, static pair => pair.Schema, StringComparer.Ordinal);
+        // A product on the object table lists no operation vocabulary; its edit reads v2/<product>/ops.
+        foreach (JsonNode? product in capabilities["products"]!.AsArray())
+        {
+            string id = product!["id"]!.GetValue<string>();
+            if (!opsSchemas.ContainsKey(id) && PublishedSchemas.Ids.Contains($"v2/{id}/ops"))
+            {
+                opsSchemas[id] = $"v2/{id}/ops";
+            }
+        }
+
         var members = new ResultMembers();
         var kinds = new HashSet<string>(StringComparer.Ordinal);
         IEnumerable<(string Where, string Json, string? Product)> documents = JsonBlocks()

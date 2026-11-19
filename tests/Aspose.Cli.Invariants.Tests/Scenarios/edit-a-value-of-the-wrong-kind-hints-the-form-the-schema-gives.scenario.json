@@ -1,22 +1,10 @@
 {
   "name": "an operation field given a value of the wrong JSON kind hints the form the schema describes for its kind of value, such as a page range or an A1 range, in every product, with the same error details; a field without such a kind keeps its own description",
   "files": {
-    "deck.pptx": { "fixture": "slides.pptx" },
     "doc.pdf": { "fixture": "pdf.pdf" },
     "book.xlsx": { "fixture": "cells.xlsx" }
   },
   "steps": [
-    {
-      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_slides\",\"slides\":[2]}]}", "--out", "out.pptx"],
-      "expect": {
-        "exitCode": 4,
-        "error": "OPS_INVALID",
-        "json": [
-          { "path": "error.details", "equals": { "id": "op-0001", "op": "delete_slides", "reason": "wrong-type", "field": "slides" } }
-        ],
-        "files": { "nothingWritten": true }
-      }
-    },
     {
       "args": ["pdf", "edit", "doc.pdf", "--ops", "{\"ops\":[{\"op\":\"delete_pages\",\"pages\":[1]}]}", "--out", "out.pdf"],
       "expect": {
@@ -40,7 +28,7 @@
       }
     },
     {
-      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_slides\",\"slides\":2}]}", "--out", "out.pptx"],
+      "args": ["pdf", "edit", "doc.pdf", "--ops", "{\"ops\":[{\"op\":\"delete_pages\",\"pages\":2}]}", "--out", "out.pdf"],
       "expect": {
         "exitCode": 4,
         "error": "OPS_INVALID",
@@ -48,7 +36,7 @@
       }
     },
     {
-      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"delete_shape\",\"slide\":\"1\",\"shapeId\":2}]}", "--out", "out.pptx"],
+      "args": ["cells", "edit", "book.xlsx", "--ops", "{\"ops\":[{\"op\":\"clear_range\",\"sheet\":1,\"range\":\"A1\"}]}", "--out", "out.xlsx"],
       "expect": {
         "exitCode": 4,
         "error": "OPS_INVALID",

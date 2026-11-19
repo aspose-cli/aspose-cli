@@ -95,6 +95,30 @@ public sealed class ScenarioGapTests
             workspace.Leftovers(["input.docx"]));
     }
 
+    /// <summary>An absent pattern reports each file and directory of the workspace it matches, and nothing else.</summary>
+    [Fact]
+    public void AbsentPattern_ReportsEveryEntryItMatches()
+    {
+        Scenario scenario = Scenario.Parse("""
+            {
+              "name": "a staging directory left beside the input",
+              "files": { ".aspose-publication-1a2b/part.tmp": { "text": "left" }, "aspose-publication.txt": { "text": "kept" } },
+              "steps": [
+                {
+                  "args": ["capabilities"],
+                  "expect": { "exitCode": 0, "files": { "absent": [".aspose-publication-*"] } }
+                }
+              ]
+            }
+            """);
+
+        ScenarioOutcome outcome = ScenarioRunner.Run(scenario);
+
+        Assert.Equal(
+            [".aspose-publication-1a2b exists"],
+            outcome.Problems.Where(static problem => problem.Check == ScenarioRunner.FilesCheck).Select(static problem => problem.Message));
+    }
+
     /// <summary>A hidden text in a file the step wrote is reported, not only one in stdout or stderr.</summary>
     [Fact]
     public void HiddenTextInAWrittenFile_IsReported()

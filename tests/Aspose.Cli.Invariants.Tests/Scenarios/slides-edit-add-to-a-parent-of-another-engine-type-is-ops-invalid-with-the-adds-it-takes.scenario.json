@@ -1,0 +1,50 @@
+{
+  "name": "slides edit refuses an add whose in names a shape that is not of the engine type the add needs, a series added to a title placeholder that is no IChart, with OPS_INVALID, exit 4, naming the field in, the address and the adds that shape takes, not as an engine error, before the document is written",
+  "files": {
+    "deck.pptx": {
+      "fixture": "slides.pptx"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "slides",
+        "edit",
+        "deck.pptx",
+        "--out",
+        "out.pptx",
+        "--ops",
+        "{\"ops\":[{\"add\":\"series\",\"in\":\"slide/258/placeholder/Title\",\"args\":{\"cellWithSeriesName\":{\"worksheet\":0,\"row\":0,\"column\":1},\"type\":\"ClusteredColumn\"}}]}"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.index",
+            "equals": 0
+          },
+          {
+            "path": "error.details.reason",
+            "equals": "invalid-value"
+          },
+          {
+            "path": "error.details.field",
+            "equals": "in"
+          },
+          {
+            "path": "error.details.available",
+            "contains": "paragraph"
+          },
+          {
+            "path": "error.details.available",
+            "notContains": "series"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}

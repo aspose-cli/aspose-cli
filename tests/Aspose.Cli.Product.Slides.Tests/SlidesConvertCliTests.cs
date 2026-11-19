@@ -7,110 +7,42 @@ using Xunit;
 namespace Aspose.Cli.Product.Slides.Tests;
 
 /// <summary>
-/// What <c>slides convert</c> writes and says through the CLI: hidden slides, which an export of
-/// every slide leaves out with a warning and a selection converts; the slide numbers of selected
-/// slides; the evaluation marks of the slides an output shows; and what an ODP, PPT or HTML5
-/// output loses.
+/// What <c>slides convert</c> and <c>slides render</c> write through the CLI: hidden slides, which
+/// a render draws; the speaker notes, which a PDF export leaves out; the slide numbers of selected
+/// slides; and the files each output format writes.
 /// </summary>
-public sealed partial class SlidesConvertCliTests : IDisposable
+public sealed class SlidesConvertCliTests : IDisposable
 {
+    private static readonly string[] Titles = ["One", "Two", "Three", "Four"];
+
     private readonly TempWorkspace _workspace = new();
 
-    public SlidesConvertCliTests()
-    {
-        ScenarioLicense.Project(_workspace.Path);
-        File.WriteAllText(_workspace.File("deck.md"), "# One\n\nFirst\n\n# Two\n\nSecond\n\n# Three\n\nThird\n\n# Four\n\nFourth\n");
-    }
+    public SlidesConvertCliTests() => ScenarioLicense.Project(_workspace.Path);
 
     public void Dispose() => _workspace.Dispose();
 
     /// <summary>
-    /// An export of every slide leaves the hidden slide out, as PowerPoint's export does, and
-    /// names it in a warning; a presentation format keeps it, hidden.
-    /// </summary>
-    [Theory]
-    [InlineData("pdf", 3)]
-    [InlineData("md", 3)]
-    [InlineData("html", 3)]
-    [InlineData("pptx", 4)]
-    public void EveryHiddenSlide_IsLeftOutOfAnExportWithAWarning(string format, int shown)
-    {
-        HiddenSecondSlide();
-
-        JsonNode result = Run("slides", "convert", "deck.pptx", "--to", format, "--out", $"all.{format}");
-
-        Assert.Equal(shown, ShownSlides(result, format));
-        JsonNode? warning = (result["warnings"] as JsonArray ?? []).SingleOrDefault(static warning => warning!["code"]!.GetValue<string>() == "HIDDEN_SLIDES_SKIPPED");
-        if (shown == 4)
-        {
-            Assert.Null(warning);
-            return;
-        }
-
-        Assert.NotNull(warning);
-        Assert.Contains("hidden slide(s) 2,", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
-    /// <summary>A hidden slide that --slides selects is converted, whatever the export format.</summary>
-    [Theory]
-    [InlineData("pdf")]
-    [InlineData("md")]
-    [InlineData("html")]
-    [InlineData("html5")]
-    public void SelectedHiddenSlide_IsConverted(string format)
-    {
-        HiddenSecondSlide();
-        string output = format == "html5" ? "two.html" : $"two.{format}";
-
-        JsonNode result = Run("slides", "convert", "deck.pptx", "--to", format, "--slides", "2", "--out", output);
-
-        Assert.DoesNotContain(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "HIDDEN_SLIDES_SKIPPED");
-        if (format == "pdf")
-        {
-            Assert.Equal(1, Run("pdf", "inspect", output)["pdf"]!["pageCount"]!.GetValue<int>());
-        }
-        else
-        {
-            Assert.Contains("Two", File.ReadAllText(_workspace.File(output)), StringComparison.Ordinal);
-        }
-    }
-
-    /// <summary>
-    /// A render draws a hidden slide, which a slide show and convert leave out, and names it in a
-    /// warning, whether it renders every slide or --slides selects the hidden one.
+    /// A render draws a hidden slide, which a slide show and convert leave out, whether it renders
+    /// every slide or --slides selects the hidden one.
     /// </summary>
     [Theory]
     [InlineData(null, 4)]
     [InlineData("2", 1)]
-    public void Render_DrawsAHiddenSlideAndWarns(string? slides, int drawn)
+    public void Render_DrawsAHiddenSlide(string? slides, int drawn)
     {
-        HiddenSecondSlide();
+        Deck(hidden: 2);
         string[] selection = slides is null ? [] : ["--slides", slides];
 
         JsonNode result = Run(["slides", "render", "deck.pptx", .. selection, "--out", "slide.png"]);
 
         Assert.Equal(drawn, result["outputs"]!.AsArray().Count);
-        JsonNode warning = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "HIDDEN_SLIDES_RENDERED")!;
-        Assert.Contains("slide(s) 2 are hidden", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
-    /// <summary>A render of slides none of which is hidden does not warn.</summary>
-    [Fact]
-    public void Render_OfShownSlidesDoesNotWarn()
-    {
-        HiddenSecondSlide();
-
-        JsonNode result = Run("slides", "render", "deck.pptx", "--slides", "1,3", "--out", "slide.png");
-
-        Assert.DoesNotContain("HIDDEN_SLIDES_RENDERED", ResultWarnings.Codes(result));
     }
 
     /// <summary>A PDF export holds the slides alone: the speaker notes are not in it.</summary>
     [Fact]
     public void PdfExport_LeavesSpeakerNotesOut()
     {
-        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
-        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """[{"op":"set_notes","slide":1,"text":"Zq9x"}]""");
+        Deck(notes: "Zq9x");
 
         Run("slides", "convert", "deck.pptx", "--out", "deck.pdf");
         CliResult read = _workspace.Run("pdf", "read", "deck.pdf", "--output-format", "json");
@@ -144,62 +76,6 @@ public sealed partial class SlidesConvertCliTests : IDisposable
     }
 
     /// <summary>
-    /// A licensed export of selected slides discloses only the evaluation marks those slides
-    /// carry: a slide an evaluation save marked is disclosed, an unmarked one is not.
-    /// </summary>
-    [LicensedFact]
-    public void SelectedSlides_DiscloseOnlyTheirOwnEvaluationMarks()
-    {
-        File.WriteAllText(_workspace.File("one.md"), "# One\n\nFirst\n");
-        Run("slides", "create", "marked.pptx", "--from-markdown", "one.md", "--license-mode", "evaluation");
-        Run("slides", "edit", "marked.pptx", "--in-place", "--ops", """[{"op":"insert_slide"}]""");
-
-        Assert.Contains("EVALUATION_INPUT_MARKED", ResultWarnings.Codes(Run("slides", "convert", "marked.pptx", "--slides", "1", "--out", "first.pdf")));
-        Assert.DoesNotContain("EVALUATION_INPUT_MARKED", ResultWarnings.Codes(Run("slides", "convert", "marked.pptx", "--slides", "2", "--out", "second.pdf")));
-    }
-
-    /// <summary>
-    /// Evaluation mode writes no watermark into a Markdown conversion but cuts its longer text
-    /// short: the <c>EVALUATION_MODE</c> message states the cut text and claims no watermark. A
-    /// deck an unlicensed create saved carries watermark boxes of its own, which the message
-    /// names as the output's content.
-    /// </summary>
-    [Fact]
-    public void EvaluationMode_MarkdownConversion_StatesTheCutTextAndNoWatermark()
-    {
-        File.WriteAllText(_workspace.File("long.md"), "# Quarterly results\n\nRevenue grew strongly this quarter\n");
-        Run("slides", "create", "long.pptx", "--from-markdown", "long.md");
-
-        JsonNode result = Run("slides", "convert", "long.pptx", "--to", "md", "--out", "long.out.md", "--license-mode", "evaluation");
-
-        string message = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE")!["message"]!.GetValue<string>();
-        Assert.StartsWith("Evaluation mode, requested with --license-mode evaluation: some operations are limited.", message, StringComparison.Ordinal);
-        Assert.Contains("cut the content short", message, StringComparison.Ordinal);
-        if (TestLicense.Path is not null)
-        {
-            Assert.DoesNotContain("watermark", message, StringComparison.OrdinalIgnoreCase);
-        }
-    }
-
-    /// <summary>
-    /// A .markdown output is the md format: an evaluation conversion of selected slides to it
-    /// states the same cut text, and the same absence of a watermark, as one to .md.
-    /// </summary>
-    [Fact]
-    public void EvaluationMode_SelectedSlidesToDotMarkdown_AreDisclosedAsMarkdown()
-    {
-        File.WriteAllText(_workspace.File("long.md"), "# Quarterly results\n\nRevenue grew strongly this quarter\n");
-        Run("slides", "create", "long.pptx", "--from-markdown", "long.md");
-
-        string[] messages = [.. new[] { "long.out.md", "long.out.markdown" }.Select(output => Assert.Single(
-            Run("slides", "convert", "long.pptx", "--to", "md", "--slides", "1", "--out", output, "--license-mode", "evaluation")["warnings"] as JsonArray ?? [],
-            static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE")!["message"]!.GetValue<string>())];
-
-        Assert.Contains("cut the content short", messages[0], StringComparison.Ordinal);
-        Assert.Equal(messages[0], messages[1]);
-    }
-
-    /// <summary>
     /// A Markdown conversion writes only its output: nothing appears in the working directory,
     /// for every slide or for a selection.
     /// </summary>
@@ -208,7 +84,7 @@ public sealed partial class SlidesConvertCliTests : IDisposable
     [InlineData("1")]
     public void Markdown_WritesNothingIntoTheWorkingDirectory(string? slides)
     {
-        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+        Deck();
         Directory.CreateDirectory(_workspace.File("out"));
         string[] before = [.. Directory.EnumerateFileSystemEntries(_workspace.Path).Order(StringComparer.Ordinal)];
 
@@ -216,198 +92,6 @@ public sealed partial class SlidesConvertCliTests : IDisposable
 
         Assert.Equal(before, Directory.EnumerateFileSystemEntries(_workspace.Path).Order(StringComparer.Ordinal));
         Assert.Equal([_workspace.File(Path.Combine("out", "deck.md"))], Directory.EnumerateFileSystemEntries(_workspace.File("out")));
-    }
-
-    /// <summary>
-    /// Markdown keeps the bullets and levels a body placeholder inherits from its layout and
-    /// master: a first-level item is a list item, and a second-level item one indented under it.
-    /// </summary>
-    [Fact]
-    public void BodyPlaceholderBullets_BecomeANestedMarkdownList()
-    {
-        File.WriteAllText(_workspace.File("list.md"), "# Deck\n\n## Plan\n\n- Up\n  - Sub\n- Go\n");
-        Run("slides", "create", "list.pptx", "--from-markdown", "list.md");
-
-        Run("slides", "convert", "list.pptx", "--to", "md", "--slides", "2", "--out", "list.out.md");
-
-        string[] lines = File.ReadAllLines(_workspace.File("list.out.md"));
-        string first = Assert.Single(lines, static line => line.TrimStart().StartsWith("- Up", StringComparison.Ordinal));
-        string second = Assert.Single(lines, static line => line.TrimStart().StartsWith("- Sub", StringComparison.Ordinal));
-        Assert.Single(lines, static line => line.TrimStart().StartsWith("- Go", StringComparison.Ordinal));
-        Assert.True(Indent(second) > Indent(first), string.Join(Environment.NewLine, lines));
-
-        static int Indent(string line) => line.Length - line.TrimStart().Length;
-    }
-
-    /// <summary>An ODP output names the native charts, transitions and sections it does not keep.</summary>
-    [Fact]
-    public void OdpOutput_NamesTheChartsTransitionsAndSectionsItLoses()
-    {
-        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
-        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """
-            [{"op":"set_transition","slides":"1","kind":"fade"},
-             {"op":"insert_section","name":"Part","at":2},
-             {"op":"insert_chart","slide":2,"kind":"column","rect":{"x":50,"y":100,"width":300,"height":200},"categories":["a","b"],"series":[{"name":"S","values":[1,2]}]}]
-            """);
-
-        JsonNode result = Run("slides", "convert", "deck.pptx", "--out", "deck.odp");
-
-        string message = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!["message"]!.GetValue<string>();
-        Assert.Contains("native charts of slide(s) 2", message, StringComparison.Ordinal);
-        Assert.Contains("transitions of slide(s) 1", message, StringComparison.Ordinal);
-        Assert.Contains("section(s)", message, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// A PPT output names the native charts that become pictures, the sections and the table
-    /// styles it does not keep, without marking the output incomplete, and keeps the transitions;
-    /// a deck with none of the three, a transition aside, converts to PPT without the warning.
-    /// </summary>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void PptOutput_NamesTheChartsSectionsAndTableStylesItLoses(bool withContent)
-    {
-        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
-        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", withContent
-            ? """
-                [{"op":"set_transition","slides":"1","kind":"fade"},
-                 {"op":"insert_section","name":"Part","at":2},
-                 {"op":"insert_chart","slide":2,"kind":"column","rect":{"x":50,"y":100,"width":300,"height":200},"categories":["a","b"],"series":[{"name":"S","values":[1,2]}]},
-                 {"op":"insert_table","slide":3,"rect":{"x":50,"y":100,"width":300,"height":100},"rowCount":2,"columnCount":2,"values":[["a","b"],["c","d"]]}]
-                """
-            : """[{"op":"set_transition","slides":"1","kind":"fade"}]""");
-
-        JsonNode result = Run("slides", "convert", "deck.pptx", "--out", "deck.ppt");
-
-        JsonNode[] lossy = [.. (result["warnings"] as JsonArray ?? []).Where(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION").Select(static warning => warning!)];
-        if (!withContent)
-        {
-            Assert.Empty(lossy);
-            return;
-        }
-
-        JsonNode warning = Assert.Single(lossy);
-        Assert.Equal(
-            "The ppt output does not keep the native charts of slide(s) 2, which become pictures; the 2 section(s); "
-                + "the table styles of slide(s) 3, so those tables lose the fills, borders and text formatting of their style.",
-            warning["message"]!.GetValue<string>());
-        Assert.NotEqual(true, warning["affectsCompleteness"]?.GetValue<bool>());
-    }
-
-    /// <summary>
-    /// The warning of an ODP or PPT output names each kind of content it does not keep in
-    /// <c>details.content</c>, in the order of its message, while the warning that an html output
-    /// may not keep every feature names none.
-    /// </summary>
-    [Theory]
-    [InlineData("odp", """["charts","transitions","sections"]""")]
-    [InlineData("ppt", """["charts","sections","table-styles"]""")]
-    [InlineData("html", null)]
-    public void Convert_NamesTheKindsOfContentItDoesNotKeep(string format, string? content)
-    {
-        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
-        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """
-            [{"op":"set_transition","slides":"1","kind":"fade"},
-             {"op":"insert_section","name":"Part","at":2},
-             {"op":"insert_chart","slide":2,"kind":"column","rect":{"x":50,"y":100,"width":300,"height":200},"categories":["a","b"],"series":[{"name":"S","values":[1,2]}]},
-             {"op":"insert_table","slide":3,"rect":{"x":50,"y":100,"width":300,"height":100},"rowCount":2,"columnCount":2,"values":[["a","b"],["c","d"]]}]
-            """);
-
-        JsonNode result = Run("slides", "convert", "deck.pptx", "--to", format, "--out", $"deck.{format}");
-
-        JsonNode warning = Assert.Single(result["warnings"] as JsonArray ?? [], static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!;
-        Assert.Equal(content, warning["details"]?["content"]?.ToJsonString());
-        Assert.Equal(content is null, warning["details"] is null);
-    }
-
-    /// <summary>
-    /// A convert names what it does not keep of the slides it converts, by their numbers in the
-    /// deck: a selection names only its own slides' charts, transitions and styled tables, as a
-    /// convert of every slide numbers them, and the deck's sections, which a selection keeps. An
-    /// html5 output, whose text lacks a chart's title, draws the native charts as pictures and
-    /// names them too, leaving out a hidden slide's unless the selection names it; an html
-    /// output, whose text holds the title, names none.
-    /// </summary>
-    [Theory]
-    [InlineData("ppt", null, "The ppt output does not keep the native charts of slide(s) 1, 4, which become pictures; the 2 section(s); the table styles of slide(s) 2, so those tables lose the fills, borders and text formatting of their style.")]
-    [InlineData("ppt", "2-4", "The ppt output does not keep the native charts of slide(s) 4, which become pictures; the 2 section(s); the table styles of slide(s) 2, so those tables lose the fills, borders and text formatting of their style.")]
-    [InlineData("ppt", "3-4", "The ppt output does not keep the native charts of slide(s) 4, which become pictures; the 2 section(s), though its slides look as in the deck.")]
-    [InlineData("odp", null, "The odp output does not keep the native charts of slide(s) 1, 4, which become pictures; the transitions of slide(s) 3; the 2 section(s), though its slides look as in the deck.")]
-    [InlineData("odp", "2-4", "The odp output does not keep the native charts of slide(s) 4, which become pictures; the transitions of slide(s) 3; the 2 section(s), though its slides look as in the deck.")]
-    [InlineData("html5", null, "The html5 output does not keep the native charts of slide(s) 4, which become pictures, though its slides look as in the deck.")]
-    [InlineData("html5", "1-3", "The html5 output does not keep the native charts of slide(s) 1, which become pictures, though its slides look as in the deck.")]
-    [InlineData("html5", "2-3", null)]
-    [InlineData("html", null, null)]
-    [InlineData("html", "2-4", null)]
-    public void Convert_NamesWhatItLosesOfTheSlidesItConvertsByTheirNumbersInTheDeck(string format, string? slides, string? message)
-    {
-        // Slide 1 is hidden and holds a chart, slide 2 a styled table, slide 3 a transition and
-        // slide 4 a chart titled Qz7; the second section starts at slide 3.
-        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
-        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """
-            [{"op":"insert_chart","slide":1,"kind":"column","rect":{"x":50,"y":100,"width":300,"height":200},"categories":["a","b"],"series":[{"name":"S","values":[1,2]}]},
-             {"op":"set_slide_hidden","slides":"1","hidden":true},
-             {"op":"insert_table","slide":2,"rect":{"x":50,"y":100,"width":300,"height":100},"rowCount":2,"columnCount":2,"values":[["a","b"],["c","d"]]},
-             {"op":"set_transition","slides":"3","kind":"fade"},
-             {"op":"insert_section","name":"Part","at":3},
-             {"op":"insert_chart","slide":4,"kind":"column","rect":{"x":50,"y":100,"width":300,"height":200},"title":"Qz7","categories":["a","b"],"series":[{"name":"S","values":[1,2]}]}]
-            """);
-        string extension = format == "html5" ? "html" : format;
-
-        JsonNode result = Run([
-            "slides", "convert", "deck.pptx", "--to", format, "--out", $"converted.{extension}",
-            .. slides is null ? Array.Empty<string>() : ["--slides", slides]]);
-
-        if (format is "html" or "html5" && slides is null or "2-4")
-        {
-            // The chart of slide 4 is in the page: as text in html, only as a picture in html5.
-            Assert.Equal(format == "html", File.ReadAllText(_workspace.File("converted.html")).Contains("Qz7", StringComparison.Ordinal));
-        }
-
-        JsonNode[] named = [.. (result["warnings"] as JsonArray ?? [])
-            .Where(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION" && warning["details"]?["content"] is not null)
-            .Select(static warning => warning!)];
-        if (message is null)
-        {
-            Assert.Empty(named);
-            return;
-        }
-
-        JsonNode lost = Assert.Single(named);
-        Assert.Equal(message, lost["message"]!.GetValue<string>());
-        if (format == "html5")
-        {
-            Assert.Equal("""["charts"]""", lost["details"]!["content"]!.ToJsonString());
-        }
-    }
-
-    /// <summary>
-    /// An html, html5 or Markdown output warns that it may not keep every presentation feature;
-    /// a presentation or a PDF does not.
-    /// </summary>
-    [Theory]
-    [InlineData("html", "html", true)]
-    [InlineData("html5", "html", true)]
-    [InlineData("md", "md", true)]
-    [InlineData("pptx", "pptx", false)]
-    [InlineData("pdf", "pdf", false)]
-    public void Convert_ToHtmlHtml5OrMd_WarnsLossyConversion(string format, string extension, bool lossy)
-    {
-        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
-
-        JsonNode result = Run("slides", "convert", "deck.pptx", "--to", format, "--out", $"converted.{extension}");
-
-        JsonNode? warning = (result["warnings"] as JsonArray ?? [])
-            .SingleOrDefault(static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION");
-        if (!lossy)
-        {
-            Assert.Null(warning);
-            return;
-        }
-
-        Assert.NotNull(warning);
-        Assert.Equal($"Slides conversion to {format} may not preserve every presentation feature.", warning["message"]!.GetValue<string>());
     }
 
     /// <summary>Each render format writes its own kind of image: a PNG, a JPEG, a TIFF or an SVG document.</summary>
@@ -418,7 +102,7 @@ public sealed partial class SlidesConvertCliTests : IDisposable
     [InlineData("svg", null)]
     public void Render_WritesTheImageOfItsFormat(string format, byte[]? signature)
     {
-        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
+        Deck();
 
         JsonNode result = Run("slides", "render", "deck.pptx", "--slides", "1", "--to", format, "--out", $"slide.{format}");
 
@@ -430,25 +114,6 @@ public sealed partial class SlidesConvertCliTests : IDisposable
         }
 
         Assert.Equal(signature, content[..signature.Length]);
-    }
-
-    // deck.pptx: four slides, the second hidden.
-    private void HiddenSecondSlide()
-    {
-        Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md");
-        Run("slides", "edit", "deck.pptx", "--in-place", "--ops", """[{"op":"set_slide_hidden","slides":"2","hidden":true}]""");
-    }
-
-    // The slides an output shows: its pages or its slide headings.
-    private int ShownSlides(JsonNode result, string format)
-    {
-        string path = result["outputs"]![0]!["path"]!.GetValue<string>();
-        return format switch
-        {
-            "pdf" => Run("pdf", "inspect", path)["pdf"]!["pageCount"]!.GetValue<int>(),
-            "pptx" => Run("slides", "inspect", path)["presentation"]!["slideCount"]!.GetValue<int>(),
-            _ => new[] { "One", "Two", "Three", "Four" }.Count(title => File.ReadAllText(path).Contains(title, StringComparison.Ordinal)),
-        };
     }
 
     /// <summary>
@@ -465,10 +130,9 @@ public sealed partial class SlidesConvertCliTests : IDisposable
         var variables = new Dictionary<string, string?> { [Variable] = "Tiff-Secret-7c2e" };
         string deck = Path.Combine(folder, "deck.pptx");
         Directory.CreateDirectory(_workspace.File(folder));
-        string[] encrypt = encrypted ? ["--encrypt-env", Variable] : [];
+        Deck(path: deck, password: encrypted ? variables[Variable] : null);
         string[] open = encrypted ? ["--password-env", Variable] : [];
         string[] select = slides is null ? [] : ["--slides", slides];
-        Assert.Equal(0, _workspace.RunWithEnv(variables, ["slides", "create", deck, "--from-markdown", "deck.md", .. encrypt, "--output-format", "json"]).ExitCode);
 
         CliResult refused = _workspace.RunWithEnv(variables, ["slides", "convert", deck, .. open, "--to", "tiff", .. select, "--output-format", "json"]);
 
@@ -476,6 +140,59 @@ public sealed partial class SlidesConvertCliTests : IDisposable
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal(["deck.pptx"], Directory.EnumerateFiles(_workspace.File(folder)).Select(Path.GetFileName));
+    }
+
+    /// <summary>
+    /// Aspose.Slides writes to standard output while it renders with font fallback rules (known
+    /// issue SLIDES-FALLBACK-STDOUT); a conversion of East Asian text keeps the JSON result the
+    /// only standard output.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void Convert_KeepsTheJsonResultTheOnlyStandardOutput()
+    {
+        using (var fixture = new SlidesEngineFixture())
+        using (var presentation = new Presentation())
+        {
+            presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 600, 80).TextFrame.Text = "问题与对策";
+            presentation.Save(_workspace.File("deck.pptx"), SaveFormat.Pptx);
+        }
+
+        CliResult result = _workspace.Run("slides", "convert", "deck.pptx", "--to", "pdf", "--output-format", "json");
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        Assert.DoesNotContain("Updating of Inner rules", result.StdOut, StringComparison.Ordinal);
+        Assert.NotNull(JsonNode.Parse(result.StdOut));
+    }
+
+    /// <summary>
+    /// Saves a deck of four slides, each with its title (One to Four) and text (First to Fourth),
+    /// one of them hidden, notes on the first, or a password, when they are given.
+    /// </summary>
+    private void Deck(int? hidden = null, string? notes = null, string path = "deck.pptx", string? password = null)
+    {
+        using var fixture = new SlidesEngineFixture();
+        using var deck = new Presentation();
+        string[] texts = ["First", "Second", "Third", "Fourth"];
+        for (int index = 0; index < Titles.Length; index++)
+        {
+            ISlide slide = index == 0 ? deck.Slides[0] : deck.Slides.AddEmptySlide(deck.LayoutSlides[0]);
+            slide.Shapes.AddAutoShape(ShapeType.Rectangle, 40, 30, 600, 70).TextFrame.Text = Titles[index];
+            slide.Shapes.AddAutoShape(ShapeType.Rectangle, 40, 120, 600, 70).TextFrame.Text = texts[index];
+            slide.Hidden = hidden == index + 1;
+        }
+
+        if (notes is not null)
+        {
+            deck.Slides[0].NotesSlideManager.AddNotesSlide().NotesTextFrame.Text = notes;
+        }
+
+        if (password is not null)
+        {
+            deck.ProtectionManager.Encrypt(password);
+        }
+
+        deck.Save(_workspace.File(path), SaveFormat.Pptx);
     }
 
     private JsonNode Run(params string[] args)

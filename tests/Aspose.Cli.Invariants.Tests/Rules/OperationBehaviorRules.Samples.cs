@@ -8,8 +8,7 @@ namespace Aspose.Cli.Invariants.Tests;
 /// once leaves, an <c>add_</c> operation applied twice adds twice), C-R21 (the state fields
 /// read paths the ops schemas declare read back) and C-R30 (its outcome tells the truth). The schemas say what an operation accepts, not
 /// what the fixture holds, so the samples are written by hand against the fixtures: Sheet1 with
-/// A1:B3 filled, one PDF page, two slides, a title slide with a subtitle (shape 3) and a second with a title (shape 2) and a body (shape 3),
-/// and five Word blocks. Operations that read a file name <c>other.&lt;format&gt;</c> (the fixture
+/// A1:B3 filled, one PDF page and five Word blocks. Operations that read a file name <c>other.&lt;format&gt;</c> (the fixture
 /// again), <c>image.png</c> or <c>note.txt</c>; a secret field names <see cref="RuleWorkspace.SecretVariable"/>.
 /// </summary>
 /// <param name="Product">The product whose edit applies the operation.</param>
@@ -24,10 +23,6 @@ namespace Aspose.Cli.Invariants.Tests;
 /// <param name="Unseen">Why no comparison sees the operation's change, so C-R30 does not judge
 /// whether its output differs from its input.</param>
 /// <param name="Unrepeatable">Why the operation cannot be applied twice, so C-R19 does not judge it.</param>
-/// <param name="Shape">The type of the shape the setup added on the operation's slide, which the
-/// operation addresses: its <c>shapeId</c> is read after the setup, because an evaluation run adds
-/// a shape of its own to every slide it saves. Slide texts stay within the five characters an
-/// evaluation run reads back.</param>
 /// <param name="FromHtml">The HTML the product's <c>create --from-html</c> turns into the document
 /// the operation edits, instead of the fixture: a PDF with a form field.</param>
 internal sealed record OperationSample(
@@ -39,7 +34,6 @@ internal sealed record OperationSample(
     bool Encrypted = false,
     string? Unseen = null,
     string? Unrepeatable = null,
-    string? Shape = null,
     string? FromHtml = null)
 {
     /// <summary>The operation name.</summary>
@@ -52,30 +46,8 @@ internal sealed record OperationSample(
     public string Subject => $"{Product} {Op}{(Label is null ? string.Empty : " on " + Label)}";
 }
 
-/// <summary>
-/// A document whose part an operation addresses holds nothing of the operation's own to write
-/// to, for C-R44: <paramref name="Setup"/> builds it from the product's fixture, and each
-/// property of <paramref name="Address"/> replaces the property of that name in a sample's
-/// operation, so the operation addresses the bare part.
-/// </summary>
-/// <param name="Target">The target address of the bare part, which a refused operation names, or names the start of.</param>
-/// <param name="Objects">The units of the objects an operation must not add to write its value into, such as <c>shape</c> in <c>slide/3/shape/4</c>.</param>
-/// <param name="Addressing">The fields by which an operation of the product addresses an object, each of which <paramref name="Address"/> must replace where a sample gives it.</param>
-internal sealed record BareSample(string Product, string Label, string Setup, string Address, string Target, string[] Objects, string[] Addressing);
-
 internal static class OperationSamples
 {
-    /// <summary>The bare documents C-R44 runs each set_ operation of their product on.</summary>
-    public static IReadOnlyList<BareSample> Bare { get; } =
-    [
-        new("slides", "a Blank slide with a text box",
-            """[{"op":"insert_slide","layout":"Blank"},{"op":"insert_shape","slide":3,"geometry":"rectangle","rect":{"x":40,"y":20,"width":640,"height":80},"text":"Box"}]""",
-            """{"slide":3,"slides":"3","shapeId":2}""",
-            "slide/3",
-            ["shape"],
-            ["slide", "slideId", "slides", "shapeId", "shapeName", "placeholder"]),
-    ];
-
     // rule-exemptions: begin
     /// <summary>
     /// Operations of the catalog that have no sample, each with the reason; an entry whose
@@ -196,41 +168,6 @@ internal static class OperationSamples
         new("pdf", """{"op":"set_properties","title":"Edited","author":"Tester","subject":"Checks","keywords":"invariant","custom":{"Department":"Sales"}}"""),
         new("pdf", """{"op":"set_page_labels","ranges":[{"startPage":1,"numberStyle":"roman-lower","prefix":"A-","start":3}]}"""),
         new("pdf", """{"op":"set_page_size","pages":"1","pageSize":{"preset":"letter"}}"""),
-        new("slides", """{"op":"insert_section","name":"Intro","at":1}""",
-            Unrepeatable: "A second section of the same name is refused."),
-        new("slides", """{"op":"insert_slide","layout":"Title Only"}"""),
-        new("slides", """{"op":"import_slides","path":"other.pptx"}"""),
-        new("slides", """{"op":"set_layout","slides":"2","layout":"Title Only"}"""),
-        new("slides", """{"op":"delete_shape","slide":2,"shapeId":3}"""),
-        new("slides", """{"op":"delete_slides","slides":"2"}"""),
-        new("slides", """{"op":"copy_slide","slide":1}"""),
-        new("slides", """{"op":"insert_chart","slide":2,"kind":"column","rect":{"x":72,"y":72,"width":144,"height":72},"categories":["A","B"],"series":[{"name":"Sales","values":[1,2]}],"title":"Plot"}"""),
-        new("slides", """{"op":"insert_image","slide":2,"path":"image.png","rect":{"x":72,"y":72,"width":144,"height":72},"altText":"Logo"}"""),
-        new("slides", """{"op":"insert_shape","slide":2,"geometry":"rectangle","rect":{"x":72,"y":72,"width":144,"height":72},"text":"Box","style":{"fillColor":"#FF0000","lineColor":"#00FF00","bold":true,"color":"#123456","eastAsianFont":"SimSun","font":"Arial","latinFont":"Arial","fontSize":20}}"""),
-        new("slides", """{"op":"insert_table","slide":2,"rect":{"x":72,"y":72,"width":144,"height":72},"rowCount":2,"columnCount":2,"values":[["a","b"],["c","d"]]}"""),
-        new("slides", """{"op":"move_slide","slide":2,"to":1}"""),
-        new("slides", """{"op":"replace_text","find":"Second","replace":"Next"}"""),
-        new("slides", """{"op":"set_background","slides":"1","color":"#336699"}"""),
-        // The subtitle sample writes text alone and comes first, so C-R39 round-trips the text
-        // through a title slide's subtitle and the lists through a body placeholder.
-        new("slides", """{"op":"set_body","slide":1,"paragraphs":[{"text":"Sub"}]}""", Label: "a title slide's subtitle"),
-        // An evaluation read cuts a shape's whole text after five characters, so both paragraphs together stay within them.
-        new("slides", """{"op":"set_body","slide":2,"paragraphs":[{"text":"Ab"},{"text":"Cd","list":{"kind":"number","level":2}}]}"""),
-        new("slides", """{"op":"set_footer","slides":"1-2","text":"Foot","showNumber":true,"showDate":true}"""),
-        new("slides", """{"op":"set_notes","slide":1,"text":"Notes"}"""),
-        new("slides", """{"op":"set_properties","title":"Edited","author":"Tester","subject":"Subj","keywords":"Keys","company":"Corp"}"""),
-        new("slides", """{"op":"set_shape_bounds","slide":2,"shapeId":3,"x":50,"y":60,"width":600,"height":200}"""),
-        // font reaches Latin text only where latinFont names no other font, so it is written apart
-        // from latinFont; SlidesShapeStyleTests pins what font changes beside both of the others.
-        new("slides", """{"op":"format_shape","slide":2,"shapeId":3,"style":{"fillColor":"#FF0000","lineColor":"#00FF00","bold":true,"color":"#123456","eastAsianFont":"SimSun","font":"Arial","fontSize":22}}"""),
-        new("slides", """{"op":"format_shape","slide":2,"shapeId":3,"style":{"latinFont":"Arial"}}""", Label: "with a Latin font of its own"),
-        new("slides", """{"op":"set_slide_hidden","slides":"2","hidden":true}"""),
-        new("slides", """{"op":"set_slide_size","slideSize":{"preset":"4x3"}}"""),
-        new("slides", """{"op":"set_table_cell","slide":2,"shapeId":4,"row":1,"column":1,"text":"X"}""", Setup: """[{"op":"insert_table","slide":2,"rect":{"x":72,"y":72,"width":144,"height":72},"rowCount":2,"columnCount":2}]""", Shape: "table"),
-        new("slides", """{"op":"set_text","slide":2,"shapeId":3,"text":"Done"}"""),
-        new("slides", """{"op":"set_title","slide":1,"text":"Head"}"""),
-        new("slides", """{"op":"set_transition","slides":"1","kind":"fade","durationMs":500}"""),
-        new("slides", """{"op":"set_chart_data","slide":2,"shapeId":4,"categories":["X","Y"],"series":[{"name":"Sales","values":[3,4]}]}""", Setup: """[{"op":"insert_chart","slide":2,"kind":"column","rect":{"x":72,"y":72,"width":144,"height":72},"categories":["A","B"],"series":[{"name":"Sales","values":[1,2]}]}]""", Shape: "chart"),
         new("words", """{"op":"accept_revisions"}""", Setup: """[{"op":"set_text","target":{"block":2},"text":"Revised"}]""", SetupArgs: ["--track-changes", "--author", "Tester"]),
         new("words", """{"op":"add_comment","target":{"block":2},"author":"Tester","text":"Note"}"""),
         new("words", """{"op":"insert_section","at":1,"position":"after","pageSetup":{"pageSize":{"preset":"letter"},"orientation":"landscape","margins":{"top":36,"left":54},"columnCount":2}}"""),

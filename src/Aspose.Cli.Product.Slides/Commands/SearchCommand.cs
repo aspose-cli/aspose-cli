@@ -5,35 +5,19 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class SearchCommand
 {
-    public static CommandDefinition<SlidesSearchRequest, SlidesSearchResult> Create()
-    {
-        var search = new SearchOptions(new SearchScopeGrammar(
-            "Search scope: the shape text (with alternative and chart text), the speaker notes, the comments, the layouts or masters the slides show, or all of them.",
-            SlidesSearchScopes.Values,
-            SlidesSearchScopes.All));
-        return new(
-            "search",
-            "Search the text of a presentation's shapes, notes, comments, layouts and masters.",
+    public static CommandDefinition<SlidesSearchRequest, SlidesSearchResult> Create() =>
+        TableCommands.Search<SlidesSearchRequest, SlidesSearchResult>(
+            "Search the text of a presentation's shapes, table cells, notes and chart titles; each hit names the object's address.",
             new CommandTraits { Input = SlidesInputs.Presentation },
-            search.Options,
-            (parse, standard) => new SlidesSearchRequest
-            {
-                Input = standard.Input,
-                Query = search.Read(parse),
-                Password = standard.InputPassword,
-            })
-        {
-            Examples =
+            static search => new SlidesSearchRequest { Input = search.Input, Password = search.Password, Query = search.Query },
+            static (request, result) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
+            examples:
             [
-                "slides search deck.pptx --pattern TODO --output-format json",
-                "slides search deck.pptx --pattern \"Q[1-4]\" --regex --scope notes",
+                "slides search deck.pptx --pattern TODO",
+                "slides search deck.pptx --pattern \"Q[1-4]\" --regex",
             ],
-            Links =
+            links:
             [
-                CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "slide read-back and visual review"),
-                new("aspose-cli docs reading", "reading every product within bounded windows"),
-            ],
-            Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
-        };
-    }
+                CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "what each Slides command is for"),
+            ]);
 }

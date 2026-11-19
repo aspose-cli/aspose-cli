@@ -59,14 +59,15 @@ public static class TableRoundTrip
     /// A value of <paramref name="kind"/> that differs from <paramref name="current"/>, written as
     /// an operation document writes it: every kind has one fixed sample and a second for when the
     /// object already holds the first; an enumeration takes its first member that is not the
-    /// current one and not <c>NotDefined</c>.
+    /// current one and not <c>NotDefined</c>. A text sample has at most five characters, so the
+    /// round trip holds in an engine's evaluation mode, which reads longer text cut short.
     /// </summary>
     public static JsonNode Sample(ValueKind kind, JsonNode? current)
     {
         ArgumentNullException.ThrowIfNull(kind);
         JsonNode[] candidates = kind.Name switch
         {
-            "text" => ["Round trip", "Second value"],
+            "text" => ["Trip", "Other"],
             "integer" => [1500, 2500],
             "short-integer" => [1, 2],
             "number" => [2.5, 3.5],

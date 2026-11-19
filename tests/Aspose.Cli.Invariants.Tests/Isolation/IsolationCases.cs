@@ -255,8 +255,11 @@ internal static class IsolationCases
         if (item.Command.Has("--in-place") && item.Command.Has("--out"))
         {
             // An edit keeps its input's format without --out, and not every format it reads is one it
-            // writes; the product's own format always is.
-            invocation.Add("--out", "edited." + ScenarioFixtures.PrimaryFormat(item.Product));
+            // writes; the product's own format always is. An edit through an object table writes its
+            // input's format and no other, and writes every format it reads.
+            invocation.Add("--out", "edited." + (PublishedSchema.IsObjectTableProduct(CliCatalog.Current, item.Product)
+                ? Path.GetExtension(input).TrimStart('.')
+                : ScenarioFixtures.PrimaryFormat(item.Product)));
         }
         // Every input document is the sample: a second one, as a comparison reads, is a copy of it.
         for (int index = 0; index < invocation.Inputs.Count; index++)

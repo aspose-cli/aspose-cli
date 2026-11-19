@@ -12,19 +12,45 @@ namespace Aspose.Cli.IntegrationTests;
 /// </summary>
 public sealed class DirectoryOutputContractTests
 {
-    private static readonly Dictionary<string, (string[] Create, string[] Publish)> Cases = new(StringComparer.Ordinal)
+    /// <summary>
+    /// A deck with two different pictures: two renders of a blank slide at different widths, each
+    /// added as a picture frame.
+    /// </summary>
+    private static readonly string[][] SlidesWithTwoPictures =
+    [
+        ["slides", "create", "blank.pptx"],
+        ["slides", "render", "blank.pptx", "--slides", "1", "--width", "64", "--out", "a.png"],
+        ["slides", "render", "blank.pptx", "--slides", "1", "--width", "96", "--out", "b.png"],
+        ["slides", "edit", "blank.pptx", "--out", "input.pptx", "--ops", """
+            {"ops":[
+              {"add":"pictureFrame","in":"slide/256","args":{"image":"a.png","shapeType":"Rectangle","x":10,"y":10,"width":40,"height":30}},
+              {"add":"pictureFrame","in":"slide/256","args":{"image":"b.png","shapeType":"Rectangle","x":60,"y":10,"width":60,"height":45}}
+            ]}
+            """],
+    ];
+
+    private static readonly Dictionary<string, (string[][] Create, string[] Publish)> Cases = new(StringComparer.Ordinal)
     {
-        ["pdf split"] = (["pdf", "create", "input.pdf", "--from-text", "content.txt"],
+        ["pdf split"] = ([["pdf", "create", "input.pdf", "--from-text", "content.txt"]],
             ["pdf", "split", "input.pdf", "--by", "pages", "--out-dir", "parts"]),
-        ["pdf extract"] = (["pdf", "create", "input.pdf", "--from-text", "content.txt"],
+        ["pdf extract"] = ([["pdf", "create", "input.pdf", "--from-text", "content.txt"]],
             ["pdf", "extract", "input.pdf", "--what", "text", "--out-dir", "parts"]),
-        ["words split"] = (["words", "create", "input.docx", "--from-text", "content.txt"],
+        ["words split"] = ([["words", "create", "input.docx", "--from-text", "content.txt"]],
             ["words", "split", "input.docx", "--by", "sections", "--out-dir", "parts"]),
-        ["words extract"] = (["words", "create", "input.docx", "--from-text", "content.txt"],
+        ["words extract"] = ([["words", "create", "input.docx", "--from-text", "content.txt"]],
             ["words", "extract", "input.docx", "--what", "text", "--out-dir", "parts"]),
-        ["slides extract"] = (["slides", "create", "input.pptx", "--from-markdown", "content.md"],
-            ["slides", "extract", "input.pptx", "--what", "text", "--out-dir", "parts"]),
+        ["slides extract"] = (SlidesWithTwoPictures,
+            ["slides", "extract", "input.pptx", "--what", "media", "--out-dir", "parts"]),
     };
+
+    private static void Create(TempWorkspace workspace, string[][] steps)
+    {
+        foreach (string[] step in steps)
+        {
+            CliResult created = workspace.Run([.. step, "--output-format", "json"]);
+            Assert.True(created.ExitCode == 0, created.StdErr);
+        }
+    }
 
     public static TheoryData<string> Commands => [.. Cases.Keys];
 
@@ -36,9 +62,8 @@ public sealed class DirectoryOutputContractTests
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("content.txt"), "Directory output fixture");
         File.WriteAllText(workspace.File("content.md"), "# Directory output fixture\n\n- One point\n");
-        (string[] create, string[] publish) = Cases[command];
-        CliResult created = workspace.Run([.. create, "--output-format", "json"]);
-        Assert.True(created.ExitCode == 0, created.StdErr);
+        (string[][] create, string[] publish) = Cases[command];
+        Create(workspace, create);
         CliResult first = workspace.Run([.. publish, "--output-format", "json"]);
         Assert.True(first.ExitCode == 0, first.StdErr);
         string[] published = Directory.GetFiles(workspace.File("parts"));
@@ -100,12 +125,12 @@ public sealed class DirectoryOutputContractTests
         Assert.True(result.ExitCode == 0, result.StdErr);
     }
 
-    private static readonly Dictionary<string, (string[] Create, string[] Publish)> MultiFileCases = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, (string[][] Create, string[] Publish)> MultiFileCases = new(StringComparer.Ordinal)
     {
-        ["words split"] = (["words", "create", "input.docx", "--from-markdown", "content.md"],
+        ["words split"] = ([["words", "create", "input.docx", "--from-markdown", "content.md"]],
             ["words", "split", "input.docx", "--by", "heading1", "--out-dir", "parts"]),
-        ["slides extract"] = (["slides", "create", "input.pptx", "--from-markdown", "content.md"],
-            ["slides", "extract", "input.pptx", "--what", "text", "--out-dir", "parts"]),
+        ["slides extract"] = (SlidesWithTwoPictures,
+            ["slides", "extract", "input.pptx", "--what", "media", "--out-dir", "parts"]),
     };
 
     public static TheoryData<string> MultiFileCommands => [.. MultiFileCases.Keys];
@@ -116,9 +141,8 @@ public sealed class DirectoryOutputContractTests
     {
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("content.md"), "# First\n\nOne\n\n# Second\n\nTwo\n");
-        (string[] create, string[] publish) = MultiFileCases[command];
-        CliResult created = workspace.Run([.. create, "--output-format", "json"]);
-        Assert.True(created.ExitCode == 0, created.StdErr);
+        (string[][] create, string[] publish) = MultiFileCases[command];
+        Create(workspace, create);
         CliResult first = workspace.Run([.. publish, "--output-format", "json"]);
         Assert.True(first.ExitCode == 0, first.StdErr);
         string[] published = [.. Directory.GetFiles(workspace.File("parts")).Order(StringComparer.Ordinal)];

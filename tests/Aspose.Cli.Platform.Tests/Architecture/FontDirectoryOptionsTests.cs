@@ -37,7 +37,6 @@ public sealed class FontDirectoryOptionsTests
         ["pdf edit"] = true, // text stamps, watermarks and form appearances
         ["pdf validate"] = false,
         ["pdf sign"] = true, // the visible signature appearance
-        ["slides inspect"] = false,
         ["slides read"] = false,
         ["slides search"] = false,
         ["slides create"] = true, // saving shrinks auto-fit text with the fonts' metrics

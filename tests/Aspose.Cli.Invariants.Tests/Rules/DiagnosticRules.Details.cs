@@ -16,14 +16,15 @@ internal static partial class ContractRules
     /// budgets state <c>limit</c>, <c>actual</c> and <c>unit</c> (not <c>observed</c>,
     /// <c>sizeBytes</c>, <c>limitBytes</c>, <c>requestedCells</c>, <c>maxCells</c>, <c>maxPixels</c>,
     /// <c>requestedSheet</c>, <c>firstSheet</c>); collections state <c>available</c> (not
-    /// <c>supported</c>); operation errors state <c>id</c> and <c>op</c> (not the batch position
-    /// <c>index</c>); a changed file states <c>expectedSizeBytes</c>, <c>actualSizeBytes</c>,
+    /// <c>supported</c>); an error of an operation with an id states <c>id</c> and <c>op</c>, and
+    /// one of an object table's batch, whose operations have no id, states their position
+    /// <c>index</c> in the batch, from 0 as <c>ops[0]</c> counts; a changed file states <c>expectedSizeBytes</c>, <c>actualSizeBytes</c>,
     /// <c>expectedSha256</c> and <c>actualSha256</c> (not <c>expectedBytes</c>, <c>observedBytes</c>,
     /// <c>observedSha256</c>); a stage of processing is <c>phase</c> (not <c>stage</c>).
     /// </summary>
     private static readonly string[] ReplacedDetailsKeys =
     [
-        "observed", "sizeBytes", "limitBytes", "requestedCells", "maxCells", "maxPixels", "requestedSheet", "firstSheet", "supported", "index",
+        "observed", "sizeBytes", "limitBytes", "requestedCells", "maxCells", "maxPixels", "requestedSheet", "firstSheet", "supported",
         "expectedBytes", "observedBytes", "observedSha256", "stage",
     ];
 
@@ -129,7 +130,8 @@ internal static partial class ContractRules
         {
             string id = product.Id;
             string extension = ScenarioFixtures.PrimaryFormat(id);
-            CliCommand inspect = catalog.Command($"{id} inspect");
+            // The command that only reads the input: inspect, or read for a product without inspect.
+            CliCommand inspect = catalog.Commands.FirstOrDefault(command => command.Words == $"{id} inspect") ?? catalog.Command($"{id} read");
             string[] globals = [.. catalog.Command(string.Empty).Options.Select(static option => option.Name)];
 
             Invocation missing = Invocation.For(inspect);

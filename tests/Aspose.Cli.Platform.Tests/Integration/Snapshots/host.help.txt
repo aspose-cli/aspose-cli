@@ -18,7 +18,7 @@ Options:
 Commands:
   cells                             Spreadsheet operations (Excel and friends) with engine-grade fidelity.
   pdf                               PDF automation with page, security and fixed-layout semantics.
-  slides                            Presentation automation with slide, layout and notes semantics.
+  slides                            Read, edit, convert and render presentations through the Aspose.Slides object model.
   words                             Word-processing document automation with layout fidelity.
   license                           Inspect and manage the Aspose license used by the CLI.
   capabilities <product> <command>  Describe everything this build supports (products, verbs, formats), as data.

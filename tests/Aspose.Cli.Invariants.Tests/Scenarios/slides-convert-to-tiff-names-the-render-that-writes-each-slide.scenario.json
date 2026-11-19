@@ -1,14 +1,10 @@
 {
-  "name": "slides convert does not write TIFF, which render writes one slide to a file: --to tiff, or an --out ending in .tiff, is refused before anything is written, as png is, with the render to run, which keeps the selection and the input's password either way and run as written writes each selected slide; a multi-page TIFF is a convert to PDF and a pdf convert to TIFF; render still draws hidden slides and warns, and convert to gif is unchanged",
+  "name": "slides convert does not write TIFF, which render writes one slide to a file: --to tiff, or an --out ending in .tiff, is refused before anything is written, as png is, with the render to run, which keeps the selection and the input's password either way and run as written writes each selected slide; a multi-page TIFF is a convert to PDF and a pdf convert to TIFF, and convert to gif still writes one file",
   "files": {
-    "deck.md": { "text": "# One\n\n## Two\n\n- b\n\n## Three\n\n- c\n" },
+    "deck.pptx": { "fixture": "slides.pptx" },
     "locked.pptx": { "fixture": "slides.encrypted" }
   },
   "steps": [
-    {
-      "args": ["slides", "create", "deck.pptx", "--from-markdown", "deck.md"],
-      "expect": { "exitCode": 0 }
-    },
     {
       "args": ["slides", "convert", "deck.pptx", "--to", "tiff", "--out", "x.tiff"],
       "expect": {
@@ -25,10 +21,10 @@
       "expect": {
         "exitCode": 0,
         "json": [
-          { "path": "outputs[2].slide", "equals": 3 },
-          { "path": "outputs[3]", "exists": false }
+          { "path": "outputs[1].slide", "equals": 2 },
+          { "path": "outputs[2]", "exists": false }
         ],
-        "files": { "present": ["x.1.tiff", "x.2.tiff", "x.3.tiff"] },
+        "files": { "present": ["x.1.tiff", "x.2.tiff"] },
         "reopens": ["@result"]
       }
     },
@@ -91,7 +87,7 @@
           { "path": "outputs[0].slide", "equals": 2 },
           { "path": "outputs[1]", "exists": false }
         ],
-        "files": { "present": ["w.tiff"], "absent": ["w.1.tiff", "w.2.tiff", "w.3.tiff"] }
+        "files": { "present": ["w.tiff"], "absent": ["w.1.tiff", "w.2.tiff"] }
       }
     },
     {
@@ -133,23 +129,10 @@
       }
     },
     {
-      "args": ["slides", "edit", "deck.pptx", "--ops", "{\"ops\":[{\"op\":\"set_slide_hidden\",\"slides\":\"2\",\"hidden\":true}]}", "--out", "hidden.pptx"],
-      "expect": { "exitCode": 0 }
-    },
-    {
-      "args": ["slides", "render", "hidden.pptx", "--to", "tiff"],
+      "args": ["slides", "convert", "deck.pptx", "--to", "gif"],
       "expect": {
         "exitCode": 0,
-        "warnings": { "present": ["HIDDEN_SLIDES_RENDERED"] },
-        "files": { "present": ["hidden.1.tiff", "hidden.2.tiff", "hidden.3.tiff"] }
-      }
-    },
-    {
-      "args": ["slides", "convert", "hidden.pptx", "--to", "gif"],
-      "expect": {
-        "exitCode": 0,
-        "warnings": { "present": ["HIDDEN_SLIDES_SKIPPED"] },
-        "files": { "present": ["hidden.gif"] },
+        "files": { "present": ["deck.gif"] },
         "reopens": ["@result"]
       }
     }

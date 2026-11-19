@@ -16,7 +16,7 @@ public sealed class SlidesHardeningTests
         var loader = SlidesEngineFixture.Loader(ProductTestBudgets.Create<SlidesModule>());
 
         // A concurrent in-place edit publishes by replacing the file the engine still reads.
-        using (Engine.Mapping.LoadedPresentation loaded = loader.Open(input, password: null))
+        using (Engine.Mapping.LoadedPresentation loaded = loader.OpenTable(input, password: null, new Aspose.Cli.Sdk.Tables.EngineWarningLog()))
         {
             File.Replace(replacement, input, destinationBackupFileName: null);
             Assert.Single(loaded.Presentation.Slides);
@@ -26,56 +26,12 @@ public sealed class SlidesHardeningTests
         Assert.Equal(2, replaced.Slides.Count);
     }
 
-    [Theory]
-    [InlineData("text", 4, true)]
-    [InlineData("text", 5, true)]
-    [InlineData("text", 10, true)]
-    [InlineData("text", 15, false)]
-    [InlineData("full", 35, true)]
-    [InlineData("full", 40, false)]
-    public void Read_AccountsForEveryContentProjectionAndExactBoundaries(string scope, int budget, bool truncated)
-    {
-        TestLicense.Require("Aspose.Slides evaluation mode saves a watermark text box into every slide, which exact budget accounting would count.");
-        using var fixture = new SlidesEngineFixture();
-        string input = fixture.File($"read-budget-{scope}-{budget}.pptx");
-        using (var presentation = new Aspose.Slides.Presentation())
-        {
-            Aspose.Slides.ISlide slide = presentation.Slides[0];
-            slide.Shapes.Clear();
-            slide.Shapes.AddAutoShape(Aspose.Slides.ShapeType.Rectangle, 10, 10, 200, 30).TextFrame.Text = "First";
-            slide.Shapes.AddAutoShape(Aspose.Slides.ShapeType.Rectangle, 10, 50, 200, 30).TextFrame.Text = "Body!";
-            slide.NotesSlideManager.AddNotesSlide().NotesTextFrame.Text = "Notes";
-            presentation.CommentAuthors.AddAuthor("Author", "A").Comments.AddComment(
-                "Reply", slide, new System.Drawing.PointF(10, 10), DateTime.UtcNow);
-            presentation.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
-        }
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
-        {
-            Input = input,
-            Slides = PageRange.Parse("1"), Content = scope, IncludeNotes = true, MaxCharacters = budget,
-        });
-        SlidesSlideData result = Assert.Single(read.Slides);
-        int characters = (result.Title?.Length ?? 0) + (result.Text?.Sum(static text => text.Length) ?? 0)
-            + result.Shapes.Sum(static shape => (shape.Text?.Length ?? 0) + (shape.Runs?.Sum(static run => run.Text.Length) ?? 0)
-                + (shape.Paragraphs?.Sum(static paragraph => paragraph.Text.Length) ?? 0))
-            + (result.Notes?.Text.Length ?? 0) + (result.Comments?.Sum(static comment => comment.Text.Length) ?? 0);
-        Assert.Equal(budget, characters);
-        Assert.Equal(truncated, result.ContentTruncated);
-        Assert.Equal(truncated, read.Window!.Truncated);
-        Assert.Equal(1, read.Window.Total);
-    }
     [Fact]
-    public void LargeDeck_RemainsProgressiveAndSupportsBoundedRendering()
+    public void LargeDeck_SupportsBoundedRendering()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("windowed.pptx", slides: 12);
 
-        SlidesInspectResult info = SlidesInfo.Run(
-            fixture.Session,
-            new SlidesInspectRequest { Input = input });
-        SlidesReadResult window = fixture.Disclosed(session => SlidesRead.Run(
-            session,
-            new SlidesReadRequest { Input = input, Content = SlidesReadContents.Text }));
         SlidesRenderResult rendered = SlidesExport.Render(
             fixture.Session,
             new SlidesRenderRequest
@@ -86,49 +42,9 @@ public sealed class SlidesHardeningTests
                 Width = 320,
             });
 
-        Assert.Equal(12, info.Presentation.SlideCount);
-        Assert.Equal(10, window.Slides.Count);
-        Assert.True(window.Window!.Truncated);
-        Assert.Equal(12, window.Window.Total);
         Assert.Equal([1, 12], rendered.Outputs.Select(static item => item.Slide));
         Assert.All(rendered.Outputs, static item => Assert.True(item.SizeBytes > 100));
         Assert.Equal(320, PngWidth(rendered.Outputs[0].Path));
-        if (fixture.LicenseState != Sdk.Licensing.LicenseState.Licensed)
-        {
-            Assert.Contains(
-                window.Warnings ?? [],
-                static warning => warning.Code == WarningCodes.EvaluationInputTruncated);
-        }
-    }
-
-    [Fact]
-    public void EvaluationTextWarning_MarksOnlyResultsThatCarryTheCutShortText()
-    {
-        using var fixture = new SlidesEngineFixture();
-        string input = fixture.CreatePresentation("cut-short.pptx", slides: 1);
-        string markdown = fixture.File("cut-short.md");
-        File.WriteAllText(markdown, "# A title longer than five characters\n\n- A bullet longer than five characters\n");
-        bool evaluation = fixture.LicenseState == Sdk.Licensing.LicenseState.Evaluation;
-
-        // A read or a text extraction tells the SDK it read the text; a Markdown output carries the
-        // cut text, which the write pipeline's disclosure names; saved files keep the full text.
-        Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesRead.Run(session, new SlidesReadRequest { Input = input, Content = SlidesReadContents.Text })).Warnings));
-        Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesExtract.Run(session, new SlidesExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = SlidesExtractKinds.Text })).Warnings));
-        IReadOnlyList<Warning>? markdownOutput = fixture.Disclosed(session => SlidesExport.Convert(session, new SlidesConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.out.md"), format: "md") })).Warnings;
-        Assert.False(CutShort(markdownOutput));
-        Assert.Equal(evaluation, markdownOutput?.Any(static warning => warning.Code == WarningCodes.EvaluationMode
-            && warning.Message.Contains("cut the content short", StringComparison.Ordinal)) == true);
-        Assert.False(CutShort(fixture.Disclosed(session => SlidesExport.Convert(session, new SlidesConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.pdf"), format: "pdf") })).Warnings));
-        Assert.False(CutShort(fixture.Disclosed(session => SlidesCreate.Run(session, new SlidesCreateRequest { Output = TestOutput.At(fixture.File("created.pptx")), Markdown = new SourceFile("--from-markdown", markdown) })).Warnings));
-        Assert.False(CutShort(fixture.Disclosed(session => SlidesEdit.Run(session, new SlidesEditRequest
-        {
-            Input = input,
-            Batch = new SlidesOpsBatch { Ops = [new SlidesSetPropertiesOp { Title = "Briefing" }] },
-            Output = TestOutput.At(fixture.File("edited.pptx")),
-        })).Warnings));
-
-        static bool CutShort(IReadOnlyList<Warning>? warnings) =>
-            warnings?.Any(static warning => warning.Code == WarningCodes.EvaluationInputTruncated) == true;
     }
 
     [Fact]
@@ -231,10 +147,10 @@ public sealed class SlidesHardeningTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("malformed" + extension);
         File.WriteAllBytes(input, content);
-        CliException infoError = Assert.Throws<CliException>(() =>
-            SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = input }));
+        CliException readError = Assert.Throws<CliException>(() =>
+            SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input }));
 
-        Assert.Equal(ErrorCodes.FileCorrupt, infoError.Code);
+        Assert.Equal(ErrorCodes.FileCorrupt, readError.Code);
     }
 
     [Theory]
@@ -247,7 +163,7 @@ public sealed class SlidesHardeningTests
         File.WriteAllBytes(input, content);
 
         CliException error = Assert.Throws<CliException>(() =>
-            SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = input }));
+            SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         Assert.DoesNotContain("Unknown", error.Message, StringComparison.Ordinal);

@@ -49,4 +49,8 @@ public static class SlidesFormats
     /// <summary>The presentation formats create and edit write.</summary>
     internal static IReadOnlyList<FormatDescriptor> Writable { get; } =
         [.. Definitions.Where(static format => format.Id is "pptx" or "pptm")];
+
+    /// <summary>The presentation formats edit writes back in the same format: every one the engine both opens and saves.</summary>
+    internal static IReadOnlyList<FormatDescriptor> Editable { get; } =
+        [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input))];
 }

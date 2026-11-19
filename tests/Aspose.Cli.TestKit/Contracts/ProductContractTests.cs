@@ -291,13 +291,19 @@ public abstract class ProductContractTests<TModule>
     /// Prevents the product's edit result, its one partial outcome, from drifting away from the
     /// shared operation wire contract: its record lists every outcome as a
     /// <see cref="BoundedOperationOutcome"/>, and its schema requires <c>applied</c> and
-    /// references the shared outcome schema for each item.
+    /// references the shared outcome schema for each item. A product without an operation
+    /// vocabulary, whose edit applies an object table's operations, has no such outcome.
     /// </summary>
     [Fact]
     public void PartialOutcomes_UseSharedBoundedOperationContract()
     {
         ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
         ProductDefinition definition = Assert.Single(catalog.Products);
+        if (definition.Operations.Count == 0)
+        {
+            return;
+        }
+
         Type outcome = Assert.Single(
             definition.Json.ResultRecords.Select(static record => record.Type).Distinct(),
             // A partial outcome that applies operations, as an edit does; a check such as a
@@ -330,7 +336,11 @@ public abstract class ProductContractTests<TModule>
                 .OrderBy(static name => name, StringComparer.Ordinal));
     }
 
-    /// <summary>Validates every canonical product input against its declared schema.</summary>
+    /// <summary>
+    /// Validates every canonical product input against its declared schema. A product with an
+    /// operation vocabulary has at least its operation document; a product without one may read
+    /// no product-owned input document at all.
+    /// </summary>
     [Fact]
     public void CanonicalInputs_ConformToCurrentSchemas()
     {
@@ -338,6 +348,11 @@ public abstract class ProductContractTests<TModule>
         Assert.NotNull(definition.Json);
         ProductResourceCatalog resources =
             ProductCatalog.Build([new TModule()]).Resources;
+
+        if (definition.Operations.Count == 0 && CanonicalInputs.Count == 0)
+        {
+            return;
+        }
 
         Assert.NotEmpty(CanonicalInputs);
         Assert.Equal(

@@ -13,20 +13,25 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 /// a banner, an evaluation sheet) is disclosed the same way by every product. The SDK pipeline
 /// compares the evaluation marks of the input and of the staged output, so the disclosure is one
 /// SDK warning code, whatever the product. The test does not name the code: it is what a licensed
-/// edit of the marked document warns beyond the same edit of the clean document.
+/// edit of the marked document warns beyond the same edit of the clean document. A product on the
+/// object table recognizes no mark: what evaluation mode wrote stays in what a read returns, as the
+/// engine wrote it, and the run's license mode is the one statement of it.
 /// </summary>
 public sealed class EvaluationMarkDisclosureTests
 {
     private const string EvaluationModeWarning = "EVALUATION_MODE";
 
+    /// <summary>The products that recognize the marks evaluation mode writes.</summary>
+    private static readonly string[] Products = [.. ScenarioFixtures.Products.Where(static product => product != "slides")];
+
     [LicensedFact]
     public async Task EveryProduct_DisclosesAnEvaluationMarkedInputWithTheSameSdkCode()
     {
         // The products work in separate workspaces, so they run at the same time.
-        Task<string[]>[] runs = [.. ScenarioFixtures.Products.Select(static product => Task.Run(() => Disclosure(product)))];
+        Task<string[]>[] runs = [.. Products.Select(static product => Task.Run(() => Disclosure(product)))];
         string[][] found = await Task.WhenAll(runs);
         var disclosures = new Dictionary<string, string[]>(StringComparer.Ordinal);
-        foreach ((string product, string[] codes) in ScenarioFixtures.Products.Zip(found))
+        foreach ((string product, string[] codes) in Products.Zip(found))
         {
             disclosures[product] = codes;
         }
@@ -76,7 +81,6 @@ public sealed class EvaluationMarkDisclosureTests
     {
         ["cells"] = """{"ops":[{"op":"insert_rows","sheet":"Sheet1","at":2}]}""",
         ["pdf"] = """{"ops":[{"op":"add_bookmark","title":"Again","page":1}]}""",
-        ["slides"] = """{"ops":[{"op":"insert_slide","layout":"Title Only"}]}""",
         ["words"] = """{"ops":[{"op":"insert_paragraphs","at":{"block":2},"position":"after","paragraphs":[{"text":"Added"}]}]}""",
     };
 

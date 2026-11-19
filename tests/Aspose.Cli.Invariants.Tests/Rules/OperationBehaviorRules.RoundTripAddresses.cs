@@ -81,25 +81,6 @@ internal static partial class ContractRules
             Item(@"^pdf inspect: permissions\b", static (_, _) => ["security/encryption"]),
             Item(@"^pdf inspect: properties\.([^.\[]+)", static (m, _) => [$"property/{m[1]}"]),
         ],
-        ["slides"] =
-        [
-            Derived(@"^slides (inspect|read): (content|window|slideCount|layouts|masters)\b"),
-            Derived(@"^slides inspect: presentation\.(slideCount|masterCount|layoutCount|sectionCount|commentCount|mediaCount|hasMacros|orientation)\b"),
-            Derived(@"^slides (inspect|read): slides\[\d+\]\.(slideId|shapeCount|hasNotes|commentCount|contentTruncated|title)\b"),
-            Item(@"^slides inspect: presentation\.slideSize\b", static (_, _) => ["presentation/slide-size"]),
-            Item(@"^slides inspect: properties\.([^.\[]+)", static (m, _) => [$"property/{m[1]}"]),
-            Item(@"^slides inspect: sections\[(\d+)\]", (m, at) => [$"section/{at($"sections[{m[1]}].name")}"]),
-            Item(@"^slides read: slides\[(\d+)\]\.notes\b", (m, at) => [$"slide/{at($"slides[{m[1]}].slide")}/notes"]),
-            // The text box an evaluation save adds to every slide is the evaluation's, not the operation's.
-            Item(@"^slides read: slides\[(\d+)\]\.shapes\[(\d+)\]", static (_, _) => [],
-                static (m, at) => at($"slides[{m[1]}].shapes[{m[2]}].text")?.StartsWith("Evalu", StringComparison.Ordinal) == true),
-            // The footer, date and number placeholders are the slide's footer, which the slide reports.
-            Item(@"^slides read: slides\[(\d+)\]\.shapes\[(\d+)\]", (m, at) =>
-                FooterPlaceholder().IsMatch(at($"slides[{m[1]}].shapes[{m[2]}].placeholder") ?? string.Empty)
-                    ? [$"slide/{at($"slides[{m[1]}].slide")}"]
-                    : [$"slide/{at($"slides[{m[1]}].slide")}/shape/{at($"slides[{m[1]}].shapes[{m[2]}].shapeId")}"]),
-            Item(@"^slides (inspect|read): slides\[(\d+)\]", (m, at) => [$"slide/{at($"slides[{m[2]}].slide")}"]),
-        ],
         ["words"] =
         [
             Derived(@"^words (inspect|read): (content|window|blockCount|outline|fields|bookmarks|fonts|images|revisions)\b"),
@@ -274,7 +255,4 @@ internal static partial class ContractRules
 
     [GeneratedRegex(@"(Print_Area|Print_Titles|_FilterDatabase|^_xlnm)", RegexOptions.CultureInvariant)]
     private static partial Regex BuiltInName();
-
-    [GeneratedRegex(@"^(footer|date|date-time|datetime|slide-number|slidenumber|number)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
-    private static partial Regex FooterPlaceholder();
 }

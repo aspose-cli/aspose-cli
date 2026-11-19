@@ -78,6 +78,19 @@ internal static class PublishedSchema
     public static IEnumerable<CliProduct> OpsProducts(CliCatalog catalog) =>
         catalog.Products.Where(static product => product.OpsSchemaId is not null);
 
+    /// <summary>
+    /// Whether a schema is generated from a product's object table: an ops schema whose
+    /// definitions declare <c>x-addresses</c>, the address forms of the table's kinds. Its kinds,
+    /// rows, arguments and their values are named after the engine's object model.
+    /// </summary>
+    public static bool IsObjectTable(string id) =>
+        IsOps(id) && Document(id)["$defs"] is JsonObject definitions
+            && definitions.Any(static definition => definition.Value?["x-addresses"] is not null);
+
+    /// <summary>Whether a product edits through an object table: its ops schema, <c>v2/&lt;product&gt;/ops</c>, is generated from one.</summary>
+    public static bool IsObjectTableProduct(CliCatalog catalog, string product) =>
+        Ids(catalog).Contains($"v2/{product}/ops", StringComparer.Ordinal) && IsObjectTable($"v2/{product}/ops");
+
     /// <summary>The parsed schema document; callers must not change it.</summary>
     public static JsonObject Document(string id) => Documents.GetOrAdd(id, PublishedSchemas.Document);
 

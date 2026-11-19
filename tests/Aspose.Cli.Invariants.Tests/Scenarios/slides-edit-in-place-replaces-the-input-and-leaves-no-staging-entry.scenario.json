@@ -1,0 +1,70 @@
+{
+  "name": "slides edit --in-place replaces the input with the edited presentation, reports the input's path as its output, and leaves no .aspose-publication-* entry beside it",
+  "files": {
+    "deck.pptx": {
+      "fixture": "slides.pptx"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "slides",
+        "edit",
+        "deck.pptx",
+        "--in-place",
+        "--ops",
+        "{\"ops\":[{\"set\":\"presentation\",\"props\":{\"title\":\"Done\"}}]}"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "output.path",
+            "equals": "<workspace>/deck.pptx"
+          },
+          {
+            "path": "ops[0].at",
+            "equals": "presentation"
+          },
+          {
+            "path": "ops[0].now.title",
+            "equals": "Done"
+          }
+        ],
+        "files": {
+          "present": [
+            "deck.pptx"
+          ],
+          "absent": [
+            ".aspose-publication-*",
+            "deck.out.pptx"
+          ]
+        },
+        "reopens": [
+          "deck.pptx"
+        ]
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "read",
+        "deck.pptx",
+        "--at",
+        "presentation"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "objects[0].props.title",
+            "equals": "Done"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}

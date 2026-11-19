@@ -259,7 +259,9 @@ internal static partial class ContractRules
     /// <summary>
     /// Every read and search, with each <c>--max-&lt;unit&gt;</c> budget at 1: it succeeds with a
     /// truncated window that names the next call, in the unit the command selects by (a search
-    /// counts hits), both for its default selection and for a selection of every unit.
+    /// counts hits; a read that selects by no unit counts the unit its budget names, such as
+    /// <c>object</c> for <c>--max-objects</c>), both for its default selection and for a selection
+    /// of every unit.
     /// </summary>
     private static IEnumerable<InvariantCase> R15Run(CliCatalog catalog)
     {
@@ -268,10 +270,10 @@ internal static partial class ContractRules
         {
             bool search = command.Has("--pattern");
             string? selection = SelectionUnits.Keys.FirstOrDefault(command.Has);
-            string unit = search ? "hit" : selection is null ? "?" : SelectionUnits[selection];
             foreach (CliOption budget in command.Options.Where(static option => option.Name.StartsWith("--max-", StringComparison.Ordinal)
                 && option.Name != "--max-input-bytes"))
             {
+                string unit = search ? "hit" : selection is null ? budget.Name["--max-".Length..].TrimEnd('s') : SelectionUnits[selection];
                 string[][] selections = selection is null ? [[]] : [[], [selection, WholeSelections[selection]]];
                 foreach (string[] selected in selections)
                 {
@@ -575,9 +577,10 @@ internal static partial class ContractRules
     /// <summary>
     /// Every operation sample: <c>itemsAffected</c> is 0 exactly when the result warns
     /// <see cref="NoEffectWarning"/>, and an operation that affected items wrote an output that
-    /// differs from its input (<see cref="OperationRuns.Differ"/>). Per product, one batch of the
-    /// samples shows that no <c>applied[]</c> entry carries <c>index</c> and that every target
-    /// reads <c>&lt;unit&gt;/&lt;address&gt;</c>.
+    /// differs from its input (<see cref="OperationRuns.Differ"/>). Per product with an operation
+    /// vocabulary, one batch of the samples shows that no <c>applied[]</c> entry carries
+    /// <c>index</c> and that every target reads <c>&lt;unit&gt;/&lt;address&gt;</c>; an edit of an
+    /// object table reports <c>ops[]</c>, not <c>applied[]</c>, and has no samples to batch.
     /// </summary>
     private static IEnumerable<InvariantCase> R30Run(CliCatalog catalog)
     {
@@ -591,6 +594,10 @@ internal static partial class ContractRules
         foreach (string product in products)
         {
             yield return Check("C-R30", $"{product} operations have samples", () => SampleCoverage(catalog.Product(product)));
+            if (catalog.Product(product).Ops.Count == 0)
+            {
+                continue;
+            }
             yield return Check("C-R30", $"{product} applied[] has no index", () => Batch(product, IndexProblems), shard: product);
             yield return Check("C-R30", $"{product} targets read <unit>/<address>",
                 () => Batch(product, applied => TargetProblems(applied, products)), shard: product);
