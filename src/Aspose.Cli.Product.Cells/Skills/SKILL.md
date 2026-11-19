@@ -1,130 +1,168 @@
 ---
 name: aspose-cli-cells
-description: High-fidelity Excel/spreadsheet processing via the local Aspose CLI without Python or Microsoft Office; use for real workbooks, formula recalculation, native charts and pivots, format-preserving edits, protected files, exact-layout conversion, and file fidelity.
-license: MIT
+description: Read, edit, convert and render Excel workbooks with the local Aspose CLI. Edits are batches of set, add, delete, move and do operations on the Aspose.Cells object model, each read back from the saved file.
 ---
 
 # Aspose Cells
 
-Use `aspose-cli cells` for workbooks: XLSX, XLSM, XLSB, XLS, ODS, CSV and TSV.
-The shared rules (session start, reading windows, operation batches, secrets,
-licensing, errors) are in `aspose-cli docs overview`; this Skill adds
-what is specific to workbooks. `aspose-cli capabilities cells` lists commands,
-formats, operations and codes; `aspose-cli schema v2/cells/ops --operation <op>`
-gives an operation's fields. A table in a Word, PDF or slide file is theirs.
+`aspose-cli cells` reads, edits and converts XLSX, XLTX, XLSM, XLTM, XLAM, XLSB, XLS and XLT
+through Aspose.Cells; `edit` writes the format it reads. CSV and TSV text is read only by
+`convert`, with the text options it states. The shared rules (session start, secrets, licensing,
+errors) are in the Platform Skill.
 
-## Workflow
+| Command | What it does |
+|---|---|
+| `cells read` | Every object of the workbook, or of one subtree, with every row of the object table, and the workbook's inventory |
+| `cells search` | Matches in cell text, formulas and comment notes, each with the object's address |
+| `cells edit` | One batch of operations; writes the input's format; nothing is written when one fails |
+| `cells convert` | The engine's save to another format: PDF, XPS, HTML, MHTML, JSON, Markdown, ODS, CSV, TSV, or another workbook format; CSV or TSV text to a workbook |
+| `cells render` | The engine's image of each sheet, as one page, or of one area of a sheet |
+| `cells create` | The engine's new workbook, or a copy of `--template` saved as a new file |
 
-1. **Inspect, then read windows of one sheet.**
+## The object table
 
-   ```
-   aspose-cli cells inspect book.xlsx --output-format compact
-   aspose-cli cells inspect book.xlsx --sample --detail names --detail errors --output-format json
-   aspose-cli cells read book.xlsx --sheet Sales --range A1:F50 --output-format json
-   aspose-cli cells search book.xlsx --pattern "Total" --output-format json
-   ```
+`aspose-cli schema v2/cells/ops --operation directory` lists the vocabulary in one short JSON
+document: each kind with its address forms, the rows a set writes (`rows`) and the rows that are
+read only (`readOnlyRows`), and whether it can be deleted and moved; each add with the kind it adds
+to and its parameters; each action with its parameters. One entry in full, with each row's type and
+the engine member it names: `--operation style`, `--operation add.chart`, `--operation do.sort`. A
+row names one engine member; setting it sets that member only, and whatever else the engine
+changes with it is the engine's doing. Colors are `#RRGGBB`, sizes are points unless the row names
+another unit (a column's `width` is in characters), enumeration values are the engine's member
+names (`Solid`, `Center`, `Column`), and a date is the number the engine holds for it.
 
-   `--sample` shows display values for layout only; take types (`t`) from
-   `cells read`, whose `--content` adds formulas (`f`) or a style pool.
+| Address | Object |
+|---|---|
+| `workbook` | The workbook: active sheet, default font, protection |
+| `sheet/Sales` | A sheet by its name, in any case |
+| `sheet/Sales/cell/B2`, `…/cell/B2/style` | A cell; its style |
+| `sheet/Sales/range/A1:F20` | The values of an area, as rows of values |
+| `sheet/Sales/row/5`, `sheet/Sales/column/C` | A row by its number, a column by its letters |
+| `name/Total`, `name/Sales!Local` | A defined name by its full text |
+| `sheet/Sales/merge/A1:C1`, `sheet/Sales/comment/B2` | A merged area by its area, a comment by its cell |
+| `sheet/Sales/pageSetup`, `sheet/Sales/protection` | The sheet's page setup and protection |
+| `…/table/0`, `…/pivot/0`, `…/validation/0`, `…/hyperlink/0`, `…/sparklineGroup/0` | Tables, pivot tables, validations, hyperlinks, sparkline groups by position |
+| `…/conditionalFormatting/0/rule/1` | A conditional formatting by position; a rule of it |
+| `…/chart/3`, `…/chart/3/series/0`, `…/series/0/point/2`, `…/picture/5` | A chart or picture by its shape id; a series and a point by position |
+| `…/pivot/0/dataField/0` | A value field of a pivot table |
 
-2. **Edit in one batch** (batches and outcomes: `aspose-cli docs editing`):
+A sheet name is the address's text as it is, spaces and all: `sheet/Sales 2026/cell/B2` in an
+operation's JSON. On a command line quote it: `--at "sheet/Sales 2026"`.
 
-   ```json
-   {
-     "ops": [
-       { "op": "set_values", "sheet": "Sales", "range": "A6", "values": [["South", 500, 600]] },
-       { "op": "set_formula", "sheet": "Sales", "range": "E2:E6", "formula": "=SUM(B2:D2)" },
-       { "op": "format_range", "sheet": "Sales", "range": "A1:E1", "style": { "bold": true } },
-       { "op": "freeze_panes", "sheet": "Sales", "cell": "A2" }
-     ]
-   }
-   ```
+## Reading
 
-   ```
-   aspose-cli cells edit book.xlsx --ops ops.json --in-place --verify --output-format json
-   aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==E2*F2"
-   ```
+```powershell
+aspose-cli cells read book.xlsx
+aspose-cli cells read book.xlsx --at "sheet/Sales/range/A1:F20"
+aspose-cli cells read book.xlsx --at sheet/Sales --kind cell --max-objects 500
+```
 
-   The engine recalculates the workbook after the batch. `--verify` checks
-   the written result for cell changes and formula errors; on findings it
-   exits 8 with the output already published (`--in-place` has replaced the
-   input). Add it to the first edit of a file you did not create, and report
-   the totals `verification.formulaResultChanges` lists. To leave the original
-   untouched until the check passes, edit to a new file and deliver it only on
-   exit 0:
+- Each object comes with its `at` address, its `kind` and its `props`.
+- A read without `--kind` lists sheets, names, tables, charts, pivots and the other objects, but no
+  row, column, cell, style or chart point: `window.notListedUnlessNamed` says which kinds it left
+  out. Name them with `--kind` to list them; a cell is listed when the engine holds it.
+- The values of an area are cheapest as a range: `--at sheet/Sales/range/A1:F20` reads one object
+  whose `value` is a list of rows. A sheet's `maxDisplayRange` is the area that holds its data; a
+  whole column such as `C:C` is all 1,048,576 rows, so read `maxDisplayRange` instead.
+- A cell read with `--kind cell` is about 300 characters: 200 cells, the default window, are about
+  65,000. A window holds at most `--max-objects` objects; when `window.truncated` is true, run the
+  same command with `--from` set to `window.next.from`.
+- To find where some text is, use `cells search`: each hit gives the address of the object that
+  holds it.
+- `inventory.read` counts the objects read lists; `inventory.notRead` counts content the table
+  does not address, such as shapes other than charts and pictures, OLE objects, slicers, external
+  links and VBA projects.
 
-   ```
-   aspose-cli cells edit book.xlsx --ops ops.json --out book.edited.xlsx --verify --output-format json
-   ```
+## Editing
 
-   Operations by task,
-   batch order and recipes: `aspose-cli docs cells/editing`.
+```json
+{"ops": [
+  {"set": "sheet/Sales/range/A1:C2", "props": {"value": [["Region", "Q1", "Q2"], ["East", 1250, 1380]]}},
+  {"set": "sheet/Sales/cell/D2", "props": {"formula": "=SUM(B2:C2)"}},
+  {"set": "sheet/Sales/cell/A1/style", "props": {"font.isBold": true}},
+  {"add": "sheet", "args": {"index": 1, "sheetType": "Worksheet", "sheetName": "Summary"}},
+  {"do": "calculate"}
+]}
+```
 
-3. **Verify** (`aspose-cli docs cells/verification`):
+```powershell
+aspose-cli cells edit book.xlsx --ops ops.json --out book.edited.xlsx
+```
 
-   | tier | check |
-   |------|-------|
-   | values | `cells read` every changed range |
-   | visual | `aspose-cli cells render book.xlsx --sheets all --out <image> --output-format json`, then look at every sheet image yourself; judge widths from `cells render --range Sales!A1:G20` |
-   | semantic | `cells inspect --detail errors` reports no formula errors; `cells search` finds no placeholders |
+- Operations run in order, each on what the ones before it left. When one fails, nothing is
+  written, and the error names it: `details.index` (its position in `ops`), `details.at`.
+- The result has one entry per operation, read from the saved file after it was opened again:
+  `at` and `now` (every row of the object there); an action gives `returned`, the engine's return
+  value, and `at` when it names an object. `counts` lists the inventory counts that changed.
+- An add's entry gives the new object's address; a set that renames a sheet gives the sheet's new
+  address. Use them in the next batch; do not guess ids.
+- A position in `at` is read after the whole batch: when a later operation inserts or deletes
+  before it, `now` is whatever object is at that position then.
+- Every argument of an add or an action is the engine call's parameter of that name; the ones not
+  given are not passed. `--operation add.<name>` and `--operation do.<name>` list them. An
+  argument that takes an object takes its address: `{"do": "sort", "args": {"range":
+  "sheet/Sales/range/A1:C5", …}}`.
 
-4. **Convert and render.**
+Tasks, as the table does them:
 
-   ```
-   aspose-cli cells convert book.xlsx --to pdf
-   aspose-cli cells convert book.xlsx --to csv --sheets 2 --bom
-   aspose-cli cells render book.xlsx --sheets all --out book.png
-   ```
+- Values: set `value` on a range with as many rows and columns as the area, or on a cell. A
+  value is a number, `true` or `false`, text, or `null` for none. The engine reads text as it
+  reads typing: `#N/A` is an error value, and `'007` is the text `007` with `quotePrefix` set. A
+  formula is the `formula` row, not a value.
+- Formulas: the engine does not calculate when it saves. After values or formulas change, end
+  the batch with `{"do": "calculate"}` so the saved cells hold their results. `set_shared_formula`
+  fills an area from its top left cell; `set_dynamic_array_formula` returns the range it spills
+  into.
+- Formatting one cell: set rows of `…/cell/B2/style`. Formatting a range: `apply_style`, whose
+  `style` holds style rows and whose `flag` names the StyleFlag properties applied:
+  `CellShading` carries `pattern` with both colors, `NumberFormat` carries `number` and `custom`.
+  A fill shows only with `pattern` set, such as `Solid`, beside `foregroundColor`:
 
-   Add `--bom` to a CSV or TSV a person opens in Excel, or it misreads
-   non-English text. What an output drops: `aspose-cli docs cells/troubleshooting`.
+  ```json
+  {"do": "apply_style", "args": {"range": "sheet/Sales/range/A1:F1", "style": {"font.isBold": true, "foregroundColor": "#DDEBF7", "pattern": "Solid"}, "flag": ["FontBold", "CellShading"]}}
+  ```
 
-## Workbook rules
+- Rows and columns: set `height` on `…/row/5` or `width` on `…/column/C`; `insert_rows`,
+  `delete_rows`, `autofit_columns`, `group_rows` and the others are actions.
+- A chart: `add chart` with its `type` and the `area` of cells it covers, then `add series` in it
+  with the data `area`, such as `Sales!B2:E5`, and `isVertical`: the engine adds a series for
+  each column of the area (`true`) or each row (`false`), and the entry's address is the first.
+  Then set the chart's `nSeries.categoryData` and each series' `name`.
+- A pivot table: `add pivot` with its source, then `add_pivot_field` once per field, then
+  `calculate_pivot`.
 
-- Name the sheet every time: `--sheet` on `cells read` and `cells search`,
-  `--range Sales!A1:G20` on `cells render`, `"sheet"` in an operation.
-  `--sheets` on `cells convert` and `cells render` takes positions from
-  `cells inspect` (`2`, `1-3`, `all`), never names.
-- If a number can be computed from other cells, write a formula: `set_formula`
-  fills a range like Excel; `set_values` stores every string as text.
-- An open-ended request ("make me a sales sheet") gets the full deliverable:
-  realistic data, a Detail sheet and a designed Dashboard sheet
-  (`aspose-cli docs cells/design-system`).
-- A CSV or TSV in another encoding than UTF-8 (`INPUT_ENCODING_INVALID`) is
-  refused: import it once with `cells convert data.csv --to xlsx` and
-  `--encoding`. In a file that writes decimal commas (`2,71`) every number
-  with a comma or a point stays text (`NUMBERS_READ_AS_TEXT`): convert with
-  `--culture` to read them as numbers. `TEXT_TABLE_LAYOUT` means the table
-  does not start at row 1; take its rows from the message
-  (`aspose-cli docs cells/troubleshooting`).
+## Converting and rendering
 
-## Common mistakes
+```powershell
+aspose-cli cells convert book.xlsx --out book.pdf
+aspose-cli cells convert book.xlsx --to csv --sheet "Sales 2026" --format-strategy None --out sales.csv
+aspose-cli cells convert sales.csv --to xlsx --separator , --encoding utf-8 --convert-numbers true --convert-dates false
+aspose-cli cells render book.xlsx --sheet Sales --area A1:F20 --out sales.png
+```
 
-| mistake | do this instead |
-|---------|-----------------|
-| Inline `--ops` JSON in PowerShell | Write the ops to a file, or use `--set` for single cells (`aspose-cli docs troubleshooting`, Windows PowerShell) |
-| A whole-column range such as `A:A` | Give explicit bounds such as `A1:A500`; whole rows and columns are refused |
-| A date written as `"2026-04-03"` or `"=DATE(2026,4,3)"` in `set_values` | Both are stored as text; write `=DATE(2026,4,3)` with `set_formula` (or `--set "Sales!B2==DATE(2026,4,3)"`), then give the cells a date `numberFormat` such as `yyyy-mm-dd`: `cells read` reports `"t": "datetime"` only once the format is set |
-| `sort_range` over live formulas | Relative references scramble; sort the values first, then set the formulas |
-| `copy_range` from another file | It copies within the workbook; use `import_range` or `import_sheet` |
-| A bigger font on a title row | The row keeps its height; auto-fit it with `resize_rows` and no `height` |
-| Text written into a new workbook | Columns keep the default width, so long text is cut off by the next cell; size them with `resize_columns` (no `widthChars` auto-fits) |
-| Chinese text in a new workbook | The default font is Arial, so it renders in a serif fallback; make `{"op":"set_default_font","font":"DengXian","fontSize":11}` the first operation |
-| A workbook open in Excel | The in-place save fails with `OUTPUT_UNWRITABLE`; ask the user to close it |
-| `cells compare` after a formatting session | `identical: true` is correct: it compares values and formula text only |
+- A CSV, TSV or Markdown output holds one sheet: the active sheet, or the one `--sheet` names.
+  `--format-strategy None` writes values as they are stored; `DisplayString` as their number
+  formats show them; without it, the engine's default.
+- A PDF holds every sheet, or the ones `--sheet` names. An HTML, MHTML or Markdown output is one
+  file that holds its images.
+- A `.csv`, `.tsv` or `.txt` input is read with `--separator` (not for `.tsv`), `--encoding`,
+  `--convert-numbers` and `--convert-dates`, and with `--culture` when a conversion is on.
+- `render` draws every sheet, or the ones `--sheet` names, each as one image written to
+  `<stem>.<sheet>.<ext>` when there are several; `--area` draws one area of the one sheet named.
+  An empty or hidden sheet has no page, so a render that includes one writes nothing and fails
+  with `RENDER_FAILED` naming it in `details.sheet`.
 
-## References
+## Evaluation mode
 
-| topic | read it when |
-|-------|--------------|
-| `aspose-cli docs cells/editing` | Choosing operations by task, batch order, charts, pivots, tables, protection, `--verify` |
-| `aspose-cli docs cells/workbook-standards` | Delivering any workbook: widths, number formats, validation, print |
-| `aspose-cli docs cells/design-system` | A designed workbook: dashboards, colors, charts, KPI cards |
-| `aspose-cli docs cells/financial-models` | Building a formula-driven model |
-| `aspose-cli docs cells/verification` | Verifying: the three tiers, render facts, `cells compare` |
-| `aspose-cli docs cells/troubleshooting` | A Cells error or warning, CSV tables that do not start at row 1, evaluation-mode warning sheets |
+Without a Cells license the result says `"license": {"mode": "evaluation"}`. The engine then adds
+a sheet to every workbook it opens, `Evaluation Warning`, then `Evaluation Warning (1)` and so on,
+and makes it the active sheet; reads list it, and a file it saves keeps it, so each edit adds
+one. It writes the first sheet to CSV, whatever sheet is active, with a line of notice. One
+process opens at most 100 files.
 
-Examples: [report from CSV](examples/report-from-csv/README.md),
-[recalculate and verify](examples/recalc-and-verify/README.md),
-[edit an existing file safely](examples/edit-existing-safely/README.md),
-[sales dashboard](examples/sales-dashboard/README.md).
+## More
+
+- [Engine behavior](references/engine-behavior.md): what the engine does with values, formulas,
+  styles, charts and conversions, which the CLI passes on unchanged.
+- [Build a report](examples/build-a-report/README.md): a new workbook, data and formulas,
+  formatting, a chart, a calculation, and a PDF to look at.

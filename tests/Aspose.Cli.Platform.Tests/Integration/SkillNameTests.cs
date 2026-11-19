@@ -27,7 +27,9 @@ public sealed partial class SkillNameTests : IDisposable
     /// Every JSON document a Skill or the README shows, in a fenced <c>json</c> block or an
     /// indented code block, is one that the CLI reads or writes and validates against its schema:
     /// an envelope that names its schema against that schema; an operation document
-    /// (<c>{"ops": [...]}</c>), or one operation (<c>{"op": ...}</c>) as a batch of one, against
+    /// (<c>{"ops": [...]}</c>), or one operation (<c>{"op": ...}</c>, or an object table's
+    /// <c>{"set": ...}</c>, <c>{"add": ...}</c>, <c>{"delete": ...}</c>, <c>{"move": ...}</c> or
+    /// <c>{"do": ...}</c>) as a batch of one, against
     /// the ops schema of the Skill's product (any product's for the platform Skill and the
     /// README); and one member of a result (<c>"window": {...}</c>) against a member of that name
     /// in a result schema of the product or the shared ones. A block that is none of these fails,
@@ -98,7 +100,7 @@ public sealed partial class SkillNameTests : IDisposable
                 kinds.Add("envelope");
                 candidates = [PublishedSchemas.IdOf(schema)];
             }
-            else if (node is JsonArray || (node is JsonObject batch && (batch.ContainsKey("ops") || batch.ContainsKey("op"))))
+            else if (node is JsonArray || (node is JsonObject batch && (batch.ContainsKey("ops") || batch.ContainsKey("op") || TableShapes.Any(batch.ContainsKey))))
             {
                 // A bare array is the batch's operations; one operation is a batch of one.
                 kinds.Add(node is JsonObject single && !single.ContainsKey("ops") ? "operation" : "operations");
@@ -129,6 +131,9 @@ public sealed partial class SkillNameTests : IDisposable
             "Every JSON document a Skill or the README shows is valid against the schema the CLI serves:"
             + Environment.NewLine + string.Join(Environment.NewLine, problems));
     }
+
+    /// <summary>The members that name the shape of one operation of an object table.</summary>
+    private static readonly string[] TableShapes = ["set", "add", "delete", "move", "do"];
 
     /// <summary>The product whose Skill holds a file, or null for the platform Skill and the README.</summary>
     private static string? ProductOf(string file) =>

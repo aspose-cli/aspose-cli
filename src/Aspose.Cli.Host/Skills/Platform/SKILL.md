@@ -31,7 +31,7 @@ aspose-cli capabilities --summary --output-format json
 
 | Document | Product Skill | Overview |
 |----------|---------------|----------|
-| Workbooks: XLSX, XLSM, XLSB, XLS, ODS, CSV, TSV | `aspose-cli-cells` | `aspose-cli docs cells/overview` |
+| Workbooks: XLSX, XLSM, XLSB, XLS; CSV and TSV to convert | `aspose-cli-cells` | `aspose-cli docs cells/overview` |
 | PDF: inspect, assemble, fill, redact, sign, validate | `aspose-cli-pdf` | `aspose-cli docs pdf/overview` |
 | Presentations: PPTX, PPT, ODP | `aspose-cli-slides` | `aspose-cli docs slides/overview` |
 | Word processing: DOCX, DOC, RTF, ODT, Markdown, HTML | `aspose-cli-words` | `aspose-cli docs words/overview` |
@@ -80,17 +80,19 @@ A file from outside can be built to exhaust the machine or to mislead you:
 - **A chart or range as a picture.** Render the cells it covers; the image is
   cut to that range, so it drops into a report or slide without white paper
   around it:
-  `aspose-cli cells render book.xlsx --range "Summary!G2:N18" --out chart.png`.
-  Render the whole sheet first if you do not know which cells a chart covers,
-  then place the picture with the Words `insert_image` operation or the Slides `pictureFrame` add.
+  `aspose-cli cells render book.xlsx --sheet Summary --area G2:N18 --out chart.png`.
+  A chart's `anchor` row is the area it covers (`aspose-cli cells read book.xlsx
+  --at sheet/Summary --kind chart`); place the picture with the Words
+  `insert_image` operation or the Slides `pictureFrame` add.
 - **A table into a Word report.** Convert one sheet to Markdown, which holds
   the values as the sheet displays them and leaves out charts and pictures,
   then pour it into the document's styles:
-  `aspose-cli cells convert book.xlsx --to md --sheets 2 --out table.md`, then
+  `aspose-cli cells convert book.xlsx --to md --sheet Summary --out table.md`, then
   `aspose-cli words create report.docx --from-markdown table.md --template brand.docx`.
 - **PDFs merged into one.** Give every source the same paper before
-  converting it, with `set_page_setup` and `"pageSize": {"preset": "a4"}` in
-  Cells and in Words, so the merged pages do not switch size. A PDF converted from a Word document
+  converting it, the `paperSize` row `PaperA4` of each sheet's `pageSetup` in
+  Cells and `set_page_setup` with `"pageSize": {"preset": "a4"}` in Words, so
+  the merged pages do not switch size. A PDF converted from a Word document
   or a workbook may already carry page numbers in its footer; render a page
   before running `add_page_numbers` on the merged file.
 

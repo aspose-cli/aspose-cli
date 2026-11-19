@@ -799,6 +799,66 @@ public sealed class CellsKnownIssueTests
             + $"and the PDF saved {pdf.Length} bytes");
     }
 
+    [LicensedFact]
+    public void ValueAxisAutomaticMinimumOff_WithoutAMinimum_FailsTheSave()
+    {
+        using var fixture = new CellsFixture();
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        for (int row = 0; row < 4; row++)
+        {
+            sheet.Cells[row, 0].PutValue(row + 1);
+        }
+
+        Chart chart = sheet.Charts[sheet.Charts.Add(ChartType.Column, 5, 0, 20, 6)];
+        chart.NSeries.Add("A1:A4", true);
+        chart.ValueAxis.IsAutomaticMinValue = false;
+        Exception? failure = Record.Exception(() => workbook.Save(fixture.File("axis.xlsx"), SaveFormat.Xlsx));
+
+        KnownIssue.Reproduces(
+            "CELLS-AXIS-AUTOMATIC-MIN-SAVE",
+            failure is NullReferenceException,
+            $"with IsAutomaticMinValue false and no MinValue the save {(failure is null ? "succeeded" : $"threw {failure.GetType().Name}")}");
+    }
+
+    [LicensedFact]
+    public void SettingTheColorOfAThemeColor_KeepsItsTint()
+    {
+        using var fixture = new CellsFixture();
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        for (int column = 0; column < 4; column++)
+        {
+            sheet.Cells[0, column].PutValue(column + 1);
+        }
+
+        SparklineGroup group = sheet.SparklineGroups[sheet.SparklineGroups.Add(SparklineType.Line, "A1:D1", false, CellArea.CreateCellArea("F1", "F1"))];
+        group.SeriesColor.Color = System.Drawing.Color.FromArgb(0x12, 0xAB, 0x34);
+        int read = group.SeriesColor.Color.ToArgb() & 0xFFFFFF;
+
+        KnownIssue.Reproduces(
+            "CELLS-COLOR-TINT-KEPT",
+            read != 0x12AB34,
+            $"the series color of a new sparkline group, set to #12AB34, reads #{read:X6}");
+    }
+
+    [LicensedFact]
+    public void InsertingASheetBeforeTheLast_TakesTheNameOfAnotherSheet()
+    {
+        using var fixture = new CellsFixture();
+        using var workbook = new Workbook();
+        workbook.Worksheets[0].Name = "Data";
+        workbook.Worksheets.Add("Other");
+        workbook.Worksheets.Insert(0, SheetType.Worksheet, "DATA");
+        Exception? atEnd = Record.Exception(() => workbook.Worksheets.Insert(workbook.Worksheets.Count, SheetType.Worksheet, "Data"));
+        int named = workbook.Worksheets.Count(static sheet => string.Equals(sheet.Name, "Data", StringComparison.OrdinalIgnoreCase));
+
+        KnownIssue.Reproduces(
+            "CELLS-SHEET-INSERT-DUPLICATE",
+            named == 2 && atEnd is CellsException,
+            $"inserted first, the name DATA left {named} sheets named Data in any case; inserted last, Data {(atEnd is null ? "was taken" : $"threw {atEnd.GetType().Name}")}");
+    }
+
     private sealed class ChineseTotals : GlobalizationSettings
     {
         public ChineseTotals() => PivotSettings = new ChinesePivotTotals();

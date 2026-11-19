@@ -23,23 +23,13 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   an ODS or OTS package's SVG picture is read this way while the package loads, no `LoadFilter`
   excepted. Loading HTML or MHTML, the engine also opens the images the page names by path, and no option
   turns that off.
-- **CLI behavior:** every SVG the engine gets keeps only references inside itself, `#id`
-  fragments and base64 `data:` URIs whose bytes are a PNG, JPEG or GIF file; other references,
-  in attributes, CSS, `xml:base` or SMIL animations, are removed and reported with
-  `REMOTE_RESOURCES_BLOCKED`, as are script elements, `on*` event attributes and `javascript:`
-  links. A loaded workbook's SVG picture that named any is replaced by the
-  same picture without them, at the same place and size, so what the engine read while loading
-  it never reaches an output; one whose SVG does not parse as XML, or that sits in a group, is
-  left out with `IMAGES_SKIPPED`. An ODS or OTS package is given to the engine with every SVG
-  entry, wherever it sits, cleaned the same way, and a compressed SVG entry, which cannot be
-  checked, removed with `IMAGES_SKIPPED`; an encrypted package, which cannot be cleaned first, is
-  refused with `FEATURE_UNSUPPORTED` (`details.reason` `engine-defect`). `insert_image` refuses an
-  SVG that does not parse with `OPS_INVALID`, and a compressed SVG, which cannot be read, with
-  `FEATURE_UNSUPPORTED`. Cells reads no HTML or MHTML: it only writes them, and refuses such an
-  input before the engine loads it.
-- **Workaround:** embed an SVG's images as base64 `data:` URIs (PNG, JPEG or GIF), or insert a
-  raster image; remove an ODS file's password, or save it as xlsx, in the application that made
-  it; save an HTML table as xlsx or csv in the application it came from, then open
+- **CLI behavior:** Cells reads no ODS, OTS, HTML or MHTML: it only writes them, and refuses such
+  an input as `FORMAT_UNSUPPORTED` before the engine loads it. A picture a batch adds is a raster
+  image: the table refuses an SVG image file. Every command runs behind the network gate of
+  SECURITY.md, which blocks the engine's own requests; an SVG picture a workbook already holds is
+  drawn as the engine draws it.
+- **Workaround:** embed an SVG's images as base64 `data:` URIs (PNG, JPEG or GIF), or add a raster
+  image; save an ODS file or an HTML table as xlsx in the application that made it, then open
   that.
 
 ### CELLS-SVG-ORPHAN
@@ -57,21 +47,16 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   // out.xlsx keeps xl/media/image1.svg, and no .rels file refers to it
   ```
 
-- **CLI behavior:** an SVG picture replaced without its references (CELLS-SVG-EGRESS) leaves its
-  original SVG, references included, in an xlsx, xlsm, xltx or xltm output as such a part.
-  `REMOTE_RESOURCES_BLOCKED` says the pictures no longer hold the references and that a workbook
-  package the command writes may still carry each original SVG, rather than that the references
-  left the file. An SVG picture left out because it does not parse or sits in a group leaves its
-  SVG the same way, and `IMAGES_SKIPPED` says so.
+- **CLI behavior:** none: deleting a picture leaves its SVG part, as the engine saves it.
 - **Workaround:** embed an SVG's images as base64 `data:` URIs (PNG, JPEG or GIF) before giving
-  the workbook to the CLI, so that no picture is replaced.
+  the workbook to the CLI.
 
 ### CELLS-SPARKLINE-APOSTROPHE
 
 - **Defect:** `SparklineGroups.Add(type, dataRange, isVertical, locationRange)` throws
   `Invalid "'"` for a data range on a sheet whose name has an apostrophe, however it is quoted.
-- **CLI behavior:** none visible; `add_sparkline` builds the group from its parts, with the same
-  result.
+- **CLI behavior:** none: `add sparklineGroup` is the engine's `SparklineGroups.Add`, whose
+  exception is reported as `ENGINE_ERROR`.
 
 ### CELLS-COPY-NAME-SCOPE
 
@@ -80,11 +65,10 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   another sheet, adds the source's definition as a name scoped to the destination's first sheet.
   Once saved, that sheet's own formulas read the added name instead of the workbook's, and the
   copied sheet's formulas read the destination's definition.
-- **CLI behavior:** `import_sheet` refuses, with `OPS_INVALID`, a source that defines a
-  workbook-level name this workbook defines differently, unless the name refers only to the
-  imported sheet.
-- **Workaround:** rename or delete the name in one of the workbooks, or import the cells with
-  `import_range`.
+- **CLI behavior:** none: `copy_sheet` from a file is the engine's `Worksheet.Copy`, and the name
+  it adds is in the output as the engine wrote it.
+- **Workaround:** rename or delete the name in one of the workbooks before the copy, or copy the
+  cells with `copy_range`.
 
 ### CELLS-COPY-EXTERNAL-CACHE
 
@@ -93,11 +77,10 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   linked file was absent), give the destination's link an empty cache. The formula evaluates to
   `#REF!` in the source but, once the destination is calculated, reads the linked cells as empty,
   usually as 0.
-- **CLI behavior:** `import_sheet` and `import_range` with `"content": "all"` warn
-  `EXTERNAL_LINK_CACHE_MISSING` with the copied cells whose result changed this way;
-  `--verify` reports it as a verification issue, so the edit exits 8.
-- **Workaround:** replace those formulas with `set_formula` or `set_values`, or save the source
-  in Excel with the linked workbook available so the link caches its values.
+- **CLI behavior:** none: `copy_sheet` and `copy_range` from a file leave the link as the engine
+  copied it.
+- **Workaround:** set those formulas again with the cell's `formula` row, or save the source in
+  Excel with the linked workbook available so the link caches its values.
 
 ### CELLS-LINK-RELATIVE-TARGET
 
@@ -106,10 +89,9 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   stores it as the relative target `fx.xlsx` with the relationship type `xlPathMissing`, so once
   saved to another folder the link no longer names the file in the input's folder. How Excel
   resolves an `xlPathMissing` target is unverified.
-- **CLI behavior:** `cells edit` warns `EXTERNAL_LINK_RELATIVE` with the stored targets when the
-  batch adds a link whose target is a file name without a folder.
-- **Workaround:** keep the linked workbook in the output's folder, or bring its values in with
-  `import_range` instead of a link.
+- **CLI behavior:** none: a formula a batch sets keeps the link the engine stores.
+- **Workaround:** keep the linked workbook in the output's folder, or copy its values with
+  `copy_range` and `pasteType` `Values` instead of a link.
 
 ### CELLS-WIDTH-EAST-ASIAN
 
@@ -130,8 +112,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   layout sizes columns apart from the cell model (a few percent wider with Microsoft YaHei), so
   the edge falls elsewhere in the print-area layout of `OnlyArea = true`, which also draws text
   that ends on an edge in full.
-- **CLI behavior:** none: `cells render` of a whole sheet can cut such text, while
-  `cells render --range` shows it whole; PDF export lays out its own pages.
+- **CLI behavior:** none: `cells render` of a whole sheet can cut such text, while `cells render
+  --area` shows it whole; PDF export lays out its own pages.
 - **Workaround:** widen the column the text starts in by one or two characters, or wrap the
   text.
 
@@ -141,8 +123,7 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   field's grand-total column with the word of `PivotGlobalizationSettings.GetTextOfTotal`
   before the caption (`Total Sum of Amount`); overriding the word gives `汇总 求和项:金额`, never
   Excel's Simplified Chinese form `求和项:金额汇总`, and no pivot caption property sets it.
-- **CLI behavior:** `insert_pivot` keeps the engine's `Total <caption>` in every caption
-  language; `aspose-cli docs cells/editing` says so.
+- **CLI behavior:** none: the captions are the engine's.
 - **Workaround:** leave out the column field, so the value fields are the columns and the one
   grand-total row reads `总计`, or summarize with `SUMIFS` formulas.
 
@@ -153,8 +134,10 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   `C2:C10`, and rows 9-11 leave `C2:C9`, while a conditional format over the same cells becomes
   `C2:C9` and `C2:C8`. Deleting lines in the middle of the area shrinks it correctly, and a
   validation whose every area is deleted stays in the sheet with no area.
-- **CLI behavior:** `delete_rows` and `delete_columns` set each validation to the areas it
-  covers after the delete, as Excel does, and remove a validation left with no area.
+- **CLI behavior:** none: after `delete_rows` or `delete_columns`, a validation's `areas` read
+  what the engine left.
+- **Workaround:** after the delete, `remove_validation_area` with the line the engine left, or
+  delete a validation left with no area.
 
 ### CELLS-PIVOT-LABEL-INDENT
 
@@ -166,9 +149,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   and grand total labels and the innermost field's items are drawn like plain cells.
   `AutoFitColumns` leaves the indent out, so an auto-fitted column is as wide as for the text
   alone and the label is cut.
-- **CLI behavior:** none: auto-fit (`resize_columns` without `widthChars`) leaves the label cut.
-- **Workaround:** set the column width with `resize_columns` and `widthChars`, a few characters
-  wider than the label.
+- **CLI behavior:** none: `autofit_columns` leaves the label cut.
+- **Workaround:** set the column's `width` a few characters wider than the label.
 
 ### CELLS-COPY-SELF-LINK
 
@@ -178,20 +160,18 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   beside `budget.xlsx` into it, as an external link to the destination itself, which reads as 0
   once calculated. Setting the same formula with `Cell.Formula` gives the reference inside the
   workbook, `=Budget!$D$6`.
-- **CLI behavior:** `import_range` and `import_sheet` turn such a link into references inside
-  the workbook, as `set_formula` gives.
+- **CLI behavior:** none: `copy_range` and `copy_sheet` from a file keep the link as the engine
+  copied it.
+- **Workaround:** set such a formula again with the cell's `formula` row, which gives the
+  reference inside the workbook.
 
 ### CELLS-JSON-HEADER-ONLY
 
 - **Defect:** saving as JSON a sheet whose data is a single row, which the engine takes for the
   header, writes the header's names as members of an array, such as `["Name": null]`, which is
   not JSON; no `JsonSaveOptions` setting writes it as an empty list of records.
-- **CLI behavior:** `cells convert --to json` leaves out the evaluation warning sheets, whose
-  notice is such a row, and the sheets that hold only a header row, which it names in
-  `SHEETS_DROPPED`. A workbook whose own sheets all hold only a header row is refused with
-  `FEATURE_UNSUPPORTED` (`details.reason` `engine-defect`), naming the sheets, before anything
-  is written.
-- **Workaround:** add a data row below the header, or convert the sheet to csv with `--sheets`,
+- **CLI behavior:** none: `cells convert --to json` writes what the engine saves.
+- **Workaround:** add a data row below the header, or convert the sheet to csv with `--sheet`,
   which writes the header alone.
 
 ### CELLS-AUTOFIT-RICH-TEXT
@@ -200,7 +180,7 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   that does not wrap, so a run larger than that font is cut off, though
   `Cell.GetHeightOfValue` measures the run, and wrapped rich text is fitted.
 - **CLI behavior:** none.
-- **Workaround:** set the row height with `resize_rows` and `height`.
+- **Workaround:** set the row's `height`.
 
 ### CELLS-AUTOFIT-GENERAL-NUMBER
 
@@ -212,9 +192,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   DengXian 11 rendering draws it in full only one pixel wider than that display text needs. No
   `AutoFitterOptions` setting (`FormatStrategy`, `ForRendering`) changes the width; numbers in
   other formats, dates and text are fitted in full.
-- **CLI behavior:** `resize_columns` without `widthChars` widens such a column a pixel at a time
-  until each General number in it shows in full, then one pixel more, so sheet images and PDF
-  pages show the whole number.
+- **CLI behavior:** none: `autofit_columns` sets the width the engine computes.
+- **Workaround:** set the column's `width` one character wider than the fitted one.
 
 ### CELLS-SHEET-END-COMMENT-PAGES
 
@@ -222,9 +201,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   `Worksheet.GetPrintingPageBreaks` reports each page of comments as the cell area A1:A1, and
   throws a `NullReferenceException` when a comment holds a character such as Chinese, Japanese or
   an emoji. Saving the same sheet as PDF or XPS, and `SheetRender`, print its comments at the end.
-- **CLI behavior:** the printed pages of a sheet's charts, which `cells convert` to pdf or xps
-  warns about with `CHART_SPLIT_ACROSS_PAGES`, are measured as if the sheet printed no comments,
-  since its comment pages hold no chart; the output still prints the comments at the end of the sheet.
+- **CLI behavior:** none: the CLI calls no page-break query; a PDF or XPS prints the comments at
+  the end of the sheet.
 
 ### CELLS-CSV-SAVE-CULTURE
 
@@ -240,8 +218,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   // out.csv holds k,"19,9"
   ```
 
-- **CLI behavior:** none visible; the CLI loads and saves delimited text with the thread's culture
-  set to the invariant one.
+- **CLI behavior:** none visible: the process's culture is en-US, so a number is written with a
+  decimal point.
 
 ### CELLS-CSV-FRACTION-CULTURE
 
@@ -256,7 +234,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   // throws FormatException: The input string '3,5' was not in a correct format.
   ```
 
-- **CLI behavior:** none visible, as for CELLS-CSV-SAVE-CULTURE.
+- **CLI behavior:** none visible: the process's culture is en-US, whose decimal point the load
+  expects.
 
 ### CELLS-CSV-KEEP-PRECISION
 
@@ -271,9 +250,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   // cell.Type is IsNumeric and cell.StringValue 1.23457E+19, not the text
   ```
 
-- **CLI behavior:** none visible; the CLI does not set the option. A delimited text input's value
-  keeps a type only where the cell shows it as written, so a number of more than 15 digits stays
-  text.
+- **CLI behavior:** none: `cells convert` does not set the option, and `--convert-numbers true`
+  reads such a value as a number of 15 significant digits.
 
 ### CELLS-CSV-ERROR-TEXT
 
@@ -291,13 +269,9 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   Excel itself opens such a csv with the error values, so reading them as text is the CLI's
   choice; the defect is only that the engine overrides what the parser returns.
 
-- **CLI behavior:** a delimited text input holds no formula, and its values write back as they
-  were written, so the CLI puts each error value a load typed back as the text it was written
-  as, with a quote prefix (`'#N/A`), which keeps it text and which a delimited text output does
-  not write. `set_values` and `--set` write such a string with a quote prefix too, as typing
-  `'#N/A` in Excel does. A verified edit to csv or tsv reads such
-  text back as the error only in a cell where the edited workbook held an error value, so a
-  formula error the edit left is still reported and text that only looks like one is not.
+- **CLI behavior:** none: `cells convert` of a csv or tsv input gives the engine's error values,
+  and a cell value a batch writes is put as the engine puts typed text, so `#N/A` becomes the
+  error value and `'#N/A` the text.
 
 ### CELLS-MARKDOWN-DETECTION
 
@@ -314,9 +288,9 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   Detect("| a | b |\n|---|---|\n| 1 | 2 |\n");  // Unknown
   ```
 
-- **CLI behavior:** a file named `.csv` or `.tsv` that the detection takes for Markdown is read
-  as the delimited text its name says, as one it recognizes as no format is. Under `.txt`, which
-  plain text owns, the detection stands, and the file is refused as Markdown (`FILE_CORRUPT`).
+- **CLI behavior:** none visible: `cells convert` reads a `.csv`, `.tsv` or `.txt` input as
+  delimited text with the options it states, without the detection, and read, search and edit take
+  no such input.
 
 ### CELLS-ODS-PRINT-COMMENTS
 
@@ -330,10 +304,8 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   // new Workbook("c.ods").Worksheets[0].PageSetup.PrintComments is PrintNoComments
   ```
 
-- **CLI behavior:** an edit or convert that writes ods from a sheet with the setting warns
-  `LOSSY_CONVERSION` that the ods leaves it out and an xlsx workbook keeps it; when the edit's
-  batch set it, the setting is in no file, so `--verify` fails. A
-  printout of an ods input warns of the comments it leaves out.
+- **CLI behavior:** none: an ods output leaves the setting out, as the engine saves it.
+- **Workaround:** keep the workbook as xlsx, xls or xlsb, which keep the setting.
 
 ### CELLS-PRINT-AREA-BAND-COMMENTS
 
@@ -349,8 +321,60 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
   new SheetRender(sheet, new ImageOrPrintOptions()).PageCount;   // 1: no page of comments
   ```
 
-- **CLI behavior:** a printout counts the comments a band holds as left out and warns
-  `LOSSY_CONVERSION` with them.
+- **CLI behavior:** none: a PDF or image of such a print area prints no comment of the band.
+- **Workaround:** give the print area as a bounded range, such as `A1:C200`.
+
+### CELLS-AXIS-AUTOMATIC-MIN-SAVE
+
+- **Defect:** setting `Chart.ValueAxis.IsAutomaticMinValue` to false on an axis whose `MinValue`
+  was never set makes the next `Workbook.Save` throw `NullReferenceException`; setting `MinValue`
+  first, which turns the automatic minimum off itself, saves.
+
+  ```csharp
+  chart.NSeries.Add("A1:A4", true);
+  chart.ValueAxis.IsAutomaticMinValue = false;
+  workbook.Save("axis.xlsx");   // throws NullReferenceException
+  ```
+
+- **CLI behavior:** an edit that sets `valueAxis.isAutomaticMinValue` to false without
+  `valueAxis.minValue` fails at its save with `ENGINE_ERROR`, and writes nothing.
+- **Workaround:** set `valueAxis.minValue`, which the engine takes as turning the automatic
+  minimum off.
+
+### CELLS-COLOR-TINT-KEPT
+
+- **Defect:** setting `CellsColor.Color` on a theme color the engine returns, such as the default
+  `SparklineGroup.SeriesColor` (accent 1, tint -0.5), keeps the tint and applies it to the new
+  color: `#12AB34` reads back as `#09561A` before any save, and the saved file holds that color.
+  Assigning a new `Workbook.CreateCellsColor()` with the color gives it as set.
+
+  ```csharp
+  SparklineGroup group = sheet.SparklineGroups[sheet.SparklineGroups.Add(SparklineType.Line, "A1:D1", false, area)];
+  group.SeriesColor.Color = Color.FromArgb(0x12, 0xAB, 0x34);
+  // group.SeriesColor.Color is #09561A
+  ```
+
+- **CLI behavior:** the row `sparklineGroup.seriesColor` sets `SeriesColor.Color`, and the edit
+  reads back the color the engine holds.
+- **Workaround:** none in the CLI; in Excel, set the color again from the sparkline's color
+  picker.
+
+### CELLS-SHEET-INSERT-DUPLICATE
+
+- **Defect:** `WorksheetCollection.Insert(index, type, name)` before the last sheet takes a name
+  another sheet already has, in any case, leaving two sheets of one name, which Excel never
+  allows; at the end of the collection it refuses the name with a `CellsException`.
+
+  ```csharp
+  workbook.Worksheets[0].Name = "Data";
+  workbook.Worksheets.Insert(0, SheetType.Worksheet, "DATA");   // taken: two sheets named Data
+  workbook.Worksheets.Insert(workbook.Worksheets.Count, SheetType.Worksheet, "Data");   // throws
+  ```
+
+- **CLI behavior:** `add sheet` with such a name before the last sheet stops the edit with
+  `ADDRESS_AMBIGUOUS`, as the new sheet's address names two sheets; at the end the engine's
+  refusal is `ENGINE_ERROR`. Nothing is written either way.
+- **Workaround:** give the new sheet a name no sheet has.
 
 ## Aspose.PDF.Drawing 26.8.0
 

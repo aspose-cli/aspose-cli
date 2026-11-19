@@ -1,0 +1,17 @@
+{"ops": [
+  {"set": "sheet/Sheet1", "props": {"name": "Sales"}},
+  {"set": "sheet/Sales/range/A1:F5", "props": {"value": [
+    ["Region", "Q1", "Q2", "Q3", "Q4", "Total"],
+    ["East", 1250, 1380, 1420, 1465, null],
+    ["South", 1100, 1180, 1210, 1260, null],
+    ["North", 980, 1010, 1065, 1120, null],
+    ["West", 760, 815, 840, 905, null]
+  ]}},
+  {"do": "set_shared_formula", "args": {"cell": "sheet/Sales/cell/F2", "sharedFormula": "=SUM(B2:E2)", "rowNumber": 4, "columnNumber": 1}},
+  {"do": "apply_style", "args": {"range": "sheet/Sales/range/A1:F1", "style": {"font.isBold": true, "foregroundColor": "#DDEBF7", "pattern": "Solid"}, "flag": ["FontBold", "CellShading"]}},
+  {"do": "apply_style", "args": {"range": "sheet/Sales/range/B2:F5", "style": {"custom": "#,##0"}, "flag": ["NumberFormat"]}},
+  {"do": "autofit_columns", "args": {"sheet": "sheet/Sales", "firstColumn": "A", "lastColumn": "F"}},
+  {"do": "freeze_panes", "args": {"sheet": "sheet/Sales", "cellName": "B2", "freezedRows": 1, "freezedColumns": 1}},
+  {"do": "calculate"},
+  {"add": "chart", "in": "sheet/Sales", "args": {"type": "Column", "area": "H2:O18"}, "props": {"title.text": "Sales by quarter"}}
+]}

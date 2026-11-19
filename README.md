@@ -12,7 +12,7 @@ in evaluation mode, and the CLI discloses every evaluation effect on its output.
 ```powershell
 aspose-cli capabilities --summary --output-format json
 aspose-cli skill list
-aspose-cli docs cells/editing
+aspose-cli docs cells/overview
 aspose-cli skill install aspose-cli-platform --host codex
 aspose-cli skill install aspose-cli-cells --host codex
 ```

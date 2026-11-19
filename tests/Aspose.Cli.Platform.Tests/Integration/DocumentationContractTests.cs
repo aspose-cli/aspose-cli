@@ -44,13 +44,13 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
     [InlineData("aspose-cli cells")]
     [InlineData("aspose-cli --max-input-bytes 30 cells read book.xlsx")]
     [InlineData("aspose-cli cells read book.xlsx --at sheet/Sheet1/range/A1:B2")]
-    [InlineData("aspose-cli docs cells/editing")]
+    [InlineData("aspose-cli docs cells/engine-behavior")]
     [InlineData("aspose-cli docs pdf/forms-security")]
     [InlineData("aspose-cli schema v2/pdf/inspect-result")]
     [InlineData("aspose-cli schema <id>")]
     [InlineData("aspose-cli cells edit book.xlsx --ops '{\"ops\":[{\"set\":\"sheet/Sheet1/cell/A1\", \"props\":{\"value\":\"--opaque\"}}]}' --in-place")]
     [InlineData("aspose-cli cells convert source.csv --to xlsx --out=\"path with spaces.xlsx\"")]
-    [InlineData("aspose-cli docs cells/editing | more")]
+    [InlineData("aspose-cli docs cells/engine-behavior | more")]
     public void Validator_AcceptsCurrentCommandsAndTeachingPlaceholders(string command) =>
         Assert.Null(fixture.Validator.ValidateCommand(command));
 
