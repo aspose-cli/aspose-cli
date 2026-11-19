@@ -84,6 +84,12 @@ public static partial class ErrorCodes
 
     /// <summary>A named style does not exist in the document.</summary>
     public static readonly ErrorCode StyleNotFound = ErrorCode.NotFound("STYLE_NOT_FOUND");
+
+    /// <summary>An address of the object table names an object the document does not contain.</summary>
+    public static readonly ErrorCode AddressNotFound = ErrorCode.NotFound("ADDRESS_NOT_FOUND");
+
+    /// <summary>An address of the object table that finds by a property, such as a placeholder's type, matches more than one object.</summary>
+    public static readonly ErrorCode AddressAmbiguous = new("ADDRESS_AMBIGUOUS", ExitCode.ValidationError);
     public static readonly ErrorCode ExtractBudgetExceeded = new("EXTRACT_BUDGET_EXCEEDED", ExitCode.ValidationError);
     // -- Output problems (exit 5) --------------------------------------------
 
@@ -126,6 +132,12 @@ public static partial class ErrorCodes
     /// </summary>
     public static readonly ErrorCode FormatAmbiguous = new("FORMAT_AMBIGUOUS", ExitCode.FormatError);
     public static readonly ErrorCode FeatureUnsupported = new("FEATURE_UNSUPPORTED", ExitCode.FormatError);
+
+    /// <summary>
+    /// The document engine threw while the object table read a row or made the engine call an
+    /// operation named; the message and details give the engine's exception as it is.
+    /// </summary>
+    public static readonly ErrorCode EngineError = new("ENGINE_ERROR", ExitCode.FormatError);
 
     // -- License problems (exit 7) -------------------------------------------
 
@@ -174,6 +186,8 @@ public static partial class ErrorCodes
         PageNotFound,
         BookmarkNotFound,
         StyleNotFound,
+        AddressNotFound,
+        AddressAmbiguous,
         ExtractBudgetExceeded,
         OutputExists,
         OutputUnwritable,
@@ -185,6 +199,7 @@ public static partial class ErrorCodes
         FormatMismatch,
         FormatAmbiguous,
         FeatureUnsupported,
+        EngineError,
         LicenseFileNotFound,
         LicenseInvalid,
         EvaluationLimit,

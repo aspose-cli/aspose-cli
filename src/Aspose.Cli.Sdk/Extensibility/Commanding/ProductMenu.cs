@@ -42,6 +42,9 @@ internal sealed class MenuCommand<TSession, TRequest, TResult> : IMenuEntry<TSes
     public IEnumerable<ProductOperationCommand> Operations() =>
         Definition() is { Operations: { } describe } definition ? [describe(definition.Name)] : [];
 
+    public IEnumerable<Func<Tables.DocumentTable>> Tables() =>
+        Definition() is { Table: { } table } ? [table] : [];
+
     private CommandDefinition<TRequest, TResult> Definition() =>
         _create() ?? throw new InvalidOperationException("A command definition factory returned null.");
 }

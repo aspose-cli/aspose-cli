@@ -5,8 +5,9 @@ namespace Aspose.Cli.Architecture.Tests;
 
 /// <summary>
 /// An edit publishes its output through the SDK's <c>PublishEdit</c>, which stages the output with
-/// its backup and the input precondition, reads the staged file back and commits. A product's
-/// edit (its <c>*Edit.cs</c> engine files) never stages or commits an output set itself.
+/// the input precondition, reads the staged file back and commits; a product on the object table
+/// hands its edit to the SDK's <c>TableEdit.Run</c>, which does. A product's edit (its
+/// <c>*Edit.cs</c> engine files) never stages or commits an output set itself.
 /// </summary>
 public sealed class EditPublicationOwnershipTests
 {
@@ -20,10 +21,10 @@ public sealed class EditPublicationOwnershipTests
     public void ProductEdits_PublishThroughPublishEdit()
     {
         string[] missing = [.. OwnershipSourceFiles.ProductIds
-            .Where(product => !EditFiles.Any(file => file.Product == product && Invocations(file).Any(static call => call.Name == "PublishEdit")))];
+            .Where(product => !EditFiles.Any(file => file.Product == product && Invocations(file).Any(static call => call.Name == "PublishEdit" || (call.Name == "Run" && call.Node.Expression.ToString() == "TableEdit.Run"))))];
 
         Assert.True(missing.Length == 0,
-            "Every product's edit publishes its output through the SDK's PublishEdit; these do not: " + string.Join(", ", missing));
+            "Every product's edit publishes its output through the SDK's PublishEdit or TableEdit.Run; these do not: " + string.Join(", ", missing));
     }
 
     [Fact]

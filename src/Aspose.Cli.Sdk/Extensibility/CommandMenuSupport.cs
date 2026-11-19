@@ -78,4 +78,7 @@ internal interface IMenuEntry<TSession>
 
     /// <summary>The operation documents the entry's command applies, under its name.</summary>
     IEnumerable<ProductOperationCommand> Operations();
+
+    /// <summary>Loads the object table whose operation documents the entry's command applies, if any.</summary>
+    IEnumerable<Func<Tables.DocumentTable>> Tables();
 }

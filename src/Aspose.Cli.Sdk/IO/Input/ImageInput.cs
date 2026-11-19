@@ -94,6 +94,27 @@ public static class ImageInput
     /// <returns>The image's bytes, for the engine.</returns>
     public static byte[] Read(InputResourceScope inputs, string path) => Read(inputs, path, Corrupt);
 
+    /// <summary>
+    /// Reads an image file in full, as <see cref="Read(InputSource, string)"/> does, and refuses
+    /// an SVG image too: its bytes reach the engine as they are, so only an image that names
+    /// nothing outside itself is taken.
+    /// </summary>
+    /// <param name="inputs">The invocation's input reader.</param>
+    /// <param name="path">The image file.</param>
+    /// <returns>The image's bytes, for the engine.</returns>
+    public static byte[] ReadSelfContained(InputSource inputs, string path)
+    {
+        ArgumentNullException.ThrowIfNull(inputs);
+        byte[] content = inputs.ReadAllBytes(path);
+        if (IsSvg(content))
+        {
+            throw Corrupt(path, "its content is an SVG image, which this input does not take");
+        }
+
+        Check(inputs.Budgets, content, path, Corrupt);
+        return content;
+    }
+
     /// <summary>Refuses image bytes another reader read unless they are an intact image.</summary>
     /// <param name="inputs">The invocation's input reader, whose budgets the decode is checked against.</param>
     /// <param name="content">The image's bytes.</param>

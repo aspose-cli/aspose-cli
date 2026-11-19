@@ -161,7 +161,9 @@ public sealed class OutputTarget
         string? directoryDescription,
         bool required,
         IReadOnlyList<FormatDescriptor>? writes = null,
-        string? derivedMarker = null)
+        string? derivedMarker = null,
+        bool dryRun = true,
+        bool followsInput = false)
     {
         if (writes is { Count: 0 })
         {
@@ -174,6 +176,8 @@ public sealed class OutputTarget
         Required = required;
         Writes = writes;
         DerivedMarker = derivedMarker;
+        HasDryRun = dryRun;
+        FollowsInput = followsInput;
     }
 
     internal OutputKind Kind { get; }
@@ -189,6 +193,15 @@ public sealed class OutputTarget
 
     /// <summary>What a derived output inserts before the extension, such as <c>.signed</c>.</summary>
     internal string? DerivedMarker { get; }
+
+    /// <summary>Whether the command takes <c>--dry-run</c>; an object table edit does not.</summary>
+    internal bool HasDryRun { get; }
+
+    /// <summary>
+    /// Whether the output is written in the format of the input, which the command checks the
+    /// output's extension against once the input is open; binding refuses no extension.
+    /// </summary>
+    internal bool FollowsInput { get; }
 
     /// <summary>
     /// One file named by <c>--out</c>, beside <c>--overwrite</c>, in the format the command's
@@ -232,6 +245,19 @@ public sealed class OutputTarget
         null,
         required: false,
         Declared(writes));
+
+    /// <summary>
+    /// The edited input of an object table edit, published as <see cref="Mutation"/> publishes it,
+    /// without <c>--dry-run</c>: the edit reports what the saved file holds, never what it would.
+    /// </summary>
+    internal static OutputTarget TableMutation(IReadOnlyList<FormatDescriptor> writes) => new(
+        OutputKind.Mutation,
+        "Output path. Default: the input path with '.out' inserted before the extension.",
+        null,
+        required: false,
+        Declared(writes),
+        dryRun: false,
+        followsInput: true);
 
     private static string Help(string description)
     {
@@ -352,7 +378,7 @@ public sealed class StandardOptions
             {
                 Description = "Replace the output file if it already exists.",
             };
-            DryRun = output.Kind == OutputKind.Mutation ? CreateDryRun(EditDryRunDescription) : DryRunOption();
+            DryRun = !output.HasDryRun ? null : output.Kind == OutputKind.Mutation ? CreateDryRun(EditDryRunDescription) : DryRunOption();
             if (output.Kind == OutputKind.Mutation)
             {
                 InPlace = new Option<bool>(StandardOptionNames.InPlace)

@@ -22,8 +22,11 @@ public static class OpsInvalidReasons
     /// <summary>An object names a field twice.</summary>
     public const string DuplicateField = "duplicate-field";
 
-    /// <summary>An operation's <c>op</c> names no operation of the vocabulary.</summary>
+    /// <summary>An operation's <c>op</c> names no operation of the vocabulary, or an object table batch names no add or action of its table.</summary>
     public const string UnknownOp = "unknown-op";
+
+    /// <summary>An object table operation sets a row that can only be read.</summary>
+    public const string ReadOnlyField = "read-only-field";
 
     /// <summary>
     /// A value of the right kind that the operation refuses: outside its range or allowed values,

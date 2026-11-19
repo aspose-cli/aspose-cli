@@ -325,6 +325,7 @@ public sealed class ProductCatalog
                 ordered.Select(product => (
                     resources[product.Manifest.Id],
                     product.Operations,
+                    product.Tables,
                     product.Json.ResultRecords))));
     }
 }
