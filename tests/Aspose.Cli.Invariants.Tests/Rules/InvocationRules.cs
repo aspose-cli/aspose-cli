@@ -159,10 +159,11 @@ internal static partial class ContractRules
                 && render.Option("--to") is { AllowedValues.Count: > 1 } image)
             {
                 string other = image.AllowedValues.First(static value => value != "png");
-                // A render writes every unit by default and the fixture may hold several, so it
-                // selects the first, whose image is the output itself.
-                string[] first = render.Options.FirstOrDefault(static option => option.Name is "--pages" or "--slides") is { } selection
-                    ? [selection.Name, "1"]
+                // A render writes every unit by default and the fixture may hold several, as a
+                // workbook does with the sheet evaluation mode adds, so it selects the first,
+                // whose image is the output itself.
+                string[] first = render.Options.FirstOrDefault(static option => option.Name is "--pages" or "--slides" or "--sheet") is { } selection
+                    ? [selection.Name, selection.Name == "--sheet" ? "Sheet1" : "1"]
                     : [];
                 yield return InvariantCases.Case("C-R13", $"{render} --out out.{other} without --to", product, slow: false,
                     Invocation.For(render).Add(first).Add("--out", "out." + other),

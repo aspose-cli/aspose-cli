@@ -6,10 +6,10 @@
     "records.json": { "text": "[{\"Item\":\"First\",\"Amount\":1},{\"Item\":\"Second\",\"Amount\":2}]" }
   },
   "steps": [
-    { "args": ["cells", "inspect", "comma.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
-    { "args": ["cells", "inspect", "tab.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
-    { "args": ["cells", "inspect", "records.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
+    { "args": ["cells", "read", "comma.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
+    { "args": ["cells", "read", "tab.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
+    { "args": ["cells", "read", "records.json"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
     { "args": ["cells", "convert", "comma.json", "--to", "xlsx", "--out", "out.xlsx"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } },
-    { "args": ["cells", "read", "comma.json", "--range", "A1:B3"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } }
+    { "args": ["cells", "read", "comma.json", "--at", "sheet/Sheet1/range/A1:B3"], "expect": { "error": ["FILE_CORRUPT", "FORMAT_UNSUPPORTED"], "files": { "nothingWritten": true } } }
   ]
 }

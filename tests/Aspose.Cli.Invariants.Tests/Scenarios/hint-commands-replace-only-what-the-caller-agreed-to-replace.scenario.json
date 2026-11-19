@@ -21,7 +21,7 @@
       }
     },
     {
-      "args": ["cells", "render", "book.xlsx", "--out", "book.pdf", "--overwrite"],
+      "args": ["cells", "render", "book.xlsx", "--sheet", "Sheet1", "--out", "book.pdf", "--overwrite"],
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",

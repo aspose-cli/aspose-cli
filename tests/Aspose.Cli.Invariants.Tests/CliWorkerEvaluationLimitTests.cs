@@ -16,16 +16,16 @@ namespace Aspose.Cli.Invariants.Tests;
 [Collection(CliWorkerLaneCollection.Name)]
 public sealed class CliWorkerEvaluationLimitTests
 {
-    /// <summary>More inspections of a workbook than Aspose.Cells evaluation mode opens files in one process.</summary>
-    private const int Inspections = 110;
+    /// <summary>More reads of a workbook than Aspose.Cells evaluation mode opens files in one process.</summary>
+    private const int Reads = 110;
 
     /// <summary>
-    /// Inspecting a workbook more times than evaluation mode opens files in one process, in the
-    /// workers of one evaluation lane, succeeds every time, and an inspection the first worker
-    /// refused ran again in a new worker.
+    /// Reading a workbook more times than evaluation mode opens files in one process, in the
+    /// workers of one evaluation lane, succeeds every time, and a read the first worker refused
+    /// ran again in a new worker.
     /// </summary>
     [Fact]
-    public void InspectionsPastTheEvaluationFileLimitOfAWorker_AllSucceed()
+    public void ReadsPastTheEvaluationFileLimitOfAWorker_AllSucceed()
     {
         Assert.SkipUnless(CliWorkers.Enabled, $"{CliWorkers.CountVariable}=0 runs every command as a child process.");
         using var workspace = new TempWorkspace();
@@ -34,19 +34,19 @@ public sealed class CliWorkerEvaluationLimitTests
         var failures = new List<string>();
         int runs = 0;
         var watch = Stopwatch.StartNew();
-        for (int inspection = 1; inspection <= Inspections; inspection++)
+        for (int read = 1; read <= Reads; read++)
         {
-            (CliResult result, int made) = lane.Run("cells", "inspect", "book.xlsx", "--output-format", "json");
+            (CliResult result, int made) = lane.Run("cells", "read", "book.xlsx", "--output-format", "json");
             runs += made;
             if (result.ExitCode != 0)
             {
-                failures.Add($"inspection {inspection}: exit {result.ExitCode}: {result.StdErr.Trim()}");
+                failures.Add($"read {read}: exit {result.ExitCode}: {result.StdErr.Trim()}");
             }
         }
-        TestContext.Current.TestOutputHelper?.WriteLine($"{Inspections} inspections, {runs} runs in workers, {watch.Elapsed.TotalSeconds:N1}s.");
+        TestContext.Current.TestOutputHelper?.WriteLine($"{Reads} reads, {runs} runs in workers, {watch.Elapsed.TotalSeconds:N1}s.");
 
-        Assert.True(failures.Count == 0, $"{failures.Count} of {Inspections} inspections failed, the first:{Environment.NewLine}" + string.Join(Environment.NewLine, failures.Take(3)));
-        Assert.True(runs > Inspections, $"No inspection ran again in a new worker ({runs} runs for {Inspections} inspections), so none reached the evaluation file limit of its worker.");
+        Assert.True(failures.Count == 0, $"{failures.Count} of {Reads} reads failed, the first:{Environment.NewLine}" + string.Join(Environment.NewLine, failures.Take(3)));
+        Assert.True(runs > Reads, $"No read ran again in a new worker ({runs} runs for {Reads} reads), so none reached the evaluation file limit of its worker.");
     }
 
     /// <summary>
@@ -60,19 +60,20 @@ public sealed class CliWorkerEvaluationLimitTests
     {
         Assert.SkipUnless(CliWorkers.Enabled, $"{CliWorkers.CountVariable}=0 runs every command as a child process.");
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--sheet-names", "Dashboard,Detail").ExitCode);
+        File.WriteAllText(workspace.File("long.txt"), string.Join('\n', Enumerable.Range(1, 600).Select(static line => $"Line {line} of a long text")));
+        Assert.Equal(0, workspace.Run("pdf", "create", "long.pdf", "--from-text", "long.txt").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx").ExitCode);
         var lane = new Lane(workspace);
-        // Evaluation mode exports the first sheet to a text format whatever sheet is asked for,
-        // which the command refuses.
-        string[] secondSheet = ["cells", "convert", "book.xlsx", "--to", "csv", "--sheets", "2", "--out", "report.csv", "--output-format", "json"];
+        // Evaluation mode reads only the first pages of a PDF, which a render of a later page needs.
+        string[] laterPage = ["pdf", "render", "long.pdf", "--pages", "6", "--out", "page.png", "--output-format", "json"];
 
-        (CliResult first, int firstRuns) = lane.Run(secondSheet);
-        (CliResult again, int againRuns) = lane.Run(secondSheet);
-        (CliResult json, int jsonRuns) = lane.Run("cells", "inspect", "book.xlsx", "--license", "missing.lic", "--output-format", "json");
+        (CliResult first, int firstRuns) = lane.Run(laterPage);
+        (CliResult again, int againRuns) = lane.Run(laterPage);
+        (CliResult json, int jsonRuns) = lane.Run("cells", "read", "book.xlsx", "--license", "missing.lic", "--output-format", "json");
 
         Assert.Equal((7, "EVALUATION_LIMIT", 1), (first.ExitCode, Code(first), firstRuns));
         Assert.Equal((7, "EVALUATION_LIMIT", 2), (again.ExitCode, Code(again), againRuns));
-        Assert.False(File.Exists(workspace.File("report.csv")));
+        Assert.Empty(Directory.GetFiles(workspace.Path, "page*.png"));
         Assert.Equal((7, "LICENSE_FILE_NOT_FOUND", 1), (json.ExitCode, Code(json), jsonRuns));
     }
 

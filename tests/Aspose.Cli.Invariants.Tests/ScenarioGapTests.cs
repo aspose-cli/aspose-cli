@@ -129,7 +129,7 @@ public sealed class ScenarioGapTests
               "files": { "in.csv": { "text": "name\nHidden-I3-5e1d\n" } },
               "steps": [
                 {
-                  "args": ["cells", "convert", "in.csv", "--to", "tsv", "--out", "out.tsv"],
+                  "args": ["cells", "convert", "in.csv", "--to", "tsv", "--out", "out.tsv", "--separator", ",", "--encoding", "utf-8", "--convert-numbers", "false", "--convert-dates", "false"],
                   "expect": { "exitCode": 0, "hidden": ["Hidden-I3-5e1d"] }
                 }
               ]

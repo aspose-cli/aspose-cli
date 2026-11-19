@@ -228,19 +228,17 @@ internal static partial class ContractRules
     {
         // Whether x itself is on by default, which alone justifies --no-x, is in the meaning of
         // the option, not in capabilities (the --no-x switch defaults to false either way); only
-        // the --x and --no-x pair is checked here.
+        // the --x and --no-x pair is checked here, from each boolean option's side.
         IReadOnlyList<TreeCommand> tree = CommandTree.Of(catalog);
-        foreach (string negative in tree.SelectMany(static command => command.Options).Where(IsNegative)
+        foreach (string name in tree.SelectMany(static command => command.Options).Where(static option => option.IsBoolean)
             .Select(static option => option.Name).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
         {
-            string positive = "--" + negative["--no-".Length..];
-            yield return Check("C-R09", negative, () => tree
-                .Where(command => command.Has(positive))
-                .Select(command => $"{command} declares {positive} while {CommandTree.List(tree.Where(other => other.Has(negative)).Select(static other => other.ToString()))} declare {negative}."));
+            string pair = name.StartsWith("--no-", StringComparison.Ordinal) ? "--" + name["--no-".Length..] : "--no-" + name["--".Length..];
+            yield return Check("C-R09", name, () => tree
+                .Where(command => command.Has(pair))
+                .Select(command => $"{command} declares {pair} while {CommandTree.List(tree.Where(other => other.Has(name)).Select(static other => other.ToString()))} declare {name}."));
         }
     }
-
-    private static bool IsNegative(TreeOption option) => option.IsBoolean && option.Name.StartsWith("--no-", StringComparison.Ordinal);
 
     // ----- C-R10 (declared): every secret has -env and -stdin forms --------------------------------
 

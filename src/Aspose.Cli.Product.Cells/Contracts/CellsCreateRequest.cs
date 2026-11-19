@@ -8,9 +8,9 @@ public sealed record CellsCreateRequest
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
 
-    /// <summary>Sheet names, in order; already validated non-empty and unique.</summary>
-    public required IReadOnlyList<string> SheetNames { get; init; }
+    /// <summary>The workbook saved as the new one (<c>--template</c>), or null for the engine's new workbook.</summary>
+    public SourceFile? Template { get; init; }
 
-    /// <summary>Resolved password to protect the output file; null leaves it unencrypted.</summary>
+    /// <summary>The password the output opens with, or null.</summary>
     public Secret? EncryptPassword { get; init; }
 }

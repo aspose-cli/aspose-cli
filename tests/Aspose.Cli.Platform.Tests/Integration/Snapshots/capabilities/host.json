@@ -1122,7 +1122,7 @@
       "additionalProperties": false,
       "properties": {
         "code": {
-          "description": "Stable SCREAMING_SNAKE_CASE error code, e.g. SHEET_NOT_FOUND.",
+          "description": "Stable SCREAMING_SNAKE_CASE error code, e.g. ADDRESS_NOT_FOUND.",
           "type": "string",
           "pattern": "^[A-Z][A-Z0-9_]*$"
         },

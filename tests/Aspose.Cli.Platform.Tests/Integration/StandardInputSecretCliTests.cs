@@ -32,7 +32,7 @@ public sealed class StandardInputSecretCliTests
         ScenarioLicense.Project(workspace.Path);
         File.WriteAllText(workspace.File("text.txt"), "Hello\n");
         string[] source = product == "pdf" ? ["--from-text", "text.txt"] : [];
-        string read = product == "slides" ? "read" : "inspect";
+        string read = product is "slides" or "cells" ? "read" : "inspect";
 
         Succeeds(Piped(workspace, Utf8.GetBytes(Password + "\n"), [product, "create", file, .. source, "--encrypt-stdin", "--output-format", "json"]));
         Succeeds(workspace.RunWithEnv(PasswordVariable, product, read, file, "--password-env", "PW", "--output-format", "json"));
@@ -54,7 +54,7 @@ public sealed class StandardInputSecretCliTests
         ScenarioLicense.Project(workspace.Path);
         workspace.RunWithEnv(new Dictionary<string, string?> { ["PW"] = password }, "cells", "create", "enc.xlsx", "--encrypt-env", "PW", "--output-format", "json").Succeeded();
 
-        Succeeds(Piped(workspace, Utf8.GetBytes(input), ["cells", "inspect", "enc.xlsx", "--password-stdin", "--output-format", "json"]));
+        Succeeds(Piped(workspace, Utf8.GetBytes(input), ["cells", "read", "enc.xlsx", "--password-stdin", "--output-format", "json"]));
     }
 
     /// <summary>

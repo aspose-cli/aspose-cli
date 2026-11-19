@@ -13,7 +13,7 @@
       }
     },
     {
-      "args": ["cells", "render", "book.xlsx", "--to", "jpeg", "--out", "sheet.jpg"],
+      "args": ["cells", "render", "book.xlsx", "--sheet", "Sheet1", "--to", "jpeg", "--out", "sheet.jpg"],
       "expect": {
         "exitCode": 0,
         "files": { "present": ["sheet.jpg"], "unchanged": ["book.xlsx"] },
@@ -21,7 +21,7 @@
       }
     },
     {
-      "args": ["cells", "render", "book.xlsx", "--to", "jpeg", "--out", "sheet.jpeg"],
+      "args": ["cells", "render", "book.xlsx", "--sheet", "Sheet1", "--to", "jpeg", "--out", "sheet.jpeg"],
       "expect": {
         "exitCode": 0,
         "files": { "present": ["sheet.jpeg"], "unchanged": ["book.xlsx"] },

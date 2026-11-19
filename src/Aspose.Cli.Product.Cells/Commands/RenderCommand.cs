@@ -1,74 +1,73 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.IO.Output;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
-/// <summary>
-/// <c>cells render</c> — draw sheets (or a range of one) as images.
-/// This is how an agent "looks at" a spreadsheet to verify layout and charts.
-/// </summary>
+/// <summary><c>cells render</c>: every sheet, or the ones named, each drawn by the engine as one image.</summary>
 internal static class RenderCommand
 {
     public static CommandDefinition<CellsRenderRequest, CellsRenderResult> Create()
     {
-        var sheets = new PartRangeOption("sheet", $"every visible sheet, at most {RenderSelection.MaximumParts} per run")
+        var sheets = new Option<string[]>(CellsOptionNames.Sheet)
         {
-        };
-        var rangeOption = new Option<string?>(SheetRangeInput.RangeOption)
+            Description = "A sheet to render, by its name; repeat for several. Default: every sheet of the workbook. Several sheets are each written to <stem>.<sheet>.<ext>.",
+        }.WithInput(InputKind.None);
+        var area = new Option<string?>(CellsOptionNames.Area)
         {
-            Description = "Render only this range of one sheet, e.g. A1:G20 or Sales!A1:G20, or all.",
+            Description = "An area of the one sheet named, such as A1:G20, set as its print area and drawn alone. Default: the whole sheet.",
         }.WithInput(InputKind.None);
         var dpi = new DpiOption();
         return new(
             "render",
-            "Render sheets, or a range of one, to images.",
+            "Render sheets, or an area of one, to images as the engine draws them.",
             new CommandTraits
             {
-                Input = CellsInputs.Workbook("Workbook to render."),
+                Input = CellsInputs.Workbook,
                 Output = OutputTarget.File("Output path. Default: the input path with the image extension. "
                     + "Several sheets write <stem>.<sheet>.<ext> beside it."),
                 UsesFonts = true,
                 Target = TargetFormat.Render(CellsFormats.Definitions),
             },
-            [.. sheets.Options, rangeOption, .. dpi.Options],
+            [sheets, area, .. dpi.Options],
             (parse, standard) =>
             {
-                ResolvedOutput output = standard.Output;
-                int resolution = dpi.Read(parse, output.Format);
-                (PageRange? selection, string? text) = CellsInputs.SheetSelection(sheets, parse);
-                RangeSpec? range = SheetRangeInput.Parse(parse.GetValue(rangeOption));
-                if (range?.SheetName is not null && selection is not null)
+                string[] named = parse.GetValue(sheets) ?? [];
+                string? drawn = parse.GetValue(area);
+                if (drawn is not null)
                 {
-                    throw CliErrors.OptionInvalid(
-                        sheets.Name,
-                        "the range already names its sheet");
+                    if (named.Length != 1)
+                    {
+                        throw CliErrors.OptionInvalid(CellsOptionNames.Area, $"an area is of the one sheet --sheet names, and --sheet named {named.Length}");
+                    }
+
+                    if (!Key.IsWrittenAs(KeyPart.Area, drawn))
+                    {
+                        throw CliErrors.OptionInvalid(CellsOptionNames.Area, $"'{drawn}' is not an area such as A1:G20");
+                    }
                 }
 
                 return new CellsRenderRequest
                 {
                     Input = standard.Input,
-                    Output = output,
-                    Sheets = selection,
-                    SheetsText = text,
-                    SheetName = range?.SheetName,
-                    Range = range?.Range,
-                    Dpi = resolution,
+                    Output = standard.Output,
+                    Sheets = named.Length == 0 ? null : named,
+                    Area = drawn,
+                    Dpi = dpi.Read(parse, standard.Output.Format),
                     Password = standard.InputPassword,
                 };
             })
         {
             Examples =
             [
-                "cells render book.xlsx --range Sales!A1:G20 --out sales.png",
-                "cells render book.xlsx --sheets 2 --out dashboard.png",
-                "cells render book.xlsx --sheets all --out check.png",
+                "cells render book.xlsx --out book.png",
+                "cells render book.xlsx --sheet Dashboard --area A1:H30 --out dashboard.png",
+                "cells render book.xlsx --sheet Data --sheet Summary --out check.png",
             ],
             Links =
             [
-                CommandHelpLink.Docs(CellsModule.Manifest, "verification", "the spreadsheet delivery verification protocol"),
+                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "what each Cells command is for"),
             ],
         };
     }

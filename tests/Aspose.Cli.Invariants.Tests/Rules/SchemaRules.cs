@@ -62,17 +62,6 @@ internal static partial class ContractRules
     private static readonly HashSet<string> CoordinateNames = new(StringComparer.Ordinal) { "x", "y" };
 
     // rule-exemptions: begin
-    /// <summary>
-    /// Kept on purpose: the compact cell of a cells read, and the
-    /// cell sides that edit and compare report in the same shape, name the value, type and formula
-    /// <c>v</c>, <c>t</c> and <c>f</c>, because a read returns thousands of them and the short names
-    /// keep the payload small. C-R20 does not count them as abbreviations, and C-R32 accepts the
-    /// cell matrix of the sheet projection as the units of a cells read.
-    /// </summary>
-    private static readonly HashSet<string> CompactCellNames = new(StringComparer.Ordinal) { "v", "t", "f" };
-    private const string CompactCellSchemaPrefix = "v2/cells/";
-    private const string CellsReadSchema = "v2/cells/read-result";
-
     /// <summary>Field names whose products may give them different types (C-R20): each follows its product's address or style model.</summary>
     private static readonly HashSet<string> ProductModelNames = new(StringComparer.Ordinal) { "at", "target", "style", "column" };
 
@@ -232,8 +221,6 @@ internal static partial class ContractRules
     private static IEnumerable<(NameAspect Aspect, string Message)> FieldNames(SchemaSubject subject)
     {
         bool ops = PublishedSchema.IsOps(subject.SchemaId);
-        bool compactCells = subject.SchemaId.StartsWith(CompactCellSchemaPrefix, StringComparison.Ordinal);
-        bool compactCellSeen = false;
         foreach (SchemaProperty property in subject.Properties())
         {
             string name = property.Name;
@@ -241,11 +228,7 @@ internal static partial class ContractRules
             {
                 yield return (NameAspect.Spelling, $"{property.Path}: not camelCase");
             }
-            if (compactCells && CompactCellNames.Contains(name))
-            {
-                compactCellSeen = true;
-            }
-            else if (AbbreviatedNames.Contains(name)
+            if (AbbreviatedNames.Contains(name)
                 || NameWords.Matches(name).Any(word => AbbreviatedWords.Contains(word.Value.ToLowerInvariant()))
                 || (name.Length == 1 && !CoordinateNames.Contains(name)))
             {
@@ -272,7 +255,9 @@ internal static partial class ContractRules
             {
                 yield return (NameAspect.Ranges, $"{property.Path}: to ends a from-to range; a range names its ends first and last");
             }
-            if (name.Contains("assword", StringComparison.Ordinal) && !name.EndsWith("PasswordEnv", StringComparison.Ordinal) && name != "passwordEnv")
+            // A boolean holds no secret, such as a table row that says whether a password protects the object.
+            if (name.Contains("assword", StringComparison.Ordinal) && !name.EndsWith("PasswordEnv", StringComparison.Ordinal) && name != "passwordEnv"
+                && property.Schema["type"]?.GetValue<string>() != "boolean")
             {
                 yield return (NameAspect.Secrets, $"{property.Path}: a secret is named *PasswordEnv");
             }
@@ -286,10 +271,6 @@ internal static partial class ContractRules
             && (own?["from"] is null || own?["to"] is null))
         {
             yield return (NameAspect.Ranges, "from and to: listed as a source and a destination but no longer declared; update the list");
-        }
-        if (subject.SchemaId == CellsReadSchema && !compactCellSeen)
-        {
-            yield return (NameAspect.Spelling, "the compact-cell exemption (v, t, f) no longer matches; remove it");
         }
     }
 
@@ -785,18 +766,6 @@ internal static partial class ContractRules
             }
             bool listed = required.Any(name => name.EndsWith("Count", StringComparison.Ordinal)
                 && required.Contains(name[..^"Count".Length] + "s"));
-            if (id == CellsReadSchema)
-            {
-                // The kept compact cells: a row-major matrix of v/t/f cells in the sheet projection.
-                JsonObject? cells = root["properties"]?["sheet"] is JsonObject sheet
-                    ? PublishedSchema.Resolve(id, sheet).Node["properties"]?["cells"] as JsonObject
-                    : null;
-                if (listed || cells?["items"]?["items"] is null)
-                {
-                    yield return "the compact-cell exemption (a v/t/f matrix in sheet.cells) no longer matches; remove it";
-                }
-                yield break;
-            }
             if (!listed)
             {
                 yield return "does not require a <unit>Count and its <units> list";

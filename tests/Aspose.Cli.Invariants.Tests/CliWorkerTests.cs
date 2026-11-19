@@ -102,8 +102,10 @@ public sealed class CliWorkerTests
         }
         TestContext.Current.TestOutputHelper?.WriteLine($"{cases.Length} {product} cases, {(projectLicense ? "project license" : "no license")}, {differences.Count} differ.");
         // Without a license, one case per command: at least eight, or every command of a product with fewer.
+        // With one, a command's run, an unknown option, a missing input and help: at least thirty,
+        // or four for each command of a product with fewer.
         int commands = CliCatalog.Current.Commands.Count(command => command.Product == product && command.Arguments.Count + command.Options.Count > 0);
-        Assert.True(cases.Length >= (projectLicense ? 30 : Math.Min(8, commands)), $"Only {cases.Length} cases for {product}.");
+        Assert.True(cases.Length >= (projectLicense ? Math.Min(30, 4 * commands) : Math.Min(8, commands)), $"Only {cases.Length} cases for {product}.");
         Assert.True(differences.Count == 0, $"{differences.Count} of {cases.Length} runs differ:{Environment.NewLine}" + string.Join(Environment.NewLine, differences));
     }
 
@@ -442,7 +444,7 @@ public sealed class CliWorkerTests
         using (CliWorkers.ChildProcesses())
         {
             int before = CliWorkers.ThreadRuns;
-            CliResult result = workspace.Run("cells", "inspect", "missing.xlsx", "--output-format", "json");
+            CliResult result = workspace.Run("cells", "read", "missing.xlsx", "--output-format", "json");
 
             Assert.Equal(before, CliWorkers.ThreadRuns);
             Assert.NotEqual(0, result.ExitCode);
@@ -465,8 +467,8 @@ public sealed class CliWorkerTests
         using (CliWorkers.ChildProcesses())
         {
             int before = CliWorkers.ThreadRuns;
-            CliResult plain = workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json");
-            CliResult verbose = workspace.Run("cells", "inspect", "book.xlsx", "--verbose", "--output-format", "json");
+            CliResult plain = workspace.Run("cells", "read", "book.xlsx", "--output-format", "json");
+            CliResult verbose = workspace.Run("cells", "read", "book.xlsx", "--verbose", "--output-format", "json");
 
             Assert.Equal(before, CliWorkers.ThreadRuns);
             Assert.Equal(0, plain.ExitCode);

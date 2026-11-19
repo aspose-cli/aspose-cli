@@ -16,8 +16,7 @@ public sealed partial class OptionRangeHelpTests
     /// <summary>The integer options with an upper bound, in every command that has them.</summary>
     private static readonly string[] Bounded =
     [
-        "--dpi", "--grid", "--width", "--max-blocks", "--max-chars", "--max-hits", "--max-cells", "--max-diffs",
-        "--sample-rows", "--max-input-bytes",
+        "--dpi", "--grid", "--width", "--max-blocks", "--max-chars", "--max-hits", "--max-input-bytes",
     ];
 
     [Fact]

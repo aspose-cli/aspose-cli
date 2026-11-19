@@ -1,161 +1,108 @@
 using Aspose.Cells;
+using Aspose.Cells.Rendering;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
-using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
-/// <summary><c>cells convert</c>: a workbook saved in another document format.</summary>
+/// <summary>
+/// <c>cells convert</c>: a workbook, or CSV or TSV text, saved in another format with the engine's
+/// options for it, the ones the caller stated set: the sheet a one-sheet format writes, the sheets
+/// a PDF writes, and how a text output writes its values.
+/// </summary>
 internal static class CellsConvert
 {
-    public static CellsConvertResult Run(CellsSession session, CellsConvertRequest request)
+    internal static CellsConvertResult Run(CellsSession session, CellsConvertRequest request)
     {
-        ArgumentNullException.ThrowIfNull(session);
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentException.ThrowIfNullOrEmpty(request.Input);
-
-        var saver = new CellsSavePipeline(session.Outputs);
-        LicenseState licenseState = session.Outputs.License;
-        using LoadedWorkbook loaded = session.Loader.Open(request.Input, request.Password, request.TextImport);
+        LicenseState state = session.Outputs.License;
+        CellValueFormatStrategy? strategy = request.FormatStrategy is { } name ? CellsEngineFormats.FormatStrategy(name) : null;
+        var log = new EngineWarningLog();
+        using LoadedWorkbook loaded = request.TextInput is { } text
+            ? session.Loader.OpenText(request.Input, text.Format, text, log)
+            : session.Loader.Open(request.Input, request.Password, log);
         Workbook workbook = loaded.Workbook;
-        if (request.Sheets is null && request.SheetsText is { } byName)
+        string format = request.Output.Format.Id;
+        SaveOptions options = CellsEngineFormats.Options(format, log);
+        if (request.Sheets is { } names)
         {
-            throw Sheets.SelectedByName(workbook, byName);
-        }
-
-        // Capture before saving: Workbook.FileFormat mutates to the target
-        // format once the workbook is saved.
-        InputInfo input = BuildSource(request.Input, loaded);
-
-        IReadOnlyList<Worksheet>? selected = request.Sheets is { } selection
-            ? [.. Sheets.Selected(workbook, request.SheetsText,
-                () => selection.Resolve(workbook.Worksheets.Count, CellsDiagnostics.SheetNotFound, "sheet")).Distinct().Order().Select(position => workbook.Worksheets[position - 1])]
-            : null;
-        IReadOnlyList<int>? selectedSheets = null;
-
-        if (selected is not null)
-        {
-            if (WorkbookSavePlan.WritesActiveSheetOnlyFor(request.Output.Format.Id))
+            int[] sheets = [.. names.Select(name => CellsSheets.Find(workbook, name).Index)];
+            switch (options)
             {
-                if (selected.Count != 1)
-                {
-                    throw CliErrors.OptionInvalid(
-                        CellsOptionNames.Sheets,
-                        $"'{request.Output.Format.Id}' output holds one sheet, but the selection holds {selected.Count}");
-                }
-
-                // Text formats export the active sheet.
-                workbook.Worksheets.ActiveSheetIndex = selected[0].Index;
-            }
-            else if (CellsFormats.SheetScopeOf(request.Output.Format.Id) == CellsSheetScope.SheetSet)
-            {
-                selectedSheets = [.. selected.Select(static sheet => sheet.Index)];
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"--sheets reached the engine for '{request.Output.Format.Id}', which ConvertCommand refuses.");
+                // A delimited text output is the workbook's active sheet.
+                case TxtSaveOptions:
+                    workbook.Worksheets.ActiveSheetIndex = sheets[0];
+                    break;
+                case MarkdownSaveOptions markdown:
+                    markdown.SheetSet = new SheetSet(sheets);
+                    break;
+                case PdfSaveOptions pdf:
+                    pdf.SheetSet = new SheetSet(sheets);
+                    break;
             }
         }
 
-        if (WorkbookSavePlan.WritesActiveSheetOnlyFor(request.Output.Format.Id)
-            && licenseState == LicenseState.Evaluation && selected is not null)
+        if (strategy is { } value)
         {
-            // The evaluation SDK writes the first sheet regardless of ActiveSheetIndex.
-            Worksheet active = workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex];
-            Worksheet first = workbook.Worksheets[0];
-            if (active.Index != 0)
-            { throw CellsErrors.TextExportEvaluationLimit(request.Output.Format.Id, active.Name, first.Name); }
+            switch (options)
+            {
+                case TxtSaveOptions txt:
+                    txt.FormatStrategy = value;
+                    break;
+                case MarkdownSaveOptions markdown:
+                    markdown.FormatStrategy = value;
+                    break;
+            }
         }
 
-        Warning? headerOnlySkipped = null;
-        IReadOnlyList<Worksheet> jsonSheets = [];
-        if (CellsEngineFormats.WritesRecords(request.Output.Format.Id))
+        // --bom: the engine writes UTF-8 with its mark, which the publication then keeps.
+        if (request.ByteOrderMark && options is TxtSaveOptions marked)
         {
-            (jsonSheets, headerOnlySkipped) = JsonSheets(workbook);
+            marked.Encoding = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
         }
 
-        // Say which rows are not table data: the rows a text input brought over as they are, or,
-        // in a JSON output, the rows each sheet writes as records.
-        IReadOnlyList<Warning> textLayout = CellsEngineFormats.WritesRecords(request.Output.Format.Id)
-            ? TextTableLayout.JsonWarnings(jsonSheets, session.Budgets)
-            : TextTableLayout.Warnings(loaded, session.Budgets);
-
-        Warning? chartsSplit = CellsEngineFormats.IsPaginated(request.Output.Format.Id)
-            ? PrintedPages.SplitChartsWarning(workbook, request.Output.Format.Id, selectedSheets)
-            : null;
-        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
-            OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password),
-            selectedSheets, request.ByteOrderMark, loaded.ReadAsWritten);
-        if (CellsEngineFormats.WritesRecords(request.Output.Format.Id))
-        {
-            savePlan = savePlan with { Options = JsonOptions(workbook, jsonSheets) };
-        }
-
-        loaded.RestoreActiveSheet(savePlan);
-        WorkbookSaveLoss? loss = null;
-        PublishedFile written = saver.Write(request.Output, workbook, singleSheet: selectedSheets is not null,
-            savePlan, path => loss = saver.ProduceReporting(workbook, savePlan, path));
-        WorkbookSaveLoss lost = loss!;
-
+        OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
+        PublishedFile written = session.Outputs.Write(
+            request.Output.Path,
+            request.Output.Format,
+            request.Output.Overwrite,
+            workbook,
+            temp =>
+            {
+                log.During = "save";
+                workbook.Settings.Password = protection.Password?.Reveal() ?? string.Empty;
+                workbook.Save(temp, options);
+                loaded.Resources.ThrowIfFailed();
+            },
+            encrypted: protection.Encrypted,
+            byteOrderMark: request.ByteOrderMark);
         return new CellsConvertResult
         {
-            Input = input,
-            Outputs = [new(FileObjects.Output(written, request.Output.Format, savePlan.Encrypts))],
-            Sheets = selected is null ? null : [.. selected.Select(static sheet => sheet.Name)],
-            License = EnvelopeParts.License(licenseState),
-            // Only a text export without --sheets writes one sheet chosen by default; the other
-            // formats write every sheet.
-            Warnings = EnvelopeParts.CombineWarnings([.. loaded.Warnings() ?? [],
-                loaded.SkippedSheetWarning(selected is null && savePlan.WritesActiveSheetOnly), lost.SheetsDropped, lost.DrawingsDropped, headerOnlySkipped, lost.Truncated, lost.FormulasBroken, chartsSplit,
-                .. lost.Unwritten, .. textLayout]),
+            Input = FileObjects.Input(request.Input, loaded.FormatId, loaded.Encrypted),
+            Outputs = [new CellsConvertOutput(FileObjects.Output(written, request.Output.Format, protection.Encrypted))],
+            Sheets = request.Sheets,
+            EngineWarnings = log.Warnings.Count == 0 ? null : log.Warnings,
+            License = EnvelopeParts.License(state),
+            Warnings = loaded.Warnings.Count == 0 ? null : loaded.Warnings,
         };
     }
+}
 
-    /// <summary>
-    /// The JSON export of the sheets <see cref="JsonSheets"/> chose. It keeps one member per sheet
-    /// whenever the workbook has more than one sheet of its own, even when only one is written.
-    /// </summary>
-    private static JsonSaveOptions JsonOptions(Workbook workbook, IReadOnlyList<Worksheet> written)
+/// <summary>The sheet an option names, found as the table finds <c>sheet/&lt;name&gt;</c>.</summary>
+internal static class CellsSheets
+{
+    /// <summary>The one sheet whose name is <paramref name="name"/> but for case.</summary>
+    /// <exception cref="Sdk.Errors.CliException"><c>ADDRESS_NOT_FOUND</c> for none, <c>ADDRESS_AMBIGUOUS</c>'s fact for several.</exception>
+    internal static Worksheet Find(Workbook workbook, string name)
     {
-        int own = workbook.Worksheets.Cast<Worksheet>().Count(static sheet => !CellsEvaluation.IsWarningSheet(sheet));
-        var options = new JsonSaveOptions { AlwaysExportAsJsonObject = own > 1 };
-        if (written.Count > 0 && written.Count < workbook.Worksheets.Count)
+        Worksheet[] matches = [.. workbook.Worksheets.Where(sheet => string.Equals(sheet.Name, name, StringComparison.OrdinalIgnoreCase))];
+        return matches.Length switch
         {
-            options.SheetIndexes = [.. written.Select(static sheet => sheet.Index)];
-        }
-
-        return options;
-    }
-
-    /// <summary>
-    /// The sheets a JSON export writes: the workbook's own sheets, without the evaluation warning
-    /// sheets, which are no data of the workbook, and without a sheet whose data is one row, which
-    /// the engine takes for a header and writes as invalid JSON (CELLS-JSON-HEADER-ONLY). Such a
-    /// sheet has no records to write and is named in the warning; a workbook with no other sheet
-    /// is refused before anything is written.
-    /// </summary>
-    private static (IReadOnlyList<Worksheet> Written, Warning? Skipped) JsonSheets(Workbook workbook)
-    {
-        Worksheet[] own = [.. workbook.Worksheets.Cast<Worksheet>().Where(static sheet => !CellsEvaluation.IsWarningSheet(sheet))];
-        Worksheet[] headerOnly = [.. own.Where(static sheet => sheet.Cells.MaxDataRow >= 0 && sheet.Cells.MinDataRow == sheet.Cells.MaxDataRow)];
-        string names = string.Join(", ", headerOnly.Select(static sheet => $"'{sheet.Name}'"));
-        if (headerOnly.Length > 0 && headerOnly.Length == own.Length)
-        {
-            throw CliErrors.EngineDefect(
-                $"Aspose.Cells writes invalid JSON for a sheet whose data is a single header row, as in {names}, and the workbook has no other sheet to write; nothing was written.");
-        }
-
-        bool one = headerOnly.Length == 1;
-        Warning? skipped = headerOnly.Length == 0 ? null : new Warning(CellsDiagnostics.SheetsDropped,
-            $"{(one ? "Worksheet" : "Worksheets")} {names} {(one ? "was" : "were")} not exported: {(one ? "it holds" : "each holds")} "
-            + "only a header row and no records, which Aspose.Cells cannot write as JSON.")
-        {
-            AffectsCompleteness = true,
+            1 => matches[0],
+            0 => throw TableErrors.NotFound("sheet", name, [.. workbook.Worksheets.Select(static sheet => sheet.Name)]),
+            _ => throw Sdk.Errors.CliErrors.OptionInvalid(CellsOptionNames.Sheet, $"'{name}' names {matches.Length} sheets: {string.Join(", ", matches.Select(static sheet => $"'{sheet.Name}'"))}"),
         };
-        return ([.. own.Except(headerOnly)], skipped);
     }
 }

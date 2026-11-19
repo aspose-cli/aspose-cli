@@ -11,6 +11,11 @@ namespace Aspose.Cli.IntegrationTests;
 /// </summary>
 public sealed class InputAdmissionTests
 {
+    /// <summary>A conversion of <c>source.csv</c> with the text options it takes.</summary>
+    private static readonly string[] ConvertText =
+        ["cells", "convert", "source.csv", "--to", "xlsx", "--separator", ",", "--encoding", "utf-8",
+            "--convert-numbers", "false", "--convert-dates", "false", "--output-format", "json"];
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void Create_ExcludesTheExistingOutputRegardlessOfOptionOrder()
@@ -82,10 +87,10 @@ public sealed class InputAdmissionTests
 
         CliResult limited = workspace.RunWithEnv(
             new Dictionary<string, string?> { ["ASPOSE_CLI_MAX_INPUT_BYTES"] = "64" },
-            "cells", "inspect", "source.csv", "--output-format", "json");
+            [.. ConvertText, "--out", "limited.xlsx"]);
         CliResult earlierName = workspace.RunWithEnv(
             new Dictionary<string, string?> { ["ASPOSE_CLI_MAX_FILE_BYTES"] = "64" },
-            "cells", "inspect", "source.csv", "--output-format", "json");
+            [.. ConvertText, "--out", "earlier.xlsx"]);
 
         Assert.Equal(3, limited.ExitCode);
         Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(limited.StdErr)!["error"]!["code"]!.GetValue<string>());
@@ -103,8 +108,8 @@ public sealed class InputAdmissionTests
 
         // The host tests cover every alias and the '=' spelling of an output option.
         CliResult result = workspace.Run(
-            ["cells", "convert", "source.csv", "--to", "xlsx", "-o=result.xlsx",
-             "--overwrite", "--max-input-bytes", "64", "--output-format", "json"]);
+            ["cells", "convert", "source.csv", "--to", "xlsx", "-o=result.xlsx", "--separator", ",", "--encoding", "utf-8",
+             "--convert-numbers", "false", "--convert-dates", "false", "--overwrite", "--max-input-bytes", "64", "--output-format", "json"]);
 
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.NotEqual(original, File.ReadAllBytes(output));

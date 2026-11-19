@@ -89,7 +89,7 @@
       }
     },
     {
-      "args": ["cells", "convert", "book.xlsx", "--out", "c.png", "--sheets", "1"],
+      "args": ["cells", "convert", "book.xlsx", "--out", "c.png", "--sheet", "Sheet1"],
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
@@ -97,7 +97,7 @@
       }
     },
     {
-      "args": ["cells", "render", "book.xlsx", "--sheets", "1", "--to", "png", "--out", "c.png"],
+      "args": ["cells", "render", "book.xlsx", "--sheet", "Sheet1", "--to", "png", "--out", "c.png"],
       "expect": {
         "exitCode": 0,
         "json": [{ "path": "outputs[1]", "exists": false }],

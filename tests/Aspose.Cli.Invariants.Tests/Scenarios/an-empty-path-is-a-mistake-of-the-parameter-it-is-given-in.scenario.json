@@ -2,7 +2,6 @@
   "name": "an empty or blank path is a mistake of the argument or option it is given in, not an internal error",
   "files": {
     "book.xlsx": { "fixture": "cells.xlsx" },
-    "x.csv": { "text": "a,b\n1,2\n" },
     "doc.docx": { "fixture": "words.docx" }
   },
   "steps": [
@@ -35,11 +34,11 @@
       "expect": { "exitCode": 2, "error": "OPTION_INVALID", "json": [{ "path": "error.details.argument", "equals": "file" }] }
     },
     {
-      "args": ["cells", "compare", "book.xlsx", ""],
+      "args": ["words", "compare", "doc.docx", ""],
       "expect": { "exitCode": 2, "error": "OPTION_INVALID", "json": [{ "path": "error.details.argument", "equals": "right" }] }
     },
     {
-      "args": ["cells", "edit", "x.csv", "--out", "", "--set", "x!A1=1"],
+      "args": ["cells", "edit", "book.xlsx", "--out", "", "--ops", "{\"ops\":[{\"do\":\"calculate\"}]}"],
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
@@ -64,7 +63,7 @@
       "expect": { "exitCode": 3, "error": "FILE_NOT_FOUND" }
     },
     {
-      "args": ["cells", "edit", "x.csv", "--ops", ""],
+      "args": ["cells", "edit", "book.xlsx", "--ops", ""],
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",

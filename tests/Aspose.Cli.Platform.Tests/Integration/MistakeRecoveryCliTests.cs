@@ -77,8 +77,8 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     {
         ScenarioLicense.Project(_workspace.Path);
         var password = new Dictionary<string, string?> { ["BOOK_PASSWORD"] = "sibling-hint-secret-5e1b" };
-        Assert.Equal(0, _workspace.Run("cells", "create", "plain.xlsx", "--sheet-names", "Data", "--output-format", "json").ExitCode);
-        Assert.Equal(0, _workspace.Run("cells", "edit", "plain.xlsx", "--in-place", "--set", "Data!A1=Region", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "plain.xlsx", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "plain.xlsx", "--in-place", "--ops", """{"ops":[{"set":"sheet/Sheet1/cell/A1","props":{"value":"Region"}}]}""", "--output-format", "json").ExitCode);
         CliResult created = _workspace.RunWithEnv(password,
             "cells", "convert", "plain.xlsx", "--to", "xlsx", "--out", "book.xlsx", "--encrypt-env", "BOOK_PASSWORD", "--output-format", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
@@ -87,7 +87,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
             "cells", "convert", "book.xlsx", "--password-env", "BOOK_PASSWORD", "--to", "png", "--out", "x.png", "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
-        const string Command = "aspose-cli cells render book.xlsx --password-env BOOK_PASSWORD --to png --out x.png --output-format json";
+        const string Command = "aspose-cli cells render book.xlsx --sheet Sheet1 --password-env BOOK_PASSWORD --to png --out x.png --output-format json";
         CliResult rendered = _workspace.RunCommandLine(Command, password);
         Assert.True(rendered.ExitCode == 0, rendered.StdErr);
         JsonArray outputs = JsonNode.Parse(rendered.StdOut)!["outputs"]!.AsArray();
@@ -98,25 +98,22 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [Fact]
     public void EditOutputFormatTheEditCannotWrite_ListsOnlyWhatTheEditWrites()
     {
-        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
+        Assert.Equal(0, _workspace.Run("cells", "create", "a.xlsx", "--output-format", "json").ExitCode);
 
-        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--set", "Sheet1!A1=5", "--out", "x.png", "--output-format", "json");
+        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--ops", """{"ops":[{"do":"calculate"}]}""", "--out", "x.png", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(
-            [".xlsx", ".xltx", ".xlsm", ".xltm", ".xlsb", ".xls", ".ods", ".csv", ".txt", ".tsv"],
-            error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
+        Assert.Equal([".xlsx"], error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
         Assert.Null(error["details"]!["supported"]);
-        Assert.EndsWith("Must be one of: .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .txt, .tsv.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.EndsWith("Must be one of: .xlsx.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Theory]
     [InlineData("words convert a.docx --out m3.docz", ".docx")]
     [InlineData("pdf convert a.pdf --out t3.dox", ".docx")]
     [InlineData("cells convert a.xlsx --out b.xslx", ".xlsx")]
-    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out b.xslx", ".xlsx")]
     public void MistypedOutputExtension_ListsTheExtensionMeant(string commandLine, string extension)
     {
         File.WriteAllText(_workspace.File("a.docx"), "not a document");
@@ -174,23 +171,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("--to", error["details"]!["option"]!.GetValue<string>());
-    }
-
-    /// <summary>A missing required array of fixed values says it is an array and shows one.</summary>
-    [Fact]
-    public void MissingRequiredArrayOfFixedValues_SaysItIsAnArrayAndShowsOne()
-    {
-        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
-        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_borders","range":"A1:B2"}]}""");
-
-        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--ops", "ops.json", "--out", "out.xlsx", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal("edges", error["details"]!["field"]!.GetValue<string>());
-        string message = error["message"]!.GetValue<string>();
-        Assert.Contains("array", message, StringComparison.Ordinal);
-        Assert.Contains("\"edges\": [\"outline\"]", message, StringComparison.Ordinal);
     }
 
     [Theory]

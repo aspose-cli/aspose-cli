@@ -299,21 +299,29 @@ public sealed class PdfAssemblyWarningTests
         File.WriteAllText(workspace.File("report.md"), "# Report\n\nRevenue grew in October.\n");
         Run("words", "create", "report.docx", "--from-markdown", "report.md").Succeeded();
         Run("words", "convert", "report.docx", "--to", "pdf", "--out", "report.pdf").Succeeded();
-        Sheet("numbered", """{"ops":[{"op":"set_page_setup","footerCenter":"&P"}]}""", "--set", "Sheet1!A1=Revenue", "--set", "Sheet1!B1=700000");
-        Sheet("year", """{"ops":[{"op":"set_page_setup","footerCenter":"2025"}]}""", "--set", "Sheet1!A1=Revenue", "--set", "Sheet1!B1=700000");
-        // Lone numbers on tall rows reach the top and bottom edges of both pages.
-        Sheet("rows", """{"ops":[{"op":"resize_rows","first":1,"last":40,"height":30},{"op":"set_page_setup","margins":{"top":14,"bottom":14},"headerMargin":0,"footerMargin":0}]}""",
-            [.. Enumerable.Range(1, 40).SelectMany(static row => new[] { "--set", $"Sheet1!A{row}={row % 5 + 5}" })]);
+        const string Revenue = """{"set":"sheet/Sheet1/range/A1:B1","props":{"value":[["Revenue",700000]]}}""";
+        Sheet("numbered", $$$"""{"ops":[{"set":"sheet/Sheet1/pageSetup","props":{"footer.center":"&P"}},{{{Revenue}}}]}""");
+        Sheet("year", $$$"""{"ops":[{"set":"sheet/Sheet1/pageSetup","props":{"footer.center":"2025"}},{{{Revenue}}}]}""");
+        // Lone numbers on tall rows reach the top and bottom edges of both pages: margins of
+        // 14 points, in inches, and no header or footer margin.
+        string rows = string.Join(",", Enumerable.Range(1, 40).Select(static row => $$$"""{"set":"sheet/Sheet1/row/{{{row}}}","props":{"height":30}}"""));
+        string values = string.Join(",", Enumerable.Range(1, 40).Select(static row => $"[{row % 5 + 5}]"));
+        string margin = (14 / 72.0).ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+        Sheet("rows", $$$"""
+            {"ops":[{{{rows}}},
+            {"set":"sheet/Sheet1/range/A1:A40","props":{"value":[{{{values}}}]}},
+            {"set":"sheet/Sheet1/pageSetup","props":{"topMarginInch":{{{margin}}},"bottomMarginInch":{{{margin}}},"headerMarginInch":0,"footerMarginInch":0}}]}
+            """);
 
         Assert.Equal(["page/1"], Numbered("report.pdf"));
         Assert.Equal(["page/1"], Numbered("numbered.pdf"));
         Assert.Empty(Numbered("year.pdf"));
         Assert.Empty(Numbered("rows.pdf"));
 
-        void Sheet(string name, string ops, params string[] cells)
+        void Sheet(string name, string ops)
         {
             Run("cells", "create", name + ".xlsx").Succeeded();
-            Run(["cells", "edit", name + ".xlsx", "--in-place", "--ops", ops, .. cells]).Succeeded();
+            Run("cells", "edit", name + ".xlsx", "--in-place", "--ops", ops).Succeeded();
             Run("cells", "convert", name + ".xlsx", "--to", "pdf", "--out", name + ".pdf").Succeeded();
         }
 

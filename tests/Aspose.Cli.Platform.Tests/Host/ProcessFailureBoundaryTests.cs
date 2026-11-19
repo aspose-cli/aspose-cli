@@ -292,7 +292,7 @@ public sealed class ProcessFailureBoundaryTests
     }
 
     [Theory]
-    [InlineData("cells --max-input-bytes=30 inspect input.xlsx", "cells inspect")]
+    [InlineData("cells --max-input-bytes=30 read input.xlsx", "cells read")]
     public void Parser_ResolvesCommandPathAroundGlobalOptions(
         string commandLine,
         string expected)

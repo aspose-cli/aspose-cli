@@ -18,6 +18,10 @@ internal static partial class ContractRules
         ["<index>"] = "9999",
         ["<guid>"] = "00000000-0000-0000-0000-000000000000",
         ["<name>"] = "NoSuch",
+        ["<cell>"] = "XFD1048576",
+        ["<area>"] = "XFC1048575:XFD1048576",
+        ["<row>"] = "1048576",
+        ["<column>"] = "XFD",
     };
 
     /// <summary>The pattern of an address the part of an address form matches.</summary>
@@ -27,7 +31,19 @@ internal static partial class ContractRules
         ["<index>"] = @"\d+",
         ["<guid>"] = @"[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}",
         ["<name>"] = "[A-Za-z][A-Za-z0-9._-]*",
+        ["<cell>"] = "[A-Z]{1,3}[0-9]+",
+        ["<area>"] = "[A-Z]{1,3}[0-9]+(?::[A-Z]{1,3}[0-9]+)?|[A-Z]{1,3}:[A-Z]{1,3}|[0-9]+:[0-9]+",
+        ["<row>"] = "[0-9]+",
+        ["<column>"] = "[A-Z]{1,3}",
     };
+
+    /// <summary>
+    /// The steps that name a part of a sheet's grid: a cell, a row, a column or a range by its
+    /// coordinates. The engine holds the whole grid, so every address with such a step names an
+    /// object, and a kind at or below one has no missing address.
+    /// </summary>
+    private static readonly HashSet<(string Segment, string Key)> GridSteps =
+        [("cell", "<cell>"), ("row", "<row>"), ("column", "<column>"), ("range", "<area>")];
 
     /// <summary>The addresses a product's read lists for its rich fixture, in document order, read once per test process.</summary>
     private static readonly ConcurrentDictionary<string, Lazy<(string[]? Addresses, string? Failure)>> RichAddresses = new(StringComparer.Ordinal);
@@ -41,7 +57,9 @@ internal static partial class ContractRules
     /// <c>details.at</c> the address, and the edit writes no file. The edit runs on the product's
     /// rich fixture, and only the kind's own step of the address names nothing there (see
     /// <see cref="MissingAddress"/>). A kind whose address form has no step, the document itself,
-    /// always exists and has no case.
+    /// always exists and has no case, as a kind of the grid of a sheet (<see cref="GridSteps"/>) has
+    /// none, nor a kind without a key that cannot be deleted, such as a sheet's page setup: it is a
+    /// part of its parent, which always holds it.
     /// </summary>
     private static IEnumerable<InvariantCase> R44Run(CliCatalog catalog)
     {
@@ -59,6 +77,8 @@ internal static partial class ContractRules
                 if (definition?["x-addresses"] is not JsonArray { Count: > 0 } forms
                     || forms[0]!.GetValue<string>().Split('/') is not { } form
                     || !form.Any(IsKeyPart)
+                    || form.Zip(form.Skip(1)).Any(static step => GridSteps.Contains(step))
+                    || (!IsKeyPart(form[^1]) && definition["x-delete"]?.GetValue<bool>() == false)
                     || (definition["properties"] as JsonObject ?? new JsonObject()).FirstOrDefault(static row => row.Value?["readOnly"]?.GetValue<bool>() != true) is not { Key: { } row, Value: { } schema })
                 {
                     continue;

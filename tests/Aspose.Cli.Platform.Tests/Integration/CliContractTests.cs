@@ -422,7 +422,7 @@ public sealed class CliContractTests : IDisposable
     public void SchemaOperation_ReturnsExactViewAndUnknownIdsAreActionable()
     {
         CliResult capabilitiesResult = _workspace.Run(
-            "capabilities", "cells", "edit", "--output-format", "json");
+            "capabilities", "words", "edit", "--output-format", "json");
         Assert.Equal(0, capabilitiesResult.ExitCode);
         JsonNode capabilities = Parse(capabilitiesResult.StdOut);
         JsonNode operation = capabilities["products"]![0]!["operations"]![0]!;
@@ -517,9 +517,9 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Fact]
-    public void UnknownValue_IsOneLineThatListsDetailsAvailable()
+    public void UnknownValue_IsOneLineThatListsTheValuesAvailable()
     {
-        CliResult result = _workspace.Run("cells", "inspect", "a.xlsx", "--detail", "cahrts", "--output-format", "json");
+        CliResult result = _workspace.Run("cells", "convert", "a.xlsx", "--to", "xlss", "--output-format", "json");
 
         JsonNode error = Parse(result.StdErr)["error"]!;
         string message = error["message"]!.GetValue<string>();
@@ -529,8 +529,8 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData("cells inspect a.xlsx --detail cahrts", "charts")]
-    [InlineData("--license-mode autoo cells inspect a.xlsx", "auto")]
+    [InlineData("cells convert a.xlsx --to xlss", "xls")]
+    [InlineData("--license-mode autoo cells read a.xlsx", "auto")]
     [InlineData("skill install aspose-cli-platform --host calude-code", "claude-code")]
     public void UnknownValue_ListsTheAllowedValues(string commandLine, string value)
     {
@@ -543,12 +543,12 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData("-f json cells inspect a.xlsx", "-f")]
-    [InlineData("cells inspect a.xlsx --output json", "--output")]
-    [InlineData("cells inspect a.xlsx --output=json", "--output")]
+    [InlineData("-f json cells read a.xlsx", "-f")]
+    [InlineData("cells read a.xlsx --output json", "--output")]
+    [InlineData("cells read a.xlsx --output=json", "--output")]
     [InlineData("-? cells", "-?")]
-    [InlineData("cells inspect a.xlsx /h", "/h")]
-    [InlineData("cells inspect a.xlsx --preview", "--preview")]
+    [InlineData("cells read a.xlsx /h", "/h")]
+    [InlineData("cells read a.xlsx --preview", "--preview")]
     [InlineData("skill install aspose-cli-platform --host codex --scope user", "--scope")]
     public void RemovedNames_AreUnknownOptions(string commandLine, string removed)
     {
@@ -585,7 +585,6 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData("cells read", "--scan-range", true)]
     [InlineData("cells convert", "--out", false)]
     public void Capabilities_PublishWhetherAnOptionIsHidden(string command, string option, bool hidden)
     {
@@ -595,17 +594,6 @@ public sealed class CliContractTests : IDisposable
             .Single(item => item!["path"]!.GetValue<string>() == $"aspose-cli {command}")!["options"]!.AsArray()
             .Single(item => item!["name"]!.GetValue<string>() == option)!;
         Assert.Equal(hidden, described["hidden"]!.GetValue<bool>());
-    }
-
-    [Theory]
-    [InlineData("cells read a.xlsx --sacn-range", "--scan-range")]
-    public void UnknownOption_NeverListsAHiddenOption(string commandLine, string hidden)
-    {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.DoesNotContain(hidden, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
     }
 
     [Fact]

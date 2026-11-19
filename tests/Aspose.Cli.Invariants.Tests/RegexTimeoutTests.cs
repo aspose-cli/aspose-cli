@@ -33,7 +33,11 @@ public sealed class RegexTimeoutTests
 
         (string document, JsonObject files, JsonArray[] setup, JsonArray run) = product switch
         {
-            "cells" => ("text.csv", new JsonObject { ["text.csv"] = Source(Text + "\n") }, Array.Empty<JsonArray>(), Edit("cells", "text.csv", ReplaceText())),
+            // Cells takes a regular expression in its search; its edit's replace action is the
+            // engine's own. The text is the first cell of the engine's new workbook.
+            "cells" => ("text.xlsx", new JsonObject(),
+                new[] { new JsonArray("cells", "create", "text.xlsx"), new JsonArray("cells", "edit", "text.xlsx", "--in-place", "--ops", Cell()) },
+                new JsonArray("cells", "search", "text.xlsx", "--regex", "--pattern", Pattern)),
             "pdf" => ("text.pdf", new JsonObject { ["text.txt"] = Source(Text + "\n") },
                 new[] { new JsonArray("pdf", "create", "text.pdf", "--from-text", "text.txt") },
                 Edit("pdf", "text.pdf", new JsonObject { ["op"] = "redact_text", ["find"] = Pattern, ["regex"] = true })),
@@ -76,6 +80,12 @@ public sealed class RegexTimeoutTests
 
     private static JsonArray Edit(string product, string document, JsonObject op) =>
         new(product, "edit", document, "--ops", new JsonArray(op).ToJsonString());
+
+    private static string Cell() =>
+        new JsonObject
+        {
+            ["ops"] = new JsonArray(new JsonObject { ["set"] = "sheet/Sheet1/cell/A1", ["props"] = new JsonObject { ["value"] = Text } }),
+        }.ToJsonString();
 
     private static string TextBox() =>
         new JsonObject

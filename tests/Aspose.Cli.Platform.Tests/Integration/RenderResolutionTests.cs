@@ -60,7 +60,7 @@ public sealed class RenderResolutionTests
             {
                 string product = Products[index];
                 workspaces[index] = Workspace(product, out string input);
-                string[] first = product switch { "slides" => ["--slides", "1"], "cells" => ["--sheets", "1"], _ => ["--pages", "1"] };
+                string[] first = product switch { "slides" => ["--slides", "1"], "cells" => ["--sheet", "Sheet1"], _ => ["--pages", "1"] };
                 runs[index] = (product, workspaces[index].Run(
                     [product, "render", input, .. first, "--to", "png", "--dpi", "150", "--out", "page.png", "--output-format", "json"]),
                     workspaces[index].File("page.png"));

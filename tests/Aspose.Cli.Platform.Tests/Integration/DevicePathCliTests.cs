@@ -35,17 +35,17 @@ public sealed class DevicePathCliTests
     {
         using var workspace = Workspace();
 
-        JsonNode read = workspace.Run("cells", "read", "a.csv", "--workdir", prefix + workspace.Path, "--output-format", "json").Json();
+        JsonNode read = workspace.Run("cells", "read", "b.xlsx", "--workdir", prefix + workspace.Path, "--output-format", "json").Json();
         workspace.Run("cells", "create", "out.xlsx", "--workdir", prefix + workspace.Path, "--output-format", "json").Succeeded();
 
-        Assert.Equal(workspace.File("a.csv"), read["input"]!["path"]!.GetValue<string>(), ignoreCase: true);
+        Assert.Equal(workspace.File("b.xlsx"), read["input"]!["path"]!.GetValue<string>(), ignoreCase: true);
         Assert.True(File.Exists(workspace.File("out.xlsx")));
     }
 
     /// <summary>A device path that spells no plain path is refused, as an input and as the work directory, with the same words.</summary>
     [Theory]
     [InlineData("cells", "read", @"\\.\PhysicalDrive0", "file", "argument")]
-    [InlineData("cells", "read", "a.csv", "--workdir", "option")]
+    [InlineData("cells", "read", "b.xlsx", "--workdir", "option")]
     public void ADevicePathThatSpellsNoPlainPath_IsRefused(string product, string command, string file, string parameter, string key)
     {
         using var workspace = Workspace();
@@ -69,13 +69,13 @@ public sealed class DevicePathCliTests
     {
         using var workspace = Workspace();
         Directory.CreateDirectory(workspace.File(folder));
-        File.Copy(workspace.File("a.csv"), workspace.File(Path.Combine(folder, "a.csv")));
+        File.Copy(workspace.File("b.xlsx"), workspace.File(Path.Combine(folder, "b.xlsx")));
         string workDir = absolute ? workspace.File(folder) : folder;
 
-        JsonNode read = workspace.Run("cells", "read", "a.csv", "--workdir", workDir, "--output-format", "json").Json();
+        JsonNode read = workspace.Run("cells", "read", "b.xlsx", "--workdir", workDir, "--output-format", "json").Json();
         workspace.Run("cells", "create", "out.xlsx", "--workdir", workDir, "--output-format", "json").Succeeded();
 
-        Assert.Equal(workspace.File(Path.Combine(folder, "a.csv")), read["input"]!["path"]!.GetValue<string>(), ignoreCase: true);
+        Assert.Equal(workspace.File(Path.Combine(folder, "b.xlsx")), read["input"]!["path"]!.GetValue<string>(), ignoreCase: true);
         Assert.True(File.Exists(workspace.File(Path.Combine(folder, "out.xlsx"))));
     }
 
@@ -83,7 +83,7 @@ public sealed class DevicePathCliTests
     {
         var workspace = new TempWorkspace();
         ScenarioLicense.Project(workspace.Path);
-        File.WriteAllText(workspace.File("a.csv"), "a,b\n1,2\n");
+        workspace.Run("cells", "create", "b.xlsx", "--output-format", "json").Succeeded();
         return workspace;
     }
 }

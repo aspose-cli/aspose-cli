@@ -1,17 +1,17 @@
 {
-  "name": "cells edit refuses a formula the engine cannot parse as an invalid operation and hints at commas",
+  "name": "cells edit of a formula the engine cannot parse is ENGINE_ERROR at the operation and row that set it, with the engine's message, and writes nothing",
   "steps": [
-    { "args": ["cells", "create", "book.xlsx", "--sheet-names", "Data"], "expect": { "exitCode": 0 } },
+    { "args": ["cells", "create", "book.xlsx"], "expect": { "exitCode": 0 } },
     {
-      "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "{\"ops\":[{\"op\":\"set_formula\",\"sheet\":\"Data\",\"range\":\"A1:A2\",\"formula\":\"=SUM(B1;B2)\"}]}"],
+      "args": ["cells", "edit", "book.xlsx", "--in-place", "--ops", "{\"ops\":[{\"set\":\"sheet/Sheet1/cell/A2\",\"props\":{\"value\":1}},{\"set\":\"sheet/Sheet1/cell/A1\",\"props\":{\"formula\":\"=SUM(B1;B2)\"}}]}"],
       "expect": {
-        "exitCode": 4,
-        "error": "OPS_INVALID",
+        "error": "ENGINE_ERROR",
         "json": [
-          { "path": "error.details.reason", "equals": "invalid-value" },
-          { "path": "error.message", "contains": "=SUM(B1;B2)" }
+          { "path": "error.details.index", "equals": 1 },
+          { "path": "error.details.at", "equals": "sheet/Sheet1/cell/A1" },
+          { "path": "error.message", "contains": "Aspose.Cells.CellsException" }
         ],
-        "files": { "unchanged": ["book.xlsx"], "nothingWritten": true }
+        "files": { "unchanged": ["book.xlsx"], "absent": [".aspose-publication-*"], "nothingWritten": true }
       }
     }
   ]

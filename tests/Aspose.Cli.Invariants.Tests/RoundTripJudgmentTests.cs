@@ -22,7 +22,7 @@ public sealed class RoundTripJudgmentTests
         ["warnings"] = new JsonArray([.. warnings.Select(static code => (JsonNode)new JsonObject { ["code"] = code, ["message"] = code })]),
     };
 
-    private static JsonArray Read(string json) => [new JsonObject { ["command"] = "cells inspect", ["result"] = JsonNode.Parse(json) }];
+    private static JsonArray Read(string json) => [new JsonObject { ["command"] = "words inspect", ["result"] = JsonNode.Parse(json) }];
 
     [Fact]
     public void SameValue_CountedAsAnEffect_IsReported()
@@ -103,85 +103,21 @@ public sealed class RoundTripJudgmentTests
     [Fact]
     public void Changes_AreTheLeafPlacesThatDiffer() =>
         Assert.Equal(
-            ["cells inspect: workbook.sheets[0].tabColor", "cells inspect: workbook.sheets[1]"],
+            ["words inspect: workbook.sheets[0].tabColor", "words inspect: workbook.sheets[1]"],
             ContractRules.Changes(
                 Read("""{"workbook":{"sheets":[{"name":"Sheet1","tabColor":"#FF0000"}]}}"""),
                 Read("""{"workbook":{"sheets":[{"name":"Sheet1","tabColor":"#00B050"},{"name":"Extra"}]}}""")));
-
-    [Fact]
-    public void Changes_OfAReadOfAnotherActiveSheet_AreItsPosition()
-    {
-        static JsonArray Sheet(string name, int position, string value) => [new JsonObject
-        {
-            ["command"] = "cells read",
-            ["result"] = new JsonObject { ["sheet"] = new JsonObject { ["name"] = name, ["position"] = position, ["cells"] = new JsonArray(new JsonArray(JsonValue.Create(value))) } },
-        }];
-
-        string[] other = [.. ContractRules.Changes(Sheet("Sheet1", 1, "a"), Sheet("Extra", 2, "b"))];
-        string[] renamed = [.. ContractRules.Changes(Sheet("Sheet1", 1, "a"), Sheet("Data", 1, "a"))];
-
-        Assert.Equal(["cells read: sheet.position"], other);
-        Assert.Equal(["workbook/active-sheet"], ContractRules.RoundTripAddress("cells", other[0], Sheet("Extra", 2, "b"), Sheet("Sheet1", 1, "a")));
-        Assert.Equal(["cells read: sheet.name"], renamed);
-        Assert.Equal(["sheet/Data"], ContractRules.RoundTripAddress("cells", renamed[0], Sheet("Data", 1, "a"), Sheet("Sheet1", 1, "a")));
-    }
 
     [Fact]
     public void ReadsBackAt_ItsPlace_AMovedPlace_OrFalseAsAbsence()
     {
         JsonArray staged = Read("""{"styles":{"s0":{"bold":true,"fontSize":14}}}""");
 
-        Assert.True(ContractRules.ReadsBackAt(staged, Read("""{"styles":{"s0":{"bold":true,"fontSize":11}}}"""), "cells inspect: styles.s0.fontSize", "fontSize", JsonNode.Parse("11")));
-        Assert.True(ContractRules.ReadsBackAt(staged, Read("""{"styles":{"s0":{"bold":true,"fontSize":14},"s1":{"fontSize":11}}}"""), "cells inspect: styles.s0.fontSize", "fontSize", JsonNode.Parse("11")));
-        Assert.True(ContractRules.ReadsBackAt(staged, Read("""{"styles":{"s0":{"fontSize":14}}}"""), "cells inspect: styles.s0.bold", "bold", JsonValue.Create(false)));
-        Assert.False(ContractRules.ReadsBackAt(staged, Read("""{"styles":{"s0":{"bold":true,"fontSize":14}}}"""), "cells inspect: styles.s0.fontSize", "fontSize", JsonNode.Parse("11")));
-        Assert.False(ContractRules.ReadsBackAt(staged, Read("""{"styles":{}}"""), "cells inspect: styles.s0.bold", "bold", JsonValue.Create(false)));
-    }
-
-    [Fact]
-    public void Addresses_NameTheItemOfAChangedPlace_AsTargetsDo()
-    {
-        JsonArray inspect = Read("""{"workbook":{"sheetCount":1,"layouts":[{"sheet":"Sales","tabColor":{"color":"#00B050"},"rowGroups":[{"first":2,"last":3}]}]}}""");
-
-        Assert.Equal(["tab-color/Sales"], ContractRules.RoundTripAddress("cells", "cells inspect: workbook.layouts[0].tabColor.color", inspect, inspect));
-        Assert.Equal(["row/Sales!2", "row/Sales!3"], ContractRules.RoundTripAddress("cells", "cells inspect: workbook.layouts[0].rowGroups[0].collapsed", inspect, inspect));
-        Assert.Empty(ContractRules.RoundTripAddress("cells", "cells inspect: workbook.sheetCount", inspect, inspect)!);
-        Assert.Null(ContractRules.RoundTripAddress("cells", "cells inspect: workbook.somethingNew", inspect, inspect));
-
-        JsonArray evaluation = Read("""{"workbook":{"sheets":[{"name":"Sales"},{"name":"Evaluation Warning (2)"}],"layouts":[{"sheet":"Sales"},{"sheet":"Evaluation Warning (2)"}]}}""");
-        Assert.Empty(ContractRules.RoundTripAddress("cells", "cells inspect: workbook.layouts[1]", evaluation, evaluation)!);
-        Assert.Equal(["sheet/Sales"], ContractRules.RoundTripAddress("cells", "cells inspect: workbook.sheets[0].hidden", evaluation, evaluation));
-    }
-
-    /// <summary>A merged range is addressed by its range, so a changed range names the merge it replaced and the new one.</summary>
-    [Fact]
-    public void Addresses_OfAChangedMergedRange_AreTheMergeBeforeAndAfter()
-    {
-        JsonArray before = Read("""{"workbook":{"merges":[{"sheet":"Sheet1","range":"D1:E2"}]}}""");
-        JsonArray after = Read("""{"workbook":{"merges":[{"sheet":"Sheet1","range":"D1:E3"}]}}""");
-
-        string[] changes = [.. ContractRules.Changes(before, after)];
-
-        Assert.Equal(["cells inspect: workbook.merges[0].range"], changes);
-        Assert.Equal(["merge/Sheet1!D1:E3", "merge/Sheet1!D1:E2"], ContractRules.RoundTripAddress("cells", changes[0], after, before));
-        Assert.Equal(["merge/Sheet1!D1:E2"], ContractRules.RoundTripAddress("cells", changes[0], before, before));
-    }
-
-    [Fact]
-    public void Addresses_OfAStyle_AreTheCellsThatUseIt()
-    {
-        static JsonArray Cells(string bold) => ContractRules.ResolveStyles([new JsonObject
-        {
-            ["command"] = "cells read",
-            ["result"] = JsonNode.Parse("""{"sheet":{"name":"Sheet1","range":"B2:C2","cells":[[{"v":1,"styleId":"s0"},{"v":2,"styleId":"s1"}]]},"styles":{"s0":{"bold":true},"s1":{"bold":""" + bold + "}}}"),
-        }]);
-        JsonArray before = Cells("true");
-        JsonArray after = Cells("false");
-
-        string[] changes = [.. ContractRules.Changes(before, after)];
-
-        Assert.Equal(["cells read: sheet.cells[0][1].styleId.bold"], changes);
-        Assert.Equal(["cell/Sheet1!C2"], ContractRules.RoundTripAddress("cells", changes[0], after, before));
+        Assert.True(ContractRules.ReadsBackAt(staged, Read("""{"styles":{"s0":{"bold":true,"fontSize":11}}}"""), "words inspect: styles.s0.fontSize", "fontSize", JsonNode.Parse("11")));
+        Assert.True(ContractRules.ReadsBackAt(staged, Read("""{"styles":{"s0":{"bold":true,"fontSize":14},"s1":{"fontSize":11}}}"""), "words inspect: styles.s0.fontSize", "fontSize", JsonNode.Parse("11")));
+        Assert.True(ContractRules.ReadsBackAt(staged, Read("""{"styles":{"s0":{"fontSize":14}}}"""), "words inspect: styles.s0.bold", "bold", JsonValue.Create(false)));
+        Assert.False(ContractRules.ReadsBackAt(staged, Read("""{"styles":{"s0":{"bold":true,"fontSize":14}}}"""), "words inspect: styles.s0.fontSize", "fontSize", JsonNode.Parse("11")));
+        Assert.False(ContractRules.ReadsBackAt(staged, Read("""{"styles":{}}"""), "words inspect: styles.s0.bold", "bold", JsonValue.Create(false)));
     }
 
     [Fact]

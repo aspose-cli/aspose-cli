@@ -1,263 +1,114 @@
 using System.Text;
+using System.Text.Json.Nodes;
 using Aspose.Cells;
 using Aspose.Cells.Rendering;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Sdk;
-using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
-using Aspose.Cli.Sdk.IO.Output;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO.Publication;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
-using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
-/// <summary><c>cells render</c>: sheets, or a range of one, drawn as images.</summary>
+/// <summary>
+/// <c>cells render</c>: each sheet named, or every sheet, drawn by the engine's <see cref="SheetRender"/> as one
+/// page, at the resolution given; an area given is set as the sheet's print area and drawn alone
+/// (<see cref="ImageOrPrintOptions.OnlyArea"/>). The workbook is not saved.
+/// </summary>
 internal static class CellsRender
 {
-
-    public static CellsRenderResult Run(CellsSession session, CellsRenderRequest request)
+    internal static CellsRenderResult Run(CellsSession session, CellsRenderRequest request)
     {
-        ArgumentNullException.ThrowIfNull(session);
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentException.ThrowIfNullOrEmpty(request.Input);
-
-        LicenseState licenseState = session.Outputs.License;
-        using LoadedWorkbook loaded = session.Loader.Open(request.Input, request.Password);
+        LicenseState state = session.Outputs.License;
+        var log = new EngineWarningLog();
+        using LoadedWorkbook loaded = session.Loader.Open(request.Input, request.Password, log);
         Workbook workbook = loaded.Workbook;
-        InputInfo input = BuildSource(request.Input, loaded);
-        (IReadOnlyList<Worksheet> sheets, bool defaulted) = Select(workbook, request);
-        string? renderedRange = request.Range is { } range ? A1.FormatRange(range) : null;
-
-        // A hidden sheet renders to zero pages (and would crash the page-size probe). A sheet
-        // the caller selected is revealed in memory — the render never saves the workbook, so
-        // the file is untouched — turning a lookup or backing sheet into a real image. The
-        // default takes the workbook as a reader sees it and selects visible sheets only.
-        foreach (Worksheet sheet in sheets)
-        {
-            sheet.IsVisible = true;
-        }
-
-        IReadOnlyList<string> outputPaths = DerivePerSheetPaths(request.Output, sheets);
-        using OutputSet<Workbook> transaction = session.Outputs.BeginSet([request.Output.Directory], "cells-render");
-        var rendered = new List<CellsSheetOutput>();
-        var skipped = new List<string>();
-        var leftOut = new List<Warning>();
-        CliException? firstSkip = null;
-        for (int i = 0; i < sheets.Count; i++)
-        {
-            Worksheet sheet = sheets[i];
-            try
-            {
-                StagedOutput staged = StageSheet(session.Budgets, transaction, sheet, request, renderedRange, outputPaths[i], leftOut);
-                rendered.Add(new CellsSheetOutput(FileObjects.Output(staged.Published, request.Output.Format, encrypted: false))
-                {
-                    Sheet = sheet.Name,
-                });
-            }
-            catch (CliException ex) when (sheets.Count > 1
-                && (ex.Code == CellsDiagnostics.RenderEmpty || ex.Code == ErrorCodes.RenderFailed))
-            {
-                // Only this sheet's own content is at fault; its siblings can still render.
-                firstSkip ??= ex;
-                skipped.Add($"'{sheet.Name}' ({DescribeSkip(ex)})");
-            }
-        }
-
-        if (rendered.Count == 0)
-        {
-            throw firstSkip ?? Empty(Sheets.Resolve(workbook, sheetName: null));
-        }
-
-        transaction.Commit();
-        Warning? sheetsSkipped = skipped.Count == 0 ? null : new Warning(CellsDiagnostics.SheetsSkipped, $"Skipped {skipped.Count} sheet(s): {string.Join(", ", skipped)}.");
-
-        return new CellsRenderResult
-        {
-            Input = input,
-            Outputs = rendered,
-            Range = renderedRange,
-            Dpi = request.Output.Format.Raster ? request.Dpi : null,
-            License = EnvelopeParts.License(licenseState),
-            Warnings = loaded.Warnings([loaded.SkippedSheetWarning(defaulted), sheetsSkipped, .. leftOut]),
-        };
-    }
-
-    /// <summary>
-    /// The sheets a render draws, in workbook order, and whether it defaulted to the active
-    /// sheet. A range draws one sheet: the one it names, the one <c>--sheets</c> selects, or the
-    /// active sheet. Otherwise <c>--sheets</c> selects sheets by 1-based position; omitted or
-    /// <c>all</c>, it draws every visible sheet, leaving out the warning sheets an evaluation
-    /// save added, as every command's default does, unless the workbook shows nothing else.
-    /// </summary>
-    private static (IReadOnlyList<Worksheet> Sheets, bool Defaulted) Select(Workbook workbook, CellsRenderRequest request)
-    {
-        if (request.Sheets is null && request.SheetsText is { } byName)
-        {
-            throw Sheets.SelectedByName(workbook, byName);
-        }
-
-        bool all = request.Sheets is null || ReferenceEquals(request.Sheets, PageRange.All);
-        if (request.Range is not null)
-        {
-            if (request.SheetName is not null || all)
-            {
-                return ([Sheets.Resolve(workbook, request.SheetName)], request.SheetName is null);
-            }
-
-            IReadOnlyList<int> one = Positions(workbook, request);
-            if (one.Count != 1)
-            {
-                throw CliErrors.OptionInvalid(
-                    CellsOptionNames.Sheets,
-                    $"--range renders one sheet, but the selection holds {one.Count}");
-            }
-
-            return ([workbook.Worksheets[one[0] - 1]], false);
-        }
-
-        if (!all)
-        {
-            return ([.. Positions(workbook, request).Select(position => workbook.Worksheets[position - 1])], false);
-        }
-
-        var visible = new List<Worksheet>();
-        foreach (Worksheet sheet in workbook.Worksheets)
-        {
-            if (sheet.IsVisible)
-            {
-                visible.Add(sheet);
-            }
-        }
-
-        if (visible.Any(static sheet => !CellsEvaluation.IsWarningSheet(sheet)))
-        {
-            visible.RemoveAll(CellsEvaluation.IsWarningSheet);
-        }
-
-        if (visible.Count > RenderSelection.MaximumParts)
-        {
-            throw CliErrors.SelectionTooLarge(
-                CellsOptionNames.Sheets,
-                "sheet",
-                visible.Count,
-                RenderSelection.MaximumParts);
-        }
-
-        return (visible, false);
-    }
-
-    /// <summary><c>RENDER_EMPTY</c> for <paramref name="sheet"/>.</summary>
-    private static CliException Empty(Worksheet sheet) => CellsErrors.RenderEmpty(sheet.Name);
-
-    /// <summary>The 1-based positions a selection names, in workbook order, within the render limit.</summary>
-    private static IReadOnlyList<int> Positions(Workbook workbook, CellsRenderRequest request) =>
-        [.. Sheets.Selected(workbook, request.SheetsText,
-            () => RenderSelection.Resolve(request.Sheets!, workbook.Worksheets.Count, CellsDiagnostics.SheetNotFound, "sheet")).Distinct().Order()];
-
-    /// <summary>
-    /// The shared per-sheet render pipeline: build the renderer, refuse an
-    /// empty sheet (<c>RENDER_EMPTY</c>), probe the raster size
-    /// (<c>RENDER_TOO_LARGE</c>), write through the safe writer, and translate
-    /// an engine rasterization crash into <c>RENDER_FAILED</c>. Both the
-    /// single-sheet path and a render of several sheets run through it.
-    /// </summary>
-    private static StagedOutput StageSheet(ResourceBudgetLedger budgets, OutputSet<Workbook> transaction, Worksheet sheet, CellsRenderRequest request, string? printArea, string outputPath, List<Warning> warnings)
-    {
-        bool isRaster = request.Output.Format.Raster;
-
-        var imageOptions = new ImageOrPrintOptions
+        Worksheet[] sheets = request.Sheets is { } names
+            ? [.. names.Select(name => CellsSheets.Find(workbook, name))]
+            : [.. workbook.Worksheets];
+        var options = new ImageOrPrintOptions
         {
             ImageType = CellsEngineFormats.Image(request.Output.Format.Id),
             OnePagePerSheet = true,
         };
-
-        if (isRaster)
+        if (request.Output.Format.Raster)
         {
-            imageOptions.HorizontalResolution = request.Dpi;
-            imageOptions.VerticalResolution = request.Dpi;
+            options.HorizontalResolution = request.Dpi;
+            options.VerticalResolution = request.Dpi;
         }
 
-        if (printArea is not null)
+        if (request.Area is { } area)
         {
-            // Rendering a sub-range goes through the print area; OnlyArea
-            // keeps the output at exactly that area instead of a full page.
-            // The page margins (and the headers and footers drawn in them)
-            // would still frame it in white, so a chart's image would be
-            // mostly blank paper; the render never saves, so they go.
-            PageSetup page = sheet.PageSetup;
-            page.PrintArea = printArea;
-            page.LeftMargin = page.RightMargin = page.TopMargin = page.BottomMargin = 0;
-            page.ClearHeaderFooter();
-            imageOptions.OnlyArea = true;
+            sheets[0].PageSetup.PrintArea = area;
+            options.OnlyArea = true;
         }
 
-        var render = new SheetRender(sheet, imageOptions);
-
-        // An empty sheet produces no page; indexing page 0 below (here or in the
-        // size probe) would throw ArgumentOutOfRangeException and surface as an
-        // INTERNAL "please report a bug" for the ordinary act of rendering a
-        // blank sheet. Turn it into a clean, actionable error instead.
-        if (render.PageCount == 0)
+        // A sheet the engine lays out on no page, such as an empty or a hidden one, has no image:
+        // the render stops at it before anything is written, whether it was named or not.
+        SheetRender[] renders = [.. sheets.Select(sheet => new SheetRender(sheet, options))];
+        for (int i = 0; i < sheets.Length; i++)
         {
-            throw Empty(sheet);
-        }
-
-        if (printArea is null && PrintAreasLeftOut(sheet, render) is { } leftOut)
-        {
-            warnings.Add(leftOut);
-        }
-
-        try
-        {
-            if (isRaster)
+            if (renders[i].PageCount == 0)
             {
-                EnsureRenderable(budgets, render, request.Dpi);
-                if (Large(sheet, render, request) is { } large)
-                {
-                    warnings.Add(large);
-                }
+                throw CliErrors.RenderFailed($"Sheet '{sheets[i].Name}'", "SheetRender.PageCount is 0: the engine lays out no page for it",
+                    new JsonObject { ["sheet"] = sheets[i].Name });
+            }
+        }
+
+        IReadOnlyList<string> paths = Paths(request.Output, sheets);
+        log.During = "save";
+        using OutputSet<Workbook> set = session.Outputs.BeginSet([request.Output.Directory], "cells-render");
+        var outputs = new List<CellsSheetOutput>();
+        for (int i = 0; i < sheets.Length; i++)
+        {
+            SheetRender render = renders[i];
+            if (request.Output.Format.Raster)
+            {
+                EnsureRenderable(session.Budgets, render, request.Dpi);
             }
 
-            // The image shows the one sheet, which carries evaluation marks only when it is a
-            // warning sheet; it then renders the workbook's marks (CellsEvaluationProfile).
-            return transaction.Stage(outputPath, request.Output.Format, request.Output.Overwrite,
-                CellsEvaluation.IsWarningSheet(sheet) ? sheet.Workbook : null,
-                tempPath => render.ToImage(0, tempPath), rendering: true);
+            StagedOutput staged = set.Stage(paths[i], request.Output.Format, request.Output.Overwrite, workbook,
+                temp =>
+                {
+                    render.ToImage(0, temp);
+                    loaded.Resources.ThrowIfFailed();
+                },
+                rendering: true);
+            outputs.Add(new CellsSheetOutput(FileObjects.Output(staged.Published, request.Output.Format, encrypted: false)) { Sheet = sheets[i].Name });
         }
-        catch (CellsException ex)
+
+        set.Commit();
+        return new CellsRenderResult
         {
-            // The engine failed on this sheet's content (a real corpus
-            // dashboard dies with "Chart/Picture to image Error!" over one
-            // defective embedded object while its sibling sheets render fine).
-            // That is a property of the file, not a CLI bug — INTERNAL is
-            // reserved for our own faults. CliExceptions (RENDER_TOO_LARGE,
-            // output errors) pass through untouched.
-            throw CellsErrors.RenderFailed(sheet.Name, ex.Message);
-        }
+            Input = FileObjects.Input(request.Input, loaded.FormatId, loaded.Encrypted),
+            Outputs = outputs,
+            Area = request.Area,
+            Dpi = request.Output.Format.Raster ? request.Dpi : null,
+            EngineWarnings = log.Warnings.Count == 0 ? null : log.Warnings,
+            License = EnvelopeParts.License(state),
+            Warnings = loaded.Warnings.Count == 0 ? null : loaded.Warnings,
+        };
     }
 
-    /// <summary>The one-line reason a sheet was skipped, for the warning message.</summary>
-    private static string DescribeSkip(CliException exception) =>
-        exception.Code == ErrorCodes.RenderFailed
-            && exception.Details?["engineMessage"]?.GetValue<string>() is { } engineMessage
-            ? $"{exception.Code.Name}: {engineMessage}"
-            : exception.Code.Name;
+    /// <summary>Refuses a raster image whose bitmap would exceed the shared pixel budget.</summary>
+    private static void EnsureRenderable(ResourceBudgetLedger budgets, SheetRender render, int dpi)
+    {
+        float[] inches = render.GetPageSizeInch(0);
+        RenderPixelGuard.EnsureFits(budgets, (long)Math.Ceiling(inches[0] * dpi), (long)Math.Ceiling(inches[1] * dpi), dpi);
+    }
 
     /// <summary>
-    /// Derives one output file per sheet from the single output path the
-    /// caller gave (or the default): <c>report.png</c> with sheets
-    /// <c>Data</c> and <c>Summary</c> becomes <c>report.Data.png</c> and
-    /// <c>report.Summary.png</c>. Characters no file system accepts are
-    /// replaced with one underscore (a run of them collapses to one) using a
-    /// fixed, platform-independent set so the same workbook names the same
-    /// files everywhere; a collision after sanitizing appends the sheet's
-    /// 1-based workbook position. A single sheet is written to the output path itself.
+    /// One output per sheet: the output path itself for one sheet; for several,
+    /// <c>&lt;stem&gt;.&lt;sheet&gt;&lt;ext&gt;</c>, with each character no file system takes
+    /// replaced by one underscore (a run of them by one), and the sheet's position from 1 added
+    /// after a name another sheet already took.
     /// </summary>
-    private static IReadOnlyList<string> DerivePerSheetPaths(ResolvedOutput output, IReadOnlyList<Worksheet> sheets)
+    private static IReadOnlyList<string> Paths(ResolvedOutput output, IReadOnlyList<Worksheet> sheets)
     {
         if (sheets.Count == 1)
         {
@@ -268,17 +119,10 @@ internal static class CellsRender
         var taken = new HashSet<string>(FilePaths.Comparer);
         for (int i = 0; i < sheets.Count; i++)
         {
-            string label = SanitizeFileNamePart(sheets[i].Name);
-            if (!taken.Add(label))
+            string label = FileNamePart(sheets[i].Name);
+            for (int suffix = 1; !taken.Add(label); suffix++)
             {
-                label = $"{label}{sheets[i].Index + 1}";
-                for (int suffix = 2; !taken.Add(label); suffix++)
-                {
-                    // Degenerate double collision (a sheet literally named like
-                    // another's fallback); keep appending until unique so two
-                    // sheets can never target the same file.
-                    label = $"{SanitizeFileNamePart(sheets[i].Name)}{sheets[i].Index + 1}-{suffix}";
-                }
+                label = $"{FileNamePart(sheets[i].Name)}{sheets[i].Index + 1}{(suffix > 1 ? $"-{suffix}" : string.Empty)}";
             }
 
             paths[i] = output.Part(label);
@@ -287,92 +131,27 @@ internal static class CellsRender
         return paths;
     }
 
-    /// <summary>
-    /// Characters stripped from a sheet name before it becomes part of a file
-    /// name: the Windows-invalid set, the strictest of the supported
-    /// platforms, so derived names are identical on every OS. Excel already
-    /// forbids most of these in sheet names; the ones it allows
-    /// (<c>&lt;</c>, <c>&gt;</c>, <c>|</c>, <c>"</c>) are exactly why this
-    /// sanitizer exists.
-    /// </summary>
-    private static readonly char[] FileNameUnsafeChars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
+    private static readonly char[] FileNameUnsafe = ['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
 
-    private static string SanitizeFileNamePart(string sheetName)
+    private static string FileNamePart(string sheetName)
     {
         var builder = new StringBuilder(sheetName.Length);
-        bool previousWasReplacement = false;
+        bool replaced = false;
         foreach (char c in sheetName)
         {
-            if (c < ' ' || Array.IndexOf(FileNameUnsafeChars, c) >= 0)
-            {
-                if (!previousWasReplacement)
-                {
-                    builder.Append('_');
-                    previousWasReplacement = true;
-                }
-            }
-            else
+            bool unsafeCharacter = c < ' ' || Array.IndexOf(FileNameUnsafe, c) >= 0;
+            if (!unsafeCharacter)
             {
                 builder.Append(c);
-                previousWasReplacement = false;
             }
+            else if (!replaced)
+            {
+                builder.Append('_');
+            }
+
+            replaced = unsafeCharacter;
         }
 
         return builder.Length == 0 ? "_" : builder.ToString();
-    }
-
-    /// <summary>
-    /// The warning for a sheet whose print area lists several areas: the engine draws one image
-    /// per area, and a sheet's image shows the first only. Null for one area or none.
-    /// </summary>
-    /// <param name="sheet">The sheet drawn.</param>
-    /// <param name="render">Its one-page-per-sheet render.</param>
-    internal static Warning? PrintAreasLeftOut(Worksheet sheet, SheetRender render)
-    {
-        if (render.PageCount < 2 || SheetLayoutProjection.PrintArea(sheet.PageSetup)?.Range is not { } printArea)
-        {
-            return null;
-        }
-
-        IReadOnlyList<string> areas = A1.SplitList(printArea);
-        return new Warning(CellsDiagnostics.SheetPartiallyRendered,
-            $"Worksheet '{sheet.Name}' prints {areas.Count} areas, {printArea}; its image shows only the first, {areas[0]}.")
-        {
-            Location = CellsAddresses.OfSheet("sheet", sheet.Name),
-            AffectsCompleteness = true,
-        };
-    }
-
-    /// <summary>The longest side, in pixels, of an image a viewer or a model still reads in full.</summary>
-    internal const int LargeImageSide = 10_000;
-
-    /// <summary>
-    /// The warning for a raster image longer than <see cref="LargeImageSide"/> on a side; null for
-    /// a smaller image.
-    /// </summary>
-    private static Warning? Large(Worksheet sheet, SheetRender render, CellsRenderRequest request)
-    {
-        float[] inches = render.GetPageSizeInch(0);
-        long width = (long)Math.Ceiling(inches[0] * request.Dpi);
-        long height = (long)Math.Ceiling(inches[1] * request.Dpi);
-        if (Math.Max(width, height) <= LargeImageSide)
-        {
-            return null;
-        }
-
-        return new Warning(CellsDiagnostics.RenderImageLarge,
-            $"The image of worksheet '{sheet.Name}' is {width} x {height} pixels, more than {LargeImageSide} on a side, which image viewers and models scale down or cut.")
-        {
-            Location = CellsAddresses.OfSheet("sheet", sheet.Name),
-        };
-    }
-
-    /// <summary>Rejects raster output whose bitmap would exceed the shared pixel budget.</summary>
-    internal static void EnsureRenderable(ResourceBudgetLedger budgets, SheetRender render, int dpi)
-    {
-        float[] inches = render.GetPageSizeInch(0);
-        long width = (long)Math.Ceiling(inches[0] * dpi);
-        long height = (long)Math.Ceiling(inches[1] * dpi);
-        RenderPixelGuard.EnsureFits(budgets, width, height, dpi);
     }
 }

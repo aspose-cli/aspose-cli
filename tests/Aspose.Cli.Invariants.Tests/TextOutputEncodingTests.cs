@@ -41,7 +41,8 @@ public sealed class TextOutputEncodingTests : IDisposable
         };
         Assert.Equal(0, _workspace.Run("slides", "edit", "deck.pptx", "--in-place", "--ops", new JsonObject { ["ops"] = new JsonArray(box) }.ToJsonString()).ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx").ExitCode);
-        Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--set", $"Sheet1!A1={Title}").ExitCode);
+        var cell = new JsonObject { ["set"] = "sheet/Sheet1/cell/A1", ["props"] = new JsonObject { ["value"] = Title } };
+        Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--ops", new JsonObject { ["ops"] = new JsonArray(cell) }.ToJsonString()).ExitCode);
         Assert.Equal(0, _workspace.Run("pdf", "create", "document.pdf", "--from-markdown", "source.md").ExitCode);
 
         (string Product, string Input, string Target)[] conversions =

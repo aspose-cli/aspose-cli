@@ -2,7 +2,7 @@
   "name": "several usage problems of one command line are each listed in details.errors",
   "steps": [
     {
-      "args": ["cells", "inspect", "--detail", "cahrts"],
+      "args": ["cells", "read", "--max-objects", "abc"],
       "expect": {
         "exitCode": 2,
         "error": "USAGE_ERROR",

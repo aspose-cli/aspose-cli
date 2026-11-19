@@ -42,7 +42,7 @@ public sealed record ErrorPayload
     /// <summary>The relative id the error payload schema is published under.</summary>
     public const string Id = "error-payload";
 
-    /// <summary>Stable SCREAMING_SNAKE_CASE error code, e.g. <c>SHEET_NOT_FOUND</c>.</summary>
+    /// <summary>Stable SCREAMING_SNAKE_CASE error code, e.g. <c>ADDRESS_NOT_FOUND</c>.</summary>
     [Pattern("^[A-Z][A-Z0-9_]*$")]
     public required string Code { get; init; }
 

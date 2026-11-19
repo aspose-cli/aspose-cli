@@ -22,7 +22,7 @@ public sealed class EvaluationMarkDisclosureTests
     private const string EvaluationModeWarning = "EVALUATION_MODE";
 
     /// <summary>The products that recognize the marks evaluation mode writes.</summary>
-    private static readonly string[] Products = [.. ScenarioFixtures.Products.Where(static product => product != "slides")];
+    private static readonly string[] Products = [.. ScenarioFixtures.Products.Where(static product => product is not ("slides" or "cells"))];
 
     [LicensedFact]
     public async Task EveryProduct_DisclosesAnEvaluationMarkedInputWithTheSameSdkCode()
@@ -79,7 +79,6 @@ public sealed class EvaluationMarkDisclosureTests
     /// </summary>
     private static readonly IReadOnlyDictionary<string, string> AddingOperations = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["cells"] = """{"ops":[{"op":"insert_rows","sheet":"Sheet1","at":2}]}""",
         ["pdf"] = """{"ops":[{"op":"add_bookmark","title":"Again","page":1}]}""",
         ["words"] = """{"ops":[{"op":"insert_paragraphs","at":{"block":2},"position":"after","paragraphs":[{"text":"Added"}]}]}""",
     };

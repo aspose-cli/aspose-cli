@@ -11,8 +11,7 @@
       "expect": {
         "exitCode": 0,
         "json": [{ "path": "outputs[0].format", "equals": "csv" }],
-        "files": { "present": ["data.txt"], "unchanged": ["book.xlsx"] },
-        "reopens": ["cells:data.txt"]
+        "files": { "present": ["data.txt"], "unchanged": ["book.xlsx"] }
       }
     },
     {
@@ -20,8 +19,7 @@
       "expect": {
         "exitCode": 0,
         "json": [{ "path": "outputs[0].format", "equals": "tsv" }],
-        "files": { "present": ["tabs.txt"], "unchanged": ["book.xlsx"] },
-        "reopens": ["cells:tabs.txt"]
+        "files": { "present": ["tabs.txt"], "unchanged": ["book.xlsx"] }
       }
     },
     {

@@ -467,11 +467,43 @@ internal static class InvariantCases
         }
     }
 
+    /// <summary>
+    /// The options a text input of a product takes, by product and format: its convert reads such
+    /// an input only with each of them stated.
+    /// </summary>
+    private static readonly Dictionary<string, string[]> TextInputOptions = new(StringComparer.Ordinal)
+    {
+        ["cells csv"] = ["--separator", ",", "--encoding", "utf-8", "--convert-numbers", "false", "--convert-dates", "false"],
+        ["cells tsv"] = ["--encoding", "utf-8", "--convert-numbers", "false", "--convert-dates", "false"],
+    };
+
     private static InvariantCase Conversion(string product, string verb, string source, string target, string shard, bool slow)
     {
         string input = "input." + source;
-        var invocation = new Invocation([product, verb, input, "--to", target]);
+        var invocation = new Invocation([product, verb, input, "--to", target, .. TextInputOptions.GetValueOrDefault($"{product} {source}", [])]);
         invocation.Files[input] = new ScenarioFile { Fixture = $"{product}.{source}" };
+        if (verb == "convert" && TextInputOptions.TryGetValue($"{product} {target}", out string[]? text))
+        {
+            // A text output is read again only by the convert that takes its text options.
+            string id = $"{OutputReopens} | {product} {verb} {source} -> {target}";
+            string written = "output." + target;
+            string own = ScenarioFixtures.PrimaryFormat(product);
+            var scenario = new Scenario
+            {
+                Name = id,
+                Files = new Dictionary<string, ScenarioFile>(invocation.Files),
+                Steps =
+                [
+                    new ScenarioStep { Args = [.. invocation.Args, "--out", written], Expect = new ScenarioExpectation { ExitCode = [0] } },
+                    new ScenarioStep
+                    {
+                        Args = [product, "convert", written, "--to", own, .. text, "--out", "reopened." + own],
+                        Expect = new ScenarioExpectation { ExitCode = [0], Reopens = ["@result"] },
+                    },
+                ],
+            };
+            return new InvariantCase(id, OutputReopens, shard, slow, scenario);
+        }
         return Case(OutputReopens, $"{product} {verb} {source} -> {target}", shard, slow, invocation, new ScenarioExpectation
         {
             ExitCode = [0],

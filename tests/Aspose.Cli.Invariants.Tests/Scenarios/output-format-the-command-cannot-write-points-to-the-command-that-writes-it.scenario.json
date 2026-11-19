@@ -1,6 +1,9 @@
 {
   "name": "an output format the command cannot write points to the command that writes it",
   "files": {
+    "book.xlsx": {
+      "fixture": "cells.xlsx"
+    },
     "a.xlsx": {
       "text": "not a document"
     },
@@ -31,9 +34,9 @@
       "args": [
         "cells",
         "edit",
-        "a.xlsx",
-        "--set",
-        "Sheet1!A1=5",
+        "book.xlsx",
+        "--ops",
+        "{\"ops\":[{\"do\":\"calculate\"}]}",
         "--out",
         "x.pdf"
       ],
@@ -46,16 +49,18 @@
             "equals": "--out"
           },
           {
-            "path": "error.message",
-            "startsWith": "--out '"
-          },
-          {
-            "path": "error.message",
-            "contains": "which aspose-cli cells edit does not write. Must be one of: .xlsx,"
-          },
-          {
             "path": "error.details.format",
-            "exists": true
+            "equals": "xlsx"
+          },
+          {
+            "path": "error.details.available",
+            "equals": [
+              ".xlsx"
+            ]
+          },
+          {
+            "path": "error.message",
+            "contains": "Must be one of: .xlsx."
           }
         ],
         "files": {
@@ -400,6 +405,8 @@
         "cells",
         "render",
         "a.xlsx",
+        "--sheet",
+        "Sheet1",
         "--out",
         "x.pdf"
       ],

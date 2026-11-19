@@ -52,13 +52,13 @@ public sealed class LicenseManagementTests
         {
             Unseen(workspace.Run(["license", "install", "fake.lic", .. mode]));
             Unseen(workspace.Run(["license", "status", .. mode]));
-            Unseen(workspace.Run(["cells", "inspect", "input.csv", "--license", "fake.lic", .. mode]));
+            Unseen(workspace.Run(["cells", "read", "input.csv", "--license", "fake.lic", .. mode]));
             Unseen(workspace.RunWithEnv(
                 new Dictionary<string, string?> { ["ASPOSE_LICENSE_PATH"] = workspace.File("fake.lic") },
                 ["license", "status", .. mode]));
             Unseen(workspace.RunWithEnv(
                 new Dictionary<string, string?> { ["ASPOSE_LICENSE_B64"] = base64 },
-                ["cells", "inspect", "input.csv", .. mode]));
+                ["cells", "read", "input.csv", .. mode]));
         }
 
         void Unseen(CliResult result)
@@ -92,7 +92,7 @@ public sealed class LicenseManagementTests
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("input.csv"), "Name,Value\nA,42\n");
 
-        CliResult result = workspace.Run("cells", "inspect", "input.csv", "--license", value, "--output-format", "json");
+        CliResult result = workspace.Run("cells", "read", "input.csv", "--license", value, "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
@@ -109,7 +109,7 @@ public sealed class LicenseManagementTests
         string directory = workspace.File("licenses");
         Directory.CreateDirectory(directory);
 
-        CliResult result = workspace.Run("cells", "inspect", "input.csv", "--license", "licenses", "--output-format", "json");
+        CliResult result = workspace.Run("cells", "read", "input.csv", "--license", "licenses", "--output-format", "json");
 
         Assert.Equal(7, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;

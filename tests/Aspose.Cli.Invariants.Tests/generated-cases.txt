@@ -23,7 +23,6 @@ C-R03 | slides declared
 C-R03 | slides without a subcommand
 C-R03 | words declared
 C-R03 | words without a subcommand
-C-R04 | --scan-range
 C-R04 | Skills and README hidden names
 C-R04 | src/Aspose.Cli hidden names
 C-R04 | src/Aspose.Cli.Host hidden names
@@ -39,11 +38,9 @@ C-R05 | slides
 C-R05 | words
 C-R06 | aspose-cli
 C-R06 | capabilities
-C-R06 | cells compare
 C-R06 | cells convert
 C-R06 | cells create
 C-R06 | cells edit
-C-R06 | cells inspect
 C-R06 | cells read
 C-R06 | cells render
 C-R06 | cells search
@@ -84,11 +81,9 @@ C-R06 | words search
 C-R06 | words split
 C-R08 | aspose-cli
 C-R08 | capabilities
-C-R08 | cells compare
 C-R08 | cells convert
 C-R08 | cells create
 C-R08 | cells edit
-C-R08 | cells inspect
 C-R08 | cells read
 C-R08 | cells render
 C-R08 | cells search
@@ -127,9 +122,28 @@ C-R08 | words read
 C-R08 | words render
 C-R08 | words search
 C-R08 | words split
-C-R09 | --no-recalc
-C-R10 | cells compare --left-password-stdin with --right-password-stdin
-C-R10 | cells compare declared
+C-R09 | --allow-network-resources
+C-R09 | --bom
+C-R09 | --case-sensitive
+C-R09 | --certificate-password-stdin
+C-R09 | --convert-dates
+C-R09 | --convert-numbers
+C-R09 | --dry-run
+C-R09 | --encrypt-stdin
+C-R09 | --ignore-formatting
+C-R09 | --in-place
+C-R09 | --left-password-stdin
+C-R09 | --overwrite
+C-R09 | --password-stdin
+C-R09 | --regex
+C-R09 | --right-password-stdin
+C-R09 | --sample
+C-R09 | --summary
+C-R09 | --track-changes
+C-R09 | --user
+C-R09 | --verbose
+C-R09 | --verify
+C-R09 | --visible
 C-R10 | cells convert --encrypt-stdin with --password-stdin
 C-R10 | cells convert declared
 C-R10 | cells create declared
@@ -137,7 +151,6 @@ C-R10 | cells edit --encrypt-stdin with --ops
 C-R10 | cells edit --encrypt-stdin with --password-stdin
 C-R10 | cells edit --ops with --password-stdin
 C-R10 | cells edit declared
-C-R10 | cells inspect declared
 C-R10 | cells read declared
 C-R10 | cells render declared
 C-R10 | cells search declared
@@ -189,7 +202,6 @@ C-R10 | words split declared
 C-R11 | cells convert --dry-run
 C-R11 | cells create --dry-run
 C-R11 | cells create declared
-C-R11 | cells edit --dry-run
 C-R11 | cells render --dry-run
 C-R11 | license install --dry-run
 C-R11 | license install declared
@@ -260,7 +272,6 @@ C-R13 | words render declared
 C-R13 | words render without --to or --out
 C-R14 | cells convert --out -
 C-R14 | cells edit --out -
-C-R14 | cells inspect -- -input.xlsx
 C-R14 | cells render --out -
 C-R14 | pdf convert --out -
 C-R14 | pdf edit --out -
@@ -276,8 +287,7 @@ C-R14 | words convert --out -
 C-R14 | words edit --out -
 C-R14 | words inspect -- -input.docx
 C-R14 | words render --out -
-C-R15 | cells read --max-cells 1
-C-R15 | cells read --range A1:B3 --max-cells 1
+C-R15 | cells read --max-objects 1
 C-R15 | cells read declared
 C-R15 | cells search --max-hits 1
 C-R15 | cells search declared
@@ -298,17 +308,6 @@ C-R15 | words read --max-chars 1
 C-R15 | words read declared
 C-R15 | words search --max-hits 1
 C-R15 | words search declared
-C-R16 | cells convert --sheets 1-x
-C-R16 | cells convert --sheets 99
-C-R16 | cells convert --sheets all
-C-R16 | cells op clear_range with a malformed selection
-C-R16 | cells read --range A1:!!
-C-R16 | cells read --range all
-C-R16 | cells render --range A1:!!
-C-R16 | cells render --range all
-C-R16 | cells render --sheets 1-x
-C-R16 | cells render --sheets 99
-C-R16 | cells render --sheets all
 C-R16 | pdf convert --pages 1-x
 C-R16 | pdf convert --pages 99
 C-R16 | pdf convert --pages all
@@ -351,12 +350,8 @@ C-R16 | words split --pages 1-x
 C-R16 | words split --pages 99
 C-R16 | words split --pages all
 C-R17 | aspose-cli values
-C-R17 | cells compare values
 C-R17 | cells convert values
-C-R17 | cells inspect values
-C-R17 | cells read values
 C-R17 | cells render values
-C-R17 | cells search values
 C-R17 | fonts list values
 C-R17 | license install values
 C-R17 | license remove values
@@ -374,94 +369,9 @@ C-R17 | skill install values
 C-R17 | slides convert values
 C-R17 | slides extract values
 C-R17 | slides render values
-C-R17 | v2/cells/compare-result
 C-R17 | v2/cells/convert-result
 C-R17 | v2/cells/create-result
 C-R17 | v2/cells/edit-result
-C-R17 | v2/cells/inspect-result
-C-R17 | v2/cells/ops
-C-R17 | v2/cells/ops#add_comment
-C-R17 | v2/cells/ops#add_conditional_format
-C-R17 | v2/cells/ops#add_sparkline
-C-R17 | v2/cells/ops#cell
-C-R17 | v2/cells/ops#cellsBorderData
-C-R17 | v2/cells/ops#cellsChartAxisTitles
-C-R17 | v2/cells/ops#cellsChartDataLabels
-C-R17 | v2/cells/ops#cellsChartLegend
-C-R17 | v2/cells/ops#cellsConditionalRule
-C-R17 | v2/cells/ops#cellsConditionalStyle
-C-R17 | v2/cells/ops#cellsMargins
-C-R17 | v2/cells/ops#cellsPivotValueField
-C-R17 | v2/cells/ops#cellsSortKey
-C-R17 | v2/cells/ops#cellsStyleData
-C-R17 | v2/cells/ops#clear_autofilter
-C-R17 | v2/cells/ops#clear_conditional_formats
-C-R17 | v2/cells/ops#clear_print_area
-C-R17 | v2/cells/ops#clear_range
-C-R17 | v2/cells/ops#clear_tab_color
-C-R17 | v2/cells/ops#clear_validation
-C-R17 | v2/cells/ops#color
-C-R17 | v2/cells/ops#column
-C-R17 | v2/cells/ops#copy_range
-C-R17 | v2/cells/ops#define_name
-C-R17 | v2/cells/ops#define_table
-C-R17 | v2/cells/ops#delete_chart
-C-R17 | v2/cells/ops#delete_columns
-C-R17 | v2/cells/ops#delete_comment
-C-R17 | v2/cells/ops#delete_duplicates
-C-R17 | v2/cells/ops#delete_hyperlink
-C-R17 | v2/cells/ops#delete_name
-C-R17 | v2/cells/ops#delete_rows
-C-R17 | v2/cells/ops#delete_sheet
-C-R17 | v2/cells/ops#format_range
-C-R17 | v2/cells/ops#freeze_panes
-C-R17 | v2/cells/ops#group_columns
-C-R17 | v2/cells/ops#group_rows
-C-R17 | v2/cells/ops#id
-C-R17 | v2/cells/ops#import_range
-C-R17 | v2/cells/ops#import_sheet
-C-R17 | v2/cells/ops#insert_chart
-C-R17 | v2/cells/ops#insert_columns
-C-R17 | v2/cells/ops#insert_image
-C-R17 | v2/cells/ops#insert_pivot
-C-R17 | v2/cells/ops#insert_rows
-C-R17 | v2/cells/ops#insert_sheet
-C-R17 | v2/cells/ops#merge_cells
-C-R17 | v2/cells/ops#move_sheet
-C-R17 | v2/cells/ops#pageSizeInput
-C-R17 | v2/cells/ops#protect_sheet
-C-R17 | v2/cells/ops#protect_workbook
-C-R17 | v2/cells/ops#range
-C-R17 | v2/cells/ops#reference
-C-R17 | v2/cells/ops#refresh_pivot
-C-R17 | v2/cells/ops#rename_sheet
-C-R17 | v2/cells/ops#replace_text
-C-R17 | v2/cells/ops#resize_columns
-C-R17 | v2/cells/ops#resize_rows
-C-R17 | v2/cells/ops#resize_table
-C-R17 | v2/cells/ops#set_active_sheet
-C-R17 | v2/cells/ops#set_autofilter
-C-R17 | v2/cells/ops#set_borders
-C-R17 | v2/cells/ops#set_chart
-C-R17 | v2/cells/ops#set_comment
-C-R17 | v2/cells/ops#set_default_font
-C-R17 | v2/cells/ops#set_formula
-C-R17 | v2/cells/ops#set_hyperlink
-C-R17 | v2/cells/ops#set_page_setup
-C-R17 | v2/cells/ops#set_print_area
-C-R17 | v2/cells/ops#set_sheet_view
-C-R17 | v2/cells/ops#set_sheet_visibility
-C-R17 | v2/cells/ops#set_tab_color
-C-R17 | v2/cells/ops#set_validation
-C-R17 | v2/cells/ops#set_values
-C-R17 | v2/cells/ops#sort_range
-C-R17 | v2/cells/ops#unfreeze_panes
-C-R17 | v2/cells/ops#ungroup_columns
-C-R17 | v2/cells/ops#ungroup_rows
-C-R17 | v2/cells/ops#unmerge_cells
-C-R17 | v2/cells/ops#unprotect_sheet
-C-R17 | v2/cells/ops#unprotect_workbook
-C-R17 | v2/cells/ops#webLink
 C-R17 | v2/cells/read-result
 C-R17 | v2/cells/render-result
 C-R17 | v2/cells/search-result
@@ -619,94 +529,9 @@ C-R17 | words read values
 C-R17 | words render values
 C-R17 | words search values
 C-R17 | words split values
-C-R18 | v2/cells/compare-result
 C-R18 | v2/cells/convert-result
 C-R18 | v2/cells/create-result
 C-R18 | v2/cells/edit-result
-C-R18 | v2/cells/inspect-result
-C-R18 | v2/cells/ops
-C-R18 | v2/cells/ops#add_comment
-C-R18 | v2/cells/ops#add_conditional_format
-C-R18 | v2/cells/ops#add_sparkline
-C-R18 | v2/cells/ops#cell
-C-R18 | v2/cells/ops#cellsBorderData
-C-R18 | v2/cells/ops#cellsChartAxisTitles
-C-R18 | v2/cells/ops#cellsChartDataLabels
-C-R18 | v2/cells/ops#cellsChartLegend
-C-R18 | v2/cells/ops#cellsConditionalRule
-C-R18 | v2/cells/ops#cellsConditionalStyle
-C-R18 | v2/cells/ops#cellsMargins
-C-R18 | v2/cells/ops#cellsPivotValueField
-C-R18 | v2/cells/ops#cellsSortKey
-C-R18 | v2/cells/ops#cellsStyleData
-C-R18 | v2/cells/ops#clear_autofilter
-C-R18 | v2/cells/ops#clear_conditional_formats
-C-R18 | v2/cells/ops#clear_print_area
-C-R18 | v2/cells/ops#clear_range
-C-R18 | v2/cells/ops#clear_tab_color
-C-R18 | v2/cells/ops#clear_validation
-C-R18 | v2/cells/ops#color
-C-R18 | v2/cells/ops#column
-C-R18 | v2/cells/ops#copy_range
-C-R18 | v2/cells/ops#define_name
-C-R18 | v2/cells/ops#define_table
-C-R18 | v2/cells/ops#delete_chart
-C-R18 | v2/cells/ops#delete_columns
-C-R18 | v2/cells/ops#delete_comment
-C-R18 | v2/cells/ops#delete_duplicates
-C-R18 | v2/cells/ops#delete_hyperlink
-C-R18 | v2/cells/ops#delete_name
-C-R18 | v2/cells/ops#delete_rows
-C-R18 | v2/cells/ops#delete_sheet
-C-R18 | v2/cells/ops#format_range
-C-R18 | v2/cells/ops#freeze_panes
-C-R18 | v2/cells/ops#group_columns
-C-R18 | v2/cells/ops#group_rows
-C-R18 | v2/cells/ops#id
-C-R18 | v2/cells/ops#import_range
-C-R18 | v2/cells/ops#import_sheet
-C-R18 | v2/cells/ops#insert_chart
-C-R18 | v2/cells/ops#insert_columns
-C-R18 | v2/cells/ops#insert_image
-C-R18 | v2/cells/ops#insert_pivot
-C-R18 | v2/cells/ops#insert_rows
-C-R18 | v2/cells/ops#insert_sheet
-C-R18 | v2/cells/ops#merge_cells
-C-R18 | v2/cells/ops#move_sheet
-C-R18 | v2/cells/ops#pageSizeInput
-C-R18 | v2/cells/ops#protect_sheet
-C-R18 | v2/cells/ops#protect_workbook
-C-R18 | v2/cells/ops#range
-C-R18 | v2/cells/ops#reference
-C-R18 | v2/cells/ops#refresh_pivot
-C-R18 | v2/cells/ops#rename_sheet
-C-R18 | v2/cells/ops#replace_text
-C-R18 | v2/cells/ops#resize_columns
-C-R18 | v2/cells/ops#resize_rows
-C-R18 | v2/cells/ops#resize_table
-C-R18 | v2/cells/ops#set_active_sheet
-C-R18 | v2/cells/ops#set_autofilter
-C-R18 | v2/cells/ops#set_borders
-C-R18 | v2/cells/ops#set_chart
-C-R18 | v2/cells/ops#set_comment
-C-R18 | v2/cells/ops#set_default_font
-C-R18 | v2/cells/ops#set_formula
-C-R18 | v2/cells/ops#set_hyperlink
-C-R18 | v2/cells/ops#set_page_setup
-C-R18 | v2/cells/ops#set_print_area
-C-R18 | v2/cells/ops#set_sheet_view
-C-R18 | v2/cells/ops#set_sheet_visibility
-C-R18 | v2/cells/ops#set_tab_color
-C-R18 | v2/cells/ops#set_validation
-C-R18 | v2/cells/ops#set_values
-C-R18 | v2/cells/ops#sort_range
-C-R18 | v2/cells/ops#unfreeze_panes
-C-R18 | v2/cells/ops#ungroup_columns
-C-R18 | v2/cells/ops#ungroup_rows
-C-R18 | v2/cells/ops#unmerge_cells
-C-R18 | v2/cells/ops#unprotect_sheet
-C-R18 | v2/cells/ops#unprotect_workbook
-C-R18 | v2/cells/ops#webLink
 C-R18 | v2/cells/read-result
 C-R18 | v2/cells/render-result
 C-R18 | v2/cells/search-result
@@ -856,23 +681,6 @@ C-R18 | v2/words/read-result
 C-R18 | v2/words/render-result
 C-R18 | v2/words/search-result
 C-R18 | v2/words/split-result
-C-R19 | cells add_comment applied twice
-C-R19 | cells add_conditional_format applied twice
-C-R19 | cells set_active_sheet applied twice
-C-R19 | cells set_autofilter applied twice
-C-R19 | cells set_borders applied twice
-C-R19 | cells set_chart applied twice
-C-R19 | cells set_comment applied twice
-C-R19 | cells set_default_font applied twice
-C-R19 | cells set_formula applied twice
-C-R19 | cells set_hyperlink applied twice
-C-R19 | cells set_page_setup applied twice
-C-R19 | cells set_print_area applied twice
-C-R19 | cells set_sheet_view applied twice
-C-R19 | cells set_sheet_visibility applied twice
-C-R19 | cells set_tab_color applied twice
-C-R19 | cells set_validation applied twice
-C-R19 | cells set_values applied twice
 C-R19 | pdf add_attachment applied twice
 C-R19 | pdf add_bookmark applied twice
 C-R19 | pdf add_footer_text applied twice
@@ -886,70 +694,6 @@ C-R19 | pdf set_form_field applied twice
 C-R19 | pdf set_page_labels applied twice
 C-R19 | pdf set_page_size applied twice
 C-R19 | pdf set_properties applied twice
-C-R19 | v2/cells/ops#add_comment
-C-R19 | v2/cells/ops#add_conditional_format
-C-R19 | v2/cells/ops#add_sparkline
-C-R19 | v2/cells/ops#clear_autofilter
-C-R19 | v2/cells/ops#clear_conditional_formats
-C-R19 | v2/cells/ops#clear_print_area
-C-R19 | v2/cells/ops#clear_range
-C-R19 | v2/cells/ops#clear_tab_color
-C-R19 | v2/cells/ops#clear_validation
-C-R19 | v2/cells/ops#copy_range
-C-R19 | v2/cells/ops#define_name
-C-R19 | v2/cells/ops#define_table
-C-R19 | v2/cells/ops#delete_chart
-C-R19 | v2/cells/ops#delete_columns
-C-R19 | v2/cells/ops#delete_comment
-C-R19 | v2/cells/ops#delete_duplicates
-C-R19 | v2/cells/ops#delete_hyperlink
-C-R19 | v2/cells/ops#delete_name
-C-R19 | v2/cells/ops#delete_rows
-C-R19 | v2/cells/ops#delete_sheet
-C-R19 | v2/cells/ops#format_range
-C-R19 | v2/cells/ops#freeze_panes
-C-R19 | v2/cells/ops#group_columns
-C-R19 | v2/cells/ops#group_rows
-C-R19 | v2/cells/ops#import_range
-C-R19 | v2/cells/ops#import_sheet
-C-R19 | v2/cells/ops#insert_chart
-C-R19 | v2/cells/ops#insert_columns
-C-R19 | v2/cells/ops#insert_image
-C-R19 | v2/cells/ops#insert_pivot
-C-R19 | v2/cells/ops#insert_rows
-C-R19 | v2/cells/ops#insert_sheet
-C-R19 | v2/cells/ops#merge_cells
-C-R19 | v2/cells/ops#move_sheet
-C-R19 | v2/cells/ops#protect_sheet
-C-R19 | v2/cells/ops#protect_workbook
-C-R19 | v2/cells/ops#refresh_pivot
-C-R19 | v2/cells/ops#rename_sheet
-C-R19 | v2/cells/ops#replace_text
-C-R19 | v2/cells/ops#resize_columns
-C-R19 | v2/cells/ops#resize_rows
-C-R19 | v2/cells/ops#resize_table
-C-R19 | v2/cells/ops#set_active_sheet
-C-R19 | v2/cells/ops#set_autofilter
-C-R19 | v2/cells/ops#set_borders
-C-R19 | v2/cells/ops#set_chart
-C-R19 | v2/cells/ops#set_comment
-C-R19 | v2/cells/ops#set_default_font
-C-R19 | v2/cells/ops#set_formula
-C-R19 | v2/cells/ops#set_hyperlink
-C-R19 | v2/cells/ops#set_page_setup
-C-R19 | v2/cells/ops#set_print_area
-C-R19 | v2/cells/ops#set_sheet_view
-C-R19 | v2/cells/ops#set_sheet_visibility
-C-R19 | v2/cells/ops#set_tab_color
-C-R19 | v2/cells/ops#set_validation
-C-R19 | v2/cells/ops#set_values
-C-R19 | v2/cells/ops#sort_range
-C-R19 | v2/cells/ops#unfreeze_panes
-C-R19 | v2/cells/ops#ungroup_columns
-C-R19 | v2/cells/ops#ungroup_rows
-C-R19 | v2/cells/ops#unmerge_cells
-C-R19 | v2/cells/ops#unprotect_sheet
-C-R19 | v2/cells/ops#unprotect_workbook
 C-R19 | v2/pdf/ops#add_attachment
 C-R19 | v2/pdf/ops#add_bookmark
 C-R19 | v2/pdf/ops#add_footer_text
@@ -1034,53 +778,27 @@ C-R19 | words set_text applied twice
 C-R19 | words set_watermark applied twice
 C-R20 | ops field alignment across products
 C-R20 | ops field author across products
-C-R20 | ops field bold across products
-C-R20 | ops field bottom across products
 C-R20 | ops field caseSensitive across products
 C-R20 | ops field color across products
 C-R20 | ops field custom across products
-C-R20 | ops field fillColor across products
 C-R20 | ops field find across products
 C-R20 | ops field font across products
 C-R20 | ops field fontSize across products
 C-R20 | ops field height across products
-C-R20 | ops field italic across products
 C-R20 | ops field keywords across products
-C-R20 | ops field kind across products
-C-R20 | ops field left across products
-C-R20 | ops field margins across products
-C-R20 | ops field maxReplacementCount across products
 C-R20 | ops field name across products
-C-R20 | ops field numberFormat across products
 C-R20 | ops field numberStyle across products
-C-R20 | ops field orientation across products
 C-R20 | ops field pageSize across products
-C-R20 | ops field passwordEnv across products
 C-R20 | ops field path across products
-C-R20 | ops field position across products
 C-R20 | ops field preset across products
 C-R20 | ops field regex across products
-C-R20 | ops field replace across products
-C-R20 | ops field right across products
-C-R20 | ops field scalePercent across products
 C-R20 | ops field sourcePasswordEnv across products
 C-R20 | ops field start across products
 C-R20 | ops field subject across products
-C-R20 | ops field tableStyle across products
 C-R20 | ops field text across products
 C-R20 | ops field title across products
-C-R20 | ops field to across products
-C-R20 | ops field top across products
-C-R20 | ops field underline across products
 C-R20 | ops field url across products
-C-R20 | ops field value across products
-C-R20 | ops field values across products
-C-R20 | ops field what across products
-C-R20 | ops field wholeWord across products
 C-R20 | ops field width across products
-C-R20 | v2/cells/compare-result fixednames
-C-R20 | v2/cells/compare-result spelling
-C-R20 | v2/cells/compare-result variants
 C-R20 | v2/cells/convert-result fixednames
 C-R20 | v2/cells/convert-result spelling
 C-R20 | v2/cells/convert-result variants
@@ -1090,552 +808,172 @@ C-R20 | v2/cells/create-result variants
 C-R20 | v2/cells/edit-result fixednames
 C-R20 | v2/cells/edit-result spelling
 C-R20 | v2/cells/edit-result variants
-C-R20 | v2/cells/inspect-result fixednames
-C-R20 | v2/cells/inspect-result spelling
-C-R20 | v2/cells/inspect-result variants
-C-R20 | v2/cells/ops field alignment
-C-R20 | v2/cells/ops field allow
-C-R20 | v2/cells/ops field allowBlank
-C-R20 | v2/cells/ops field at
-C-R20 | v2/cells/ops field author
-C-R20 | v2/cells/ops field axisTitles
-C-R20 | v2/cells/ops field barColor
-C-R20 | v2/cells/ops field bold
-C-R20 | v2/cells/ops field borders
-C-R20 | v2/cells/ops field bottom
-C-R20 | v2/cells/ops field by
-C-R20 | v2/cells/ops field captions
-C-R20 | v2/cells/ops field caseSensitive
-C-R20 | v2/cells/ops field category
-C-R20 | v2/cells/ops field cell
-C-R20 | v2/cells/ops field collapsed
-C-R20 | v2/cells/ops field color
-C-R20 | v2/cells/ops field column
-C-R20 | v2/cells/ops field columns
-C-R20 | v2/cells/ops field content
-C-R20 | v2/cells/ops field count
-C-R20 | v2/cells/ops field dataLabels
-C-R20 | v2/cells/ops field dataRange
-C-R20 | v2/cells/ops field display
-C-R20 | v2/cells/ops field edges
-C-R20 | v2/cells/ops field errorMessage
-C-R20 | v2/cells/ops field field
-C-R20 | v2/cells/ops field fillColor
-C-R20 | v2/cells/ops field find
-C-R20 | v2/cells/ops field first
-C-R20 | v2/cells/ops field fitToHeight
-C-R20 | v2/cells/ops field fitToWidth
-C-R20 | v2/cells/ops field font
-C-R20 | v2/cells/ops field fontSize
-C-R20 | v2/cells/ops field footerCenter
-C-R20 | v2/cells/ops field footerMargin
-C-R20 | v2/cells/ops field formula
-C-R20 | v2/cells/ops field from
-C-R20 | v2/cells/ops field fromBottom
-C-R20 | v2/cells/ops field function
-C-R20 | v2/cells/ops field gridlines
-C-R20 | v2/cells/ops field hasHeader
-C-R20 | v2/cells/ops field headerCenter
-C-R20 | v2/cells/ops field headerMargin
-C-R20 | v2/cells/ops field headings
-C-R20 | v2/cells/ops field height
-C-R20 | v2/cells/ops field iconSet
-C-R20 | v2/cells/ops field indent
-C-R20 | v2/cells/ops field index
-C-R20 | v2/cells/ops field inputMessage
-C-R20 | v2/cells/ops field italic
-C-R20 | v2/cells/ops field kind
-C-R20 | v2/cells/ops field label
-C-R20 | v2/cells/ops field last
-C-R20 | v2/cells/ops field left
-C-R20 | v2/cells/ops field legend
-C-R20 | v2/cells/ops field lineStyle
-C-R20 | v2/cells/ops field listItems
-C-R20 | v2/cells/ops field listSource
-C-R20 | v2/cells/ops field locked
-C-R20 | v2/cells/ops field margins
-C-R20 | v2/cells/ops field matchStyle
-C-R20 | v2/cells/ops field maxColor
-C-R20 | v2/cells/ops field maxReplacementCount
-C-R20 | v2/cells/ops field midColor
-C-R20 | v2/cells/ops field minColor
-C-R20 | v2/cells/ops field name
-C-R20 | v2/cells/ops field numberFormat
-C-R20 | v2/cells/ops field operator
-C-R20 | v2/cells/ops field order
-C-R20 | v2/cells/ops field orientation
-C-R20 | v2/cells/ops field pageSize
-C-R20 | v2/cells/ops field passwordEnv
-C-R20 | v2/cells/ops field path
-C-R20 | v2/cells/ops field percent
-C-R20 | v2/cells/ops field position
-C-R20 | v2/cells/ops field preset
-C-R20 | v2/cells/ops field printComments
-C-R20 | v2/cells/ops field range
-C-R20 | v2/cells/ops field rank
-C-R20 | v2/cells/ops field refersTo
-C-R20 | v2/cells/ops field regex
-C-R20 | v2/cells/ops field replace
-C-R20 | v2/cells/ops field right
-C-R20 | v2/cells/ops field rows
-C-R20 | v2/cells/ops field rule
-C-R20 | v2/cells/ops field scalePercent
-C-R20 | v2/cells/ops field seriesColors
-C-R20 | v2/cells/ops field seriesInRows
-C-R20 | v2/cells/ops field sheet
-C-R20 | v2/cells/ops field side
-C-R20 | v2/cells/ops field sourcePasswordEnv
-C-R20 | v2/cells/ops field sourceRange
-C-R20 | v2/cells/ops field sourceSheet
-C-R20 | v2/cells/ops field strikethrough
-C-R20 | v2/cells/ops field style
-C-R20 | v2/cells/ops field tableStyle
-C-R20 | v2/cells/ops field target
-C-R20 | v2/cells/ops field text
-C-R20 | v2/cells/ops field title
-C-R20 | v2/cells/ops field titleColumns
-C-R20 | v2/cells/ops field titleRows
-C-R20 | v2/cells/ops field to
-C-R20 | v2/cells/ops field top
-C-R20 | v2/cells/ops field totalsRow
-C-R20 | v2/cells/ops field underline
-C-R20 | v2/cells/ops field url
-C-R20 | v2/cells/ops field value
-C-R20 | v2/cells/ops field value1
-C-R20 | v2/cells/ops field value2
-C-R20 | v2/cells/ops field values
-C-R20 | v2/cells/ops field verticalAlignment
-C-R20 | v2/cells/ops field visibility
-C-R20 | v2/cells/ops field visible
-C-R20 | v2/cells/ops field what
-C-R20 | v2/cells/ops field wholeWord
-C-R20 | v2/cells/ops field width
-C-R20 | v2/cells/ops field widthChars
-C-R20 | v2/cells/ops field wrap
-C-R20 | v2/cells/ops field zoomPercent
-C-R20 | v2/cells/ops fixednames
 C-R20 | v2/cells/ops ranges
 C-R20 | v2/cells/ops secrets
-C-R20 | v2/cells/ops spelling
-C-R20 | v2/cells/ops variants
-C-R20 | v2/cells/ops#add_comment fixednames
-C-R20 | v2/cells/ops#add_comment ranges
-C-R20 | v2/cells/ops#add_comment secrets
-C-R20 | v2/cells/ops#add_comment spelling
-C-R20 | v2/cells/ops#add_comment variants
-C-R20 | v2/cells/ops#add_conditional_format fixednames
-C-R20 | v2/cells/ops#add_conditional_format ranges
-C-R20 | v2/cells/ops#add_conditional_format secrets
-C-R20 | v2/cells/ops#add_conditional_format spelling
-C-R20 | v2/cells/ops#add_conditional_format variants
-C-R20 | v2/cells/ops#add_sparkline fixednames
-C-R20 | v2/cells/ops#add_sparkline ranges
-C-R20 | v2/cells/ops#add_sparkline secrets
-C-R20 | v2/cells/ops#add_sparkline spelling
-C-R20 | v2/cells/ops#add_sparkline variants
-C-R20 | v2/cells/ops#cell fixednames
+C-R20 | v2/cells/ops#add ranges
+C-R20 | v2/cells/ops#add secrets
+C-R20 | v2/cells/ops#add.chart ranges
+C-R20 | v2/cells/ops#add.chart secrets
+C-R20 | v2/cells/ops#add.comment ranges
+C-R20 | v2/cells/ops#add.comment secrets
+C-R20 | v2/cells/ops#add.conditionalFormatting ranges
+C-R20 | v2/cells/ops#add.conditionalFormatting secrets
+C-R20 | v2/cells/ops#add.hyperlink ranges
+C-R20 | v2/cells/ops#add.hyperlink secrets
+C-R20 | v2/cells/ops#add.merge ranges
+C-R20 | v2/cells/ops#add.merge secrets
+C-R20 | v2/cells/ops#add.name ranges
+C-R20 | v2/cells/ops#add.name secrets
+C-R20 | v2/cells/ops#add.picture ranges
+C-R20 | v2/cells/ops#add.picture secrets
+C-R20 | v2/cells/ops#add.pivot ranges
+C-R20 | v2/cells/ops#add.pivot secrets
+C-R20 | v2/cells/ops#add.rule ranges
+C-R20 | v2/cells/ops#add.rule secrets
+C-R20 | v2/cells/ops#add.series ranges
+C-R20 | v2/cells/ops#add.series secrets
+C-R20 | v2/cells/ops#add.sheet ranges
+C-R20 | v2/cells/ops#add.sheet secrets
+C-R20 | v2/cells/ops#add.sparklineGroup ranges
+C-R20 | v2/cells/ops#add.sparklineGroup secrets
+C-R20 | v2/cells/ops#add.table ranges
+C-R20 | v2/cells/ops#add.table secrets
+C-R20 | v2/cells/ops#add.validation ranges
+C-R20 | v2/cells/ops#add.validation secrets
+C-R20 | v2/cells/ops#address ranges
+C-R20 | v2/cells/ops#address secrets
 C-R20 | v2/cells/ops#cell ranges
 C-R20 | v2/cells/ops#cell secrets
-C-R20 | v2/cells/ops#cell spelling
-C-R20 | v2/cells/ops#cell variants
-C-R20 | v2/cells/ops#cellsBorderData fixednames
-C-R20 | v2/cells/ops#cellsBorderData ranges
-C-R20 | v2/cells/ops#cellsBorderData secrets
-C-R20 | v2/cells/ops#cellsBorderData spelling
-C-R20 | v2/cells/ops#cellsBorderData variants
-C-R20 | v2/cells/ops#cellsChartAxisTitles fixednames
-C-R20 | v2/cells/ops#cellsChartAxisTitles ranges
-C-R20 | v2/cells/ops#cellsChartAxisTitles secrets
-C-R20 | v2/cells/ops#cellsChartAxisTitles spelling
-C-R20 | v2/cells/ops#cellsChartAxisTitles variants
-C-R20 | v2/cells/ops#cellsChartDataLabels fixednames
-C-R20 | v2/cells/ops#cellsChartDataLabels ranges
-C-R20 | v2/cells/ops#cellsChartDataLabels secrets
-C-R20 | v2/cells/ops#cellsChartDataLabels spelling
-C-R20 | v2/cells/ops#cellsChartDataLabels variants
-C-R20 | v2/cells/ops#cellsChartLegend fixednames
-C-R20 | v2/cells/ops#cellsChartLegend ranges
-C-R20 | v2/cells/ops#cellsChartLegend secrets
-C-R20 | v2/cells/ops#cellsChartLegend spelling
-C-R20 | v2/cells/ops#cellsChartLegend variants
-C-R20 | v2/cells/ops#cellsConditionalRule fixednames
-C-R20 | v2/cells/ops#cellsConditionalRule ranges
-C-R20 | v2/cells/ops#cellsConditionalRule secrets
-C-R20 | v2/cells/ops#cellsConditionalRule spelling
-C-R20 | v2/cells/ops#cellsConditionalRule variants
-C-R20 | v2/cells/ops#cellsConditionalStyle fixednames
-C-R20 | v2/cells/ops#cellsConditionalStyle ranges
-C-R20 | v2/cells/ops#cellsConditionalStyle secrets
-C-R20 | v2/cells/ops#cellsConditionalStyle spelling
-C-R20 | v2/cells/ops#cellsConditionalStyle variants
-C-R20 | v2/cells/ops#cellsMargins fixednames
-C-R20 | v2/cells/ops#cellsMargins ranges
-C-R20 | v2/cells/ops#cellsMargins secrets
-C-R20 | v2/cells/ops#cellsMargins spelling
-C-R20 | v2/cells/ops#cellsMargins units
-C-R20 | v2/cells/ops#cellsMargins variants
-C-R20 | v2/cells/ops#cellsPivotValueField fixednames
-C-R20 | v2/cells/ops#cellsPivotValueField ranges
-C-R20 | v2/cells/ops#cellsPivotValueField secrets
-C-R20 | v2/cells/ops#cellsPivotValueField spelling
-C-R20 | v2/cells/ops#cellsPivotValueField variants
-C-R20 | v2/cells/ops#cellsSortKey fixednames
-C-R20 | v2/cells/ops#cellsSortKey ranges
-C-R20 | v2/cells/ops#cellsSortKey secrets
-C-R20 | v2/cells/ops#cellsSortKey spelling
-C-R20 | v2/cells/ops#cellsSortKey variants
-C-R20 | v2/cells/ops#cellsStyleData fixednames
-C-R20 | v2/cells/ops#cellsStyleData ranges
-C-R20 | v2/cells/ops#cellsStyleData secrets
-C-R20 | v2/cells/ops#cellsStyleData spelling
-C-R20 | v2/cells/ops#cellsStyleData units
-C-R20 | v2/cells/ops#cellsStyleData variants
-C-R20 | v2/cells/ops#clear_autofilter fixednames
-C-R20 | v2/cells/ops#clear_autofilter ranges
-C-R20 | v2/cells/ops#clear_autofilter secrets
-C-R20 | v2/cells/ops#clear_autofilter spelling
-C-R20 | v2/cells/ops#clear_autofilter variants
-C-R20 | v2/cells/ops#clear_conditional_formats fixednames
-C-R20 | v2/cells/ops#clear_conditional_formats ranges
-C-R20 | v2/cells/ops#clear_conditional_formats secrets
-C-R20 | v2/cells/ops#clear_conditional_formats spelling
-C-R20 | v2/cells/ops#clear_conditional_formats variants
-C-R20 | v2/cells/ops#clear_print_area fixednames
-C-R20 | v2/cells/ops#clear_print_area ranges
-C-R20 | v2/cells/ops#clear_print_area secrets
-C-R20 | v2/cells/ops#clear_print_area spelling
-C-R20 | v2/cells/ops#clear_print_area variants
-C-R20 | v2/cells/ops#clear_range fixednames
-C-R20 | v2/cells/ops#clear_range ranges
-C-R20 | v2/cells/ops#clear_range secrets
-C-R20 | v2/cells/ops#clear_range spelling
-C-R20 | v2/cells/ops#clear_range variants
-C-R20 | v2/cells/ops#clear_tab_color fixednames
-C-R20 | v2/cells/ops#clear_tab_color ranges
-C-R20 | v2/cells/ops#clear_tab_color secrets
-C-R20 | v2/cells/ops#clear_tab_color spelling
-C-R20 | v2/cells/ops#clear_tab_color variants
-C-R20 | v2/cells/ops#clear_validation fixednames
-C-R20 | v2/cells/ops#clear_validation ranges
-C-R20 | v2/cells/ops#clear_validation secrets
-C-R20 | v2/cells/ops#clear_validation spelling
-C-R20 | v2/cells/ops#clear_validation variants
-C-R20 | v2/cells/ops#color fixednames
-C-R20 | v2/cells/ops#color ranges
-C-R20 | v2/cells/ops#color secrets
-C-R20 | v2/cells/ops#color spelling
-C-R20 | v2/cells/ops#color variants
-C-R20 | v2/cells/ops#column fixednames
+C-R20 | v2/cells/ops#chart ranges
+C-R20 | v2/cells/ops#chart secrets
 C-R20 | v2/cells/ops#column ranges
 C-R20 | v2/cells/ops#column secrets
-C-R20 | v2/cells/ops#column spelling
-C-R20 | v2/cells/ops#column variants
-C-R20 | v2/cells/ops#copy_range fixednames
-C-R20 | v2/cells/ops#copy_range ranges
-C-R20 | v2/cells/ops#copy_range secrets
-C-R20 | v2/cells/ops#copy_range spelling
-C-R20 | v2/cells/ops#copy_range variants
-C-R20 | v2/cells/ops#define_name fixednames
-C-R20 | v2/cells/ops#define_name ranges
-C-R20 | v2/cells/ops#define_name secrets
-C-R20 | v2/cells/ops#define_name spelling
-C-R20 | v2/cells/ops#define_name variants
-C-R20 | v2/cells/ops#define_table fixednames
-C-R20 | v2/cells/ops#define_table ranges
-C-R20 | v2/cells/ops#define_table secrets
-C-R20 | v2/cells/ops#define_table spelling
-C-R20 | v2/cells/ops#define_table variants
-C-R20 | v2/cells/ops#delete_chart fixednames
-C-R20 | v2/cells/ops#delete_chart ranges
-C-R20 | v2/cells/ops#delete_chart secrets
-C-R20 | v2/cells/ops#delete_chart spelling
-C-R20 | v2/cells/ops#delete_chart variants
-C-R20 | v2/cells/ops#delete_columns fixednames
-C-R20 | v2/cells/ops#delete_columns ranges
-C-R20 | v2/cells/ops#delete_columns secrets
-C-R20 | v2/cells/ops#delete_columns spelling
-C-R20 | v2/cells/ops#delete_columns variants
-C-R20 | v2/cells/ops#delete_comment fixednames
-C-R20 | v2/cells/ops#delete_comment ranges
-C-R20 | v2/cells/ops#delete_comment secrets
-C-R20 | v2/cells/ops#delete_comment spelling
-C-R20 | v2/cells/ops#delete_comment variants
-C-R20 | v2/cells/ops#delete_duplicates fixednames
-C-R20 | v2/cells/ops#delete_duplicates ranges
-C-R20 | v2/cells/ops#delete_duplicates secrets
-C-R20 | v2/cells/ops#delete_duplicates spelling
-C-R20 | v2/cells/ops#delete_duplicates variants
-C-R20 | v2/cells/ops#delete_hyperlink fixednames
-C-R20 | v2/cells/ops#delete_hyperlink ranges
-C-R20 | v2/cells/ops#delete_hyperlink secrets
-C-R20 | v2/cells/ops#delete_hyperlink spelling
-C-R20 | v2/cells/ops#delete_hyperlink variants
-C-R20 | v2/cells/ops#delete_name fixednames
-C-R20 | v2/cells/ops#delete_name ranges
-C-R20 | v2/cells/ops#delete_name secrets
-C-R20 | v2/cells/ops#delete_name spelling
-C-R20 | v2/cells/ops#delete_name variants
-C-R20 | v2/cells/ops#delete_rows fixednames
-C-R20 | v2/cells/ops#delete_rows ranges
-C-R20 | v2/cells/ops#delete_rows secrets
-C-R20 | v2/cells/ops#delete_rows spelling
-C-R20 | v2/cells/ops#delete_rows variants
-C-R20 | v2/cells/ops#delete_sheet fixednames
-C-R20 | v2/cells/ops#delete_sheet ranges
-C-R20 | v2/cells/ops#delete_sheet secrets
-C-R20 | v2/cells/ops#delete_sheet spelling
-C-R20 | v2/cells/ops#delete_sheet variants
-C-R20 | v2/cells/ops#format_range fixednames
-C-R20 | v2/cells/ops#format_range ranges
-C-R20 | v2/cells/ops#format_range secrets
-C-R20 | v2/cells/ops#format_range spelling
-C-R20 | v2/cells/ops#format_range variants
-C-R20 | v2/cells/ops#freeze_panes fixednames
-C-R20 | v2/cells/ops#freeze_panes ranges
-C-R20 | v2/cells/ops#freeze_panes secrets
-C-R20 | v2/cells/ops#freeze_panes spelling
-C-R20 | v2/cells/ops#freeze_panes variants
-C-R20 | v2/cells/ops#group_columns fixednames
-C-R20 | v2/cells/ops#group_columns ranges
-C-R20 | v2/cells/ops#group_columns secrets
-C-R20 | v2/cells/ops#group_columns spelling
-C-R20 | v2/cells/ops#group_columns variants
-C-R20 | v2/cells/ops#group_rows fixednames
-C-R20 | v2/cells/ops#group_rows ranges
-C-R20 | v2/cells/ops#group_rows secrets
-C-R20 | v2/cells/ops#group_rows spelling
-C-R20 | v2/cells/ops#group_rows variants
-C-R20 | v2/cells/ops#id fixednames
-C-R20 | v2/cells/ops#id ranges
-C-R20 | v2/cells/ops#id secrets
-C-R20 | v2/cells/ops#id spelling
-C-R20 | v2/cells/ops#id variants
-C-R20 | v2/cells/ops#import_range fixednames
-C-R20 | v2/cells/ops#import_range ranges
-C-R20 | v2/cells/ops#import_range secrets
-C-R20 | v2/cells/ops#import_range spelling
-C-R20 | v2/cells/ops#import_range variants
-C-R20 | v2/cells/ops#import_sheet fixednames
-C-R20 | v2/cells/ops#import_sheet ranges
-C-R20 | v2/cells/ops#import_sheet secrets
-C-R20 | v2/cells/ops#import_sheet spelling
-C-R20 | v2/cells/ops#import_sheet variants
-C-R20 | v2/cells/ops#insert_chart fixednames
-C-R20 | v2/cells/ops#insert_chart ranges
-C-R20 | v2/cells/ops#insert_chart secrets
-C-R20 | v2/cells/ops#insert_chart spelling
-C-R20 | v2/cells/ops#insert_chart variants
-C-R20 | v2/cells/ops#insert_columns fixednames
-C-R20 | v2/cells/ops#insert_columns ranges
-C-R20 | v2/cells/ops#insert_columns secrets
-C-R20 | v2/cells/ops#insert_columns spelling
-C-R20 | v2/cells/ops#insert_columns variants
-C-R20 | v2/cells/ops#insert_image fixednames
-C-R20 | v2/cells/ops#insert_image ranges
-C-R20 | v2/cells/ops#insert_image secrets
-C-R20 | v2/cells/ops#insert_image spelling
-C-R20 | v2/cells/ops#insert_image units
-C-R20 | v2/cells/ops#insert_image variants
-C-R20 | v2/cells/ops#insert_pivot fixednames
-C-R20 | v2/cells/ops#insert_pivot ranges
-C-R20 | v2/cells/ops#insert_pivot secrets
-C-R20 | v2/cells/ops#insert_pivot spelling
-C-R20 | v2/cells/ops#insert_pivot variants
-C-R20 | v2/cells/ops#insert_rows fixednames
-C-R20 | v2/cells/ops#insert_rows ranges
-C-R20 | v2/cells/ops#insert_rows secrets
-C-R20 | v2/cells/ops#insert_rows spelling
-C-R20 | v2/cells/ops#insert_rows variants
-C-R20 | v2/cells/ops#insert_sheet fixednames
-C-R20 | v2/cells/ops#insert_sheet ranges
-C-R20 | v2/cells/ops#insert_sheet secrets
-C-R20 | v2/cells/ops#insert_sheet spelling
-C-R20 | v2/cells/ops#insert_sheet variants
-C-R20 | v2/cells/ops#merge_cells fixednames
-C-R20 | v2/cells/ops#merge_cells ranges
-C-R20 | v2/cells/ops#merge_cells secrets
-C-R20 | v2/cells/ops#merge_cells spelling
-C-R20 | v2/cells/ops#merge_cells variants
-C-R20 | v2/cells/ops#move_sheet fixednames
-C-R20 | v2/cells/ops#move_sheet ranges
-C-R20 | v2/cells/ops#move_sheet secrets
-C-R20 | v2/cells/ops#move_sheet spelling
-C-R20 | v2/cells/ops#move_sheet variants
-C-R20 | v2/cells/ops#pageSizeInput fixednames
-C-R20 | v2/cells/ops#pageSizeInput ranges
-C-R20 | v2/cells/ops#pageSizeInput secrets
-C-R20 | v2/cells/ops#pageSizeInput spelling
-C-R20 | v2/cells/ops#pageSizeInput variants
-C-R20 | v2/cells/ops#protect_sheet fixednames
-C-R20 | v2/cells/ops#protect_sheet ranges
-C-R20 | v2/cells/ops#protect_sheet secrets
-C-R20 | v2/cells/ops#protect_sheet spelling
-C-R20 | v2/cells/ops#protect_sheet variants
-C-R20 | v2/cells/ops#protect_workbook fixednames
-C-R20 | v2/cells/ops#protect_workbook ranges
-C-R20 | v2/cells/ops#protect_workbook secrets
-C-R20 | v2/cells/ops#protect_workbook spelling
-C-R20 | v2/cells/ops#protect_workbook variants
-C-R20 | v2/cells/ops#range fixednames
+C-R20 | v2/cells/ops#comment ranges
+C-R20 | v2/cells/ops#comment secrets
+C-R20 | v2/cells/ops#conditionalFormatting ranges
+C-R20 | v2/cells/ops#conditionalFormatting secrets
+C-R20 | v2/cells/ops#dataField ranges
+C-R20 | v2/cells/ops#dataField secrets
+C-R20 | v2/cells/ops#delete ranges
+C-R20 | v2/cells/ops#delete secrets
+C-R20 | v2/cells/ops#do ranges
+C-R20 | v2/cells/ops#do secrets
+C-R20 | v2/cells/ops#do.add_conditional_format_area ranges
+C-R20 | v2/cells/ops#do.add_conditional_format_area secrets
+C-R20 | v2/cells/ops#do.add_pivot_field ranges
+C-R20 | v2/cells/ops#do.add_pivot_field secrets
+C-R20 | v2/cells/ops#do.apply_style ranges
+C-R20 | v2/cells/ops#do.apply_style secrets
+C-R20 | v2/cells/ops#do.autofit_columns ranges
+C-R20 | v2/cells/ops#do.autofit_columns secrets
+C-R20 | v2/cells/ops#do.autofit_rows ranges
+C-R20 | v2/cells/ops#do.autofit_rows secrets
+C-R20 | v2/cells/ops#do.calculate ranges
+C-R20 | v2/cells/ops#do.calculate secrets
+C-R20 | v2/cells/ops#do.calculate_pivot ranges
+C-R20 | v2/cells/ops#do.calculate_pivot secrets
+C-R20 | v2/cells/ops#do.clear_contents ranges
+C-R20 | v2/cells/ops#do.clear_contents secrets
+C-R20 | v2/cells/ops#do.clear_formats ranges
+C-R20 | v2/cells/ops#do.clear_formats secrets
+C-R20 | v2/cells/ops#do.clear_range ranges
+C-R20 | v2/cells/ops#do.clear_range secrets
+C-R20 | v2/cells/ops#do.clear_sparklines ranges
+C-R20 | v2/cells/ops#do.clear_sparklines secrets
+C-R20 | v2/cells/ops#do.copy_range ranges
+C-R20 | v2/cells/ops#do.copy_range secrets
+C-R20 | v2/cells/ops#do.copy_sheet ranges
+C-R20 | v2/cells/ops#do.copy_sheet secrets
+C-R20 | v2/cells/ops#do.delete_columns ranges
+C-R20 | v2/cells/ops#do.delete_columns secrets
+C-R20 | v2/cells/ops#do.delete_rows ranges
+C-R20 | v2/cells/ops#do.delete_rows secrets
+C-R20 | v2/cells/ops#do.freeze_panes ranges
+C-R20 | v2/cells/ops#do.freeze_panes secrets
+C-R20 | v2/cells/ops#do.group_columns ranges
+C-R20 | v2/cells/ops#do.group_columns secrets
+C-R20 | v2/cells/ops#do.group_rows ranges
+C-R20 | v2/cells/ops#do.group_rows secrets
+C-R20 | v2/cells/ops#do.insert_columns ranges
+C-R20 | v2/cells/ops#do.insert_columns secrets
+C-R20 | v2/cells/ops#do.insert_rows ranges
+C-R20 | v2/cells/ops#do.insert_rows secrets
+C-R20 | v2/cells/ops#do.protect_sheet ranges
+C-R20 | v2/cells/ops#do.protect_sheet secrets
+C-R20 | v2/cells/ops#do.protect_workbook ranges
+C-R20 | v2/cells/ops#do.protect_workbook secrets
+C-R20 | v2/cells/ops#do.refresh_pivot ranges
+C-R20 | v2/cells/ops#do.refresh_pivot secrets
+C-R20 | v2/cells/ops#do.remove_autofilter ranges
+C-R20 | v2/cells/ops#do.remove_autofilter secrets
+C-R20 | v2/cells/ops#do.remove_conditional_format_area ranges
+C-R20 | v2/cells/ops#do.remove_conditional_format_area secrets
+C-R20 | v2/cells/ops#do.remove_duplicates ranges
+C-R20 | v2/cells/ops#do.remove_duplicates secrets
+C-R20 | v2/cells/ops#do.remove_validation_area ranges
+C-R20 | v2/cells/ops#do.remove_validation_area secrets
+C-R20 | v2/cells/ops#do.replace ranges
+C-R20 | v2/cells/ops#do.replace secrets
+C-R20 | v2/cells/ops#do.resize_table ranges
+C-R20 | v2/cells/ops#do.resize_table secrets
+C-R20 | v2/cells/ops#do.set_chart_data ranges
+C-R20 | v2/cells/ops#do.set_chart_data secrets
+C-R20 | v2/cells/ops#do.set_dynamic_array_formula ranges
+C-R20 | v2/cells/ops#do.set_dynamic_array_formula secrets
+C-R20 | v2/cells/ops#do.set_shared_formula ranges
+C-R20 | v2/cells/ops#do.set_shared_formula secrets
+C-R20 | v2/cells/ops#do.sort ranges
+C-R20 | v2/cells/ops#do.sort secrets
+C-R20 | v2/cells/ops#do.unfreeze_panes ranges
+C-R20 | v2/cells/ops#do.unfreeze_panes secrets
+C-R20 | v2/cells/ops#do.ungroup_columns ranges
+C-R20 | v2/cells/ops#do.ungroup_columns secrets
+C-R20 | v2/cells/ops#do.ungroup_rows ranges
+C-R20 | v2/cells/ops#do.ungroup_rows secrets
+C-R20 | v2/cells/ops#do.unprotect_sheet ranges
+C-R20 | v2/cells/ops#do.unprotect_sheet secrets
+C-R20 | v2/cells/ops#do.unprotect_workbook ranges
+C-R20 | v2/cells/ops#do.unprotect_workbook secrets
+C-R20 | v2/cells/ops#hyperlink ranges
+C-R20 | v2/cells/ops#hyperlink secrets
+C-R20 | v2/cells/ops#merge ranges
+C-R20 | v2/cells/ops#merge secrets
+C-R20 | v2/cells/ops#move ranges
+C-R20 | v2/cells/ops#move secrets
+C-R20 | v2/cells/ops#name ranges
+C-R20 | v2/cells/ops#name secrets
+C-R20 | v2/cells/ops#pageSetup ranges
+C-R20 | v2/cells/ops#pageSetup secrets
+C-R20 | v2/cells/ops#picture ranges
+C-R20 | v2/cells/ops#picture secrets
+C-R20 | v2/cells/ops#pivot ranges
+C-R20 | v2/cells/ops#pivot secrets
+C-R20 | v2/cells/ops#point ranges
+C-R20 | v2/cells/ops#point secrets
+C-R20 | v2/cells/ops#protection ranges
+C-R20 | v2/cells/ops#protection secrets
 C-R20 | v2/cells/ops#range ranges
 C-R20 | v2/cells/ops#range secrets
-C-R20 | v2/cells/ops#range spelling
-C-R20 | v2/cells/ops#range variants
-C-R20 | v2/cells/ops#reference fixednames
-C-R20 | v2/cells/ops#reference ranges
-C-R20 | v2/cells/ops#reference secrets
-C-R20 | v2/cells/ops#reference spelling
-C-R20 | v2/cells/ops#reference variants
-C-R20 | v2/cells/ops#refresh_pivot fixednames
-C-R20 | v2/cells/ops#refresh_pivot ranges
-C-R20 | v2/cells/ops#refresh_pivot secrets
-C-R20 | v2/cells/ops#refresh_pivot spelling
-C-R20 | v2/cells/ops#refresh_pivot variants
-C-R20 | v2/cells/ops#rename_sheet fixednames
-C-R20 | v2/cells/ops#rename_sheet ranges
-C-R20 | v2/cells/ops#rename_sheet secrets
-C-R20 | v2/cells/ops#rename_sheet spelling
-C-R20 | v2/cells/ops#rename_sheet variants
-C-R20 | v2/cells/ops#replace_text fixednames
-C-R20 | v2/cells/ops#replace_text ranges
-C-R20 | v2/cells/ops#replace_text secrets
-C-R20 | v2/cells/ops#replace_text spelling
-C-R20 | v2/cells/ops#replace_text variants
-C-R20 | v2/cells/ops#resize_columns fixednames
-C-R20 | v2/cells/ops#resize_columns ranges
-C-R20 | v2/cells/ops#resize_columns secrets
-C-R20 | v2/cells/ops#resize_columns spelling
-C-R20 | v2/cells/ops#resize_columns units
-C-R20 | v2/cells/ops#resize_columns variants
-C-R20 | v2/cells/ops#resize_rows fixednames
-C-R20 | v2/cells/ops#resize_rows ranges
-C-R20 | v2/cells/ops#resize_rows secrets
-C-R20 | v2/cells/ops#resize_rows spelling
-C-R20 | v2/cells/ops#resize_rows units
-C-R20 | v2/cells/ops#resize_rows variants
-C-R20 | v2/cells/ops#resize_table fixednames
-C-R20 | v2/cells/ops#resize_table ranges
-C-R20 | v2/cells/ops#resize_table secrets
-C-R20 | v2/cells/ops#resize_table spelling
-C-R20 | v2/cells/ops#resize_table variants
-C-R20 | v2/cells/ops#set_active_sheet fixednames
-C-R20 | v2/cells/ops#set_active_sheet ranges
-C-R20 | v2/cells/ops#set_active_sheet secrets
-C-R20 | v2/cells/ops#set_active_sheet spelling
-C-R20 | v2/cells/ops#set_active_sheet variants
-C-R20 | v2/cells/ops#set_autofilter fixednames
-C-R20 | v2/cells/ops#set_autofilter ranges
-C-R20 | v2/cells/ops#set_autofilter secrets
-C-R20 | v2/cells/ops#set_autofilter spelling
-C-R20 | v2/cells/ops#set_autofilter variants
-C-R20 | v2/cells/ops#set_borders fixednames
-C-R20 | v2/cells/ops#set_borders ranges
-C-R20 | v2/cells/ops#set_borders secrets
-C-R20 | v2/cells/ops#set_borders spelling
-C-R20 | v2/cells/ops#set_borders variants
-C-R20 | v2/cells/ops#set_chart fixednames
-C-R20 | v2/cells/ops#set_chart ranges
-C-R20 | v2/cells/ops#set_chart secrets
-C-R20 | v2/cells/ops#set_chart spelling
-C-R20 | v2/cells/ops#set_chart variants
-C-R20 | v2/cells/ops#set_comment fixednames
-C-R20 | v2/cells/ops#set_comment ranges
-C-R20 | v2/cells/ops#set_comment secrets
-C-R20 | v2/cells/ops#set_comment spelling
-C-R20 | v2/cells/ops#set_comment variants
-C-R20 | v2/cells/ops#set_default_font fixednames
-C-R20 | v2/cells/ops#set_default_font ranges
-C-R20 | v2/cells/ops#set_default_font secrets
-C-R20 | v2/cells/ops#set_default_font spelling
-C-R20 | v2/cells/ops#set_default_font units
-C-R20 | v2/cells/ops#set_default_font variants
-C-R20 | v2/cells/ops#set_formula fixednames
-C-R20 | v2/cells/ops#set_formula ranges
-C-R20 | v2/cells/ops#set_formula secrets
-C-R20 | v2/cells/ops#set_formula spelling
-C-R20 | v2/cells/ops#set_formula variants
-C-R20 | v2/cells/ops#set_hyperlink fixednames
-C-R20 | v2/cells/ops#set_hyperlink ranges
-C-R20 | v2/cells/ops#set_hyperlink secrets
-C-R20 | v2/cells/ops#set_hyperlink spelling
-C-R20 | v2/cells/ops#set_hyperlink variants
-C-R20 | v2/cells/ops#set_page_setup fixednames
-C-R20 | v2/cells/ops#set_page_setup ranges
-C-R20 | v2/cells/ops#set_page_setup secrets
-C-R20 | v2/cells/ops#set_page_setup spelling
-C-R20 | v2/cells/ops#set_page_setup units
-C-R20 | v2/cells/ops#set_page_setup variants
-C-R20 | v2/cells/ops#set_print_area fixednames
-C-R20 | v2/cells/ops#set_print_area ranges
-C-R20 | v2/cells/ops#set_print_area secrets
-C-R20 | v2/cells/ops#set_print_area spelling
-C-R20 | v2/cells/ops#set_print_area variants
-C-R20 | v2/cells/ops#set_sheet_view fixednames
-C-R20 | v2/cells/ops#set_sheet_view ranges
-C-R20 | v2/cells/ops#set_sheet_view secrets
-C-R20 | v2/cells/ops#set_sheet_view spelling
-C-R20 | v2/cells/ops#set_sheet_view units
-C-R20 | v2/cells/ops#set_sheet_view variants
-C-R20 | v2/cells/ops#set_sheet_visibility fixednames
-C-R20 | v2/cells/ops#set_sheet_visibility ranges
-C-R20 | v2/cells/ops#set_sheet_visibility secrets
-C-R20 | v2/cells/ops#set_sheet_visibility spelling
-C-R20 | v2/cells/ops#set_sheet_visibility variants
-C-R20 | v2/cells/ops#set_tab_color fixednames
-C-R20 | v2/cells/ops#set_tab_color ranges
-C-R20 | v2/cells/ops#set_tab_color secrets
-C-R20 | v2/cells/ops#set_tab_color spelling
-C-R20 | v2/cells/ops#set_tab_color variants
-C-R20 | v2/cells/ops#set_validation fixednames
-C-R20 | v2/cells/ops#set_validation ranges
-C-R20 | v2/cells/ops#set_validation secrets
-C-R20 | v2/cells/ops#set_validation spelling
-C-R20 | v2/cells/ops#set_validation variants
-C-R20 | v2/cells/ops#set_values fixednames
-C-R20 | v2/cells/ops#set_values ranges
-C-R20 | v2/cells/ops#set_values secrets
-C-R20 | v2/cells/ops#set_values spelling
-C-R20 | v2/cells/ops#set_values variants
-C-R20 | v2/cells/ops#sort_range fixednames
-C-R20 | v2/cells/ops#sort_range ranges
-C-R20 | v2/cells/ops#sort_range secrets
-C-R20 | v2/cells/ops#sort_range spelling
-C-R20 | v2/cells/ops#sort_range variants
-C-R20 | v2/cells/ops#unfreeze_panes fixednames
-C-R20 | v2/cells/ops#unfreeze_panes ranges
-C-R20 | v2/cells/ops#unfreeze_panes secrets
-C-R20 | v2/cells/ops#unfreeze_panes spelling
-C-R20 | v2/cells/ops#unfreeze_panes variants
-C-R20 | v2/cells/ops#ungroup_columns fixednames
-C-R20 | v2/cells/ops#ungroup_columns ranges
-C-R20 | v2/cells/ops#ungroup_columns secrets
-C-R20 | v2/cells/ops#ungroup_columns spelling
-C-R20 | v2/cells/ops#ungroup_columns variants
-C-R20 | v2/cells/ops#ungroup_rows fixednames
-C-R20 | v2/cells/ops#ungroup_rows ranges
-C-R20 | v2/cells/ops#ungroup_rows secrets
-C-R20 | v2/cells/ops#ungroup_rows spelling
-C-R20 | v2/cells/ops#ungroup_rows variants
-C-R20 | v2/cells/ops#unmerge_cells fixednames
-C-R20 | v2/cells/ops#unmerge_cells ranges
-C-R20 | v2/cells/ops#unmerge_cells secrets
-C-R20 | v2/cells/ops#unmerge_cells spelling
-C-R20 | v2/cells/ops#unmerge_cells variants
-C-R20 | v2/cells/ops#unprotect_sheet fixednames
-C-R20 | v2/cells/ops#unprotect_sheet ranges
-C-R20 | v2/cells/ops#unprotect_sheet secrets
-C-R20 | v2/cells/ops#unprotect_sheet spelling
-C-R20 | v2/cells/ops#unprotect_sheet variants
-C-R20 | v2/cells/ops#unprotect_workbook fixednames
-C-R20 | v2/cells/ops#unprotect_workbook ranges
-C-R20 | v2/cells/ops#unprotect_workbook secrets
-C-R20 | v2/cells/ops#unprotect_workbook spelling
-C-R20 | v2/cells/ops#unprotect_workbook variants
-C-R20 | v2/cells/ops#webLink fixednames
-C-R20 | v2/cells/ops#webLink ranges
-C-R20 | v2/cells/ops#webLink secrets
-C-R20 | v2/cells/ops#webLink spelling
-C-R20 | v2/cells/ops#webLink variants
+C-R20 | v2/cells/ops#row ranges
+C-R20 | v2/cells/ops#row secrets
+C-R20 | v2/cells/ops#rule ranges
+C-R20 | v2/cells/ops#rule secrets
+C-R20 | v2/cells/ops#series ranges
+C-R20 | v2/cells/ops#series secrets
+C-R20 | v2/cells/ops#set ranges
+C-R20 | v2/cells/ops#set secrets
+C-R20 | v2/cells/ops#sheet ranges
+C-R20 | v2/cells/ops#sheet secrets
+C-R20 | v2/cells/ops#sparklineGroup ranges
+C-R20 | v2/cells/ops#sparklineGroup secrets
+C-R20 | v2/cells/ops#style ranges
+C-R20 | v2/cells/ops#style secrets
+C-R20 | v2/cells/ops#table ranges
+C-R20 | v2/cells/ops#table secrets
+C-R20 | v2/cells/ops#validation ranges
+C-R20 | v2/cells/ops#validation secrets
+C-R20 | v2/cells/ops#workbook ranges
+C-R20 | v2/cells/ops#workbook secrets
 C-R20 | v2/cells/read-result fixednames
 C-R20 | v2/cells/read-result spelling
 C-R20 | v2/cells/read-result variants
@@ -2504,38 +1842,6 @@ C-R20 | v2/words/search-result variants
 C-R20 | v2/words/split-result fixednames
 C-R20 | v2/words/split-result spelling
 C-R20 | v2/words/split-result variants
-C-R21 | cells add_comment reads back
-C-R21 | cells add_conditional_format reads back
-C-R21 | cells add_sparkline reads back
-C-R21 | cells define_name reads back
-C-R21 | cells define_table reads back
-C-R21 | cells format_range reads back
-C-R21 | cells freeze_panes reads back
-C-R21 | cells group_columns reads back
-C-R21 | cells group_rows reads back
-C-R21 | cells import_sheet reads back
-C-R21 | cells insert_chart reads back
-C-R21 | cells insert_image reads back
-C-R21 | cells insert_pivot reads back
-C-R21 | cells insert_sheet reads back
-C-R21 | cells merge_cells reads back
-C-R21 | cells protect_sheet reads back
-C-R21 | cells rename_sheet reads back
-C-R21 | cells resize_columns reads back
-C-R21 | cells resize_rows reads back
-C-R21 | cells resize_table reads back
-C-R21 | cells set_autofilter reads back
-C-R21 | cells set_borders reads back
-C-R21 | cells set_chart reads back
-C-R21 | cells set_comment reads back
-C-R21 | cells set_default_font reads back
-C-R21 | cells set_hyperlink reads back
-C-R21 | cells set_page_setup reads back
-C-R21 | cells set_print_area reads back
-C-R21 | cells set_sheet_view reads back
-C-R21 | cells set_sheet_visibility reads back
-C-R21 | cells set_tab_color reads back
-C-R21 | cells set_validation reads back
 C-R21 | pdf add_attachment reads back
 C-R21 | pdf add_bookmark reads back
 C-R21 | pdf add_hyperlink reads back
@@ -2546,134 +1852,6 @@ C-R21 | pdf set_form_field reads back
 C-R21 | pdf set_page_labels reads back
 C-R21 | pdf set_page_size reads back
 C-R21 | pdf set_properties reads back
-C-R21 | v2/cells/ops#add_comment
-C-R21 | v2/cells/ops#add_comment unclassified
-C-R21 | v2/cells/ops#add_conditional_format
-C-R21 | v2/cells/ops#add_conditional_format unclassified
-C-R21 | v2/cells/ops#add_sparkline
-C-R21 | v2/cells/ops#add_sparkline unclassified
-C-R21 | v2/cells/ops#clear_autofilter
-C-R21 | v2/cells/ops#clear_autofilter unclassified
-C-R21 | v2/cells/ops#clear_conditional_formats
-C-R21 | v2/cells/ops#clear_conditional_formats unclassified
-C-R21 | v2/cells/ops#clear_print_area
-C-R21 | v2/cells/ops#clear_print_area unclassified
-C-R21 | v2/cells/ops#clear_range
-C-R21 | v2/cells/ops#clear_range unclassified
-C-R21 | v2/cells/ops#clear_tab_color
-C-R21 | v2/cells/ops#clear_tab_color unclassified
-C-R21 | v2/cells/ops#clear_validation
-C-R21 | v2/cells/ops#clear_validation unclassified
-C-R21 | v2/cells/ops#copy_range
-C-R21 | v2/cells/ops#copy_range unclassified
-C-R21 | v2/cells/ops#define_name
-C-R21 | v2/cells/ops#define_name unclassified
-C-R21 | v2/cells/ops#define_table
-C-R21 | v2/cells/ops#define_table unclassified
-C-R21 | v2/cells/ops#delete_chart
-C-R21 | v2/cells/ops#delete_chart unclassified
-C-R21 | v2/cells/ops#delete_columns
-C-R21 | v2/cells/ops#delete_columns unclassified
-C-R21 | v2/cells/ops#delete_comment
-C-R21 | v2/cells/ops#delete_comment unclassified
-C-R21 | v2/cells/ops#delete_duplicates
-C-R21 | v2/cells/ops#delete_duplicates unclassified
-C-R21 | v2/cells/ops#delete_hyperlink
-C-R21 | v2/cells/ops#delete_hyperlink unclassified
-C-R21 | v2/cells/ops#delete_name
-C-R21 | v2/cells/ops#delete_name unclassified
-C-R21 | v2/cells/ops#delete_rows
-C-R21 | v2/cells/ops#delete_rows unclassified
-C-R21 | v2/cells/ops#delete_sheet
-C-R21 | v2/cells/ops#delete_sheet unclassified
-C-R21 | v2/cells/ops#format_range
-C-R21 | v2/cells/ops#format_range unclassified
-C-R21 | v2/cells/ops#freeze_panes
-C-R21 | v2/cells/ops#freeze_panes unclassified
-C-R21 | v2/cells/ops#group_columns
-C-R21 | v2/cells/ops#group_columns unclassified
-C-R21 | v2/cells/ops#group_rows
-C-R21 | v2/cells/ops#group_rows unclassified
-C-R21 | v2/cells/ops#import_range
-C-R21 | v2/cells/ops#import_range unclassified
-C-R21 | v2/cells/ops#import_sheet
-C-R21 | v2/cells/ops#import_sheet unclassified
-C-R21 | v2/cells/ops#insert_chart
-C-R21 | v2/cells/ops#insert_chart unclassified
-C-R21 | v2/cells/ops#insert_columns
-C-R21 | v2/cells/ops#insert_columns unclassified
-C-R21 | v2/cells/ops#insert_image
-C-R21 | v2/cells/ops#insert_image unclassified
-C-R21 | v2/cells/ops#insert_pivot
-C-R21 | v2/cells/ops#insert_pivot unclassified
-C-R21 | v2/cells/ops#insert_rows
-C-R21 | v2/cells/ops#insert_rows unclassified
-C-R21 | v2/cells/ops#insert_sheet
-C-R21 | v2/cells/ops#insert_sheet unclassified
-C-R21 | v2/cells/ops#merge_cells
-C-R21 | v2/cells/ops#merge_cells unclassified
-C-R21 | v2/cells/ops#move_sheet
-C-R21 | v2/cells/ops#move_sheet unclassified
-C-R21 | v2/cells/ops#protect_sheet
-C-R21 | v2/cells/ops#protect_sheet unclassified
-C-R21 | v2/cells/ops#protect_workbook
-C-R21 | v2/cells/ops#protect_workbook unclassified
-C-R21 | v2/cells/ops#refresh_pivot
-C-R21 | v2/cells/ops#refresh_pivot unclassified
-C-R21 | v2/cells/ops#rename_sheet
-C-R21 | v2/cells/ops#rename_sheet unclassified
-C-R21 | v2/cells/ops#replace_text
-C-R21 | v2/cells/ops#replace_text unclassified
-C-R21 | v2/cells/ops#resize_columns
-C-R21 | v2/cells/ops#resize_columns unclassified
-C-R21 | v2/cells/ops#resize_rows
-C-R21 | v2/cells/ops#resize_rows unclassified
-C-R21 | v2/cells/ops#resize_table
-C-R21 | v2/cells/ops#resize_table unclassified
-C-R21 | v2/cells/ops#set_active_sheet
-C-R21 | v2/cells/ops#set_active_sheet unclassified
-C-R21 | v2/cells/ops#set_autofilter
-C-R21 | v2/cells/ops#set_autofilter unclassified
-C-R21 | v2/cells/ops#set_borders
-C-R21 | v2/cells/ops#set_borders unclassified
-C-R21 | v2/cells/ops#set_chart
-C-R21 | v2/cells/ops#set_chart unclassified
-C-R21 | v2/cells/ops#set_comment
-C-R21 | v2/cells/ops#set_comment unclassified
-C-R21 | v2/cells/ops#set_default_font
-C-R21 | v2/cells/ops#set_default_font unclassified
-C-R21 | v2/cells/ops#set_formula
-C-R21 | v2/cells/ops#set_formula unclassified
-C-R21 | v2/cells/ops#set_hyperlink
-C-R21 | v2/cells/ops#set_hyperlink unclassified
-C-R21 | v2/cells/ops#set_page_setup
-C-R21 | v2/cells/ops#set_page_setup unclassified
-C-R21 | v2/cells/ops#set_print_area
-C-R21 | v2/cells/ops#set_print_area unclassified
-C-R21 | v2/cells/ops#set_sheet_view
-C-R21 | v2/cells/ops#set_sheet_view unclassified
-C-R21 | v2/cells/ops#set_sheet_visibility
-C-R21 | v2/cells/ops#set_sheet_visibility unclassified
-C-R21 | v2/cells/ops#set_tab_color
-C-R21 | v2/cells/ops#set_tab_color unclassified
-C-R21 | v2/cells/ops#set_validation
-C-R21 | v2/cells/ops#set_validation unclassified
-C-R21 | v2/cells/ops#set_values
-C-R21 | v2/cells/ops#set_values unclassified
-C-R21 | v2/cells/ops#sort_range
-C-R21 | v2/cells/ops#sort_range unclassified
-C-R21 | v2/cells/ops#unfreeze_panes
-C-R21 | v2/cells/ops#unfreeze_panes unclassified
-C-R21 | v2/cells/ops#ungroup_columns
-C-R21 | v2/cells/ops#ungroup_columns unclassified
-C-R21 | v2/cells/ops#ungroup_rows
-C-R21 | v2/cells/ops#ungroup_rows unclassified
-C-R21 | v2/cells/ops#unmerge_cells
-C-R21 | v2/cells/ops#unmerge_cells unclassified
-C-R21 | v2/cells/ops#unprotect_sheet
-C-R21 | v2/cells/ops#unprotect_sheet unclassified
-C-R21 | v2/cells/ops#unprotect_workbook
-C-R21 | v2/cells/ops#unprotect_workbook unclassified
 C-R21 | v2/pdf/ops#add_attachment
 C-R21 | v2/pdf/ops#add_attachment unclassified
 C-R21 | v2/pdf/ops#add_bookmark
@@ -2838,10 +2016,8 @@ C-R22 | cells edit --ops with a bare array
 C-R22 | pdf edit --ops with a bare array
 C-R22 | slides edit --ops with a bare array
 C-R22 | words edit --ops with a bare array
-C-R23 | cells inspect succeeds in JSON mode
 C-R23 | pdf inspect succeeds in JSON mode
 C-R23 | words inspect succeeds in JSON mode
-C-R24 | cells exit codes follow their category
 C-R24 | common exit codes follow their category
 C-R24 | input file errors exit 3
 C-R24 | internal errors exit 1
@@ -2858,16 +2034,13 @@ C-R24 | usage and option value errors exit 2
 C-R24 | words create interrupted by Ctrl+C
 C-R24 | words exit codes follow their category
 C-R25 | cells corrupt input error details
-C-R25 | cells evaluation export of a later sheet error details
 C-R25 | cells input over budget error details
 C-R25 | cells invalid option value error details
 C-R25 | cells missing argument error details
 C-R25 | cells missing input error details
-C-R25 | cells several invalid operations error details
+C-R25 | cells missing target error details
 C-R25 | cells unknown command error details
 C-R25 | cells unknown created extension error details
-C-R25 | cells unknown field error details
-C-R25 | cells unknown op error details
 C-R25 | cells unknown option error details
 C-R25 | cells unknown output extension error details
 C-R25 | cells unwritable output error details
@@ -2916,15 +2089,9 @@ C-R25 | words unknown option error details
 C-R25 | words unknown output extension error details
 C-R25 | words unwritable output error details
 C-R26 | capabilities product cells as cellss
-C-R26 | cells command compare as cmopare
+C-R26 | cells command convert as cnovert
 C-R26 | cells convert --out extension .csv as .csvv
 C-R26 | cells convert --to csv as csvv
-C-R26 | cells inspect --detail charts as cahrts
-C-R26 | cells inspect option --detail as --dteail
-C-R26 | cells op add_comment as add_commentt
-C-R26 | cells op add_comment field sheet as sheett
-C-R26 | cells op set_chart kind column as cloumn
-C-R26 | cells read --sheet Sheet1 as Sehet1
 C-R26 | command cells as cellss
 C-R26 | docs topic editing as eidting
 C-R26 | pdf command convert as cnovert
@@ -2946,13 +2113,10 @@ C-R26 | words inspect option --detail as --dteail
 C-R26 | words op accept_revisions as accept_revisionss
 C-R26 | words op accept_revisions field author as atuhor
 C-R26 | words op protect_document protection read-only as raed-only
-C-R27 | cells warning codes
 C-R27 | common warning codes
 C-R27 | pdf warning codes
 C-R27 | warning envelope shape
 C-R27 | words warning codes
-C-R28 | cells code names
-C-R28 | cells not-found details
 C-R28 | codes declared once
 C-R28 | common code names
 C-R28 | common not-found details
@@ -2961,87 +2125,9 @@ C-R28 | pdf code names
 C-R28 | pdf not-found details
 C-R28 | words code names
 C-R28 | words not-found details
-C-R29 | cells edit
 C-R29 | pdf edit
 C-R29 | words edit
-C-R30 | cells add_comment
-C-R30 | cells add_conditional_format
-C-R30 | cells add_sparkline
-C-R30 | cells applied[] has no index
-C-R30 | cells clear_autofilter
-C-R30 | cells clear_autofilter on with nothing to remove
-C-R30 | cells clear_conditional_formats
-C-R30 | cells clear_print_area
-C-R30 | cells clear_print_area on with nothing to remove
-C-R30 | cells clear_range
-C-R30 | cells clear_range on an empty range
-C-R30 | cells clear_tab_color
-C-R30 | cells clear_tab_color on with nothing to remove
-C-R30 | cells clear_validation
-C-R30 | cells clear_validation on an empty range
-C-R30 | cells copy_range
-C-R30 | cells define_name
-C-R30 | cells define_table
-C-R30 | cells delete_chart
-C-R30 | cells delete_columns
-C-R30 | cells delete_comment
-C-R30 | cells delete_duplicates
-C-R30 | cells delete_hyperlink
-C-R30 | cells delete_name
-C-R30 | cells delete_rows
-C-R30 | cells delete_sheet
-C-R30 | cells format_range
-C-R30 | cells freeze_panes
-C-R30 | cells group_columns
-C-R30 | cells group_rows
-C-R30 | cells import_range
-C-R30 | cells import_sheet
-C-R30 | cells insert_chart
-C-R30 | cells insert_columns
-C-R30 | cells insert_image
-C-R30 | cells insert_pivot
-C-R30 | cells insert_pivot on column fields
-C-R30 | cells insert_rows
-C-R30 | cells insert_sheet
-C-R30 | cells merge_cells
-C-R30 | cells move_sheet
 C-R30 | cells operations have samples
-C-R30 | cells protect_sheet
-C-R30 | cells protect_workbook
-C-R30 | cells refresh_pivot
-C-R30 | cells rename_sheet
-C-R30 | cells replace_text
-C-R30 | cells resize_columns
-C-R30 | cells resize_rows
-C-R30 | cells resize_table
-C-R30 | cells set_active_sheet
-C-R30 | cells set_autofilter
-C-R30 | cells set_borders
-C-R30 | cells set_chart
-C-R30 | cells set_comment
-C-R30 | cells set_default_font
-C-R30 | cells set_formula
-C-R30 | cells set_hyperlink
-C-R30 | cells set_hyperlink on an internal target
-C-R30 | cells set_page_setup
-C-R30 | cells set_page_setup on a scale
-C-R30 | cells set_print_area
-C-R30 | cells set_sheet_view
-C-R30 | cells set_sheet_visibility
-C-R30 | cells set_tab_color
-C-R30 | cells set_validation
-C-R30 | cells set_validation on a source range
-C-R30 | cells set_validation on listed items
-C-R30 | cells set_values
-C-R30 | cells sort_range
-C-R30 | cells targets read <unit>/<address>
-C-R30 | cells unfreeze_panes
-C-R30 | cells unfreeze_panes on with nothing to remove
-C-R30 | cells ungroup_columns
-C-R30 | cells ungroup_rows
-C-R30 | cells unmerge_cells
-C-R30 | cells unprotect_sheet
-C-R30 | cells unprotect_workbook
 C-R30 | pdf add_attachment
 C-R30 | pdf add_bookmark
 C-R30 | pdf add_footer_text
@@ -3074,7 +2160,6 @@ C-R30 | pdf set_page_size
 C-R30 | pdf set_properties
 C-R30 | pdf targets read <unit>/<address>
 C-R30 | slides operations have samples
-C-R30 | v2/cells/edit-result applied
 C-R30 | v2/pdf/edit-result applied
 C-R30 | v2/words/edit-result applied
 C-R30 | words accept_revisions
@@ -3124,7 +2209,6 @@ C-R30 | words set_watermark
 C-R30 | words targets read <unit>/<address>
 C-R30 | words unprotect_document
 C-R31 | cells edit paths
-C-R31 | cells inspect paths
 C-R31 | cells render paths
 C-R31 | pdf edit paths
 C-R31 | pdf extract units
@@ -3132,16 +2216,12 @@ C-R31 | pdf inspect paths
 C-R31 | pdf render paths
 C-R31 | slides edit paths
 C-R31 | slides render paths
-C-R31 | v2/cells/compare-result fields
-C-R31 | v2/cells/compare-result outputs
 C-R31 | v2/cells/convert-result fields
 C-R31 | v2/cells/convert-result outputs
 C-R31 | v2/cells/create-result fields
 C-R31 | v2/cells/create-result outputs
 C-R31 | v2/cells/edit-result fields
 C-R31 | v2/cells/edit-result outputs
-C-R31 | v2/cells/inspect-result fields
-C-R31 | v2/cells/inspect-result outputs
 C-R31 | v2/cells/read-result fields
 C-R31 | v2/cells/read-result outputs
 C-R31 | v2/cells/render-result fields
@@ -3282,9 +2362,6 @@ C-R32 | v2/words/read-result input
 C-R32 | v2/words/read-result units
 C-R32 | v2/words/search-result hits
 C-R32 | v2/words/search-result input
-C-R33 | v2/cells/compare-result envelope
-C-R33 | v2/cells/compare-result names
-C-R33 | v2/cells/compare-result none
 C-R33 | v2/cells/convert-result envelope
 C-R33 | v2/cells/convert-result names
 C-R33 | v2/cells/convert-result none
@@ -3294,175 +2371,6 @@ C-R33 | v2/cells/create-result none
 C-R33 | v2/cells/edit-result envelope
 C-R33 | v2/cells/edit-result names
 C-R33 | v2/cells/edit-result none
-C-R33 | v2/cells/inspect-result envelope
-C-R33 | v2/cells/inspect-result names
-C-R33 | v2/cells/inspect-result none
-C-R33 | v2/cells/ops names
-C-R33 | v2/cells/ops none
-C-R33 | v2/cells/ops#add_comment names
-C-R33 | v2/cells/ops#add_comment none
-C-R33 | v2/cells/ops#add_conditional_format names
-C-R33 | v2/cells/ops#add_conditional_format none
-C-R33 | v2/cells/ops#add_sparkline names
-C-R33 | v2/cells/ops#add_sparkline none
-C-R33 | v2/cells/ops#cell names
-C-R33 | v2/cells/ops#cell none
-C-R33 | v2/cells/ops#cellsBorderData names
-C-R33 | v2/cells/ops#cellsBorderData none
-C-R33 | v2/cells/ops#cellsChartAxisTitles names
-C-R33 | v2/cells/ops#cellsChartAxisTitles none
-C-R33 | v2/cells/ops#cellsChartDataLabels names
-C-R33 | v2/cells/ops#cellsChartDataLabels none
-C-R33 | v2/cells/ops#cellsChartLegend names
-C-R33 | v2/cells/ops#cellsChartLegend none
-C-R33 | v2/cells/ops#cellsConditionalRule names
-C-R33 | v2/cells/ops#cellsConditionalRule none
-C-R33 | v2/cells/ops#cellsConditionalStyle names
-C-R33 | v2/cells/ops#cellsConditionalStyle none
-C-R33 | v2/cells/ops#cellsMargins names
-C-R33 | v2/cells/ops#cellsMargins none
-C-R33 | v2/cells/ops#cellsPivotValueField names
-C-R33 | v2/cells/ops#cellsPivotValueField none
-C-R33 | v2/cells/ops#cellsSortKey names
-C-R33 | v2/cells/ops#cellsSortKey none
-C-R33 | v2/cells/ops#cellsStyleData names
-C-R33 | v2/cells/ops#cellsStyleData none
-C-R33 | v2/cells/ops#clear_autofilter names
-C-R33 | v2/cells/ops#clear_autofilter none
-C-R33 | v2/cells/ops#clear_conditional_formats names
-C-R33 | v2/cells/ops#clear_conditional_formats none
-C-R33 | v2/cells/ops#clear_print_area names
-C-R33 | v2/cells/ops#clear_print_area none
-C-R33 | v2/cells/ops#clear_range names
-C-R33 | v2/cells/ops#clear_range none
-C-R33 | v2/cells/ops#clear_tab_color names
-C-R33 | v2/cells/ops#clear_tab_color none
-C-R33 | v2/cells/ops#clear_validation names
-C-R33 | v2/cells/ops#clear_validation none
-C-R33 | v2/cells/ops#color names
-C-R33 | v2/cells/ops#color none
-C-R33 | v2/cells/ops#column names
-C-R33 | v2/cells/ops#column none
-C-R33 | v2/cells/ops#copy_range names
-C-R33 | v2/cells/ops#copy_range none
-C-R33 | v2/cells/ops#define_name names
-C-R33 | v2/cells/ops#define_name none
-C-R33 | v2/cells/ops#define_table names
-C-R33 | v2/cells/ops#define_table none
-C-R33 | v2/cells/ops#delete_chart names
-C-R33 | v2/cells/ops#delete_chart none
-C-R33 | v2/cells/ops#delete_columns names
-C-R33 | v2/cells/ops#delete_columns none
-C-R33 | v2/cells/ops#delete_comment names
-C-R33 | v2/cells/ops#delete_comment none
-C-R33 | v2/cells/ops#delete_duplicates names
-C-R33 | v2/cells/ops#delete_duplicates none
-C-R33 | v2/cells/ops#delete_hyperlink names
-C-R33 | v2/cells/ops#delete_hyperlink none
-C-R33 | v2/cells/ops#delete_name names
-C-R33 | v2/cells/ops#delete_name none
-C-R33 | v2/cells/ops#delete_rows names
-C-R33 | v2/cells/ops#delete_rows none
-C-R33 | v2/cells/ops#delete_sheet names
-C-R33 | v2/cells/ops#delete_sheet none
-C-R33 | v2/cells/ops#format_range names
-C-R33 | v2/cells/ops#format_range none
-C-R33 | v2/cells/ops#freeze_panes names
-C-R33 | v2/cells/ops#freeze_panes none
-C-R33 | v2/cells/ops#group_columns names
-C-R33 | v2/cells/ops#group_columns none
-C-R33 | v2/cells/ops#group_rows names
-C-R33 | v2/cells/ops#group_rows none
-C-R33 | v2/cells/ops#id names
-C-R33 | v2/cells/ops#id none
-C-R33 | v2/cells/ops#import_range names
-C-R33 | v2/cells/ops#import_range none
-C-R33 | v2/cells/ops#import_sheet names
-C-R33 | v2/cells/ops#import_sheet none
-C-R33 | v2/cells/ops#insert_chart names
-C-R33 | v2/cells/ops#insert_chart none
-C-R33 | v2/cells/ops#insert_columns names
-C-R33 | v2/cells/ops#insert_columns none
-C-R33 | v2/cells/ops#insert_image names
-C-R33 | v2/cells/ops#insert_image none
-C-R33 | v2/cells/ops#insert_pivot names
-C-R33 | v2/cells/ops#insert_pivot none
-C-R33 | v2/cells/ops#insert_rows names
-C-R33 | v2/cells/ops#insert_rows none
-C-R33 | v2/cells/ops#insert_sheet names
-C-R33 | v2/cells/ops#insert_sheet none
-C-R33 | v2/cells/ops#merge_cells names
-C-R33 | v2/cells/ops#merge_cells none
-C-R33 | v2/cells/ops#move_sheet names
-C-R33 | v2/cells/ops#move_sheet none
-C-R33 | v2/cells/ops#pageSizeInput names
-C-R33 | v2/cells/ops#pageSizeInput none
-C-R33 | v2/cells/ops#protect_sheet names
-C-R33 | v2/cells/ops#protect_sheet none
-C-R33 | v2/cells/ops#protect_workbook names
-C-R33 | v2/cells/ops#protect_workbook none
-C-R33 | v2/cells/ops#range names
-C-R33 | v2/cells/ops#range none
-C-R33 | v2/cells/ops#reference names
-C-R33 | v2/cells/ops#reference none
-C-R33 | v2/cells/ops#refresh_pivot names
-C-R33 | v2/cells/ops#refresh_pivot none
-C-R33 | v2/cells/ops#rename_sheet names
-C-R33 | v2/cells/ops#rename_sheet none
-C-R33 | v2/cells/ops#replace_text names
-C-R33 | v2/cells/ops#replace_text none
-C-R33 | v2/cells/ops#resize_columns names
-C-R33 | v2/cells/ops#resize_columns none
-C-R33 | v2/cells/ops#resize_rows names
-C-R33 | v2/cells/ops#resize_rows none
-C-R33 | v2/cells/ops#resize_table names
-C-R33 | v2/cells/ops#resize_table none
-C-R33 | v2/cells/ops#set_active_sheet names
-C-R33 | v2/cells/ops#set_active_sheet none
-C-R33 | v2/cells/ops#set_autofilter names
-C-R33 | v2/cells/ops#set_autofilter none
-C-R33 | v2/cells/ops#set_borders names
-C-R33 | v2/cells/ops#set_borders none
-C-R33 | v2/cells/ops#set_chart names
-C-R33 | v2/cells/ops#set_chart none
-C-R33 | v2/cells/ops#set_comment names
-C-R33 | v2/cells/ops#set_comment none
-C-R33 | v2/cells/ops#set_default_font names
-C-R33 | v2/cells/ops#set_default_font none
-C-R33 | v2/cells/ops#set_formula names
-C-R33 | v2/cells/ops#set_formula none
-C-R33 | v2/cells/ops#set_hyperlink names
-C-R33 | v2/cells/ops#set_hyperlink none
-C-R33 | v2/cells/ops#set_page_setup names
-C-R33 | v2/cells/ops#set_page_setup none
-C-R33 | v2/cells/ops#set_print_area names
-C-R33 | v2/cells/ops#set_print_area none
-C-R33 | v2/cells/ops#set_sheet_view names
-C-R33 | v2/cells/ops#set_sheet_view none
-C-R33 | v2/cells/ops#set_sheet_visibility names
-C-R33 | v2/cells/ops#set_sheet_visibility none
-C-R33 | v2/cells/ops#set_tab_color names
-C-R33 | v2/cells/ops#set_tab_color none
-C-R33 | v2/cells/ops#set_validation names
-C-R33 | v2/cells/ops#set_validation none
-C-R33 | v2/cells/ops#set_values names
-C-R33 | v2/cells/ops#set_values none
-C-R33 | v2/cells/ops#sort_range names
-C-R33 | v2/cells/ops#sort_range none
-C-R33 | v2/cells/ops#unfreeze_panes names
-C-R33 | v2/cells/ops#unfreeze_panes none
-C-R33 | v2/cells/ops#ungroup_columns names
-C-R33 | v2/cells/ops#ungroup_columns none
-C-R33 | v2/cells/ops#ungroup_rows names
-C-R33 | v2/cells/ops#ungroup_rows none
-C-R33 | v2/cells/ops#unmerge_cells names
-C-R33 | v2/cells/ops#unmerge_cells none
-C-R33 | v2/cells/ops#unprotect_sheet names
-C-R33 | v2/cells/ops#unprotect_sheet none
-C-R33 | v2/cells/ops#unprotect_workbook names
-C-R33 | v2/cells/ops#unprotect_workbook none
-C-R33 | v2/cells/ops#webLink names
-C-R33 | v2/cells/ops#webLink none
 C-R33 | v2/cells/read-result envelope
 C-R33 | v2/cells/read-result names
 C-R33 | v2/cells/read-result none
@@ -3822,11 +2730,9 @@ C-R33 | v2/words/split-result envelope
 C-R33 | v2/words/split-result names
 C-R33 | v2/words/split-result none
 C-R34 | capabilities
-C-R34 | cells compare
 C-R34 | cells convert
 C-R34 | cells create
 C-R34 | cells edit
-C-R34 | cells inspect
 C-R34 | cells read
 C-R34 | cells render
 C-R34 | cells search
@@ -3875,11 +2781,9 @@ C-R35 | --version in JSON mode
 C-R35 | aspose-cli --help
 C-R35 | capabilities --help
 C-R35 | cells --help
-C-R35 | cells compare --help
 C-R35 | cells convert --help
 C-R35 | cells create --help
 C-R35 | cells edit --help
-C-R35 | cells inspect --help
 C-R35 | cells read --help
 C-R35 | cells render --help
 C-R35 | cells search --help
@@ -3938,7 +2842,6 @@ C-R36 | slides render --to
 C-R36 | words convert --to
 C-R36 | words formats
 C-R36 | words render --to
-C-R37 | cells inspect --verbose in json mode
 C-R37 | pdf inspect --verbose in json mode
 C-R37 | words inspect --verbose in json mode
 C-R38 | KNOWN-ISSUES.md
@@ -3966,39 +2869,7 @@ C-R38 | src/Aspose.Cli.Sdk bare commands
 C-R38 | src/Aspose.Cli.Sdk.Analyzers
 C-R38 | src/Aspose.Cli.Sdk.Analyzers bare commands
 C-R38 | written mistakes
-C-R39 | cells add_comment round trip
-C-R39 | cells add_conditional_format round trip
-C-R39 | cells add_sparkline round trip
-C-R39 | cells define_name round trip
-C-R39 | cells define_table round trip
-C-R39 | cells format_range round trip
-C-R39 | cells freeze_panes round trip
-C-R39 | cells group_columns round trip
-C-R39 | cells group_rows round trip
-C-R39 | cells import_sheet round trip
-C-R39 | cells insert_chart round trip
-C-R39 | cells insert_image round trip
-C-R39 | cells insert_pivot round trip
-C-R39 | cells insert_sheet round trip
-C-R39 | cells merge_cells round trip
-C-R39 | cells protect_sheet round trip
-C-R39 | cells rename_sheet round trip
-C-R39 | cells resize_columns round trip
-C-R39 | cells resize_rows round trip
-C-R39 | cells resize_table round trip
 C-R39 | cells round-trip exemptions
-C-R39 | cells set_autofilter round trip
-C-R39 | cells set_borders round trip
-C-R39 | cells set_chart round trip
-C-R39 | cells set_comment round trip
-C-R39 | cells set_default_font round trip
-C-R39 | cells set_hyperlink round trip
-C-R39 | cells set_page_setup round trip
-C-R39 | cells set_print_area round trip
-C-R39 | cells set_sheet_view round trip
-C-R39 | cells set_sheet_visibility round trip
-C-R39 | cells set_tab_color round trip
-C-R39 | cells set_validation round trip
 C-R39 | pdf add_attachment round trip
 C-R39 | pdf add_bookmark round trip
 C-R39 | pdf add_hyperlink round trip
@@ -4036,7 +2907,6 @@ C-R39 | words set_table_pagination round trip
 C-R39 | words set_table_style round trip
 C-R39 | words set_text round trip
 C-R39 | words set_watermark round trip
-C-R40 | compare file shape
 C-R40 | convert file shape
 C-R40 | create file shape
 C-R40 | edit file shape
@@ -4047,29 +2917,7 @@ C-R40 | read file shape
 C-R40 | render file shape
 C-R40 | search file shape
 C-R40 | split file shape
-C-R42 | cells convert xlsx -> csv
-C-R42 | cells convert xlsx -> html
-C-R42 | cells convert xlsx -> md
-C-R42 | cells convert xlsx -> mhtml
-C-R42 | cells convert xlsx -> ods
-C-R42 | cells convert xlsx -> pdf
-C-R42 | cells convert xlsx -> tsv
-C-R42 | cells convert xlsx -> xls
-C-R42 | cells convert xlsx -> xlsb
-C-R42 | cells convert xlsx -> xlsm
-C-R42 | cells convert xlsx -> xlsx
-C-R42 | cells convert xlsx -> xltm
-C-R42 | cells convert xlsx -> xltx
-C-R42 | cells edit xlsx -> .csv
-C-R42 | cells edit xlsx -> .ods
-C-R42 | cells edit xlsx -> .tsv
-C-R42 | cells edit xlsx -> .txt
-C-R42 | cells edit xlsx -> .xls
-C-R42 | cells edit xlsx -> .xlsb
-C-R42 | cells edit xlsx -> .xlsm
 C-R42 | cells edit xlsx -> .xlsx
-C-R42 | cells edit xlsx -> .xltm
-C-R42 | cells edit xlsx -> .xltx
 C-R42 | pdf convert pdf -> docx
 C-R42 | pdf convert pdf -> epub
 C-R42 | pdf convert pdf -> html
@@ -4112,13 +2960,25 @@ C-R42 | words edit docx -> .odt
 C-R42 | words edit docx -> .ott
 C-R42 | words edit docx -> .rtf
 C-R42 | words edit docx -> .xml
-C-R43 | cells replace_text
 C-R43 | words replace_text
+C-R44 | cells set chart at a missing address
+C-R44 | cells set comment at a missing address
+C-R44 | cells set dataField at a missing address
+C-R44 | cells set hyperlink at a missing address
+C-R44 | cells set name at a missing address
+C-R44 | cells set picture at a missing address
+C-R44 | cells set pivot at a missing address
+C-R44 | cells set point at a missing address
+C-R44 | cells set rule at a missing address
+C-R44 | cells set series at a missing address
+C-R44 | cells set sheet at a missing address
+C-R44 | cells set sparklineGroup at a missing address
+C-R44 | cells set table at a missing address
+C-R44 | cells set validation at a missing address
 C-R44 | slides set axis at a missing address
 C-R44 | slides set category at a missing address
 C-R44 | slides set cell at a missing address
 C-R44 | slides set data at a missing address
-C-R44 | slides set legend at a missing address
 C-R44 | slides set notes at a missing address
 C-R44 | slides set paragraph at a missing address
 C-R44 | slides set point at a missing address
@@ -4126,12 +2986,8 @@ C-R44 | slides set run at a missing address
 C-R44 | slides set series at a missing address
 C-R44 | slides set shape at a missing address
 C-R44 | slides set slide at a missing address
-C-R44 | slides set textFormat at a missing address
-C-R44 | slides set title at a missing address
-corrupt-input | cells compare
 corrupt-input | cells convert
 corrupt-input | cells edit
-corrupt-input | cells inspect
 corrupt-input | cells read
 corrupt-input | cells render
 corrupt-input | cells search
@@ -4161,11 +3017,6 @@ corrupt-input | words read
 corrupt-input | words render
 corrupt-input | words search
 corrupt-input | words split
-dry-run | cells edit --dry-run
-dry-run | cells edit --dry-run --in-place
-dry-run | cells edit --dry-run --out out.xlsx
-dry-run | cells edit --in-place
-dry-run | cells edit --out out.xlsx
 dry-run | pdf edit --dry-run
 dry-run | pdf edit --dry-run --in-place
 dry-run | pdf edit --dry-run --out out.pdf
@@ -4200,12 +3051,8 @@ evaluation-disclosed | words extract
 evaluation-disclosed | words render
 evaluation-disclosed | words split
 invalid-enum | aspose-cli --license-mode autoo
-invalid-enum | cells compare --content fromulas
 invalid-enum | cells convert --to csvv
-invalid-enum | cells inspect --detail cahrts
-invalid-enum | cells read --content fromulas
 invalid-enum | cells render --to jpegg
-invalid-enum | cells search --content alll
 invalid-enum | fonts list --product cellss
 invalid-enum | license install --product cellss
 invalid-enum | license remove --product cellss
@@ -4232,10 +3079,8 @@ invalid-enum | words read --content fulll
 invalid-enum | words render --to jpegg
 invalid-enum | words search --scope alll
 invalid-enum | words split --by haeding1
-missing-input | cells compare
 missing-input | cells convert
 missing-input | cells edit
-missing-input | cells inspect
 missing-input | cells read
 missing-input | cells render
 missing-input | cells search
@@ -4267,10 +3112,10 @@ missing-input | words search
 missing-input | words split
 output-reopens | cells convert csv -> pdf
 output-reopens | cells convert csv -> xlsx
-output-reopens | cells convert ods -> pdf
-output-reopens | cells convert ods -> xlsx
 output-reopens | cells convert tsv -> pdf
 output-reopens | cells convert tsv -> xlsx
+output-reopens | cells convert xlam -> pdf
+output-reopens | cells convert xlam -> xlsx
 output-reopens | cells convert xls -> pdf
 output-reopens | cells convert xls -> xlsx
 output-reopens | cells convert xlsb -> pdf
@@ -4285,13 +3130,17 @@ output-reopens | cells convert xlsx -> mhtml
 output-reopens | cells convert xlsx -> ods
 output-reopens | cells convert xlsx -> pdf
 output-reopens | cells convert xlsx -> tsv
+output-reopens | cells convert xlsx -> xlam
 output-reopens | cells convert xlsx -> xls
 output-reopens | cells convert xlsx -> xlsb
 output-reopens | cells convert xlsx -> xlsm
 output-reopens | cells convert xlsx -> xlsx
+output-reopens | cells convert xlsx -> xlt
 output-reopens | cells convert xlsx -> xltm
 output-reopens | cells convert xlsx -> xltx
 output-reopens | cells convert xlsx -> xps
+output-reopens | cells convert xlt -> pdf
+output-reopens | cells convert xlt -> xlsx
 output-reopens | cells convert xltm -> pdf
 output-reopens | cells convert xltm -> xlsx
 output-reopens | cells convert xltx -> pdf
@@ -4397,22 +3246,6 @@ output-reopens | words convert wordml -> pdf
 output-reopens | words render docx -> jpeg
 output-reopens | words render docx -> png
 output-reopens | words render docx -> svg
-read-only | cells compare
-read-only | cells inspect
-read-only | cells inspect --detail charts
-read-only | cells inspect --detail comments
-read-only | cells inspect --detail conditional-formats
-read-only | cells inspect --detail errors
-read-only | cells inspect --detail fonts
-read-only | cells inspect --detail hyperlinks
-read-only | cells inspect --detail images
-read-only | cells inspect --detail layout
-read-only | cells inspect --detail merges
-read-only | cells inspect --detail names
-read-only | cells inspect --detail pivots
-read-only | cells inspect --detail sparklines
-read-only | cells inspect --detail tables
-read-only | cells inspect --detail validation
 read-only | cells read
 read-only | cells search
 read-only | pdf inspect
@@ -4444,6 +3277,7 @@ read-only | words inspect --detail styles
 read-only | words inspect --detail tables
 read-only | words read
 read-only | words search
+same-name-option | --at
 same-name-option | --author
 same-name-option | --bom
 same-name-option | --by
@@ -4457,14 +3291,14 @@ same-name-option | --encrypt-env
 same-name-option | --encrypt-stdin
 same-name-option | --every
 same-name-option | --font-dir
+same-name-option | --from
 same-name-option | --from-markdown
 same-name-option | --from-text
 same-name-option | --in-place
-same-name-option | --left-password
-same-name-option | --left-password-env
-same-name-option | --left-password-stdin
+same-name-option | --kind
 same-name-option | --max-chars
 same-name-option | --max-hits
+same-name-option | --max-objects
 same-name-option | --ops
 same-name-option | --out
 same-name-option | --out-dir
@@ -4475,33 +3309,14 @@ same-name-option | --password-env
 same-name-option | --password-stdin
 same-name-option | --pattern
 same-name-option | --product
-same-name-option | --range
 same-name-option | --regex
-same-name-option | --right-password
-same-name-option | --right-password-env
-same-name-option | --right-password-stdin
-same-name-option | --sample
-same-name-option | --set
 same-name-option | --sheet
-same-name-option | --sheets
 same-name-option | --skip
 same-name-option | --slides
 same-name-option | --template
 same-name-option | --to
 same-name-option | --verify
 same-name-option | --what
-secret-hidden | cells compare --left-password
-secret-hidden | cells compare --left-password with a wrong password
-secret-hidden | cells compare --left-password-env
-secret-hidden | cells compare --left-password-env with a wrong password
-secret-hidden | cells compare --left-password-stdin
-secret-hidden | cells compare --left-password-stdin with a wrong password
-secret-hidden | cells compare --right-password
-secret-hidden | cells compare --right-password with a wrong password
-secret-hidden | cells compare --right-password-env
-secret-hidden | cells compare --right-password-env with a wrong password
-secret-hidden | cells compare --right-password-stdin
-secret-hidden | cells compare --right-password-stdin with a wrong password
 secret-hidden | cells convert --encrypt
 secret-hidden | cells convert --encrypt-env
 secret-hidden | cells convert --encrypt-stdin
@@ -4520,16 +3335,6 @@ secret-hidden | cells edit --password-env
 secret-hidden | cells edit --password-env with a wrong password
 secret-hidden | cells edit --password-stdin
 secret-hidden | cells edit --password-stdin with a wrong password
-secret-hidden | cells edit protect_sheet
-secret-hidden | cells edit protect_workbook
-secret-hidden | cells edit unprotect_sheet
-secret-hidden | cells edit unprotect_workbook
-secret-hidden | cells inspect --password
-secret-hidden | cells inspect --password with a wrong password
-secret-hidden | cells inspect --password-env
-secret-hidden | cells inspect --password-env with a wrong password
-secret-hidden | cells inspect --password-stdin
-secret-hidden | cells inspect --password-stdin with a wrong password
 secret-hidden | cells read --password
 secret-hidden | cells read --password with a wrong password
 secret-hidden | cells read --password-env
@@ -4743,11 +3548,9 @@ secret-hidden | words split --password-stdin
 secret-hidden | words split --password-stdin with a wrong password
 unknown-command | capabilities as cpaabilities
 unknown-command | cells as cellss
-unknown-command | cells compare as cmopare
 unknown-command | cells convert as cnovert
 unknown-command | cells create as cerate
 unknown-command | cells edit as editt
-unknown-command | cells inspect as isnpect
 unknown-command | cells read as readd
 unknown-command | cells render as rneder
 unknown-command | cells search as saerch
@@ -4794,70 +3597,6 @@ unknown-command | words read as readd
 unknown-command | words render as rneder
 unknown-command | words search as saerch
 unknown-command | words split as splitt
-unknown-field | cells add_comment.sheet as sheett
-unknown-field | cells add_conditional_format.sheet as sheett
-unknown-field | cells add_sparkline.sheet as sheett
-unknown-field | cells clear_autofilter.sheet as sheett
-unknown-field | cells clear_conditional_formats.sheet as sheett
-unknown-field | cells clear_print_area.sheet as sheett
-unknown-field | cells clear_range.sheet as sheett
-unknown-field | cells clear_tab_color.sheet as sheett
-unknown-field | cells clear_validation.sheet as sheett
-unknown-field | cells copy_range.sheet as sheett
-unknown-field | cells define_name.name as namee
-unknown-field | cells define_table.sheet as sheett
-unknown-field | cells delete_chart.sheet as sheett
-unknown-field | cells delete_columns.sheet as sheett
-unknown-field | cells delete_comment.sheet as sheett
-unknown-field | cells delete_duplicates.sheet as sheett
-unknown-field | cells delete_hyperlink.sheet as sheett
-unknown-field | cells delete_name.name as namee
-unknown-field | cells delete_rows.sheet as sheett
-unknown-field | cells delete_sheet.sheet as sheett
-unknown-field | cells format_range.sheet as sheett
-unknown-field | cells freeze_panes.sheet as sheett
-unknown-field | cells group_columns.sheet as sheett
-unknown-field | cells group_rows.sheet as sheett
-unknown-field | cells import_range.sheet as sheett
-unknown-field | cells import_sheet.sourceSheet as suorceSheet
-unknown-field | cells insert_chart.sheet as sheett
-unknown-field | cells insert_columns.sheet as sheett
-unknown-field | cells insert_image.sheet as sheett
-unknown-field | cells insert_pivot.sheet as sheett
-unknown-field | cells insert_rows.sheet as sheett
-unknown-field | cells insert_sheet.name as namee
-unknown-field | cells merge_cells.sheet as sheett
-unknown-field | cells move_sheet.sheet as sheett
-unknown-field | cells protect_sheet.sheet as sheett
-unknown-field | cells protect_workbook.passwordEnv as psaswordEnv
-unknown-field | cells refresh_pivot.sheet as sheett
-unknown-field | cells rename_sheet.sheet as sheett
-unknown-field | cells replace_text.sheet as sheett
-unknown-field | cells resize_columns.sheet as sheett
-unknown-field | cells resize_rows.sheet as sheett
-unknown-field | cells resize_table.sheet as sheett
-unknown-field | cells set_active_sheet.sheet as sheett
-unknown-field | cells set_autofilter.sheet as sheett
-unknown-field | cells set_borders.sheet as sheett
-unknown-field | cells set_chart.sheet as sheett
-unknown-field | cells set_comment.sheet as sheett
-unknown-field | cells set_default_font.font as fontt
-unknown-field | cells set_formula.sheet as sheett
-unknown-field | cells set_hyperlink.sheet as sheett
-unknown-field | cells set_page_setup.sheet as sheett
-unknown-field | cells set_print_area.sheet as sheett
-unknown-field | cells set_sheet_view.sheet as sheett
-unknown-field | cells set_sheet_visibility.sheet as sheett
-unknown-field | cells set_tab_color.sheet as sheett
-unknown-field | cells set_validation.sheet as sheett
-unknown-field | cells set_values.sheet as sheett
-unknown-field | cells sort_range.sheet as sheett
-unknown-field | cells unfreeze_panes.sheet as sheett
-unknown-field | cells ungroup_columns.sheet as sheett
-unknown-field | cells ungroup_rows.sheet as sheett
-unknown-field | cells unmerge_cells.sheet as sheett
-unknown-field | cells unprotect_sheet.sheet as sheett
-unknown-field | cells unprotect_workbook.passwordEnv as psaswordEnv
 unknown-field | pdf add_attachment.path as pathh
 unknown-field | pdf add_bookmark.title as titlee
 unknown-field | pdf add_footer_text.pages as pagess
@@ -4924,70 +3663,6 @@ unknown-field | words set_table_style.target as traget
 unknown-field | words set_text.target as traget
 unknown-field | words set_watermark.text as textt
 unknown-field | words unprotect_document.passwordEnv as psaswordEnv
-unknown-op | cells add_comment as add_commentt
-unknown-op | cells add_conditional_format as add_conditional_formatt
-unknown-op | cells add_sparkline as add_sparklinee
-unknown-op | cells clear_autofilter as celar_autofilter
-unknown-op | cells clear_conditional_formats as celar_conditional_formats
-unknown-op | cells clear_print_area as celar_print_area
-unknown-op | cells clear_range as celar_range
-unknown-op | cells clear_tab_color as celar_tab_color
-unknown-op | cells clear_validation as celar_validation
-unknown-op | cells copy_range as cpoy_range
-unknown-op | cells define_name as dfeine_name
-unknown-op | cells define_table as dfeine_table
-unknown-op | cells delete_chart as dleete_chart
-unknown-op | cells delete_columns as dleete_columns
-unknown-op | cells delete_comment as dleete_comment
-unknown-op | cells delete_duplicates as dleete_duplicates
-unknown-op | cells delete_hyperlink as dleete_hyperlink
-unknown-op | cells delete_name as dleete_name
-unknown-op | cells delete_rows as dleete_rows
-unknown-op | cells delete_sheet as dleete_sheet
-unknown-op | cells format_range as fromat_range
-unknown-op | cells freeze_panes as fereze_panes
-unknown-op | cells group_columns as gorup_columns
-unknown-op | cells group_rows as gorup_rows
-unknown-op | cells import_range as ipmort_range
-unknown-op | cells import_sheet as ipmort_sheet
-unknown-op | cells insert_chart as isnert_chart
-unknown-op | cells insert_columns as isnert_columns
-unknown-op | cells insert_image as isnert_image
-unknown-op | cells insert_pivot as isnert_pivot
-unknown-op | cells insert_rows as isnert_rows
-unknown-op | cells insert_sheet as isnert_sheet
-unknown-op | cells merge_cells as mrege_cells
-unknown-op | cells move_sheet as mvoe_sheet
-unknown-op | cells protect_sheet as portect_sheet
-unknown-op | cells protect_workbook as portect_workbook
-unknown-op | cells refresh_pivot as rferesh_pivot
-unknown-op | cells rename_sheet as rneame_sheet
-unknown-op | cells replace_text as rpelace_text
-unknown-op | cells resize_columns as rseize_columns
-unknown-op | cells resize_rows as rseize_rows
-unknown-op | cells resize_table as rseize_table
-unknown-op | cells set_active_sheet as ste_active_sheet
-unknown-op | cells set_autofilter as ste_autofilter
-unknown-op | cells set_borders as ste_borders
-unknown-op | cells set_chart as ste_chart
-unknown-op | cells set_comment as ste_comment
-unknown-op | cells set_default_font as ste_default_font
-unknown-op | cells set_formula as ste_formula
-unknown-op | cells set_hyperlink as ste_hyperlink
-unknown-op | cells set_page_setup as ste_page_setup
-unknown-op | cells set_print_area as ste_print_area
-unknown-op | cells set_sheet_view as ste_sheet_view
-unknown-op | cells set_sheet_visibility as ste_sheet_visibility
-unknown-op | cells set_tab_color as ste_tab_color
-unknown-op | cells set_validation as ste_validation
-unknown-op | cells set_values as ste_values
-unknown-op | cells sort_range as srot_range
-unknown-op | cells unfreeze_panes as ufnreeze_panes
-unknown-op | cells ungroup_columns as ugnroup_columns
-unknown-op | cells ungroup_rows as ugnroup_rows
-unknown-op | cells unmerge_cells as umnerge_cells
-unknown-op | cells unprotect_sheet as upnrotect_sheet
-unknown-op | cells unprotect_workbook as upnrotect_workbook
 unknown-op | pdf add_attachment as add_attachmentt
 unknown-op | pdf add_bookmark as add_bookmarkk
 unknown-op | pdf add_footer_text as add_footer_textt
@@ -5065,15 +3740,9 @@ unknown-option | aspose-cli --verbose as --vrebose
 unknown-option | aspose-cli --version as --vresion
 unknown-option | aspose-cli --workdir as --wrokdir
 unknown-option | capabilities --summary as --smumary
-unknown-option | cells compare --content as --cnotent
-unknown-option | cells compare --left-password as --lfet-password
-unknown-option | cells compare --left-password-env as --lfet-password-env
-unknown-option | cells compare --left-password-stdin as --lfet-password-stdin
-unknown-option | cells compare --max-diffs as --mxa-diffs
-unknown-option | cells compare --right-password as --rgiht-password
-unknown-option | cells compare --right-password-env as --rgiht-password-env
-unknown-option | cells compare --right-password-stdin as --rgiht-password-stdin
 unknown-option | cells convert --bom as --bomm
+unknown-option | cells convert --convert-dates as --cnovert-dates
+unknown-option | cells convert --convert-numbers as --cnovert-numbers
 unknown-option | cells convert --culture as --cluture
 unknown-option | cells convert --dry-run as --dyr-run
 unknown-option | cells convert --encoding as --ecnoding
@@ -5081,48 +3750,40 @@ unknown-option | cells convert --encrypt as --ecnrypt
 unknown-option | cells convert --encrypt-env as --ecnrypt-env
 unknown-option | cells convert --encrypt-stdin as --ecnrypt-stdin
 unknown-option | cells convert --font-dir as --fnot-dir
+unknown-option | cells convert --format-strategy as --fromat-strategy
 unknown-option | cells convert --out as --outt
 unknown-option | cells convert --overwrite as --oevrwrite
 unknown-option | cells convert --password as --psasword
 unknown-option | cells convert --password-env as --psasword-env
 unknown-option | cells convert --password-stdin as --psasword-stdin
-unknown-option | cells convert --sheets as --sehets
+unknown-option | cells convert --separator as --spearator
+unknown-option | cells convert --sheet as --sheett
 unknown-option | cells convert --to as --too
 unknown-option | cells create --dry-run as --dyr-run
 unknown-option | cells create --encrypt as --ecnrypt
 unknown-option | cells create --encrypt-env as --ecnrypt-env
 unknown-option | cells create --encrypt-stdin as --ecnrypt-stdin
 unknown-option | cells create --overwrite as --oevrwrite
-unknown-option | cells create --sheet-names as --sehet-names
-unknown-option | cells edit --bom as --bomm
-unknown-option | cells edit --dry-run as --dyr-run
+unknown-option | cells create --template as --tmeplate
 unknown-option | cells edit --encrypt as --ecnrypt
 unknown-option | cells edit --encrypt-env as --ecnrypt-env
 unknown-option | cells edit --encrypt-stdin as --ecnrypt-stdin
 unknown-option | cells edit --font-dir as --fnot-dir
 unknown-option | cells edit --in-place as --i-nplace
-unknown-option | cells edit --no-recalc as --n-orecalc
 unknown-option | cells edit --ops as --opss
 unknown-option | cells edit --out as --outt
 unknown-option | cells edit --overwrite as --oevrwrite
 unknown-option | cells edit --password as --psasword
 unknown-option | cells edit --password-env as --psasword-env
 unknown-option | cells edit --password-stdin as --psasword-stdin
-unknown-option | cells edit --set as --sett
-unknown-option | cells edit --verify as --vreify
-unknown-option | cells inspect --detail as --dteail
-unknown-option | cells inspect --password as --psasword
-unknown-option | cells inspect --password-env as --psasword-env
-unknown-option | cells inspect --password-stdin as --psasword-stdin
-unknown-option | cells inspect --sample as --smaple
-unknown-option | cells inspect --sample-rows as --smaple-rows
-unknown-option | cells read --content as --cnotent
-unknown-option | cells read --max-cells as --mxa-cells
+unknown-option | cells read --at as --att
+unknown-option | cells read --from as --fromm
+unknown-option | cells read --kind as --kindd
+unknown-option | cells read --max-objects as --mxa-objects
 unknown-option | cells read --password as --psasword
 unknown-option | cells read --password-env as --psasword-env
 unknown-option | cells read --password-stdin as --psasword-stdin
-unknown-option | cells read --range as --rangee
-unknown-option | cells read --sheet as --sheett
+unknown-option | cells render --area as --areaa
 unknown-option | cells render --dpi as --dpii
 unknown-option | cells render --dry-run as --dyr-run
 unknown-option | cells render --font-dir as --fnot-dir
@@ -5131,18 +3792,15 @@ unknown-option | cells render --overwrite as --oevrwrite
 unknown-option | cells render --password as --psasword
 unknown-option | cells render --password-env as --psasword-env
 unknown-option | cells render --password-stdin as --psasword-stdin
-unknown-option | cells render --range as --rangee
-unknown-option | cells render --sheets as --sehets
+unknown-option | cells render --sheet as --sheett
 unknown-option | cells render --to as --too
 unknown-option | cells search --case-sensitive as --csae-sensitive
-unknown-option | cells search --content as --cnotent
 unknown-option | cells search --max-hits as --mxa-hits
 unknown-option | cells search --password as --psasword
 unknown-option | cells search --password-env as --psasword-env
 unknown-option | cells search --password-stdin as --psasword-stdin
 unknown-option | cells search --pattern as --ptatern
 unknown-option | cells search --regex as --regexx
-unknown-option | cells search --sheet as --sheett
 unknown-option | cells search --skip as --skipp
 unknown-option | fonts list --product as --porduct
 unknown-option | license install --dry-run as --dyr-run
@@ -5451,11 +4109,13 @@ unwritable-output | cells convert --to mhtml --out out.ppt
 unwritable-output | cells convert --to ods --out out.ppt
 unwritable-output | cells convert --to pdf --out out.ppt
 unwritable-output | cells convert --to tsv --out out.ppt
+unwritable-output | cells convert --to xlam --out out.ppt
 unwritable-output | cells convert --to xls --out out.ppt
 unwritable-output | cells convert --to xlsb --out out.ppt
 unwritable-output | cells convert --to xlsm --out out.ppt
 unwritable-output | cells convert --to xlsx --out out.doc
 unwritable-output | cells convert --to xlsx --out out.ppt
+unwritable-output | cells convert --to xlt --out out.ppt
 unwritable-output | cells convert --to xltm --out out.ppt
 unwritable-output | cells convert --to xltx --out out.ppt
 unwritable-output | cells convert --to xps --out out.ppt
