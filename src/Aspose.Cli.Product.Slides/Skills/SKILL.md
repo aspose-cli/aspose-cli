@@ -1,101 +1,123 @@
 ---
 name: aspose-cli-slides
-description: Create, inspect, edit, convert and render PowerPoint presentations with the local Aspose CLI. Markdown outlines fill real template layouts, and edits are atomic batches.
+description: Read, edit, convert and render PowerPoint presentations with the local Aspose CLI. Edits are batches of set, add, delete, move and do operations on the Aspose.Slides object model, each read back from the saved file.
 ---
 
 # Aspose Slides
 
-Use `aspose-cli slides` for PPTX, PPT, ODP and related presentation formats. The shared rules
-(session start, reading windows, operation batches, secrets, licensing, errors)
-are in `aspose-cli docs overview`; this Skill adds only what is specific to presentations.
-`aspose-cli capabilities slides` lists the commands, formats and codes, and
-`aspose-cli schema v2/slides/ops --operation <op>` describes each operation's fields.
-A deck exported to PDF is a PDF: edit that file with the PDF Skill (`aspose-cli docs pdf/overview`).
+`aspose-cli slides` reads, edits and converts PPTX, PPTM, PPSX, PPSM, POTX, POTM, PPT, PPS, POT,
+ODP, OTP and FODP through Aspose.Slides; `edit` writes the format it reads. The shared rules (session start, secrets, licensing,
+errors) are in the Platform Skill. A deck exported to PDF is a PDF: use the PDF Skill for it.
 
-## Workflow
+| Command | What it does |
+|---|---|
+| `slides read` | Every object of the deck, or of one subtree, with every row of the object table, and the deck's inventory |
+| `slides search` | Matches in the text of shapes, table cells, notes and chart titles, each with the object's address |
+| `slides edit` | One batch of operations; writes the input's format; nothing is written when one fails |
+| `slides convert`, `slides render` | The engine's save to another format; the engine's image of each slide |
+| `slides extract --what media` | The pictures, audio and video the deck embeds, byte for byte |
+| `slides create` | The engine's new presentation, or a copy of `--template` saved as a new file |
 
-1. Clarify audience, purpose, talk length, screen ratio and requested scope.
-2. **New deck:** write a Markdown outline and author it into a template
-   ([outline authoring](references/outline-authoring.md)). Omit `--template` to use the
-   built-in 16:9 design.
+## The object table
 
-   ```powershell
-   aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx --output-format json
-   ```
+`aspose-cli schema v2/slides/ops --operation directory` lists the vocabulary in one short JSON
+document: each kind with its address forms, the rows a set writes (`rows`) and the rows that are
+read only (`readOnlyRows`), and whether it can be deleted and moved; each add with the kinds it adds
+to and its parameters; each action with its parameters. One entry in full, with each row's type and
+the engine member it names: `aspose-cli schema v2/slides/ops --operation shape`,
+`--operation add.slide`, `--operation do.replace_text`. A row names one engine member; setting it sets that member only, and whatever else the engine
+changes with it is the engine's doing. Colors are `#RRGGBB`, lengths are points, enumeration values
+are the engine's member names (`Solid`, `Title`, `ClusteredColumn`); a number the engine has not
+set (NaN) reads as `null`.
 
-3. **Existing deck:** inspect the structure, then read only the slides you need. A slide cut
-   short by `--max-chars` has `contentTruncated: true`; `window.next` selects it again, with a
-   doubled budget when it alone exceeded the budget.
+Addresses use the engine's ids and positions, positions counted from 0:
 
-   ```powershell
-   aspose-cli slides inspect deck.pptx --sample --detail layouts --detail fonts --detail notes --output-format json
-   aspose-cli slides read deck.pptx --slides 1-5 --content full --notes --output-format json
-   ```
+| Address | Object |
+|---|---|
+| `presentation` | The deck: slide size, document properties |
+| `slide/256` | A slide by its `slideId` |
+| `slide/256/shape/3` | A shape by its `shapeId`, in a group or not |
+| `slide/256/placeholder/Title`, `slide/256/placeholder/Body/1` | The shape whose placeholder type (and index) is that; none or several is an error |
+| `…/paragraph/0`, `…/paragraph/0/run/1` | A paragraph of a shape, a cell or notes; a run of a paragraph |
+| `slide/256/notes` | The slide's notes slide |
+| `…/cell/1/2`, `…/row/1`, `…/column/2` | A table cell (row 1, column 2), row or column |
+| `…/title`, `…/legend`, `…/axis/vertical`, `…/series/0`, `…/series/0/point/2`, `…/category/1`, `…/data/0/1/2` | Parts of a chart; `data/<worksheet>/<row>/<column>` is a cell of the chart's workbook |
+| `section/<id>`, `master/<id>`, `layout/<id>`, `image/0` | Sections, masters, layouts, the deck's pictures |
 
-4. Put all related changes in one `slides edit` batch
-   ([Slides editing](references/editing.md)):
+## Reading
 
-   ```powershell
-   aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --verify --output-format json
-   ```
+```powershell
+aspose-cli slides read deck.pptx --kind slide --kind shape
+aspose-cli slides read deck.pptx --at slide/257
+```
 
-5. Read the changes back, render every slide and look at the images yourself
-   ([Slides verification](references/verification.md), then the checklist in
-   `aspose-cli docs verification`):
+- Each object comes with its `at` address, its `kind` and its `props`. Read `--kind slide --kind
+  shape` first: a shape's `text` row holds all its text, paragraphs separated by `\r`; its
+  paragraphs and runs repeat that text with their formatting, so read them (`--kind paragraph
+  --kind run`) only to change formatting.
+- To find where some text is, use `slides search`: each hit gives the address of the object that
+  holds it.
+- A window holds at most `--max-objects` objects (200 by default); when `window.truncated` is
+  true, run the same command with `--from` set to `window.next.from`.
+- `inventory.read` counts the objects read lists; `inventory.notRead` counts content the table
+  does not address, such as comments, animations and SmartArt nodes.
+- Layout ids for a new slide or a slide's `layout` row: `slides read deck.pptx --kind layout`.
 
-   ```powershell
-   aspose-cli slides render deck.revised.pptx --out deck.revised.png --output-format json
-   ```
+## Editing
 
-## Addressing
+```json
+{"ops": [
+  {"set": "slide/256/placeholder/Title", "props": {"text": "2026 plan"}},
+  {"add": "slide", "args": {"index": 1, "layout": 2147483650}},
+  {"add": "autoShape", "in": "slide/256", "args": {"shapeType": "Rectangle", "x": 36, "y": 400, "width": 300, "height": 60}, "props": {"text": "Note"}},
+  {"delete": "slide/258"},
+  {"move": "slide/257", "to": 0},
+  {"do": "replace_text", "args": {"oldText": "2025", "newText": "2026"}}
+]}
+```
 
-- A slide is addressed by its 1-based `slide` number or its stable `slideId`.
-- A shape is addressed within its slide by `shapeId` (persistent, slide-scoped), by
-  case-sensitive `shapeName`, or by `placeholder` role (`title`, `body`, `subtitle`, `footer`,
-  `date`, `slide-number`), the roles `slides read` reports.
-- `slides read --content shapes` reports every one of these names exactly as the
-  operations accept them; `inspect` reports slide ids and shape counts, not shape ids.
+```powershell
+aspose-cli slides edit deck.pptx --ops ops.json --out deck.edited.pptx
+```
 
-## Design: the template owns the look
+- Operations run in order, each on what the ones before it left. When one fails, nothing is
+  written, and the error names it: `details.index` (its position in `ops`), `details.at`.
+- The result has one entry per operation, read from the saved file after it was opened again:
+  `at` and `now` (every row of the object there); an action gives `returned`, the engine's return
+  value. `counts` lists the inventory counts that changed. After a delete by id, `exists` is
+  false. After a delete by position (`…/paragraph/2`), the entry reads that position: `exists:
+  true` with the rows of the object that moved into it, `false` only when nothing is there. That
+  is no failed delete: do not delete again, read the parent to see what is left.
+- An add's entry gives the new object's address. Use it in the next batch; do not guess ids.
+- A position in `at` is read after the whole batch: when a later operation inserts or deletes
+  before it, `now` is whatever object is at that position then.
+- Every argument of an add or an action is the engine call's parameter of that name; the ones not
+  given are not passed. `--operation add.<name>` lists them.
 
-Fonts, colors, backgrounds and placeholder geometry come from the template's theme, masters and
-layouts. Fix a look by choosing or correcting the template, never by restyling text run by run.
-Details: [design system](references/design-system.md).
+Tasks, as the table does them:
+
+- Title and body text: set `text` on `placeholder/Title` (`CenteredTitle` on a title slide) and on
+  `placeholder/Body` or `placeholder/Object` (`read --kind shape` gives each shape's
+  `placeholder.type` and `placeholder.index`).
+- A table: `add table` with `columnWidths` and `rowHeights`, then set `text` on each
+  `…/cell/<row>/<column>` in a second batch, at the address the add returned.
+- Chart numbers: read the chart (`--at …/shape/<id>`); each point's `value.source` names its cell
+  when it comes from the workbook; set `value` on that `…/data/<worksheet>/<row>/<column>`. A
+  series' name is read only: set the cell its `name.source` names.
+- Footers: set `footerVisible` (or `slideNumberVisible`, `dateTimeVisible`) first, then the text
+  of `placeholder/Footer`. The engine shows a footer only where the slide's layout has the
+  placeholder; making it visible copies the placeholder again, so text set before is lost.
+- Speaker notes: `add notes` on a slide without them, then set `text` on `slide/<id>/notes`.
 
 ## Evaluation mode
 
-Without a Slides license (`aspose-cli docs licensing`), reads return text longer than five
-characters cut short and warn `EVALUATION_INPUT_TRUNCATED`, while the presentations, PDFs and
-images it saves keep the full text. Each evaluation save adds another watermark text box to every
-slide; a license does not remove them, so rebuild the deck
-with a license. Details: [evaluation mode](references/troubleshooting.md#evaluation-mode).
+Without a Slides license the result says `"license": {"mode": "evaluation"}`. The engine then
+reads text longer than five characters as its first characters and a notice, and adds a watermark
+text box to every slide of every file it saves; reads and counts show it as a shape.
 
-## Common mistakes
+## More
 
-- Taking shape ids from `slides inspect`: read them with `slides read --content shapes`, and read
-  them again after copying or importing slides.
-- Restyling text with `format_shape` slide by slide instead of fixing the template once.
-- Splitting related changes over several edits; one batch can add a slide and fill it.
-- Trusting `--verify` alone: it does not read back formatting, geometry, inserted objects, table
-  cells or chart data; read those with `slides read --content full` and look at a render.
-- Expecting speaker notes in a PDF or other export: read them with `slides read --notes`.
-- Delivering a converted file without its warnings: `HIDDEN_SLIDES_SKIPPED`, `ENCRYPTION_REMOVED`
-  and `LOSSY_CONVERSION` change what the output holds
-  ([outputs](references/editing.md#outputs-and-conversion)).
-- Passing different `--font-dir` folders to `create`, `edit`, `convert` and `render`:
-  saving shrinks auto-fit text with the fonts it finds.
-
-## References
-
-- [Slides editing](references/editing.md): addressing in a batch, operations by task, text,
-  notes, charts, media, and what each output format keeps
-- [Outline authoring](references/outline-authoring.md): the Markdown grammar and how it maps to layouts
-- [Design system](references/design-system.md): choosing the template and content rules
-- [Slides verification](references/verification.md): what `--verify` reads back, content reads,
-  chart fidelity
-- [Slides troubleshooting](references/troubleshooting.md): failed or odd-looking edits and
-  evaluation-mode output
-
-Examples: [deck from outline](examples/deck-from-outline/README.md),
-[edit a deck safely](examples/edit-deck-safely/README.md),
-[data slides](examples/data-slides/README.md).
+- [Engine behavior](references/engine-behavior.md): what `replace_text` covers, footers, chart
+  data, positions; the engine's behaviors an edit runs into, which the CLI passes on unchanged.
+- [Build a slide](examples/build-a-slide/README.md): a new deck, a text box, a table filled in a
+  second batch, notes, and a render to look at.

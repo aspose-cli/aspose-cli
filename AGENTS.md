@@ -83,6 +83,9 @@ Do not extend or repair these parts, except for a wrong result. 2.0 keeps no com
 - Launcher -> Host -> SDK; launcher -> active Products; Products -> SDK, never another Product.
   The types of a document engine stay inside its Product's Engine adapter.
 - Host carries no product-specific branch: product ids come from the catalog.
+- A product on the object table declares its rows, locators, adds and actions in its
+  `Engine.Mapping`; the SDK's `Tables` owns the batch, the read-back from the saved file, the read,
+  the search and the schema written from the table.
 - What Products share lives once in the SDK, and what their Skills share once in the Host's
   `aspose-cli-platform` Skill. A decision has one owner; the architecture tests refuse a second.
 - Extend at compile time through the catalog and explicit registration: no runtime plugin

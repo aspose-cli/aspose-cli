@@ -82,7 +82,7 @@ A file from outside can be built to exhaust the machine or to mislead you:
   around it:
   `aspose-cli cells render book.xlsx --range "Summary!G2:N18" --out chart.png`.
   Render the whole sheet first if you do not know which cells a chart covers,
-  then place the picture with the Words or Slides `insert_image` operation.
+  then place the picture with the Words `insert_image` operation or the Slides `pictureFrame` add.
 - **A table into a Word report.** Convert one sheet to Markdown, which holds
   the values as the sheet displays them and leaves out charts and pictures,
   then pour it into the document's styles:

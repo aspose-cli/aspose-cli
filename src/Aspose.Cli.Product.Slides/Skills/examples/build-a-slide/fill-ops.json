@@ -1,0 +1,9 @@
+{"ops": [
+  {"set": "slide/256/shape/3/cell/0/0", "props": {"text": "Region"}},
+  {"set": "slide/256/shape/3/cell/0/1", "props": {"text": "Revenue"}},
+  {"set": "slide/256/shape/3/cell/1/0", "props": {"text": "North"}},
+  {"set": "slide/256/shape/3/cell/1/1", "props": {"text": "1.2M"}},
+  {"set": "slide/256/notes", "props": {"text": "Open with the North figures."}},
+  {"set": "slide/257/placeholder/Title", "props": {"text": "Next steps"}},
+  {"set": "slide/257/placeholder/Object", "props": {"text": "Hire two engineers\rShip the beta"}}
+]}
