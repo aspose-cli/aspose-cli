@@ -114,7 +114,8 @@ public static class TableRead
         ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(documents);
         ArgumentNullException.ThrowIfNull(request);
-        return TableErrors.Guard(documents.Table, "Reading the document", () => RunCore(outputs, documents, request));
+        // An evaluation limit the engine reaches is reported as one, before the guard calls it the engine's error.
+        return TableErrors.Guard(documents.Table, "Reading the document", () => outputs.ReportingEvaluationLimits(() => RunCore(outputs, documents, request)));
     }
 
     private static TableReadOutcome RunCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableReadRequest request)
@@ -132,9 +133,7 @@ public static class TableRead
         string? from = request.From is null
             ? null
             : AddressResolver.Resolve(table, document, Parse(table, request.From, FromOption)).Address;
-        var kinds = new HashSet<string>(request.Kinds, StringComparer.Ordinal);
-        (object Item, ObjectKind Kind, string Address)[] selected =
-            [.. Walk(table, root.Item, root.Kind, root.Address).Where(found => kinds.Count == 0 || kinds.Contains(found.Kind.Name))];
+        ((object Item, ObjectKind Kind, string Address)[] selected, IReadOnlyList<string> unnamed) = Select(table, root, request.Kinds);
         int start = 0;
         if (from is not null)
         {
@@ -166,6 +165,7 @@ public static class TableRead
                 Total = selected.Length - start,
                 Truncated = next < selected.Length,
                 Next = next < selected.Length ? ResultWindow.Options((FromOption, selected[next].Address)) : null,
+                NotListedUnlessNamed = unnamed.Count == 0 ? null : unnamed,
             },
             Warnings = opened.Warnings.Count == 0 ? null : opened.Warnings,
             License = EnvelopeParts.License(state),
@@ -179,7 +179,7 @@ public static class TableRead
         ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(documents);
         ArgumentNullException.ThrowIfNull(request);
-        return TableErrors.Guard(documents.Table, "Searching the document", () => SearchCore(outputs, documents, request));
+        return TableErrors.Guard(documents.Table, "Searching the document", () => outputs.ReportingEvaluationLimits(() => SearchCore(outputs, documents, request)));
     }
 
     private static TableSearchOutcome SearchCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableSearchRequest request)
@@ -222,21 +222,67 @@ public static class TableRead
         };
     }
 
-    /// <summary>Every object of a subtree in document order: the object, then each placement's objects below it.</summary>
-    internal static IEnumerable<(object Item, ObjectKind Kind, string Address)> Walk(DocumentTable table, object item, ObjectKind kind, string address)
+    /// <summary>
+    /// Every object of a subtree in document order: the object, then each placement's objects below
+    /// it, through the placements <paramref name="descend"/> admits (all when it is null).
+    /// </summary>
+    internal static IEnumerable<(object Item, ObjectKind Kind, string Address)> Walk(
+        DocumentTable table, object item, ObjectKind kind, string address, Func<Placement, bool>? descend = null)
     {
         yield return (item, kind, address);
-        foreach (Placement placement in table.Placements.Where(candidate => candidate.Parent == kind))
+        foreach (Placement placement in table.Placements.Where(candidate => candidate.Parent == kind && (descend is null || descend(candidate))))
         {
             foreach (object child in AddressResolver.Engine(table, address, () => placement.List(item).ToArray()))
             {
                 string below = AddressResolver.Below(table, address, placement, item, child);
-                foreach ((object, ObjectKind, string) found in Walk(table, child, placement.Kind, below))
+                foreach ((object, ObjectKind, string) found in Walk(table, child, placement.Kind, below, descend))
                 {
                     yield return found;
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// The objects a read lists below and from <paramref name="root"/>: without --kind every kind
+    /// but those listed only when named, which it returns as not listed; with --kind the named
+    /// kinds, walking only the placements that lead to one.
+    /// </summary>
+    internal static ((object Item, ObjectKind Kind, string Address)[] Selected, IReadOnlyList<string> NotListed) Select(
+        DocumentTable table, Located root, IReadOnlyCollection<string> named)
+    {
+        var kinds = new HashSet<string>(named, StringComparer.Ordinal);
+        Func<Placement, bool> descend = kinds.Count == 0
+            ? static placement => !placement.ListedWhenNamed
+            : placement => Reaches(table, placement.Kind, kinds, depth: 0);
+        (object Item, ObjectKind Kind, string Address)[] selected =
+            [.. Walk(table, root.Item, root.Kind, root.Address, descend).Where(found => kinds.Count == 0 || kinds.Contains(found.Kind.Name))];
+        return (selected, kinds.Count == 0 ? ListedWhenNamedBelow(table, root.Kind) : []);
+    }
+
+    /// <summary>Whether <paramref name="kind"/> or a kind placed anywhere below it is one of <paramref name="named"/>.</summary>
+    private static bool Reaches(DocumentTable table, ObjectKind kind, IReadOnlySet<string> named, int depth) =>
+        named.Contains(kind.Name)
+        || depth < 32 && table.Placements.Any(placement => placement.Parent == kind && Reaches(table, placement.Kind, named, depth + 1));
+
+    /// <summary>The kinds listed only when named that sit anywhere below <paramref name="kind"/>, in the table's order.</summary>
+    private static IReadOnlyList<string> ListedWhenNamedBelow(DocumentTable table, ObjectKind kind)
+    {
+        var below = new HashSet<ObjectKind>();
+        var pending = new Queue<ObjectKind>([kind]);
+        while (pending.TryDequeue(out ObjectKind? parent))
+        {
+            foreach (Placement placement in table.Placements.Where(candidate => candidate.Parent == parent))
+            {
+                if (below.Add(placement.Kind))
+                {
+                    pending.Enqueue(placement.Kind);
+                }
+            }
+        }
+
+        return [.. table.Placements.Where(placement => placement.ListedWhenNamed && below.Contains(placement.Kind))
+            .Select(static placement => placement.Kind.Name).Distinct(StringComparer.Ordinal)];
     }
 
     /// <summary>

@@ -39,6 +39,15 @@ public static class TableErrors
     public static CliException Absent(string member) =>
         CliException.Create(ErrorCodes.OpsInvalid, $"{member} is null on this object", new JsonObject { ["reason"] = OpsInvalidReasons.InvalidValue });
 
+    /// <summary>
+    /// The <c>OPS_INVALID</c> of a value that is of the row's kind but does not fit the object it
+    /// is set on, such as a matrix of another size than the range: the fact, stated with both
+    /// sides. The edit adds the operation's position, address and row.
+    /// </summary>
+    /// <param name="fact">The fact, such as <c>the value is 2 rows by 3 columns and the range 6 rows by 6 columns</c>.</param>
+    public static CliException DoesNotFit(string fact) =>
+        CliException.Create(ErrorCodes.OpsInvalid, fact, new JsonObject { ["reason"] = OpsInvalidReasons.InvalidValue });
+
     /// <summary>The <c>OPS_INVALID</c> of a batch or one of its operations.</summary>
     /// <param name="index">The operation's position, or null for the batch as a whole.</param>
     /// <param name="reason">One of <see cref="OpsInvalidReasons"/>.</param>

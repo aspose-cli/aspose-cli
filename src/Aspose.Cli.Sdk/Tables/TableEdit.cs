@@ -67,7 +67,8 @@ public static class TableEdit
         ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(documents);
         ArgumentNullException.ThrowIfNull(request);
-        return TableErrors.Guard(documents.Table, "Editing the document", () => RunCore(outputs, documents, request));
+        // An evaluation limit the engine reaches is reported as one, before the guard calls it the engine's error.
+        return TableErrors.Guard(documents.Table, "Editing the document", () => outputs.ReportingEvaluationLimits(() => RunCore(outputs, documents, request)));
     }
 
     private static TableEditOutcome RunCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableEditRequest request)
@@ -192,7 +193,7 @@ public static class TableEdit
                     AddOp add => Add(table, document, add, ref at, ref row),
                     DeleteOp delete => Delete(table, document, delete, ref at),
                     MoveOp move => Move(table, document, move, ref at),
-                    DoOp action => Do(document, action, context),
+                    DoOp action => Do(table, document, action, context),
                     _ => throw new InvalidOperationException($"Unknown operation {op.GetType().Name}."),
                 });
             }
@@ -215,7 +216,9 @@ public static class TableEdit
         Located located = AddressResolver.Resolve(table, document, op.Address);
         at = located.Address;
         Write(located.Item, located.Kind, op.Props, located.Address, op.Index, ref row);
-        return new Applied(op.Index, located.Address, Action: null, Returned: null);
+        // A row the set wrote may be the object's key, such as a worksheet's name: its address is taken again.
+        at = Settled(table, document, located.Placement, located.ParentAddress, located.Parent, located.Item, located.Address);
+        return new Applied(op.Index, at, Action: null, Returned: null);
     }
 
     private static Applied Add(DocumentTable table, object document, AddOp op, ref string? at, ref string? row)
@@ -243,6 +246,7 @@ public static class TableEdit
         object created = op.Adder.Create(parent, op.Arguments);
         at = AddressResolver.Below(table, parentAddress, op.Adder.Placement, parent, created);
         Write(created, op.Adder.Placement.Kind, op.Props, at, op.Index, ref row);
+        at = Settled(table, document, op.Adder.Placement, parentAddress, parent, created, at);
         return new Applied(op.Index, at, Action: null, Returned: null);
     }
 
@@ -261,13 +265,42 @@ public static class TableEdit
         Located located = AddressResolver.Resolve(table, document, op.Address);
         at = located.Address;
         located.Placement!.Move!(located.Parent!, located.Item, op.To);
-        at = AddressResolver.Below(table, located.ParentAddress!, located.Placement, located.Parent!, located.Item);
+        at = Settled(table, document, located.Placement, located.ParentAddress, located.Parent, located.Item, located.Address);
         return new Applied(op.Index, at, Action: null, Returned: null);
     }
 
-    private static Applied Do(object document, DoOp op, object context)
+    /// <summary>
+    /// The address of an object after an operation set, added or moved it, taken again from its
+    /// key, and looked up in the document: an address that names more than one object is
+    /// <c>ADDRESS_AMBIGUOUS</c>, as an engine that lets two objects share a name can leave it.
+    /// </summary>
+    private static string Settled(DocumentTable table, object document, Placement? placement, string? parentAddress, object? parent, object item, string address)
     {
-        ActionResult result = op.Action.Run(document, op.Arguments, context);
+        if (placement is null)
+        {
+            return address;
+        }
+
+        string settled = AddressResolver.Below(table, parentAddress!, placement, parent!, item);
+        TableAddress parsed;
+        try
+        {
+            parsed = TableAddress.Parse(table, settled);
+        }
+        catch (TableValueException unwritable)
+        {
+            throw TableErrors.DoesNotFit($"after the operation the object's address would be '{settled}', which no address of the table can be: {unwritable.Message}");
+        }
+
+        _ = AddressResolver.Resolve(table, document, parsed);
+        return settled;
+    }
+
+    private static Applied Do(DocumentTable table, object document, DoOp op, object context)
+    {
+        // The objects the arguments address are found first, so a missing one is reported as the address's.
+        Arguments arguments = op.Arguments.Resolve(table, document);
+        ActionResult result = op.Action.Run(document, arguments, context);
         return new Applied(op.Index, result.At, op.Action.Name, result.Returned);
     }
 
@@ -317,6 +350,12 @@ public static class TableEdit
             catch (CliException error) when (error.Code == ErrorCodes.AddressNotFound)
             {
                 located = null;
+            }
+            catch (CliException error) when (error.Code == ErrorCodes.AddressAmbiguous)
+            {
+                // The saved file holds more than one object the address names, as an engine that
+                // lets two names differ only in case can leave it: there is no one object to read.
+                throw TableErrors.At(op.Index, op.At, error);
             }
 
             JsonObject? now;

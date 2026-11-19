@@ -212,6 +212,31 @@ public static class ValueKinds
         static value => value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } name ? name : throw Expected("an environment variable name", value),
         TableInput.Secret);
 
+    /// <summary>
+    /// Text written as a key part of <paramref name="part"/> is, such as an A1 area <c>B2:D10</c> or
+    /// a column name <c>C</c>: its form is checked as an address checks it, and what it names is
+    /// the engine's to say.
+    /// </summary>
+    public static ValueKind<string> KeyText(KeyPart part, string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        string description = TableAddress.Describe(part);
+        return new(
+            name, $"{char.ToUpperInvariant(description[0])}{description[1..]}.",
+            static () => new JsonObject { ["type"] = "string", ["minLength"] = 1 },
+            static value => JsonValue.Create(value),
+            value => value.ValueKind == JsonValueKind.String && value.GetString() is { } text && TableAddress.Matches(part, text)
+                ? text
+                : throw Expected(description, value));
+    }
+
+    /// <summary>The address of an object, as read gives it in <c>at</c>; an address argument's value.</summary>
+    internal static ValueKind<string> AddressText { get; } = new(
+        "address", "An object's address, as read gives it in at.",
+        static () => new JsonObject { ["type"] = "string", ["minLength"] = 1 },
+        static value => JsonValue.Create(value),
+        static value => value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } text ? text : throw Expected("an address", value));
+
     /// <summary>A member of the engine's enumeration <typeparamref name="TEnum"/>, by its name.</summary>
     public static ValueKind<TEnum> Enum<TEnum>()
         where TEnum : struct, System.Enum

@@ -95,20 +95,32 @@ internal sealed partial record TableAddress(string Text, ObjectKind Kind, IReadO
         return new TableAddress(text, current, steps);
     }
 
-    private static bool Matches(KeyPart part, string token) => part switch
+    /// <summary>Whether <paramref name="token"/> has the form of <paramref name="part"/>; what it names is the engine's to say.</summary>
+    internal static bool Matches(KeyPart part, string token) => part switch
     {
         KeyPart.Index => int.TryParse(token, NumberStyles.None, CultureInfo.InvariantCulture, out _),
         KeyPart.Id or KeyPart.Number => uint.TryParse(token, NumberStyles.None, CultureInfo.InvariantCulture, out _),
         KeyPart.Guid => System.Guid.TryParseExact(token, "D", out _),
+        KeyPart.Text => token.Length > 0,
+        KeyPart.CellName => CellNamePattern().IsMatch(token),
+        KeyPart.Area => AreaPattern().IsMatch(token),
+        KeyPart.RowName => RowNamePattern().IsMatch(token),
+        KeyPart.ColumnName => ColumnNamePattern().IsMatch(token),
         _ => NamePattern().IsMatch(token),
     };
 
-    private static string Describe(KeyPart part) => part switch
+    /// <summary>What a key part is, as an error states it.</summary>
+    internal static string Describe(KeyPart part) => part switch
     {
         KeyPart.Index => "a position from 0",
         KeyPart.Id => "an id",
         KeyPart.Number => "a whole number",
         KeyPart.Guid => "a GUID",
+        KeyPart.Text => "a name",
+        KeyPart.CellName => "a cell name such as B5",
+        KeyPart.Area => "an area such as B2:D10, B5, 5:5 or C:C",
+        KeyPart.RowName => "a row number from 1, such as the 5 of B5",
+        KeyPart.ColumnName => "a column name such as the B of B5",
         _ => "a name",
     };
 
@@ -118,6 +130,18 @@ internal sealed partial record TableAddress(string Text, ObjectKind Kind, IReadO
     /// <summary>The pattern of a key part that is a name.</summary>
     [GeneratedRegex("^[A-Za-z][A-Za-z0-9._-]*$", RegexOptions.CultureInvariant)]
     private static partial Regex NamePattern();
+
+    [GeneratedRegex("^[A-Za-z]{1,3}[1-9][0-9]{0,6}$", RegexOptions.CultureInvariant)]
+    private static partial Regex CellNamePattern();
+
+    [GeneratedRegex("^(?:[A-Za-z]{1,3}[1-9][0-9]{0,6}(?::[A-Za-z]{1,3}[1-9][0-9]{0,6})?|[A-Za-z]{1,3}:[A-Za-z]{1,3}|[1-9][0-9]{0,6}:[1-9][0-9]{0,6})$", RegexOptions.CultureInvariant)]
+    private static partial Regex AreaPattern();
+
+    [GeneratedRegex("^[1-9][0-9]{0,6}$", RegexOptions.CultureInvariant)]
+    private static partial Regex RowNamePattern();
+
+    [GeneratedRegex("^[A-Za-z]{1,3}$", RegexOptions.CultureInvariant)]
+    private static partial Regex ColumnNamePattern();
 }
 
 /// <summary>An object an address found in a document.</summary>
@@ -166,12 +190,21 @@ internal static class AddressResolver
             }
             else
             {
-                found = Engine(table, address.Text, () => step.Placement.Find(current, step.Key));
-                if (found is null)
+                IReadOnlyList<object> matches = Engine(table, address.Text, () => step.Placement.Find(current, step.Key));
+                if (matches.Count == 0)
                 {
                     throw TableErrors.NotFound(step.Placement.Segment, step.Key.ToString(), path.Count == 0 ? null : here,
                         [.. step.Placement.List(current).Select(item => step.Placement.KeyOf(current, item).ToString())], address.Text);
                 }
+
+                if (matches.Count > 1)
+                {
+                    string prefix = path.Count == 0 ? string.Empty : here + "/";
+                    throw TableErrors.Ambiguous(step.Placement.Segment, step.Key.ToString(), here,
+                        [.. matches.Select(match => $"{prefix}{Text(step.Placement, step.Placement.KeyOf(current, match))}")], address.Text);
+                }
+
+                found = matches[0];
             }
 
             path.Add(Text(step.Placement, step.Placement.KeyOf(current, found)));
