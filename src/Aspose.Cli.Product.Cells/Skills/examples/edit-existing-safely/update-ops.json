@@ -1,7 +1,0 @@
-{
-  "schema": "https://schemas.aspose.com/aspose-cli/v2/cells/ops.schema.json",
-  "ops": [
-    { "op": "set_values", "sheet": "Q3", "range": "B1", "values": [[1240]] },
-    { "op": "set_values", "sheet": "Q3", "range": "B2", "values": [[44.5]] }
-  ]
-}

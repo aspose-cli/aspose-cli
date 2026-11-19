@@ -13,9 +13,9 @@ exits non-zero:
   "schema": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
   "schemaVersion": 2,
   "error": {
-    "code": "SHEET_NOT_FOUND",
+    "code": "ADDRESS_NOT_FOUND",
     "message": "No sheet 'Nope' was found. Must be one of: Data, Summary",
-    "details": { "subject": "sheet", "requested": "Nope", "availableCount": 2, "available": ["Data", "Summary"] }
+    "details": { "subject": "sheet", "requested": "Nope", "availableCount": 2, "available": ["Data", "Summary"], "at": "sheet/Nope" }
   }
 }
 ```

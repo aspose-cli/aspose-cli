@@ -1,0 +1,8 @@
+{"ops": [
+  {"add": "series", "in": "sheet/Sales/chart/1", "args": {"area": "Sales!B2:E5", "isVertical": false}},
+  {"set": "sheet/Sales/chart/1", "props": {"nSeries.categoryData": "Sales!B1:E1"}},
+  {"set": "sheet/Sales/chart/1/series/0", "props": {"name": "=Sales!A2"}},
+  {"set": "sheet/Sales/chart/1/series/1", "props": {"name": "=Sales!A3"}},
+  {"set": "sheet/Sales/chart/1/series/2", "props": {"name": "=Sales!A4"}},
+  {"set": "sheet/Sales/chart/1/series/3", "props": {"name": "=Sales!A5"}}
+]}
