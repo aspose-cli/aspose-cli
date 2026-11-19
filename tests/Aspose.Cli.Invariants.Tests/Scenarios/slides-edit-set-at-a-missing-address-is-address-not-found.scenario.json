@@ -1,0 +1,93 @@
+{
+  "name": "slides edit refuses a set at an address that names no object with ADDRESS_NOT_FOUND, exit 4: details.index is the operation's position, details.at the whole address, and the subject, the key and the keys that exist are those of the step that found nothing; nothing is written",
+  "files": {
+    "deck.pptx": {
+      "fixture": "slides.pptx"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "slides",
+        "edit",
+        "deck.pptx",
+        "--out",
+        "out.pptx",
+        "--ops",
+        "{\"ops\":[{\"set\":\"slide/999/placeholder/Title\",\"props\":{\"text\":\"X\"}}]}"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "ADDRESS_NOT_FOUND",
+        "json": [
+          {
+            "path": "error.details.index",
+            "equals": 0
+          },
+          {
+            "path": "error.details.at",
+            "equals": "slide/999/placeholder/Title"
+          },
+          {
+            "path": "error.details.subject",
+            "equals": "slide"
+          },
+          {
+            "path": "error.details.requested",
+            "equals": "999"
+          },
+          {
+            "path": "error.details.available",
+            "equals": [
+              "257",
+              "258"
+            ]
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "edit",
+        "deck.pptx",
+        "--out",
+        "out.pptx",
+        "--ops",
+        "{\"ops\":[{\"set\":\"slide/258/shape/4294967295\",\"props\":{\"name\":\"X\"}}]}"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "ADDRESS_NOT_FOUND",
+        "json": [
+          {
+            "path": "error.details.index",
+            "equals": 0
+          },
+          {
+            "path": "error.details.at",
+            "equals": "slide/258/shape/4294967295"
+          },
+          {
+            "path": "error.details.subject",
+            "equals": "shape"
+          },
+          {
+            "path": "error.details.requested",
+            "equals": "4294967295"
+          },
+          {
+            "path": "error.details.available",
+            "contains": "2"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}

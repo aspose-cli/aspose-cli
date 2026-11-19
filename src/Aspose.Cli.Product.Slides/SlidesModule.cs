@@ -27,6 +27,9 @@ public sealed class SlidesModule : IProductModule
             AvailableEngines = ["aspose"],
     };
 
+    /// <summary>Loads the Slides object table, which names engine types: the commands call it only when they run.</summary>
+    internal static Aspose.Cli.Sdk.Tables.DocumentTable Table() => Engine.Mapping.SlidesTable.Definition;
+
     public ProductDefinition Define() =>
         Aspose.Cli.Sdk.Extensibility.Product
             .Define<SlidesSession>(Manifest)
@@ -35,8 +38,7 @@ public sealed class SlidesModule : IProductModule
             .Json(ProductJsonContext.Definition)
             // Aspose.Slides writes to standard output while it renders (known issue SLIDES-FALLBACK-STDOUT).
             .Guard(static (_, run) => SlidesStandardOutput.Muted(run))
-            .Describe("Presentation automation with slide, layout and notes semantics.", Help)
-            .Command(InspectCommand.Create, SlidesInfo.Run)
+            .Describe("Read, edit, convert and render presentations through the Aspose.Slides object model.", Help)
             .Command(ReadCommand.Create, SlidesRead.Run)
             .Command(SearchCommand.Create, SlidesSearch.Run)
             .Command(ConvertCommand.Create, SlidesExport.Convert)
@@ -49,14 +51,12 @@ public sealed class SlidesModule : IProductModule
 
     private static CommandHelp Help() => new(
         [
-            "slides create deck.pptx --from-markdown outline.md --template brand.pptx",
-            "slides inspect deck.pptx --sample --detail masters --detail layouts --detail fonts --detail notes",
-            "slides read deck.pptx --slides 1-5 --content full --notes --output-format json",
-            "slides edit deck.pptx --ops deck-ops.json --out revised.pptx",
+            "slides create deck.pptx --template brand.potx",
+            "slides read deck.pptx --kind slide --kind shape",
+            "slides read deck.pptx --at slide/256",
+            "slides edit deck.pptx --ops ops.json --out revised.pptx",
         ],
         [
-            CommandHelpLink.Docs(Manifest, "editing", "atomic presentation operations"),
-            CommandHelpLink.Docs(Manifest, "verification", "slide read-back and visual review"),
-            CommandHelpLink.Schema<SlidesOp>("the operation JSON schema"),
+            new("aspose-cli schema v2/slides/ops --operation directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

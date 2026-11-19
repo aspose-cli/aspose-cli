@@ -626,11 +626,19 @@ internal static class InvariantCases
     /// Every product command that writes a document, run as its smallest valid invocation: in
     /// evaluation mode it succeeds and its result warns <see cref="EvaluationWarning"/>, so the
     /// marks the engine saved into the output are disclosed; with a license it does not claim them.
+    /// An extract whose every <c>--what</c> copies the files a document embeds byte for byte
+    /// (<see cref="ScenarioRunner.EmbeddedFileKinds"/>) writes no engine output, which is not
+    /// disclosed (D6), so it has no case in either license mode.
     /// </summary>
     private static IEnumerable<InvariantCase> EvaluationDisclosedCases(CliCommand command)
     {
         bool writes = command.Verb == "create" || command.Has("--out") || command.Has("--out-dir") || command.Has("--in-place");
         if (command.Product is not { } product || !writes)
+        {
+            yield break;
+        }
+        if (command.Option("--what") is { AllowedValues.Count: > 0 } kinds
+            && kinds.AllowedValues.All(kind => ScenarioRunner.EmbeddedFileKinds.Contains((product, kind))))
         {
             yield break;
         }

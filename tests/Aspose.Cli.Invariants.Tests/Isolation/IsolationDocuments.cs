@@ -285,26 +285,27 @@ internal static class IsolationDocuments
             Require(workspace.Run("cells", "edit", file, "--ops", "ops.json", "--in-place"), "insert the cells base pictures");
             return;
         }
-        var markdown = new StringBuilder("# Isolation sample\n\nThe base document of the isolation matrix.\n\n");
         if (product == "slides")
         {
-            // A Markdown outline places one picture per slide; the edit places them all on the first.
-            File.WriteAllText(workspace.File("source.md"), markdown.ToString());
-            Require(workspace.Run("slides", "create", file, "--from-markdown", "source.md"), "create the slides base presentation");
+            // The engine's new presentation, with every picture on its one slide at the address its read gives.
+            Require(workspace.Run("slides", "create", file), "create the slides base presentation");
+            CliResult read = workspace.Run("slides", "read", file, "--kind", "slide", "--output-format", "json");
+            Require(read, "read the slides base presentation");
+            string slide = System.Text.Json.Nodes.JsonNode.Parse(read.StdOut)!["objects"]![0]!["at"]!.GetValue<string>();
             string ops = System.Text.Json.JsonSerializer.Serialize(new
             {
                 ops = Enumerable.Range(0, count).Select(index => new
                 {
-                    op = "insert_image",
-                    slide = 1,
-                    path = $"picture{index}.png",
-                    rect = new { x = 20 + (index * 120), y = 300, width = 100, height = 100 },
+                    add = "pictureFrame",
+                    @in = slide,
+                    args = new { image = $"picture{index}.png", shapeType = "Rectangle", x = 20 + (index * 120), y = 300, width = 100, height = 100 },
                 }).ToArray(),
             });
             File.WriteAllText(workspace.File("ops.json"), ops);
             Require(workspace.Run("slides", "edit", file, "--ops", "ops.json", "--in-place"), "insert the slides base pictures");
             return;
         }
+        var markdown = new StringBuilder("# Isolation sample\n\nThe base document of the isolation matrix.\n\n");
         for (int index = 0; index < count; index++)
         {
             markdown.Append($"![picture {index}](picture{index}.png)\n\n");

@@ -60,7 +60,7 @@ internal static class RenderCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "slide read-back and visual review"),
+                CommandHelpLink.Docs(SlidesModule.Manifest, "engine-behavior", "what the engine draws and saves as it is"),
             ],
         };
     }

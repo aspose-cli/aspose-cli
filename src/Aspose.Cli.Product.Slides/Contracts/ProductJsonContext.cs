@@ -5,7 +5,6 @@ namespace Aspose.Cli.Generated;
 
 /// <summary>Source-generated serialization metadata for Slides contracts.</summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true)]
-[JsonSerializable(typeof(Product.Slides.Contracts.SlidesInspectResult))]
 [JsonSerializable(typeof(Product.Slides.Contracts.SlidesReadResult))]
 [JsonSerializable(typeof(Product.Slides.Contracts.SlidesConvertResult))]
 [JsonSerializable(typeof(Product.Slides.Contracts.SlidesRenderResult))]
@@ -13,7 +12,6 @@ namespace Aspose.Cli.Generated;
 [JsonSerializable(typeof(Product.Slides.Contracts.SlidesExtractResult))]
 [JsonSerializable(typeof(Product.Slides.Contracts.SlidesEditResult))]
 [JsonSerializable(typeof(Product.Slides.Contracts.SlidesSearchResult))]
-[JsonSerializable(typeof(Product.Slides.Contracts.SlidesOpsBatch))]
 internal sealed partial class ProductJsonContext : JsonSerializerContext
 {
     internal static ProductJsonDefinition Definition => DefinitionHolder.Value;

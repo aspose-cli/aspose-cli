@@ -1,0 +1,70 @@
+{
+  "name": "a slides edit batch whose second operation fails after the first succeeded writes no output, to --out or in place: the error names ops[1], and the input keeps its bytes",
+  "files": {
+    "deck.pptx": {
+      "fixture": "slides.pptx"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "slides",
+        "edit",
+        "deck.pptx",
+        "--out",
+        "out.pptx",
+        "--ops",
+        "{\"ops\":[{\"set\":\"presentation\",\"props\":{\"title\":\"Kept\"}},{\"delete\":\"slide/999\"}]}"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "ADDRESS_NOT_FOUND",
+        "json": [
+          {
+            "path": "error.details.index",
+            "equals": 1
+          },
+          {
+            "path": "error.details.at",
+            "equals": "slide/999"
+          }
+        ],
+        "files": {
+          "absent": [
+            "out.pptx"
+          ],
+          "nothingWritten": true
+        }
+      }
+    },
+    {
+      "args": [
+        "slides",
+        "edit",
+        "deck.pptx",
+        "--in-place",
+        "--ops",
+        "{\"ops\":[{\"set\":\"presentation\",\"props\":{\"title\":\"Kept\"}},{\"delete\":\"slide/999\"}]}"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "ADDRESS_NOT_FOUND",
+        "json": [
+          {
+            "path": "error.details.index",
+            "equals": 1
+          }
+        ],
+        "files": {
+          "unchanged": [
+            "deck.pptx"
+          ],
+          "absent": [
+            ".aspose-publication-*"
+          ],
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}

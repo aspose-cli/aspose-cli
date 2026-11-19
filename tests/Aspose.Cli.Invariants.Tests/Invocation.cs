@@ -143,8 +143,9 @@ internal sealed class Invocation
                 yield return $"no {verb} command has {option}, which the invocation rules imply";
             }
         }
+        // A template is no source: without one, a create starts from the engine's new document.
         foreach (CliCommand command in commands.Where(static command => command.Arguments.Any(static argument => argument.Required && argument.InputKind != "file")
-            && command.Options.Any(static option => option.InputKind == "file" && !option.Required)))
+            && command.Options.Any(static option => option.InputKind == "file" && !option.Required && option.Name != "--template")))
         {
             if (!ImpliedByVerb.Any(rule => rule.Verb == command.Verb && command.Has(rule.Option)))
             {

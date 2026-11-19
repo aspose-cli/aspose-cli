@@ -32,12 +32,13 @@ public sealed class StandardInputSecretCliTests
         ScenarioLicense.Project(workspace.Path);
         File.WriteAllText(workspace.File("text.txt"), "Hello\n");
         string[] source = product == "pdf" ? ["--from-text", "text.txt"] : [];
+        string read = product == "slides" ? "read" : "inspect";
 
         Succeeds(Piped(workspace, Utf8.GetBytes(Password + "\n"), [product, "create", file, .. source, "--encrypt-stdin", "--output-format", "json"]));
-        Succeeds(workspace.RunWithEnv(PasswordVariable, product, "inspect", file, "--password-env", "PW", "--output-format", "json"));
+        Succeeds(workspace.RunWithEnv(PasswordVariable, product, read, file, "--password-env", "PW", "--output-format", "json"));
 
         workspace.RunWithEnv(PasswordVariable, [product, "create", "env-" + file, .. source, "--encrypt-env", "PW", "--output-format", "json"]).Succeeded();
-        Succeeds(Piped(workspace, Utf8.GetBytes(Password + "\n"), [product, "inspect", "env-" + file, "--password-stdin", "--output-format", "json"]));
+        Succeeds(Piped(workspace, Utf8.GetBytes(Password + "\n"), [product, read, "env-" + file, "--password-stdin", "--output-format", "json"]));
     }
 
     /// <summary>The first line is the password, after a UTF-8 byte order mark and before LF or CRLF.</summary>

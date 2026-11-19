@@ -1,108 +1,22 @@
-using Aspose.Cli.Product.Slides.Engine.Editing;
-using Aspose.Cli.Sdk.IO.Output;
-using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Results;
-using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>
-/// Applies a validated, atomic operation batch through the SDK runner, publishes the output and
-/// verifies the effect of each operation: <c>slides edit</c>.
-/// </summary>
+/// <summary><c>slides edit</c>: the object table edit of a presentation.</summary>
 internal static class SlidesEdit
 {
     internal static SlidesEditResult Run(SlidesSession session, SlidesEditRequest request)
     {
-        string filePath = request.Input;
-        SlidesOpsBatch batch = SlidesOp.Catalog.Prepare(request.Batch);
-        string format = request.Output.Format.Id;
-
-        LicenseState state = session.Outputs.License;
-        FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        using LoadedPresentation loaded = session.Loader.OpenToWrite(filePath, request.Password);
-        InputInfo input = precondition.Admit(loaded.FormatId, loaded.Protection);
-        Presentation presentation = loaded.Presentation;
-        bool evaluation = state == LicenseState.Evaluation;
-        var model = new SlidesEditModel(
-            session.Budgets.Inputs,
-            session.Loader,
-            presentation,
-            evaluation,
-            request.OpSecrets,
-            () => session.Outputs.ReadInput(presentation));
-        SlidesEditVerifier? verifier = request.Verify ? new SlidesEditVerifier(presentation, model.Target, evaluation) : null;
-        model.Before = verifier is null ? null : verifier.Before;
-        AppliedBatch applied = BoundedOperationRunner.Run(
-            SlidesOp.Catalog, batch.Ops, deadline: null, model, verifier, SlidesStateProjection.SlideUnit);
-        IReadOnlyList<Warning> warnings = [.. model.Warnings, .. applied.Warnings];
-        EditPublication<SlidesEditVerification> publication = Publish(session, loaded, request, format, precondition, verifier, applied, warnings);
-
+        TableEditOutcome outcome = TableEdit.Run(session.Outputs, new SlidesDocuments(session.Loader), request);
         return new SlidesEditResult
         {
-            Input = input,
-            Output = publication.Output,
-            DryRun = request.Options.DryRun,
-            Checked = request.Options.Checked,
-            Applied = applied.Outcomes,
-            SlidesTouched = applied.Pages.Count == 0 ? null : [.. applied.Pages],
-            Verification = publication.Verification,
-            License = EnvelopeParts.License(state),
-            Warnings = request.Options.DryRun
-                ? EnvelopeParts.CombineWarnings(InputWarnings(loaded), warnings)
-                : EnvelopeParts.CombineWarnings(WrittenWarnings(loaded), warnings),
+            Input = outcome.Input,
+            Output = outcome.Output,
+            Ops = outcome.Ops,
+            Counts = outcome.Counts,
+            EngineWarnings = outcome.EngineWarnings,
+            License = outcome.License,
+            Warnings = outcome.Warnings,
         };
-    }
-
-    private static EditPublication<SlidesEditVerification> Publish(
-        SlidesSession session,
-        LoadedPresentation loaded,
-        SlidesEditRequest request,
-        string format,
-        FileWritePrecondition precondition,
-        SlidesEditVerifier? verifier,
-        AppliedBatch applied,
-        IReadOnlyList<Warning> warnings)
-    {
-        Presentation presentation = loaded.Presentation;
-        OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
-        if (!request.Options.DryRun)
-        {
-            SlidesOutputProtection.Protect(presentation, protection);
-        }
-
-        return session.Outputs.PublishEdit<SlidesEditVerification>(
-            request.Output,
-            presentation,
-            precondition,
-            request.Options.DryRun,
-            protection.Encrypted,
-            temp =>
-            {
-                presentation.Save(temp, SlidesEngineFormats.SaveFormatOf(format));
-                loaded.Resources.ThrowIfFailed();
-                using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
-                    temp,
-                    protection.Password);
-            },
-            verifier is null ? null : candidate =>
-            {
-                using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
-                    candidate,
-                    protection.Password);
-                // Only what the operations reported is the batch's: a resource the presentation
-                // links stays a link in the output, loaded or not, and every save redraws a chart's
-                // implicit title, whatever the batch does (SLIDES-CHART-TITLE).
-                VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Presentation) with { Warnings = warnings });
-                return new SlidesEditVerification
-                {
-                    Ok = verified.Ok,
-                    Issues = verified.Issues,
-                    CheckedOps = verified.CheckedOps,
-                    UncheckedOps = verified.UncheckedOps,
-                };
-            },
-            "slides-edit");
     }
 }

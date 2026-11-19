@@ -6,31 +6,32 @@ namespace Aspose.Cli.Product.Slides.Commands;
 internal static class EditCommand
 {
     public static CommandDefinition<SlidesEditRequest, SlidesEditResult> Create() =>
-        EditDefinition.Create<SlidesOp, SlidesOpsBatch, SlidesEditRequest, SlidesEditResult>(
-            new BoundedEditCommand<SlidesOp, SlidesOpsBatch>(new BoundedEditDefinition<SlidesOp, SlidesOpsBatch>
-            {
-                Contracts = ProductJsonContext.Definition,
-                VerifyDescription = "Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left; inserted pictures, shapes, tables and charts are not read back.",
-                Writes = SlidesFormats.Writable,
-            }),
-            "Apply one validated, atomic presentation operation batch.",
+        TableCommands.Edit<SlidesEditRequest, SlidesEditResult>(
+            SlidesModule.Table,
+            "Apply a batch of set, add, delete, move and do operations to a presentation; nothing is written when one fails.",
             new CommandTraits
             {
                 Input = SlidesInputs.Presentation,
                 Encrypt = SlidesInputs.EncryptedPresentation,
                 UsesFonts = true,
             },
-            [],
-            static (_, edit, _) => new SlidesEditRequest(edit),
+            SlidesFormats.Editable,
+            static edit => new SlidesEditRequest
+            {
+                Input = edit.Input,
+                Batch = edit.Batch,
+                Output = edit.Output,
+                Password = edit.Password,
+                EncryptPassword = edit.EncryptPassword,
+            },
             examples:
             [
-                "slides edit deck.pptx --ops deck-ops.json --out revised.pptx --verify",
-                "slides edit deck.pptx --in-place --ops deck-ops.json",
+                "slides edit deck.pptx --ops ops.json --out revised.pptx",
+                "slides edit deck.pptx --in-place --ops ops.json",
             ],
             links:
             [
-                CommandHelpLink.Docs(SlidesModule.Manifest, "editing", "atomic presentation operations"),
-                CommandHelpLink.Schema<SlidesOp>("the operation JSON schema"),
-                CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "what --verify reads back"),
+                CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "addresses, the five operation shapes and the read-back"),
+                CommandHelpLink.Docs(SlidesModule.Manifest, "build-a-slide", "a new deck built in two batches"),
             ]);
 }

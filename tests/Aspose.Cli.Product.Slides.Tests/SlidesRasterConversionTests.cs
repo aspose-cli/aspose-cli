@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
 
-public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.CreatedDeck created) : IClassFixture<SlidesRasterConversionTests.CreatedDeck>
+public sealed class SlidesRasterConversionTests
 {
     /// <summary>
     /// An image output without an extension, such as deliver\png that reads as a folder, is
@@ -93,9 +93,11 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
     [Fact]
     public void Edit_WritesLongPublicationPathsThroughRealCli()
     {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation(slides: 1);
         using var workspace = new TempWorkspace();
-        created.CopyTo(workspace.File("deck.pptx"));
-        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"op":"set_notes","slide":1,"text":"Review note"}]}""");
+        File.Copy(input, workspace.File("deck.pptx"));
+        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"set":"presentation","props":{"title":"Review"}}]}""");
         string directory = workspace.File(Path.Combine(new string('a', 90), new string('b', 90), new string('c', 90)));
         Directory.CreateDirectory(directory);
         string output = Path.Combine(directory, "edited.pptx");
@@ -105,26 +107,5 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         Assert.Equal(output, JsonNode.Parse(edited.StdOut)!["output"]!["path"]!.GetValue<string>());
         Assert.True(File.Exists(output));
         Assert.Empty(Directory.GetFiles(directory, "*.stage"));
-    }
-    /// <summary>
-    /// The deck the real-CLI tests start from, created once through the built CLI from a
-    /// Markdown outline; each test works on its own copy.
-    /// </summary>
-    public sealed class CreatedDeck : IDisposable
-    {
-        private readonly TempWorkspace _workspace = new();
-        private readonly Lazy<string> _deck;
-
-        public CreatedDeck() => _deck = new(() =>
-        {
-            File.WriteAllText(_workspace.File("outline.md"), "# Quarterly review\n\nGrowth and retention");
-            CliResult create = _workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--slide-size", "16x9", "--output-format", "json");
-            Assert.True(create.ExitCode == 0, create.StdErr);
-            return _workspace.File("deck.pptx");
-        });
-
-        public void CopyTo(string path) => File.Copy(_deck.Value, path);
-
-        public void Dispose() => _workspace.Dispose();
     }
 }

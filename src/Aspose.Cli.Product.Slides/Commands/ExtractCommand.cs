@@ -8,12 +8,12 @@ internal static class ExtractCommand
 {
     public static CommandDefinition<SlidesExtractRequest, SlidesExtractResult> Create()
     {
-        var what = new Option<string>("--what") { Required = true, Description = "What to extract; media includes audio and video." }.WithInput(InputKind.None);
+        var what = new Option<string>("--what") { Required = true, Description = "What to extract: media, the pictures, audio and video the presentation embeds." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. SlidesExtractKinds.All]);
         var slides = new PartRangeOption("slide", "every slide");
         return new(
             "extract",
-            "Extract bounded presentation media, notes or text.",
+            "Extract the media a presentation embeds, byte for byte.",
             new CommandTraits
             {
                 Input = SlidesInputs.Presentation,
@@ -34,7 +34,7 @@ internal static class ExtractCommand
         {
             Examples =
             [
-                "slides extract deck.pptx --what notes --out-dir notes",
+                "slides extract deck.pptx --what media --out-dir media",
                 "slides extract deck.pptx --what media --slides 2-4 --out-dir media",
             ],
             Links =

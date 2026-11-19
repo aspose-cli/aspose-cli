@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text.Json.Nodes;
 using Aspose.Slides;
 using Aspose.Slides.Export;
 using Xunit;
@@ -13,7 +14,7 @@ public sealed class SlidesResourceLoadingTests
     private const string Unreachable = "http://127.0.0.1:9";
 
     [Fact]
-    public async Task LinkedPictureAndVideo_AreNeverFetchedWhileReadingRenderingOrConverting()
+    public async Task LinkedPictureAndVideo_AreNeverFetchedWhileReadingEditingRenderingOrConverting()
     {
         using var fixture = new SlidesEngineFixture();
         await using var server = new ResourceHttpServer();
@@ -29,7 +30,13 @@ public sealed class SlidesResourceLoadingTests
         }
         Assert.True(Relink(input, Unreachable, server.Url) >= 2, "The deck must keep both external links.");
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Content = SlidesReadContents.Full });
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input });
+        SlidesEditResult edited = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = TestBatch.Parse([new JsonObject { ["set"] = "presentation", ["props"] = new JsonObject { ["title"] = "Linked" } }]),
+            Output = TestOutput.At(fixture.File("linked.edited.pptx")),
+        });
         SlidesRenderResult rendered = SlidesExport.Render(fixture.Session, new SlidesRenderRequest
         {
             Input = input,
@@ -42,7 +49,12 @@ public sealed class SlidesResourceLoadingTests
         });
 
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
-        Assert.NotEmpty(Assert.Single(read.Slides).Shapes);
+        Assert.Equal(
+            ["IPictureFrame", "IVideoFrame"],
+            read.Objects.Where(static item => item.Kind == "shape").Select(static item => item.Props["type"]!.GetValue<string>()).Where(static type => type != "IAutoShape"));
+        // An edit leaves a link it did not load a link.
+        Assert.True(Links(fixture.File("linked.edited.pptx"), server.Url) >= 2, "The edited deck must keep both external links.");
+        Assert.Contains(edited.Warnings ?? [], IsOmission);
         Assert.All(rendered.Outputs, static item => Assert.True(item.SizeBytes > 0));
         Assert.All(converted.Outputs, static output => Assert.True(new FileInfo(output.Path).Length > 0));
         // Output that needed the linked picture discloses that it was left out.
@@ -89,6 +101,21 @@ public sealed class SlidesResourceLoadingTests
 
     private static bool IsOmission(Warning warning) =>
         warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness;
+
+    /// <summary>How many times the relationships of a package name <paramref name="origin"/>.</summary>
+    private static int Links(string package, string origin)
+    {
+        using ZipArchive archive = ZipFile.OpenRead(package);
+        int count = 0;
+        foreach (ZipArchiveEntry entry in archive.Entries.Where(static entry => entry.FullName.EndsWith(".rels", StringComparison.Ordinal)))
+        {
+            using var reader = new StreamReader(entry.Open());
+            string xml = reader.ReadToEnd();
+            count += (xml.Length - xml.Replace(origin, string.Empty, StringComparison.Ordinal).Length) / origin.Length;
+        }
+
+        return count;
+    }
 
     /// <summary>Points the external relationships of a package at another origin; returns how many changed.</summary>
     private static int Relink(string package, string from, string to)

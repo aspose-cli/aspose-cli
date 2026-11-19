@@ -1,5 +1,7 @@
+using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Aspose.Cli.TestKit;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
@@ -28,7 +30,16 @@ public sealed class TextOutputEncodingTests : IDisposable
     {
         File.WriteAllText(_workspace.File("source.md"), $"# {Title}\n\n{Title}\n", new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         Assert.Equal(0, _workspace.Run("words", "create", "document.docx", "--from-markdown", "source.md").ExitCode);
-        Assert.Equal(0, _workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "source.md").ExitCode);
+        Assert.Equal(0, _workspace.Run("slides", "create", "deck.pptx").ExitCode);
+        string slide = _workspace.Run("slides", "read", "deck.pptx", "--kind", "slide", "--output-format", "json").Json()["objects"]![0]!["at"]!.GetValue<string>();
+        var box = new JsonObject
+        {
+            ["add"] = "autoShape",
+            ["in"] = slide,
+            ["args"] = new JsonObject { ["shapeType"] = "Rectangle", ["x"] = 36, ["y"] = 36, ["width"] = 600, ["height"] = 80 },
+            ["props"] = new JsonObject { ["text"] = Title },
+        };
+        Assert.Equal(0, _workspace.Run("slides", "edit", "deck.pptx", "--in-place", "--ops", new JsonObject { ["ops"] = new JsonArray(box) }.ToJsonString()).ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--set", $"Sheet1!A1={Title}").ExitCode);
         Assert.Equal(0, _workspace.Run("pdf", "create", "document.pdf", "--from-markdown", "source.md").ExitCode);
@@ -54,7 +65,10 @@ public sealed class TextOutputEncodingTests : IDisposable
             {
                 string page = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true).GetString(bytes);
                 Assert.Matches("(?i)<meta[^>]*charset\\s*=\\s*\"?utf-8", page);
-                Assert.Contains(Title, page, StringComparison.Ordinal);
+                // The page's text, without its markup: Slides draws a text as runs of glyphs, one
+                // element per font the engine falls back to, such as one for the CJK characters.
+                string text = WebUtility.HtmlDecode(Regex.Replace(page, "<[^>]*>", string.Empty));
+                Assert.Contains(Title, text, StringComparison.Ordinal);
             }
         }
     }

@@ -14,7 +14,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
     /// <summary>Every unknown field of one operation is reported at once.</summary>
     [Theory]
-    [InlineData("slides", "a.pptx", """{"op":"format_shape","slide":1,"shapeId":4,"style":{"fill":"#FF0000","size":20}}""")]
     [InlineData("pdf", "a.pdf", """{"op":"add_page_numbers","txet":"{n}","placment":"bottom-center"}""")]
     public void SeveralUnknownFieldsOfOneOperation_AreListedTogether(string product, string file, string operation)
     {
@@ -195,17 +194,18 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     }
 
     [Theory]
-    [InlineData("slides edit a.pptx --ops ops.json --out noext", "noext")]
-    [InlineData("slides edit a.pptx --ops ops.json --out dotonly.", "dotonly")]
-    [InlineData("slides create noext --from-markdown deck.md", "noext")]
-    [InlineData("slides create dotonly. --from-markdown deck.md", "dotonly")]
+    [InlineData("slides edit a.pptx --ops slides.json --out noext", "noext")]
+    [InlineData("slides edit a.pptx --ops slides.json --out dotonly.", "dotonly")]
+    [InlineData("slides create noext", "noext")]
+    [InlineData("slides create dotonly.", "dotonly")]
     [InlineData("words edit a.docx --ops words.json --out noext", "noext")]
     [InlineData("words create noext --from-markdown deck.md", "noext")]
     public void OutputWithoutExtension_IsAnInvalidOption(string commandLine, string output)
     {
-        File.WriteAllText(_workspace.File("a.pptx"), "not a document");
+        // A Slides edit checks its output against the format of the input it opened.
+        _workspace.Run("slides", "create", "a.pptx").Succeeded();
         File.WriteAllText(_workspace.File("a.docx"), "not a document");
-        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_notes","slide":1,"text":"x"}]}""");
+        File.WriteAllText(_workspace.File("slides.json"), """{"ops":[{"set":"slide/256","props":{"hidden":true}}]}""");
         File.WriteAllText(_workspace.File("words.json"), """{"ops":[{"op":"set_properties","title":"x"}]}""");
         File.WriteAllText(_workspace.File("deck.md"), "# Title");
 

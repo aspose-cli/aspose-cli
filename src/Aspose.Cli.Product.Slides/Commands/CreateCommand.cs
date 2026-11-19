@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
-using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -9,45 +8,32 @@ internal static class CreateCommand
 {
     public static CommandDefinition<SlidesCreateRequest, SlidesCreateResult> Create()
     {
-        var markdown = new Option<string?>("--from-markdown") { Description = "Markdown outline to author." }.WithInput(InputKind.File);
-        var template = new Option<string?>("--template") { Description = "Presentation whose masters, layouts and theme are reused." }.WithInput(InputKind.File);
-        var slideSize = new Option<string?>("--slide-size") { Description = "Slide aspect ratio, at a width of 720 points; the template size is kept when omitted. Set any other size, such as 960 by 540 points, with the set_slide_size operation of 'slides edit'." }.WithInput(InputKind.None);
-        slideSize.AcceptOnlyFromAmong([.. SlidesSlideSizePresets.All]);
+        var template = new Option<string?>("--template") { Description = "A presentation to save as the new one. Default: the engine's new, empty presentation." }.WithInput(InputKind.File);
         return new(
             "create",
-            "Create a blank, template-based or Markdown-authored presentation.",
+            "Create a presentation: the engine's new presentation, or a copy of a template saved in the output's format.",
             new CommandTraits
             {
-                Output = OutputTarget.CreatedFile("PPTX or PPTM path to create.", SlidesFormats.Writable),
+                Output = OutputTarget.CreatedFile("Presentation path to create.", SlidesFormats.Writable),
                 Encrypt = SlidesInputs.EncryptedPresentation,
                 UsesFonts = true,
             },
-            [markdown, template, slideSize],
-            (parse, standard) =>
+            [template],
+            (parse, standard) => new SlidesCreateRequest
             {
-                SourceFile? markdownFile = standard.Source(markdown);
-                SourceFile? templateFile = standard.Source(template);
-                ResolvedOutput output = standard.Output;
-                Secret? encryptPassword = standard.EncryptPassword();
-                return new SlidesCreateRequest
-                {
-                    Output = output,
-                    Markdown = markdownFile,
-                    Template = templateFile,
-                    SlideSize = parse.GetValue(slideSize),
-                    EncryptPassword = encryptPassword,
-                };
+                Output = standard.Output,
+                Template = standard.Source(template),
+                EncryptPassword = standard.EncryptPassword(),
             })
         {
             Examples =
             [
-                "slides create deck.pptx --from-markdown outline.md --template brand.pptx",
-                "slides create blank.pptx --slide-size 4x3",
+                "slides create blank.pptx",
+                "slides create deck.pptx --template brand.potx",
             ],
             Links =
             [
-                CommandHelpLink.Docs(SlidesModule.Manifest, "deck-from-outline", "a deck from a Markdown outline"),
-                CommandHelpLink.Docs(SlidesModule.Manifest, "outline-authoring", "the outline grammar"),
+                CommandHelpLink.Docs(SlidesModule.Manifest, "build-a-slide", "a new deck built in two batches"),
             ],
         };
     }

@@ -58,8 +58,7 @@ internal static partial class OperationRuns
 
     /// <summary>
     /// Seeds the workspace and applies the sample's setup: the document the operation edits and
-    /// the operation, with the id of the shape it addresses when the setup added that shape, or
-    /// the failure of the setup edit. Neither a document nor a failure means evaluation mode
+    /// the operation, or the failure of the setup edit. Neither a document nor a failure means evaluation mode
     /// cannot run the setup (<see cref="RuleRun.Unjudged"/>).
     /// </summary>
     public static (string? Document, JsonObject Operation, string? Failure) Prepare(RuleWorkspace workspace, OperationSample sample)
@@ -86,20 +85,6 @@ internal static partial class OperationRuns
         if (setup.ExitCode != 0)
         {
             return (null, operation, setup.Unjudged ? null : "the setup edit failed: " + setup.Describe());
-        }
-        if (sample.Shape is { } type)
-        {
-            // The read of the operation's slide lists each shape with its id and kind.
-            CliCommand read = CliCatalog.Current.Commands.First(command => IsRead(command, sample.Product) && command.Has("--slides"));
-            string slide = operation["slide"]!.ToJsonString();
-            RuleRun slides = workspace.Json([.. read.Tokens, based, "--slides", slide]);
-            JsonNode? shape = (slides.Document?["slides"]?[0]?["shapes"] as JsonArray ?? [])
-                .FirstOrDefault(item => item?["kind"]?.GetValue<string>() == type);
-            if (shape?["shapeId"] is not { } id)
-            {
-                return (null, operation, $"the setup added no {type} on slide {slide}: {(slides.ExitCode == 0 ? "none listed" : slides.Describe())}");
-            }
-            operation["shapeId"] = id.DeepClone();
         }
         return (based, operation, null);
     }
@@ -182,7 +167,7 @@ internal static partial class OperationRuns
 
     /// <summary>The product's inspect, then each of its read commands.</summary>
     private static IEnumerable<CliCommand> Probes(CliCatalog catalog, string product) =>
-        [catalog.Command($"{product} inspect"), .. catalog.Commands.Where(command => IsRead(command, product))];
+        [.. catalog.Commands.Where(command => command.Words == $"{product} inspect"), .. catalog.Commands.Where(command => IsRead(command, product))];
 
     /// <summary>
     /// One probe command on a document: inspect with every detail and its preview, a read with its

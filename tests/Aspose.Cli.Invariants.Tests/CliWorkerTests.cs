@@ -101,7 +101,9 @@ public sealed class CliWorkerTests
             }
         }
         TestContext.Current.TestOutputHelper?.WriteLine($"{cases.Length} {product} cases, {(projectLicense ? "project license" : "no license")}, {differences.Count} differ.");
-        Assert.True(cases.Length >= (projectLicense ? 30 : 8), $"Only {cases.Length} cases for {product}.");
+        // Without a license, one case per command: at least eight, or every command of a product with fewer.
+        int commands = CliCatalog.Current.Commands.Count(command => command.Product == product && command.Arguments.Count + command.Options.Count > 0);
+        Assert.True(cases.Length >= (projectLicense ? 30 : Math.Min(8, commands)), $"Only {cases.Length} cases for {product}.");
         Assert.True(differences.Count == 0, $"{differences.Count} of {cases.Length} runs differ:{Environment.NewLine}" + string.Join(Environment.NewLine, differences));
     }
 

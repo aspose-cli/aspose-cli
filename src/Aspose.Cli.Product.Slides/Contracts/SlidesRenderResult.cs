@@ -23,4 +23,7 @@ public sealed record SlidesRenderResult() : EngineResultEnvelope("render-result"
     [Minimum(64)]
     [Maximum(20_000)]
     public int? Width { get; init; }
+
+    /// <summary>The warnings Aspose.Slides reported while it loaded the presentation and wrote the output, as it reported them; omitted when there were none.</summary>
+    public IReadOnlyList<EngineWarning>? EngineWarnings { get; init; }
 }

@@ -13,8 +13,7 @@ public sealed class SlidesHtml5ConversionTests
     public void ConvertToHtml5_PublishesTheDeckWithItsCompanionFiles()
     {
         using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("outline.md"), "# Quarterly review\n\nGrowth and retention");
-        CliResult created = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--output-format", "json");
+        CliResult created = workspace.Run("slides", "create", "deck.pptx", "--output-format", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
         Directory.CreateDirectory(workspace.File("site"));
 

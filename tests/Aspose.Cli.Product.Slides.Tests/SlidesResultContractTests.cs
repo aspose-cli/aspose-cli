@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Slides.Tests;
 
 /// <summary>
 /// Real CLI runs whose JSON the workspace checks against the generated result schemas, over a
-/// deck that fills the optional parts of each result: media, notes, comments and sections.
+/// deck that holds media, notes, comments, sections and document properties.
 /// </summary>
 public sealed class SlidesResultContractTests : IDisposable
 {
@@ -17,37 +17,17 @@ public sealed class SlidesResultContractTests : IDisposable
     public void Dispose() => _workspace.Dispose();
 
     [Fact]
-    public void InspectWithEveryDetail_ReportsEveryInventory()
+    public void Read_ReportsTheObjectsOfEveryKindTheDeckHolds()
     {
         CreateDeck(_workspace.File("deck.pptx"));
 
-        JsonNode info = _workspace.Run(
-            "slides", "inspect", "deck.pptx", "--sample",
-            "--detail", "comments", "--detail", "fonts", "--detail", "layouts", "--detail", "masters",
-            "--detail", "media", "--detail", "notes", "--detail", "properties", "--detail", "sections",
-            "--output-format", "json").Json();
+        JsonNode read = _workspace.Run("slides", "read", "deck.pptx", "--output-format", "json").Json();
 
-        Assert.Contains(info["sections"]!.AsArray(), static section => section!["name"]!.GetValue<string>() == "Results");
-        Assert.Equal("image", Assert.Single(info["media"]!.AsArray())!["kind"]!.GetValue<string>());
-        Assert.Equal("Check the numbers.", Assert.Single(info["comments"]!.AsArray())!["text"]!.GetValue<string>());
-        Assert.True(info["notes"]![0]!["present"]!.GetValue<bool>());
-        Assert.Equal("Finance", info["properties"]!["author"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void QuerySlidesFull_ReportsRunsNotesAndComments()
-    {
-        CreateDeck(_workspace.File("deck.pptx"));
-
-        JsonNode read = _workspace.Run(
-            "slides", "read", "deck.pptx", "--content", "full", "--output-format", "json").Json();
-
-        JsonNode first = read["slides"]![0]!;
-        // Evaluation mode cuts read text short, so only the presence of the notes is checked.
-        Assert.NotNull(first["notes"]);
-        Assert.Single(first["comments"]!.AsArray());
-        Assert.Contains(first["shapes"]!.AsArray(), static shape => shape!["kind"]!.GetValue<string>() == "image");
-        Assert.Contains(first["shapes"]!.AsArray(), static shape => shape!["runs"] is JsonArray);
+        string[] kinds = [.. read["objects"]!.AsArray().Select(static item => item!["kind"]!.GetValue<string>()).Distinct()];
+        Assert.Contains("section", kinds);
+        Assert.Contains("image", kinds);
+        Assert.Contains("notes", kinds);
+        Assert.Contains("paragraph", kinds);
     }
 
     [Fact]
@@ -66,25 +46,22 @@ public sealed class SlidesResultContractTests : IDisposable
         Assert.Equal(64, byWidth["width"]!.GetValue<int>());
     }
 
-    [Theory]
-    [InlineData("media", "index")]
-    [InlineData("notes", "slide")]
-    [InlineData("text", "slide")]
-    public void Extract_ReportsEachWrittenFile(string what, string unit)
+    [Fact]
+    public void Extract_ReportsEachWrittenFile()
     {
         CreateDeck(_workspace.File("deck.pptx"));
 
         JsonNode extracted = _workspace.Run(
-            "slides", "extract", "deck.pptx", "--what", what, "--out-dir", what, "--output-format", "json").Json();
+            "slides", "extract", "deck.pptx", "--what", "media", "--out-dir", "media", "--output-format", "json").Json();
 
-        Assert.Equal(what, extracted["what"]!.GetValue<string>());
+        Assert.Equal("media", extracted["what"]!.GetValue<string>());
         Assert.Null(extracted["items"]);
         JsonNode item = extracted["outputs"]![0]!;
-        // Each file names the one unit it holds beside its file fields: a media item or a slide.
+        // Each file names the media item it holds beside its file fields.
         Assert.Equal(
-            new[] { "path", "format", "sizeBytes", unit }.Order(StringComparer.Ordinal),
+            new[] { "path", "format", "sizeBytes", "index" }.Order(StringComparer.Ordinal),
             item.AsObject().Select(static pair => pair.Key).Order(StringComparer.Ordinal));
-        Assert.Equal(1, item[unit]!.GetValue<int>());
+        Assert.Equal(1, item["index"]!.GetValue<int>());
         string path = item["path"]!.GetValue<string>();
         Assert.Equal(Path.GetExtension(path).TrimStart('.'), item["format"]!.GetValue<string>());
         Assert.Equal(new FileInfo(path).Length, item["sizeBytes"]!.GetValue<long>());

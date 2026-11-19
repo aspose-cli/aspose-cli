@@ -44,15 +44,20 @@ internal static partial class ContractRules
     /// cannot read, such as the frameset of a Cells MHTML archive that Words reads as an empty
     /// document, so the markers that file holds as text count instead. A convert target no product
     /// reads is skipped; today these are the Cells
-    /// <c>json</c> and <c>xps</c>, the PDF <c>tiff</c> and <c>xps</c>, the Slides <c>gif</c> and
-    /// <c>xps</c>, and the Words <c>openxps</c>, <c>pcl</c>, <c>ps</c> and <c>xps</c>.
+    /// <c>json</c> and <c>xps</c>, the PDF <c>tiff</c> and <c>xps</c>, and the Words <c>openxps</c>,
+    /// <c>pcl</c>, <c>ps</c> and <c>xps</c>. A product that edits through its object table
+    /// (<see cref="PublishedSchema.IsObjectTableProduct"/>) has no convert case: what its
+    /// engine's save to another format loses is the engine's (AGENTS.md, Boundary), and it names
+    /// none; its edit writes its input's format only, which the edit cases hold to keeping every
+    /// marker.
     /// </summary>
     private static IEnumerable<InvariantCase> R42(CliCatalog catalog)
     {
         foreach (CliProduct product in catalog.Products.Where(static product => ScenarioFixtures.Products.Contains(product.Id)))
         {
             string own = ScenarioFixtures.PrimaryFormat(product.Id);
-            if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product.Id} convert")?.Option("--to") is { } to)
+            if (!PublishedSchema.IsObjectTableProduct(catalog, product.Id)
+                && catalog.Commands.FirstOrDefault(command => command.Words == $"{product.Id} convert")?.Option("--to") is { } to)
             {
                 foreach (string target in to.AllowedValues.Where(target => Extensions(catalog, product.Id, target).Any(extension => Readers(catalog, extension).Length > 0)))
                 {
@@ -71,11 +76,12 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The extensions a product's <c>edit --out</c> writes, as the command itself states them:
-    /// <c>capabilities</c> does not list what a command writes, and only some of these formats
-    /// follow from a format's uses, so they are the <c>details.available</c> of its refusal of an
-    /// extension no format has, which comes before the input is read. Empty for a product without
-    /// <c>edit</c>.
+    /// The extensions a product's <c>edit --out</c> writes from its fixture, as the command itself
+    /// states them: <c>capabilities</c> does not list what a command writes, and only some of these
+    /// formats follow from a format's uses, so they are the <c>details.available</c> of its
+    /// refusal of an extension no format has. The edit opens the product's own fixture with its
+    /// one-operation document, since a product may judge <c>--out</c> against the format it
+    /// opened. Empty for a product without <c>edit</c>.
     /// </summary>
     /// <exception cref="InvalidOperationException">The refusal no longer lists the extensions, so the cases cannot be generated.</exception>
     private static string[] EditExtensions(CliCatalog catalog, string product)
@@ -86,8 +92,9 @@ internal static partial class ContractRules
         }
         using var workspace = new RuleWorkspace();
         string input = "input." + ScenarioFixtures.PrimaryFormat(product);
-        workspace.Seed(input, "Not a document: the refusal comes before the input is read.");
-        RuleRun refused = workspace.Json(product, "edit", input, "--ops", """{"ops":[]}""", "--out", "output.unwritable");
+        workspace.Seed(input, ScenarioFixtures.Read($"{product}.{ScenarioFixtures.PrimaryFormat(product)}"));
+        workspace.Seed("edit.ops.json", ScenarioFixtures.Read($"{product}.ops"));
+        RuleRun refused = workspace.Json(product, "edit", input, "--ops", "edit.ops.json", "--out", "output.unwritable");
         return refused.Document?["error"]?["details"]?["available"] is JsonArray { Count: > 0 } available
             ? [.. available.Select(static extension => extension!.GetValue<string>())]
             : throw new InvalidOperationException($"{product} edit does not list the extensions it writes when it refuses one: {refused.Describe()}");

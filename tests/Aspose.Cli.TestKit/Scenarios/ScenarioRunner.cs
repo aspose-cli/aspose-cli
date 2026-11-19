@@ -164,7 +164,7 @@ public static partial class ScenarioRunner
         }
         if (expect.Files is { } files)
         {
-            CheckFiles(files, before, after, report);
+            CheckFiles(files, before, after, workspace.Path, report);
         }
         foreach (string reopen in expect.Reopens ?? [])
         {
@@ -268,6 +268,7 @@ public static partial class ScenarioRunner
         ScenarioFiles files,
         IReadOnlyDictionary<string, string> before,
         IReadOnlyDictionary<string, string> after,
+        string root,
         Action<string, string> report)
     {
         foreach (string path in files.Present ?? [])
@@ -279,7 +280,21 @@ public static partial class ScenarioRunner
         }
         foreach (string path in files.Absent ?? [])
         {
-            if (after.ContainsKey(Normalize(path)))
+            if (path.Contains('*', StringComparison.Ordinal))
+            {
+                // A pattern, in which * stands for any characters but '/', matches a file or a directory.
+                var pattern = new Regex(
+                    "^" + Regex.Escape(Normalize(path)).Replace(@"\*", "[^/]*", StringComparison.Ordinal) + "$",
+                    RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+                foreach (string entry in Directory.EnumerateFileSystemEntries(root, "*", SearchOption.AllDirectories)
+                    .Select(entry => Normalize(Path.GetRelativePath(root, entry)))
+                    .Where(entry => pattern.IsMatch(entry))
+                    .Order(StringComparer.Ordinal))
+                {
+                    report(FilesCheck, $"{entry} exists");
+                }
+            }
+            else if (after.ContainsKey(Normalize(path)))
             {
                 report(FilesCheck, $"{path} exists");
             }
@@ -341,13 +356,15 @@ public static partial class ScenarioRunner
                 }
                 continue;
             }
-            CliResult inspect = Execute(workspace, [reader, "inspect", path, "--output-format", "json"], env: null, stdin: null);
-            if (inspect.ExitCode != 0)
+            // The command that only reads a file: inspect, or read for a product without inspect.
+            string verb = catalog.Commands.Any(command => command.Words == $"{reader} inspect") ? "inspect" : "read";
+            CliResult reopened = Execute(workspace, [reader, verb, path, "--output-format", "json"], env: null, stdin: null);
+            if (reopened.ExitCode != 0)
             {
-                JsonNode? failure = ErrorOf(inspect.StdErr);
-                report(ReopensCheck, $"{reader} inspect {name} failed: exit {inspect.ExitCode} "
+                JsonNode? failure = ErrorOf(reopened.StdErr);
+                report(ReopensCheck, $"{reader} {verb} {name} failed: exit {reopened.ExitCode} "
                     + (failure is null
-                        ? ScenarioContract.Excerpt(inspect.StdErr)
+                        ? ScenarioContract.Excerpt(reopened.StdErr)
                         : $"{failure["code"]?.GetValue<string>()}: {ScenarioContract.Excerpt(failure["message"]?.GetValue<string>() ?? string.Empty)}"));
             }
         }
@@ -600,8 +617,8 @@ public static partial class ScenarioRunner
     /// The <c>extract --what</c> kinds of each product that copy the files a document embeds as it
     /// stores them, the ones its extract handler names <c>ExtractionContent.EmbeddedFiles</c>.
     /// </summary>
-    private static readonly HashSet<(string Product, string? What)> EmbeddedFileKinds =
-        [("pdf", "attachments"), ("words", "images"), ("slides", "media")];
+    public static readonly IReadOnlySet<(string Product, string? What)> EmbeddedFileKinds =
+        new HashSet<(string Product, string? What)>([("pdf", "attachments"), ("words", "images"), ("slides", "media")]);
 
     /// <summary>The value of a step's <c>--what</c>, null without one.</summary>
     private static string? What(IReadOnlyList<string> args)

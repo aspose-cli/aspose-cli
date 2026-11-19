@@ -41,14 +41,6 @@ public sealed class SlidesEngineFixture : IDisposable
 
     public LicenseState LicenseState => Gate.EnsureApplied();
 
-    /// <summary>
-    /// Whether shape text is the watermark evaluation mode saves into every slide: a text box
-    /// whose text the SDK itself cuts short with its truncation marker.
-    /// </summary>
-    internal static bool IsEvaluationWatermark(string? text) =>
-        text?.StartsWith("Evalu...", StringComparison.Ordinal) == true
-        && text.Contains(SlidesEvaluationMarks.EvaluationTruncationMarker, StringComparison.OrdinalIgnoreCase);
-
     /// <summary>A blank PNG <paramref name="size"/> pixels square; different sizes give different images.</summary>
     internal static byte[] Png(int size)
     {
@@ -58,25 +50,6 @@ public sealed class SlidesEngineFixture : IDisposable
         using var stream = new MemoryStream();
         image.Save(stream, ImageFormat.Png);
         return stream.ToArray();
-    }
-
-    /// <summary>The number of image file directories in a TIFF, one per frame.</summary>
-    internal static int TiffFrames(byte[] tiff)
-    {
-        bool little = tiff[0] == (byte)'I';
-        uint Read32(long at) => little
-            ? System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(tiff.AsSpan((int)at))
-            : System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(tiff.AsSpan((int)at));
-        int Read16(long at) => little
-            ? System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(tiff.AsSpan((int)at))
-            : System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(tiff.AsSpan((int)at));
-        int count = 0;
-        for (long offset = Read32(4); offset != 0; offset = Read32(offset + 2 + (12L * Read16(offset))))
-        {
-            count++;
-        }
-
-        return count;
     }
 
     public TempDirectory Temp { get; } = new();

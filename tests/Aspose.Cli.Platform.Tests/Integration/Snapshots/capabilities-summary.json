@@ -265,7 +265,7 @@
     {
       "id": "slides",
       "name": "Slides",
-      "description": "Presentation automation with slide, layout and notes semantics.",
+      "description": "Read, edit, convert and render presentations through the Aspose.Slides object model.",
       "engine": "aspose",
       "engineVersion": "<build>",
       "loadFormats": [
@@ -307,23 +307,19 @@
         },
         {
           "command": "create",
-          "description": "Create a blank, template-based or Markdown-authored presentation."
+          "description": "Create a presentation: the engine's new presentation, or a copy of a template saved in the output's format."
         },
         {
           "command": "edit",
-          "description": "Apply one validated, atomic presentation operation batch."
+          "description": "Apply a batch of set, add, delete, move and do operations to a presentation; nothing is written when one fails."
         },
         {
           "command": "extract",
-          "description": "Extract bounded presentation media, notes or text."
-        },
-        {
-          "command": "inspect",
-          "description": "Show presentation structure, stable slide ids and metadata."
+          "description": "Extract the media a presentation embeds, byte for byte."
         },
         {
           "command": "read",
-          "description": "Read a bounded slide-content window."
+          "description": "Read a presentation's objects, each with every row of the object table, and its inventory."
         },
         {
           "command": "render",
@@ -331,43 +327,10 @@
         },
         {
           "command": "search",
-          "description": "Search the text of a presentation's shapes, notes, comments, layouts and masters."
+          "description": "Search the text of a presentation's shapes, table cells, notes and chart titles; each hit names the object's address."
         }
       ],
-      "operations": [
-        {
-          "command": "edit",
-          "ops": [
-            "copy_slide",
-            "delete_shape",
-            "delete_slides",
-            "format_shape",
-            "import_slides",
-            "insert_chart",
-            "insert_image",
-            "insert_section",
-            "insert_shape",
-            "insert_slide",
-            "insert_table",
-            "move_slide",
-            "replace_text",
-            "set_background",
-            "set_body",
-            "set_chart_data",
-            "set_footer",
-            "set_layout",
-            "set_notes",
-            "set_properties",
-            "set_shape_bounds",
-            "set_slide_hidden",
-            "set_slide_size",
-            "set_table_cell",
-            "set_text",
-            "set_title",
-            "set_transition"
-          ]
-        }
-      ]
+      "operations": []
     },
     {
       "id": "words",

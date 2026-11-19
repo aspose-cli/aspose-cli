@@ -1,5 +1,4 @@
 using System.Text.Json.Nodes;
-using Aspose.Cli.TestKit;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
@@ -20,26 +19,23 @@ public sealed class OperationTimeoutIdTests
     // Nested repetition over forty letters and a mismatch backtracks far beyond the one-second budget.
     private static readonly string Text = new string('a', 40) + "!";
 
-    /// <summary>Every product of the catalog, so a new product fails until its text edit is placed here.</summary>
-    public static TheoryData<string> Products() => [.. CliCatalog.Current.Products.Select(static product => product.Id)];
+    /// <summary>
+    /// Every product of the catalog whose edit applies named operations, so a new one fails until its
+    /// text edit is placed here. Slides is not one: its edit's operations are addresses and actions,
+    /// and none of them takes a regular expression.
+    /// </summary>
+    public static TheoryData<string> Products() => [.. CliCatalog.Current.Products.Where(static product => product.Ops.Count > 0).Select(static product => product.Id)];
 
     [Theory]
     [MemberData(nameof(Products))]
     public void ARegexTimeout_NamesTheOperationThatRanOutOfTime(string product)
     {
-        if (product == "slides")
-        {
-            TestLicense.Require("Aspose.Slides evaluation mode reads text longer than five characters cut short, so the pattern never meets the long text.");
-        }
-
         (string document, JsonObject files, JsonArray create, JsonObject op) = product switch
         {
             "cells" => ("text.csv", new JsonObject { ["text.csv"] = Source(Text + "\n") }, null!, ReplaceText()),
             "pdf" => ("text.pdf", new JsonObject { ["text.txt"] = Source(Text + "\n") },
                 new JsonArray("pdf", "create", "text.pdf", "--from-text", "text.txt"),
                 new JsonObject { ["op"] = "redact_text", ["find"] = Pattern, ["regex"] = true }),
-            "slides" => ("text.pptx", new JsonObject { ["title.md"] = Source("# " + Text + "\n") },
-                new JsonArray("slides", "create", "text.pptx", "--from-markdown", "title.md"), ReplaceText()),
             "words" => ("text.docx", new JsonObject { ["text.txt"] = Source(Text + "\n") },
                 new JsonArray("words", "create", "text.docx", "--from-text", "text.txt"), ReplaceText(UnanchoredPattern)),
             _ => throw new ArgumentOutOfRangeException(nameof(product), product, null),

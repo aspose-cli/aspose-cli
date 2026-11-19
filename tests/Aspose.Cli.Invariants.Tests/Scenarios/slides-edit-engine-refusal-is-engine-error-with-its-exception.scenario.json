@@ -1,0 +1,46 @@
+{
+  "name": "slides edit reports a call the engine refuses, a move of a slide past the last position of a two-slide deck, as ENGINE_ERROR, exit 6, with the operation's position, its address and the engine's exception type and message as they are; nothing is written",
+  "files": {
+    "deck.pptx": {
+      "fixture": "slides.pptx"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "slides",
+        "edit",
+        "deck.pptx",
+        "--out",
+        "out.pptx",
+        "--ops",
+        "{\"ops\":[{\"move\":\"slide/258\",\"to\":7}]}"
+      ],
+      "expect": {
+        "exitCode": 6,
+        "error": "ENGINE_ERROR",
+        "json": [
+          {
+            "path": "error.details.index",
+            "equals": 0
+          },
+          {
+            "path": "error.details.at",
+            "equals": "slide/258"
+          },
+          {
+            "path": "error.details.engineException",
+            "exists": true
+          },
+          {
+            "path": "error.details.engineMessage",
+            "exists": true
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}

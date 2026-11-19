@@ -65,7 +65,7 @@ public sealed class CliCatalog
         _schemas.GetOrAdd(id, key => new Lazy<string>(() => ScenarioHost.Schema(key))).Value;
 
     /// <summary>
-    /// The product whose <c>inspect</c> reopens a file: the product routing assigns to its
+    /// The product whose <c>inspect</c>, or <c>read</c> where it has no inspect, reopens a file: the product routing assigns to its
     /// extension, else <paramref name="preferred"/>, the product that wrote it, when it loads the
     /// extension; null otherwise. Another product that merely declares an unrouted extension is
     /// never asked, so its refusal is not reported against the product that wrote the file.

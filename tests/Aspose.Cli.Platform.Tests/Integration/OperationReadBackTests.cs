@@ -8,7 +8,8 @@ namespace Aspose.Cli.IntegrationTests;
 /// The <c>x-readBack</c> of every operation field a product publishes says where a read reports
 /// what the field writes in a form any JSON Schema tool resolves, the form of the schemas' own
 /// <c>$ref</c>: a canonical schema URI and a JSON Pointer into that schema. The ops schema says
-/// what the keyword means.
+/// what the keyword means. An object table's schema has no <c>x-readBack</c>: a read gives each
+/// row under the name a set writes it by.
 /// </summary>
 public sealed class OperationReadBackTests
 {
@@ -18,7 +19,7 @@ public sealed class OperationReadBackTests
     public void EveryReadPath_IsACanonicalSchemaUriWithAJsonPointerThatResolves()
     {
         var problems = new List<string>();
-        string[] opsSchemas = [.. PublishedSchemas.Ids.Where(static id => id.EndsWith("/ops", StringComparison.Ordinal))];
+        string[] opsSchemas = [.. PublishedSchemas.Ids.Where(static id => id.EndsWith("/ops", StringComparison.Ordinal) && NamesOperationsByOp(PublishedSchemas.Document(id)))];
         Assert.NotEmpty(opsSchemas);
         int paths = 0;
         foreach (string id in opsSchemas)
@@ -49,6 +50,11 @@ public sealed class OperationReadBackTests
         Assert.True(paths > 0, "No published operation field has a read path.");
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
     }
+
+    /// <summary>Whether an ops schema's operations are told apart by an <c>op</c> name, as an operation vocabulary's are.</summary>
+    private static bool NamesOperationsByOp(JsonObject document) =>
+        document["$defs"] is JsonObject definitions
+        && definitions.Any(static pair => pair.Value?["properties"]?["op"]?["const"] is not null);
 
     /// <summary>Why a read path does not resolve, or null when it resolves to a schema.</summary>
     private static string? Resolve(string path)

@@ -38,8 +38,6 @@ public sealed class CreateInputsContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData("slides create deck.pptx --from-markdown outline.md --template brand.pptx", "--from-markdown:outline.md:md", "--template:brand.pptx:pptx")]
-    [InlineData("slides create deck.pptx --template brand.pptx --from-markdown outline.md", "--template:brand.pptx:pptx", "--from-markdown:outline.md:md")]
     [InlineData("slides create deck.pptx --template brand.pptx", "--template:brand.pptx:pptx")]
     [InlineData("words create doc.docx --template brand.docx --from-markdown outline.md", "--template:brand.docx:docx", "--from-markdown:outline.md:md")]
     [InlineData("words create doc.docx --from-text notes.txt --template brand.docx", "--from-text:notes.txt:txt", "--template:brand.docx:docx")]

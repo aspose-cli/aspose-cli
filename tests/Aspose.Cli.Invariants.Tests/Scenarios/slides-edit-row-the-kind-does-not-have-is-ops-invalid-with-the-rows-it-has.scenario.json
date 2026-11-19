@@ -1,0 +1,54 @@
+{
+  "name": "slides edit refuses a row the addressed kind does not have with OPS_INVALID, exit 4, naming the operation's position, the field and the address and listing the kind's rows in details.available, before the document is written",
+  "files": {
+    "deck.pptx": {
+      "fixture": "slides.pptx"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "slides",
+        "edit",
+        "deck.pptx",
+        "--out",
+        "out.pptx",
+        "--ops",
+        "{\"ops\":[{\"set\":\"slide/258/placeholder/Title\",\"props\":{\"txt\":\"X\"}}]}"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.index",
+            "equals": 0
+          },
+          {
+            "path": "error.details.reason",
+            "equals": "unknown-field"
+          },
+          {
+            "path": "error.details.field",
+            "equals": "props.txt"
+          },
+          {
+            "path": "error.details.at",
+            "equals": "slide/258/placeholder/Title"
+          },
+          {
+            "path": "error.details.available",
+            "contains": "text"
+          },
+          {
+            "path": "error.details.available",
+            "notContains": "txt"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}

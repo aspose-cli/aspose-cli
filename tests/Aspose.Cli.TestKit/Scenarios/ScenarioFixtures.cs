@@ -19,7 +19,8 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// <item><c>slides.media</c> and <c>pdf.media</c>: the primary document with media every value of
 /// its <c>extract --what</c> writes a file from.</item>
 /// <item><c>&lt;product&gt;.rich</c>: the primary format with one marker text in each kind of
-/// content the product makes (<see cref="RichMarkers"/>), and in the PDF a picture.</item>
+/// content the product makes (<see cref="RichMarkers"/>), in the PDF a picture and in the presentation
+/// a table and a chart.</item>
 /// <item><c>markdown</c> and <c>text</c>: source text that holds <see cref="SampleText"/>.</item>
 /// <item><c>certificate.pfx</c>: a self-signed signing certificate protected by <see cref="Password"/>.</item>
 /// </list>
@@ -49,7 +50,7 @@ public static class ScenarioFixtures
     {
         ["cells"] = """{"ops":[{"op":"set_values","sheet":"Sheet1","range":"D1","values":[["edited"]]}]}""",
         ["pdf"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
-        ["slides"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
+        ["slides"] = """{"ops":[{"set":"presentation","props":{"title":"Edited"}}]}""",
         ["words"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
     };
 
@@ -162,7 +163,14 @@ public static class ScenarioFixtures
                 Require(workspace.Run("pdf", "create", file, "--from-text", "source.txt", "--output-format", "json"));
                 break;
             case "slides":
-                Require(workspace.Run("slides", "create", file, "--from-markdown", "source.md", "--output-format", "json"));
+                (string first, string second) = SlidesDeck(workspace, file);
+                File.WriteAllText(workspace.File("ops.json"), $$$"""
+                    {"ops":[{"set":"{{{first}}}/placeholder/CenteredTitle","props":{"text":"{{{SampleText}}}"}},
+                    {"set":"{{{first}}}/placeholder/Subtitle","props":{"text":"The first paragraph of the seed document."}},
+                    {"set":"{{{second}}}/placeholder/Title","props":{"text":"Second section"}},
+                    {"set":"{{{second}}}/placeholder/Object","props":{"text":"One point\rAnother point"}}]}
+                    """);
+                Require(workspace.Run("slides", "edit", file, "--ops", "ops.json", "--in-place", "--output-format", "json"));
                 break;
             case "words":
                 Require(workspace.Run("words", "create", file, "--from-markdown", "source.md", "--output-format", "json"));
@@ -172,9 +180,27 @@ public static class ScenarioFixtures
     }
 
     /// <summary>
+    /// The engine's new presentation made into two slides with placeholders: one of the layout
+    /// whose type is <c>Title</c> (a centered title and a subtitle) and one of <c>TitleAndObject</c>
+    /// (a title and an object placeholder), the engine's own blank slide deleted. Returns the
+    /// addresses the edit reports for the two slides.
+    /// </summary>
+    private static (string First, string Second) SlidesDeck(TempWorkspace workspace, string file)
+    {
+        Require(workspace.Run("slides", "create", file, "--output-format", "json"));
+        JsonArray objects = Require(workspace.Run("slides", "read", file, "--kind", "layout", "--kind", "slide", "--output-format", "json"))["objects"]!.AsArray();
+        string Layout(string type) => objects
+            .First(item => item!["kind"]!.GetValue<string>() == "layout" && item["props"]!["layoutType"]!.GetValue<string>() == type)!["props"]!["slideId"]!.ToJsonString();
+        string blank = objects.First(static item => item!["kind"]!.GetValue<string>() == "slide")!["at"]!.GetValue<string>();
+        File.WriteAllText(workspace.File("deck.ops.json"),
+            $$$"""{"ops":[{"add":"slide","args":{"index":0,"layout":{{{Layout("Title")}}}}},{"add":"slide","args":{"index":1,"layout":{{{Layout("TitleAndObject")}}}}},{"delete":"{{{blank}}}"}]}""");
+        JsonArray added = Require(workspace.Run("slides", "edit", file, "--ops", "deck.ops.json", "--in-place", "--output-format", "json"))["ops"]!.AsArray();
+        return (added[0]!["at"]!.GetValue<string>(), added[1]!["at"]!.GetValue<string>());
+    }
+
+    /// <summary>
     /// The primary presentation with a picture and speaker notes on its first slide, so that
-    /// extracting media, notes or text each writes a file: the picture is the slide itself,
-    /// rendered small.
+    /// extracting media writes a file: the picture is the slide itself, rendered small.
     /// </summary>
     private static byte[] SlidesWithMedia(string primary)
     {
@@ -183,8 +209,11 @@ public static class ScenarioFixtures
         string source = "seed." + primary;
         File.WriteAllBytes(workspace.File(source), Read($"slides.{primary}"));
         Require(workspace.Run("slides", "render", source, "--slides", "1", "--width", "64", "--out", "picture.png", "--output-format", "json"));
-        File.WriteAllText(workspace.File("ops.json"),
-            """{"ops":[{"op":"insert_image","slide":1,"path":"picture.png"},{"op":"set_notes","slide":1,"text":"Speaker notes of the seed slide."}]}""");
+        string first = Require(workspace.Run("slides", "read", source, "--kind", "slide", "--output-format", "json"))["objects"]![0]!["at"]!.GetValue<string>();
+        File.WriteAllText(workspace.File("ops.json"), $$$"""
+            {"ops":[{"add":"pictureFrame","in":"{{{first}}}","args":{"image":"picture.png","shapeType":"Rectangle","x":10,"y":10,"width":64,"height":36}},
+            {"add":"notes","in":"{{{first}}}","props":{"text":"Speaker notes of the seed slide."}}]}
+            """);
         Require(workspace.Run("slides", "edit", source, "--ops", "ops.json", "--in-place", "--output-format", "json"));
         return File.ReadAllBytes(workspace.File(source));
     }
@@ -222,7 +251,9 @@ public static class ScenarioFixtures
     /// A document of the product's primary format with each marker of <see cref="RichMarkers"/> in
     /// the kind of content it names, built with the product's own create and edit: the body text,
     /// and a header, footer, comment, chart title, form field value, slide footer, speaker notes or
-    /// shape text where the product makes one. The PDF also shows a picture (<see cref="RichPicture"/>).
+    /// shape text where the product makes one. The PDF also shows a picture (<see cref="RichPicture"/>), and
+    /// the presentation holds an empty table and a chart, so that every kind of object its edit
+    /// addresses has one in the fixture.
     /// </summary>
     private static byte[] Rich(string product, string primary)
     {
@@ -254,14 +285,23 @@ public static class ScenarioFixtures
                     """;
                 break;
             case "slides":
-                File.WriteAllText(workspace.File("rich.md"), $"# Rich seed\n\n{Marker("body")}\n\n## Second slide\n\n- One point\n");
-                Require(workspace.Run("slides", "create", file, "--from-markdown", "rich.md", "--output-format", "json"));
-                operations = $$"""
-                    [{"op":"set_notes","slide":1,"text":"{{Marker("speaker notes")}}"},
-                    {"op":"set_footer","text":"{{Marker("footer")}}"},
-                    {"op":"insert_shape","slide":2,"geometry":"rectangle","rect":{"x":40,"y":300,"width":220,"height":60},"text":"{{Marker("shape text")}}"},
-                    {"op":"insert_chart","slide":2,"kind":"column","rect":{"x":300,"y":250,"width":320,"height":200},"categories":["A","B"],"series":[{"name":"Series","values":[1,2]}],"title":"{{Marker("chart title")}}"}]
-                    """;
+                // The footer is made visible before its text is set, as showing it copies the
+                // layout's placeholder again; the chart's title is set at the address its add reports.
+                (string first, string second) = SlidesDeck(workspace, file);
+                File.WriteAllText(workspace.File("content.ops.json"), $$$"""
+                    {"ops":[{"set":"{{{first}}}/placeholder/CenteredTitle","props":{"text":"Rich seed"}},
+                    {"set":"{{{first}}}/placeholder/Subtitle","props":{"text":"{{{Marker("body")}}}"}},
+                    {"set":"{{{second}}}/placeholder/Title","props":{"text":"Second slide"}},
+                    {"set":"{{{second}}}/placeholder/Object","props":{"text":"One point"}},
+                    {"add":"notes","in":"{{{first}}}","props":{"text":"{{{Marker("speaker notes")}}}"}},
+                    {"set":"{{{first}}}","props":{"footerVisible":true}},
+                    {"set":"{{{first}}}/placeholder/Footer","props":{"text":"{{{Marker("footer")}}}"}},
+                    {"add":"autoShape","in":"{{{second}}}","args":{"shapeType":"Rectangle","x":40,"y":300,"width":220,"height":60},"props":{"text":"{{{Marker("shape text")}}}"}},
+                    {"add":"table","in":"{{{second}}}","args":{"x":40,"y":380,"columnWidths":[60,60],"rowHeights":[20,20]}},
+                    {"add":"chart","in":"{{{second}}}","args":{"type":"ClusteredColumn","x":300,"y":250,"width":320,"height":200},"props":{"hasTitle":true}}]}
+                    """);
+                string chart = Require(workspace.Run("slides", "edit", file, "--ops", "content.ops.json", "--in-place", "--output-format", "json"))["ops"]![9]!["at"]!.GetValue<string>();
+                operations = $$$"""[{"set":"{{{chart}}}/title","props":{"text":"{{{Marker("chart title")}}}"}}]""";
                 break;
             case "words":
                 File.WriteAllText(workspace.File("rich.md"), $"# Rich seed\n\n{Marker("body")}\n\nSecond paragraph.\n");

@@ -18,6 +18,12 @@
     },
     "deck.md": {
       "text": "# Title"
+    },
+    "deck.pptx": {
+      "fixture": "slides.pptx"
+    },
+    "slides-ops.json": {
+      "fixture": "slides.ops"
     }
   },
   "steps": [
@@ -63,9 +69,9 @@
       "args": [
         "slides",
         "edit",
-        "a.pptx",
+        "deck.pptx",
         "--ops",
-        "ops.json",
+        "slides-ops.json",
         "--out",
         "x.pdf"
       ],
@@ -78,16 +84,18 @@
             "equals": "--out"
           },
           {
-            "path": "error.message",
-            "startsWith": "--out '"
-          },
-          {
-            "path": "error.message",
-            "contains": "which aspose-cli slides edit does not write. Must be one of: .pptx,"
-          },
-          {
             "path": "error.details.format",
-            "exists": true
+            "equals": "pptx"
+          },
+          {
+            "path": "error.details.available",
+            "equals": [
+              ".pptx"
+            ]
+          },
+          {
+            "path": "error.message",
+            "contains": "Must be one of: .pptx."
           }
         ],
         "files": {
@@ -101,9 +109,7 @@
       "args": [
         "slides",
         "create",
-        "x.ppt",
-        "--from-markdown",
-        "deck.md"
+        "x.ppt"
       ],
       "expect": {
         "exitCode": 2,

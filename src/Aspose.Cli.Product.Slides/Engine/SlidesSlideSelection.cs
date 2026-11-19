@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 
 namespace Aspose.Cli.Product.Slides.Engine;
@@ -15,11 +16,7 @@ internal static class SlidesSlideSelection
         }
     }
 
-    /// <summary>The slide numbers a range selects; a presentation without slides has none to select.</summary>
+    /// <summary>The slide numbers, from 1, a range selects; a presentation without slides has none to select.</summary>
     internal static IReadOnlyList<int> ResolveSlideRange(PageRange range, int slideCount) =>
-        range.Resolve(slideCount, SlidesDiagnostics.SlideNotFound, "slide");
-
-    /// <summary>Every slide number, as the range <c>1-</c> selects them.</summary>
-    internal static IReadOnlyList<int> AllSlides(int slideCount) =>
-        ResolveSlideRange(PageRange.Parse("1-"), slideCount);
+        range.Resolve(slideCount, ErrorCodes.AddressNotFound, "slide");
 }

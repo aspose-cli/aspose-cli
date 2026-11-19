@@ -11,7 +11,7 @@ public sealed class ProductPublicationTests
     public static TheoryData<string, string, string[], string> EditCases => new()
     {
         { "words", "docx", ["--from-text", "source.txt"], """{"ops":[{"op":"set_text","target":{"find":"Anchor"},"text":"Edited"}]}""" },
-        { "slides", "pptx", ["--from-markdown", "source.md"], """{"ops":[{"op":"set_title","slide":1,"text":"Edited"}]}""" },
+        { "slides", "pptx", [], """{"ops":[{"set":"slide/256","props":{"hidden":true}}]}""" },
         { "pdf", "pdf", ["--from-text", "source.txt"], """{"ops":[{"op":"set_properties","title":"Edited"}]}""" },
     };
 
@@ -37,13 +37,13 @@ public sealed class ProductPublicationTests
     /// staging beside the file.
     /// </summary>
     [Theory]
-    [InlineData("slides", "pptx", "--from-markdown", "source.md", """{"ops":[{"op":"set_title","slide":1,"text":"Edited"}]}""")]
-    [InlineData("pdf", "pdf", "--from-text", "source.txt", """{"ops":[{"op":"set_properties","title":"Edited"}]}""")]
+    [InlineData("slides", "pptx", new string[0], """{"ops":[{"set":"slide/256","props":{"hidden":true}}]}""")]
+    [InlineData("pdf", "pdf", new[] { "--from-text", "source.txt" }, """{"ops":[{"op":"set_properties","title":"Edited"}]}""")]
     public void InPlaceEdit_WhoseEngineHoldsItsInput_LeavesNoStaging(string product, string extension,
-        string sourceOption, string source, string ops)
+        string[] sourceOptions, string ops)
     {
         using var workspace = new TempWorkspace();
-        string input = CreateInput(workspace, product, extension, [sourceOption, source]);
+        string input = CreateInput(workspace, product, extension, sourceOptions);
 
         workspace.Run([product, "edit", input, "--ops", ops, "--in-place", "--output-format", "json"]).Succeeded();
 
@@ -60,7 +60,7 @@ public sealed class ProductPublicationTests
     {
         using var workspace = new TempWorkspace();
         string document = CreateInput(workspace, "words", "docx", ["--from-text", "source.txt"]);
-        string deck = CreateInput(workspace, "slides", "pptx", ["--from-markdown", "source.md"]);
+        string deck = CreateInput(workspace, "slides", "pptx", []);
 
         CliResult converted = workspace.Run(["words", "convert", document, "--to", "pdf", "--out", workspace.File("converted.pdf"),
             "--output-format", "json"]);

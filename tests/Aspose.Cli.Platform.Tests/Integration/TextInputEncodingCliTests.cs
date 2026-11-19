@@ -39,7 +39,6 @@ public sealed class TextInputEncodingCliTests
 
     [Theory]
     [InlineData("words", "out.docx", "--from-text", "text.txt", "Hello ")]
-    [InlineData("slides", "out.pptx", "--from-markdown", "outline.md", "# Hello ")]
     public void TextFileAfterAMark_ThatIsNotUtf8_IsRefusedBeforeAnythingIsWritten(string product, string output, string option, string file, string text)
     {
         using var workspace = Workspace();

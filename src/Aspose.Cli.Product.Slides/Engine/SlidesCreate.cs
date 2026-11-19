@@ -2,46 +2,22 @@ using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesResultParts;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Creates a blank, template-based or Markdown-authored presentation.</summary>
+/// <summary><c>slides create</c>: the engine's new presentation, or a template saved as a new presentation.</summary>
 internal static class SlidesCreate
 {
-    /// <summary>
-    /// A template, which opens without a password: an encrypted one is refused. New slides go on
-    /// its layouts, so it opens to be written (SLIDES-PPT-TEMPLATE-LAYOUTS).
-    /// </summary>
-    private static LoadedPresentation OpenTemplate(SlidesSession session, string path) =>
-        session.Loader.OpenToWrite(path, PasswordSource.None());
-
     internal static SlidesCreateResult Run(SlidesSession session, SlidesCreateRequest request)
     {
         LicenseState state = session.Outputs.License;
-        string format = request.Output.Format.Id;
-
-        using LoadedPresentation template = request.Template is null
-            ? SlidesPresentationLoader.OpenDefaultTemplate()
-            : OpenTemplate(session, request.Template.Path);
-        Presentation presentation = template.Presentation;
-        ApplySlideSize(presentation, request.SlideSize);
-        IReadOnlyList<Warning> authoring = [];
-        if (request.Markdown is not null)
-        {
-            authoring = SlidesMarkdownBuilder.Build(
-                session.Budgets,
-                presentation,
-                request.Markdown.Path);
-        }
-        else if (presentation.Slides.Count == 0)
-        {
-            // A design template may hold only masters and layouts; a presentation needs a slide.
-            presentation.Slides.AddEmptySlide(SlidesPlaceholders.Layout(presentation, SlideLayoutType.Title));
-        }
-
-        // A new presentation keeps no password of its template, which opens only without one.
+        var log = new EngineWarningLog();
+        // A template opens without a password: an encrypted one is refused.
+        using LoadedPresentation? template = request.Template is null ? null : session.Loader.Open(request.Template.Path, PasswordSource.None(), log);
+        using Presentation? created = template is null ? new Presentation() : null;
+        Presentation presentation = template?.Presentation ?? created!;
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, new InputProtection(Encrypted: false), inputPassword: null);
         SlidesOutputProtection.Protect(presentation, protection);
         PublishedFile written = session.Outputs.Write(
@@ -51,37 +27,19 @@ internal static class SlidesCreate
             presentation,
             temp =>
             {
-                presentation.Save(temp, SlidesEngineFormats.SaveFormatOf(format));
-                template.Resources.ThrowIfFailed();
+                log.During = "save";
+                SlidesExport.Save(presentation, temp, SlidesEngineFormats.SaveFormatOf(request.Output.Format.Id), log);
+                template?.Resources.ThrowIfFailed();
             },
             encrypted: protection.Encrypted);
         return new SlidesCreateResult
         {
             Output = FileObjects.Output(written, request.Output.Format, protection.Encrypted),
             SlideCount = presentation.Slides.Count,
-            Inputs = FileObjects.Sources(
-                (request.Template, template.FormatId, template.Encrypted),
-                (request.Markdown, "md", false)),
+            Inputs = template is null ? [] : FileObjects.Sources((request.Template, template.FormatId, template.Encrypted)),
+            EngineWarnings = log.Warnings.Count == 0 ? null : log.Warnings,
             License = EnvelopeParts.License(state),
-            Warnings = authoring.Count == 0
-                ? WrittenWarnings(template)
-                : [.. WrittenWarnings(template) ?? [], .. authoring],
+            Warnings = template is null ? null : SlidesResultParts.InputWarnings(template),
         };
-    }
-
-    /// <summary>
-    /// Resizes the canvas and scales masters, layouts and slides with it, so inherited
-    /// placeholder geometry (footers, slide numbers, dates) stays inside the new canvas.
-    /// </summary>
-    private static void ApplySlideSize(Presentation presentation, string? preset)
-    {
-        if (preset is null)
-        {
-            return;
-        }
-
-        presentation.SlideSize.SetSize(
-            preset == SlidesSlideSizePresets.Widescreen ? SlideSizeType.OnScreen16x9 : SlideSizeType.OnScreen,
-            SlideSizeScaleType.EnsureFit);
     }
 }

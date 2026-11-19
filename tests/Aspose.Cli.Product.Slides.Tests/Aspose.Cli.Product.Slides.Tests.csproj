@@ -9,4 +9,8 @@
   <ItemGroup>
     <PackageReference Include="Aspose.Slides.NET6.CrossPlatform" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- The 16:9 design the SLIDES-PPT-TEMPLATE-LAYOUTS reproduction saves as PPT. -->
+    <None Update="Assets\default-16x9.pptx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
