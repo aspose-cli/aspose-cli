@@ -1894,6 +1894,13 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "notListedUnlessNamed": {
+          "description": "The kinds a read lists only when its --kind option names them, such as a spreadsheet's cells, that this read could have reached and did not list because no --kind named them; the same read with --kind and one of them lists those objects. Omitted when there are none.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

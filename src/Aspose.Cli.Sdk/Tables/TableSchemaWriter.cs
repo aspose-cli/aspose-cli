@@ -119,7 +119,7 @@ internal static class TableSchemaWriter
                 required.Add("in");
             }
 
-            properties["args"] = With(Arguments(adder.Arguments), "The engine call's parameters, by name.");
+            properties["args"] = With(Arguments(table, adder.Arguments), "The engine call's parameters, by name.");
             if (adder.Arguments.Any(static argument => argument.Required))
             {
                 required.Add("args");
@@ -153,7 +153,7 @@ internal static class TableSchemaWriter
                 ["properties"] = new JsonObject
                 {
                     ["do"] = new JsonObject { ["const"] = action.Name, ["description"] = "The action's name." },
-                    ["args"] = With(Arguments(action.Arguments), "The engine call's parameters, by name."),
+                    ["args"] = With(Arguments(table, action.Arguments), "The engine call's parameters, by name."),
                 },
             };
         }
@@ -263,6 +263,10 @@ internal static class TableSchemaWriter
         {
             definition["x-delete"] = table.Placements.Any(candidate => candidate.Kind == kind && candidate.Delete is not null);
             definition["x-move"] = table.Placements.Any(candidate => candidate.Kind == kind && candidate.Move is not null);
+            if (ListedWhenNamed(table, kind))
+            {
+                definition["x-listedWhenNamed"] = true;
+            }
         }
 
         definition["properties"] = properties;
@@ -307,16 +311,29 @@ internal static class TableSchemaWriter
         KeyPart.Id => "<id>",
         KeyPart.Number => "<number>",
         KeyPart.Guid => "<guid>",
+        KeyPart.CellName => "<cell>",
+        KeyPart.Area => "<area>",
+        KeyPart.RowName => "<row>",
+        KeyPart.ColumnName => "<column>",
         _ => "<name>",
     };
 
-    private static JsonObject Arguments(IReadOnlyList<Argument> arguments)
+    /// <summary>Whether read lists objects of <paramref name="kind"/> only when --kind names it.</summary>
+    private static bool ListedWhenNamed(DocumentTable table, ObjectKind kind) =>
+        table.Placements.Any(candidate => candidate.Kind == kind && candidate.ListedWhenNamed);
+
+    private static JsonObject Arguments(DocumentTable table, IReadOnlyList<Argument> arguments)
     {
         var properties = new JsonObject();
         foreach (Argument argument in arguments)
         {
             JsonObject schema = argument.Kind.Schema();
             schema["description"] = argument.Description;
+            if (argument.Addresses is { } kind)
+            {
+                schema["x-addresses"] = new JsonArray([.. Addresses(table, kind, 0).Select(static address => (JsonNode)address)]);
+            }
+
             properties[argument.Name] = schema;
         }
 
@@ -365,6 +382,10 @@ internal static class TableSchemaWriter
             {
                 entry["delete"] = table.Placements.Any(candidate => candidate.Kind == kind && candidate.Delete is not null);
                 entry["move"] = table.Placements.Any(candidate => candidate.Kind == kind && candidate.Move is not null);
+                if (ListedWhenNamed(table, kind))
+                {
+                    entry["listedWhenNamed"] = true;
+                }
             }
 
             kinds[kind.Name] = entry;

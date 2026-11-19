@@ -127,13 +127,24 @@ public static class TableCommands
     }
 
     /// <summary>Defines the <c>read</c> command.</summary>
+    /// <param name="table">Loads the product's table; it is called only when the command runs.</param>
+    /// <param name="description">The command help.</param>
+    /// <param name="traits">The read document.</param>
+    /// <param name="bind">Maps the invocation to the product's request.</param>
+    /// <param name="examples">The help examples.</param>
+    /// <param name="links">The help links.</param>
+    /// <param name="listedWhenNamed">
+    /// The kinds of the product's table that read lists only when --kind names them, which the
+    /// --kind help names; none for a table without such kinds.
+    /// </param>
     public static CommandDefinition<TRequest, TResult> Read<TRequest, TResult>(
         Func<DocumentTable> table,
         string description,
         CommandTraits traits,
         Func<TableReadInvocation, TRequest> bind,
         IReadOnlyList<string>? examples = null,
-        IReadOnlyList<CommandHelpLink>? links = null)
+        IReadOnlyList<CommandHelpLink>? links = null,
+        IReadOnlyList<string>? listedWhenNamed = null)
         where TResult : ResultEnvelope
     {
         ArgumentNullException.ThrowIfNull(table);
@@ -146,9 +157,12 @@ public static class TableCommands
         {
             Description = "The address of the object the window starts at; a truncated read's window.next gives it.",
         }.WithInput(InputKind.None);
+        string onlyNamed = listedWhenNamed is { Count: > 0 }
+            ? $" Objects of the kinds {string.Join(", ", listedWhenNamed)} are listed only when --kind names them; window.notListedUnlessNamed names those a read left out."
+            : string.Empty;
         var kinds = new Option<string[]>(KindOption)
         {
-            Description = "List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind.",
+            Description = $"List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind.{onlyNamed}",
         }.WithInput(InputKind.None);
         var maxObjects = new Option<int>(MaxObjectsOption)
         {

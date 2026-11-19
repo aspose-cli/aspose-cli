@@ -8,7 +8,7 @@ namespace Aspose.Cli.Sdk.Tables;
 /// </summary>
 public sealed class Argument
 {
-    private Argument(string name, ValueKind kind, string description, bool required)
+    private Argument(string name, ValueKind kind, string description, bool required, ObjectKind? addresses = null, bool resolvedByTheCall = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(kind);
@@ -17,7 +17,36 @@ public sealed class Argument
         Kind = kind;
         Description = description;
         Required = required;
+        Addresses = addresses;
+        ResolvedByTheCall = resolvedByTheCall;
     }
+
+    /// <summary>The kind of the object the argument's address names, or null for an argument that is no address.</summary>
+    public ObjectKind? Addresses { get; }
+
+    /// <summary>
+    /// Whether the call itself finds the object, in another document it opens, through
+    /// <see cref="TableActionContext{TDocument}.Find{T}"/>; otherwise the edit finds it in the
+    /// edited document before the call.
+    /// </summary>
+    public bool ResolvedByTheCall { get; }
+
+    /// <summary>
+    /// A parameter whose value is the address of an object of <paramref name="kind"/>, such as the
+    /// worksheet a call is made on. The address is checked against the table with the batch and
+    /// the object found in the edited document before the call: <see cref="Arguments.Get{T}"/>
+    /// gives the engine object, <see cref="Arguments.AddressOf"/> its address.
+    /// </summary>
+    public static Argument Address(string name, ObjectKind kind, string description, bool required = true) =>
+        new(name, ValueKinds.AddressText, description, required, kind ?? throw new ArgumentNullException(nameof(kind)));
+
+    /// <summary>
+    /// A parameter whose value is the address of an object of <paramref name="kind"/> that the call
+    /// finds itself, through <see cref="TableActionContext{TDocument}.Find{T}"/>, such as a range of
+    /// another workbook it opens.
+    /// </summary>
+    public static Argument AddressFoundByTheCall(string name, ObjectKind kind, string description, bool required = true) =>
+        new(name, ValueKinds.AddressText, description, required, kind ?? throw new ArgumentNullException(nameof(kind)), resolvedByTheCall: true);
 
     /// <summary>The parameter's name.</summary>
     public string Name { get; }
@@ -50,11 +79,58 @@ public sealed class Arguments
     /// <summary>Whether the caller gave <paramref name="name"/>.</summary>
     public bool Has(string name) => _values.ContainsKey(name);
 
-    /// <summary>The value of a parameter the caller gave.</summary>
+    /// <summary>The value of a parameter the caller gave; for an address, the engine object the edit found at it.</summary>
     public T Get<T>(string name) =>
         _values.TryGetValue(name, out object? value)
-            ? (T)value!
+            ? value switch
+            {
+                FoundAddress found => (T)found.Located.Item,
+                AddressValue => throw new InvalidOperationException($"Argument '{name}' is an address the call finds itself; use TableActionContext.Find."),
+                _ => (T)value!,
+            }
             : throw new InvalidOperationException($"Argument '{name}' was not given; declare it required or test Has first.");
+
+    /// <summary>The address an address parameter named, in its canonical form once the edit found it.</summary>
+    public string AddressOf(string name) =>
+        _values.TryGetValue(name, out object? value)
+            ? value switch
+            {
+                FoundAddress found => found.Located.Address,
+                AddressValue address => address.Address.Text,
+                _ => throw new InvalidOperationException($"Argument '{name}' is no address."),
+            }
+            : throw new InvalidOperationException($"Argument '{name}' was not given; declare it required or test Has first.");
+
+    /// <summary>These arguments with each address the edit finds looked up in <paramref name="document"/>.</summary>
+    internal Arguments Resolve(DocumentTable table, object document)
+    {
+        if (!_values.Values.Any(static value => value is AddressValue { ResolvedByTheCall: false }))
+        {
+            return this;
+        }
+
+        var resolved = new Dictionary<string, object?>(StringComparer.Ordinal);
+        foreach ((string name, object? value) in _values)
+        {
+            resolved[name] = value is AddressValue { ResolvedByTheCall: false } address
+                ? new FoundAddress(AddressResolver.Resolve(table, document, address.Address))
+                : value;
+        }
+
+        return new Arguments(resolved);
+    }
+
+    /// <summary>An address argument, checked against the table, not yet looked up.</summary>
+    internal sealed record AddressValue(TableAddress Address, bool ResolvedByTheCall);
+
+    /// <summary>An address argument the edit looked up.</summary>
+    private sealed record FoundAddress(Located Located);
+
+    /// <summary>The address value of a parameter, for a lookup the call makes itself.</summary>
+    internal TableAddress AddressValueOf(string name) =>
+        _values.TryGetValue(name, out object? value) && value is AddressValue address
+            ? address.Address
+            : throw new InvalidOperationException($"Argument '{name}' is no address the call finds itself.");
 }
 
 /// <summary>An add: one name for one engine call that creates an object of <typeparamref name="T"/> below a <typeparamref name="TParent"/>.</summary>
@@ -132,16 +208,28 @@ public sealed class DocumentTable<TDocument> : DocumentTable
         ArgumentNullException.ThrowIfNull(locator);
         Action<TParent, T>? delete = locator.Delete;
         Action<TParent, T, int>? move = locator.Move;
+        Func<TParent, Key, T?>? find = locator.Find;
+        Func<TParent, Key, IReadOnlyList<T>>? findAll = locator.FindAll;
+        if ((find is null) == (findAll is null))
+        {
+            throw new ArgumentException($"The locator of '{kind.Name}' gives Find or FindAll, and only one of them.", nameof(locator));
+        }
+
         AddPlacement(new Placement(
             parent,
             kind,
             locator.Segment,
             locator.Key,
-            (owner, key) => locator.Find((TParent)owner, key),
+            findAll is null
+                ? (owner, key) => find!((TParent)owner, key) is { } found ? [found] : []
+                : (owner, key) => [.. findAll((TParent)owner, key)],
             owner => locator.List((TParent)owner),
             (owner, item) => locator.KeyOf((TParent)owner, (T)item),
             delete is null ? null : (owner, item) => delete((TParent)owner, (T)item),
-            move is null ? null : (owner, item, to) => move((TParent)owner, (T)item, to)));
+            move is null ? null : (owner, item, to) => move((TParent)owner, (T)item, to))
+        {
+            ListedWhenNamed = locator.ListedWhenNamed,
+        });
     }
 
     /// <summary>Declares a second way to address objects of <paramref name="kind"/> below <paramref name="parent"/>.</summary>
@@ -303,17 +391,21 @@ public abstract class DocumentTable
             ?? throw new ArgumentException($"Kind '{kind.Name}' is not placed below '{parent.Name}'; place it first.", nameof(kind));
 }
 
-/// <summary>Where a kind sits below a parent kind, type-erased.</summary>
+/// <summary>Where a kind sits below a parent kind, type-erased; <see cref="Find"/> gives every object a key matches.</summary>
 internal sealed record Placement(
     ObjectKind Parent,
     ObjectKind Kind,
     string Segment,
     IReadOnlyList<KeyPart> Key,
-    Func<object, Key, object?> Find,
+    Func<object, Key, IReadOnlyList<object>> Find,
     Func<object, IEnumerable<object>> List,
     Func<object, object, Key> KeyOf,
     Action<object, object>? Delete,
-    Action<object, object, int>? Move);
+    Action<object, object, int>? Move)
+{
+    /// <summary>Whether read lists the objects only when --kind names their kind.</summary>
+    public bool ListedWhenNamed { get; init; }
+}
 
 /// <summary>A second way to address the objects of a placement, type-erased.</summary>
 internal sealed record AliasPlacement(

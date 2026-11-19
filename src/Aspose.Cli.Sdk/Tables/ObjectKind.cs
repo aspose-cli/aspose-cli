@@ -150,6 +150,21 @@ public enum KeyPart
 
     /// <summary>An unsigned engine number that is no position, such as a placeholder's index.</summary>
     Number,
+
+    /// <summary>A name as the engine has it, any characters but <c>/</c>, such as a worksheet's.</summary>
+    Text,
+
+    /// <summary>A cell's name in A1 notation, such as <c>B5</c>.</summary>
+    CellName,
+
+    /// <summary>An area in A1 notation: two cells such as <c>B2:D10</c>, one cell, or whole rows or columns such as <c>5:5</c> and <c>C:C</c>.</summary>
+    Area,
+
+    /// <summary>A row's name in A1 notation, a whole number from 1, such as the <c>5</c> of <c>B5</c>.</summary>
+    RowName,
+
+    /// <summary>A column's name in A1 notation, such as the <c>B</c> of <c>B5</c>.</summary>
+    ColumnName,
 }
 
 /// <summary>
@@ -183,6 +198,9 @@ public sealed class Key : IEquatable<Key>
     public static Key Of(string name, uint number) => new([name, number.ToString(CultureInfo.InvariantCulture)]);
 
     internal static Key Parsed(IReadOnlyList<string> parts) => new(parts);
+
+    /// <summary>Whether <paramref name="text"/> is written as a key part of <paramref name="part"/> is, such as an A1 area; what it names is the engine's to say.</summary>
+    public static bool IsWrittenAs(KeyPart part, string text) => TableAddress.Matches(part, text ?? throw new ArgumentNullException(nameof(text)));
 
     /// <summary>The part at <paramref name="position"/> as a whole number.</summary>
     public int Index(int position = 0) => int.Parse(Parts[position], NumberStyles.None, CultureInfo.InvariantCulture);
@@ -230,8 +248,21 @@ public sealed class Locator<TParent, T>
     /// <summary>The parts of the key after the segment, empty for an object that is the only one of its kind.</summary>
     public IReadOnlyList<KeyPart> Key { get; init; } = [];
 
-    /// <summary>The object with a key, or null when there is none.</summary>
-    public required Func<TParent, Key, T?> Find { get; init; }
+    /// <summary>The object with a key, or null when there is none; give it or <see cref="FindAll"/>.</summary>
+    public Func<TParent, Key, T?>? Find { get; init; }
+
+    /// <summary>
+    /// Every object the key matches, for an engine lookup that can match more than one, such as
+    /// one that ignores case: none is not found and more than one is ambiguous. Give it or <see cref="Find"/>.
+    /// </summary>
+    public Func<TParent, Key, IReadOnlyList<T>>? FindAll { get; init; }
+
+    /// <summary>
+    /// Whether <c>read</c> lists the objects only when <c>--kind</c> names their kind: a kind whose
+    /// count grows with the data rather than with the document's structure, such as cells. They
+    /// are still addressed, searched and counted.
+    /// </summary>
+    public bool ListedWhenNamed { get; init; }
 
     /// <summary>Every object below the parent, in document order.</summary>
     public required Func<TParent, IEnumerable<T>> List { get; init; }

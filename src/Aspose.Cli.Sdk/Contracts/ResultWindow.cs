@@ -29,6 +29,13 @@ public sealed record ResultWindow
     /// </summary>
     public IReadOnlyDictionary<string, string>? Next { get; init; }
 
+    /// <summary>
+    /// The kinds a read lists only when its --kind option names them, such as a spreadsheet's
+    /// cells, that this read could have reached and did not list because no --kind named them;
+    /// the same read with --kind and one of them lists those objects. Omitted when there are none.
+    /// </summary>
+    public IReadOnlyList<string>? NotListedUnlessNamed { get; init; }
+
     /// <summary>The values of <see cref="Next"/>, each under its option's name without the leading dashes.</summary>
     /// <param name="options">Each option, as in <c>--skip</c>, and its value.</param>
     public static IReadOnlyDictionary<string, string> Options(params (string Option, string Value)[] options) =>

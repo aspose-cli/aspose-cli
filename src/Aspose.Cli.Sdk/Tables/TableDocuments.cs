@@ -91,6 +91,21 @@ public sealed class TableActionContext<TDocument>
         return opened;
     }
 
+    /// <summary>
+    /// The object an address argument the call finds itself names in <paramref name="document"/>,
+    /// such as a range of a workbook the call opened: the table's lookup, with its
+    /// <c>ADDRESS_NOT_FOUND</c> and <c>ADDRESS_AMBIGUOUS</c>.
+    /// </summary>
+    public T Find<T>(TDocument document, Arguments arguments, string name)
+        where T : class
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(arguments);
+        Located located = AddressResolver.Resolve(_documents.Table, document, arguments.AddressValueOf(name));
+        return located.Item as T
+            ?? throw new InvalidOperationException($"Argument '{name}' names a {located.Kind.Name}, which is no {typeof(T).Name}.");
+    }
+
     /// <summary>What the document policy left out of each document the actions opened, while they are open.</summary>
     internal IReadOnlyList<Warning> Warnings => [.. _opened.SelectMany(static opened => opened.Warnings)];
 

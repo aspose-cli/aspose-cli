@@ -364,11 +364,17 @@ public sealed class TableBatch
                     throw TableErrors.Invalid(index, OpsInvalidReasons.WrongType, "args", $"args is {ValueKinds.Describe(args)}, not an object");
                 }
 
+                if (declared.Count == 0 && args.EnumerateObject().Any())
+                {
+                    throw TableErrors.Invalid(index, OpsInvalidReasons.UnknownField, "args", $"'{name}' takes no args");
+                }
+
                 CheckMembers(index, args, "args", [.. declared.Select(static argument => argument.Name)]);
                 foreach (JsonProperty member in args.EnumerateObject())
                 {
                     Argument argument = declared.First(candidate => candidate.Name == member.Name);
-                    values[member.Name] = Decode(index, $"args.{member.Name}", argument.Kind, member.Value, null);
+                    object? value = Decode(index, $"args.{member.Name}", argument.Kind, member.Value, null);
+                    values[member.Name] = argument.Addresses is { } kind ? AddressArgument(index, $"args.{member.Name}", (string)value!, kind, argument.ResolvedByTheCall) : value;
                 }
             }
 
@@ -378,6 +384,24 @@ public sealed class TableBatch
             }
 
             return new Arguments(values);
+        }
+
+        /// <summary>An address argument checked against the table: its segments and keys, and the kind it names.</summary>
+        private Arguments.AddressValue AddressArgument(int index, string field, string text, ObjectKind kind, bool resolvedByTheCall)
+        {
+            TableAddress address;
+            try
+            {
+                address = TableAddress.Parse(table, text);
+            }
+            catch (TableValueException invalid)
+            {
+                throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, field, $"{field}: {invalid.Message}", text);
+            }
+
+            return address.Kind == kind
+                ? new Arguments.AddressValue(address, resolvedByTheCall)
+                : throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, field, $"{field} names a {address.Kind.Name}; it takes the address of a {kind.Name}", text);
         }
 
         private object? Decode(int index, string field, ValueKind kind, JsonElement value, string? at)
