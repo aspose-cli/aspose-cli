@@ -813,16 +813,15 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   laid-out lines that end past the right edge of the frame once the text overflows, while
   rendering shrinks the text and draws every line inside the frame. The runs' rectangles
   (`IPortion.GetRect`) follow the shrunk text as rendering draws it.
-- **CLI behavior:** none.
+- **CLI behavior:** none: the CLI passes the engine's behavior on.
 
 ### SLIDES-CHART-TITLE
 
 - **Defect:** loading a chart whose automatic title is implicit (no `c:title`,
   `autoTitleDeleted` 0) reports a title that overlays the plot, and saving writes it, so the plot
   area grows and its automatic axis scale can change.
-- **CLI behavior:** every edit, conversion and rendering of such a chart warns
-  `CHART_TITLE_OVERLAID` with its slide. `slides edit --verify` only warns: no operation of the
-  batch causes it, so it is not an issue.
+- **CLI behavior:** none: the CLI passes the engine's behavior on, so an edit, a conversion or a
+  rendering of such a chart writes or draws the title over the plot.
 - **Workaround:** inspect those charts in PowerPoint and restore their title layout there.
 
 ### SLIDES-CJK-FALLBACK
@@ -831,10 +830,7 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   engine picks a fallback font per glyph and alternates between Japanese and Chinese fonts inside
   one word (MS Gothic and SimSun on Windows), so rendered and exported text mixes stroke weights.
   PowerPoint draws the run in one East Asian font.
-- **CLI behavior:** every loaded presentation gets fallback rules for the CJK ranges that name the
-  fonts of its script (kana: Japanese, Hangul: Korean, a Traditional Chinese language tag:
-  Traditional Chinese, otherwise Simplified Chinese); the engine uses the first installed one.
-  The rules affect rendering only and are not saved.
+- **CLI behavior:** none: the CLI passes the engine's behavior on and adds no fallback rules.
 - **Workaround:** give the template's theme an East Asian font that has the glyphs.
 
 ### SLIDES-FALLBACK-STDOUT
@@ -849,16 +845,20 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
 - **Defect:** font initialization casts every value under
   `HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts` to `string`, so a `REG_DWORD` or
   `REG_BINARY` value written by other software throws `InvalidCastException`.
-- **CLI behavior:** a Slides command that uses fonts fails with `FEATURE_UNSUPPORTED`
-  (`details.reason` `environment`), naming each such value, before the engine starts.
-- **Workaround:** remove the named values; Windows writes only string values there.
+- **CLI behavior:** none: the CLI passes the engine's exception on. A command whose engine calls
+  lay text out, such as a save, a conversion or a rendering, fails: `slides create`,
+  `slides convert` and `slides render` with `FEATURE_UNSUPPORTED` and a message such as
+  `Slides failed inside its document engine: Unable to cast object of type 'System.Int32' to type 'System.String'.`
+  for a `REG_DWORD` value, and `slides edit` with `ENGINE_ERROR`, whose `details.engineException`
+  is `System.InvalidCastException`.
+- **Workaround:** remove the values under that key that are not strings; Windows writes only
+  string values there.
 
 ### SLIDES-ODP-NATIVE-CONTENT
 
 - **Defect:** saving a presentation as ODP writes each native chart as a picture and drops the
   slide transitions and the sections, although OpenDocument presentations can hold all three.
-- **CLI behavior:** `slides convert` to ODP warns `LOSSY_CONVERSION`, naming the slides whose
-  charts become pictures, the slides whose transitions are dropped and the number of sections.
+- **CLI behavior:** none: `slides convert` to ODP writes what the engine's save writes.
 - **Workaround:** keep the PPTX for further edits.
 
 ### SLIDES-PPT-NATIVE-CONTENT
@@ -866,9 +866,7 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
 - **Defect:** saving a presentation as PPT writes each native chart as a picture and drops the
   table styles, so a styled table keeps its cells and text but not its fills, borders and text
   formatting. PowerPoint's own PPT save keeps the chart editable and the table's look.
-- **CLI behavior:** `slides convert` to PPT warns `LOSSY_CONVERSION`, naming the slides whose
-  charts become pictures and the slides whose tables lose their style, and the number of
-  sections, which a PPT file cannot hold.
+- **CLI behavior:** none: `slides convert` to PPT writes what the engine's save writes.
 - **Workaround:** keep the PPTX for further edits.
 
 ### SLIDES-PPT-TEMPLATE-LAYOUTS
@@ -878,9 +876,8 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   "Section Header" for a design whose PPTX has one of each). They belong to the master like the
   others, but a slide added on one of them makes the PPTX save throw `KeyNotFoundException` for
   `Aspose.Slides.LayoutSlide`. A PPTX save of the loaded file without such a slide drops them.
-- **CLI behavior:** none visible; `slides create --template` and `slides edit` first save a PPT,
-  PPS or POT file as PPTX in memory and use the reopened copy, so new slides take the layouts the
-  PPTX keeps.
+- **CLI behavior:** none: the CLI passes the engine's behavior on; `slides create --template` and
+  `slides edit` see the layouts of a PPT, PPS or POT file as the engine lists them.
 
 ### SLIDES-MD-INHERITED-BULLETS
 
@@ -888,9 +885,7 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   sets its bullet. Paragraphs whose bullets come from the layout or master, as in a body
   placeholder, are written as plain lines without their level; no `MarkdownSaveOptions`
   setting changes this.
-- **CLI behavior:** `slides convert --to md` first writes each paragraph's effective bullet into
-  it as an explicit value, in its private copy of the presentation, so the Markdown keeps the
-  list items and their levels.
+- **CLI behavior:** none: `slides convert --to md` writes such paragraphs as plain lines.
 
 ### SLIDES-ALT-TEXT-TAB
 
@@ -906,12 +901,231 @@ Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/Sli
   using var loaded = new Presentation("alt.pptx");  // Shapes[0].AlternativeText is "a  bc"
   ```
 
-- **CLI behavior:** `insert_image` writes the `altText` it is given and, when it holds a tab,
-  warns `ALT_TEXT_TABS_DROPPED` at the picture's `location`. The output holds the text without
-  its tabs, as `slides read` reports it and `slides search` finds it; `slides edit --verify` reads
-  no alternative text back, so the warning is what names the change. An image's alt text in a
-  Markdown outline is written the same way, without the warning.
+- **CLI behavior:** none: alternative text written with a tab reads back from the saved file
+  without it.
 - **Workaround:** write spaces in place of tabs in alternative text.
+
+### SLIDES-CHART-NO-SAMPLE-CATEGORIES
+
+- **Defect:** a chart added without sample data
+  (`IShapeCollection.AddChart(…, initWithSample: false)`) is saved as PPTX without categories
+  (`c:cat`) for one of its series. With one series, the reopened chart has no categories, whether
+  they came from worksheet cells or from literals; with two series, the file gives the categories
+  to one series only.
+- **CLI behavior:** none.
+
+### SLIDES-CHART-NO-SAMPLE-NAME
+
+- **Defect:** on a chart added without sample data, a PPTX save throws `NullReferenceException`
+  when its series has no name cell: a series named by a string literal (`Name.DataSourceType`
+  `StringLiterals`), or one added by `IChartSeriesCollection.Add(ChartType)` without a name. The
+  series named by a literal saves on a chart added with sample data.
+- **CLI behavior:** none.
+
+### SLIDES-CHART-SHEET-CREATED
+
+- **Defect:** `IChartDataWorkbook.GetCell` with a worksheet index or name the workbook does not
+  have adds a worksheet instead of failing: index 1 of a workbook of one sheet adds a second
+  `Sheet1`, the name `sheet1` beside `Sheet1` adds `sheet1`, and a null name adds a sheet whose
+  name is null. The embedded workbook is saved with these names, the null one empty, although
+  sheet names are unique without regard to case and never empty.
+- **CLI behavior:** a chart cell that an address or an argument names on a worksheet the workbook
+  does not have is `ADDRESS_NOT_FOUND`, as any target that does not exist is; `GetCell` is not
+  called for it.
+
+### SLIDES-CHART-CELL-RANGE
+
+- **Defect:** `IChartDataWorkbook.GetCell` takes row -1, row 1048576 and column 16384, which lie
+  outside a worksheet, and the embedded workbook is saved with cells `A0`, `A1048577` and `XFE1`.
+- **CLI behavior:** none.
+
+### SLIDES-CHART-CELL-READ
+
+- **Defect:** reading an empty cell through `IChartDataWorkbook.GetCell` changes the saved
+  embedded workbook: two saves write the same worksheet part, and after `GetCell(0, 300, 70)` it
+  holds a cell `BS301`.
+- **CLI behavior:** none.
+
+### SLIDES-CHART-POINT-REMOVE
+
+- **Defect:** on a chart none of whose point values has been read, removing a data point
+  (`IChartDataPointCollection.RemoveAt` or `Remove`, or `IChartDataPoint.Remove`) lowers `Count`
+  but keeps the point: a PPTX save writes it, and the first point value read afterwards brings it
+  back. Removing point 2 of the 4 of a sample chart's series leaves 3; the saved chart reopens
+  with 4, and once a value is read the series in memory has 4 points again, with the indexes 0,
+  1, 3 and 3. After any point value has been read, the same calls remove the point.
+- **CLI behavior:** none.
+
+### SLIDES-CHART-POINT-BY-INDEX
+
+- **Defect:** `IChartDataPointCollection.GetOrCreateDataPointByIdx` adds empty points up to the
+  index, as documented, but a PPTX save drops them: a series of 4 points has 11 once point 10 is
+  created, and 4 once saved and reopened.
+- **CLI behavior:** none.
+
+### SLIDES-CHART-MIXED-ORDER
+
+- **Defect:** a chart whose series have different types reopens with its series in another
+  order: a pie series added after the three column series of a sample chart is the first series
+  once the chart is saved as PPTX and reopened.
+- **CLI behavior:** none.
+
+### SLIDES-CHART-DATA-SETTER
+
+- **Defect:** the `IBaseChartValue.Data` setter treats a string by where the value comes from: a
+  point value read from a worksheet cell writes it into the cell, a point value given as a
+  literal (`DoubleLiterals`) throws `ArgumentException` ("Assigned value is not appropriate to
+  DataSourceType."), and a series name read from a worksheet cell throws the same
+  `ArgumentException`.
+- **CLI behavior:** none.
+
+### SLIDES-CHART-UNUSED-VALUE
+
+- **Defect:** a point value member the chart type does not use, such as `IChartDataPoint.XValue`
+  of a column chart, has no cell and reads `Data` as null, and setting its `Data` throws
+  `NullReferenceException` instead of an exception that names the cause.
+- **CLI behavior:** none.
+
+### SLIDES-CATEGORY-AXIS-DATE
+
+- **Defect:** `IAxis.CategoryAxisType` set to `CategoryAxisType.Date` on the horizontal axis of a
+  column chart with text categories, as `AddChart` creates it with sample data, reads `Date` in
+  memory, but a PPTX save writes a text axis (`c:catAx`, no `c:dateAx`), so the reopened axis
+  reads `Text`.
+- **CLI behavior:** none.
+
+### SLIDES-SLIDE-NUMBER-SETTER
+
+- **Defect:** `ISlide.SlideNumber` reads the slide's index plus `IPresentation.FirstSlideNumber`,
+  but its setter moves the slide to the index of the value minus 1, as if numbering started at 1.
+  With `FirstSlideNumber` 5 and three slides, setting the first slide's number to 7, the last
+  slide's number, throws `PptxEditException`, and setting it to 4 throws the same exception after
+  changing `FirstSlideNumber` to 4.
+- **CLI behavior:** none.
+
+### SLIDES-INSERT-CLONE-RANGE
+
+- **Defect:** `ISlideCollection.InsertClone` takes any index from 0 to `Count`, and refuses a
+  larger one with `PptxEditException` "Index must lay within [0..Count-1] range.", a range that
+  leaves out `Count`.
+- **CLI behavior:** none.
+
+### SLIDES-SECTION-INSERT-END
+
+- **Defect:** `ISectionCollection.AddEmptySection(name, index)` refuses the index `Count` with
+  `PptxEditException`, while the engine's other insert calls, such as
+  `ISlideCollection.InsertEmptySlide`, take `Count` as the end; only `AppendEmptySection` adds a
+  section at the end.
+- **CLI behavior:** none.
+
+### SLIDES-TABLE-INDEX-MESSAGE
+
+- **Defect:** `ITable[column, row]` out of range throws `IndexOutOfRangeException` with messages
+  that give different upper bounds: in a table of 3 columns and 2 rows, column 3 is refused with
+  "value of index = 3 is out of range 0..3", a range that includes it, and row 2 with "value of
+  index = 2 is out of range 0..1".
+- **CLI behavior:** none.
+
+### SLIDES-BULLET-CHAR-UNSET
+
+- **Defect:** `IBulletFormat.Char` of a paragraph that sets no bullet reads U+FFFF, a Unicode
+  noncharacter, while the effective bullet character is U+2022. Its documentation names no value
+  for an unset character, as that of `IBulletFormat.Height` names `float.NaN`.
+- **CLI behavior:** none.
+
+### SLIDES-FOOTER-LAYOUT-ONLY
+
+- **Defect:** `ISlideHeaderFooterManager.SetFooterVisibility(true)`,
+  `SetSlideNumberVisibility(true)` and `SetDateTimeVisibility(true)` on a slide whose layout has
+  no such placeholder return without an error and change nothing, even when the master has the
+  placeholder: `IsFooterVisible`, `IsSlideNumberVisible` and `IsDateTimeVisible` still read false,
+  and the slide gets no shape.
+- **CLI behavior:** none.
+
+### SLIDES-PARENT-GROUP-ROOT
+
+- **Defect:** `IShape.ParentGroup` of a shape that is not grouped (`IsGrouped` false) is the
+  slide's root group shape (`OfficeInteropShapeId` 1), which is not among the slide's shapes; the
+  documentation says it is null for a shape that is not grouped.
+- **CLI behavior:** none.
+
+### SLIDES-UNIQUEID-TAGS
+
+- **Defect:** once the `IShape.UniqueId` of one shape has been read, saving writes a custom tag
+  part (`ppt/tags/tagN.xml`) holding the unique id for every shape of the presentation, those of
+  its masters and layouts too, and every later save of the file keeps them. A new
+  presentation with two shapes is saved without such a part before the read, and with more parts
+  than the slide has shapes after it.
+- **CLI behavior:** none.
+
+### SLIDES-ENVIRONMENT-TAGS
+
+- **Defect:** every presentation the engine creates or opens has five custom tags in
+  `IPresentation.CustomData.Tags` that neither the file nor the caller set, each named `AS_` and a
+  word: the .NET version, the operating system and its version, and the engine's release date,
+  title and version. A PowerPoint file without tags opens with them, and a save writes all five
+  even after one is removed, so each saved file names the operating system that saved it.
+- **CLI behavior:** none.
+
+### SLIDES-DUPLICATE-SHAPE-ID
+
+- **Defect:** loading a slide on which two shapes share an id (`p:cNvPr id`) gives the second one
+  the slide's highest id plus 1, without a warning through `LoadOptions.WarningCallback`: shapes
+  of ids 2, 2 and 4 load as 2, 5 and 4.
+- **CLI behavior:** none.
+
+### SLIDES-IMAGE-PART-WARNING
+
+- **Defect:** loading a presentation whose image part is cut short or empty reports no warning
+  through `LoadOptions.WarningCallback`, while a missing image part is reported (`DataLoss`,
+  "Empty image part.").
+- **CLI behavior:** none.
+
+### SLIDES-IMAGE-EMPTY-PART
+
+- **Defect:** a presentation whose image part is empty (0 bytes) opens, but the image's
+  `IPPImage.Width` and `Height` throw `EndOfStreamException` ("Unable to read beyond the end of
+  the stream."); its `BinaryData` reads 0 bytes.
+- **CLI behavior:** none: a `slides read` that reaches the image fails with `ENGINE_ERROR`, whose
+  `details.at` is the image's address (`image/<n>`) and `details.row` is `width`; a read whose
+  `--kind` leaves out `image` succeeds.
+
+### SLIDES-ACTIVEX-EMPTY-SAVE
+
+- **Defect:** an ActiveX control part with an all-zero `classid` and no properties loads as a
+  control, and saving the presentation throws `NullReferenceException`; with one property, it
+  saves.
+- **CLI behavior:** none.
+
+### SLIDES-IMAGE-UNKNOWN-BYTES
+
+- **Defect:** `IImageCollection.AddImage(byte[])` takes bytes in no image format it decodes, an
+  SVG document among them, without an error or a warning. The image reads `ContentType`
+  `image/unknown` and the size 0 × 0, a picture frame of it draws nothing, and a PPTX save stores
+  it as `ppt/media/image1.image` of the content type `image/unknown`. The same SVG given as an
+  `ISvgImage` (`AddImage(ISvgImage)`) draws.
+- **CLI behavior:** none: a picture the CLI adds from a file gets the file's bytes through
+  `AddImage(byte[])`, and an SVG file is refused before the engine is called.
+
+### SLIDES-ODP-EMPTY-DECK
+
+- **Defect:** a presentation without slides saved as ODP reopens with one slide; saved as PPTX,
+  it reopens with none.
+- **CLI behavior:** none.
+
+### SLIDES-ODP-MIMETYPE
+
+- **Defect:** an ODP save writes the package's `mimetype` entry compressed and after other
+  entries, while OpenDocument requires it to be the first entry, stored without compression.
+- **CLI behavior:** none.
+
+### SLIDES-ODP-LENGTH-PRECISION
+
+- **Defect:** an ODP save writes lengths in centimetres rounded to 0.001 cm (about 0.03 pt), so
+  shape positions reopen changed: shapes at X 205.5, 41.5, 312 and 100.25 pt are written as
+  `7.249cm`, `1.464cm`, `11.006cm` and `3.536cm` and reopen at 205.4962, 41.50179, 312.00046 and
+  100.23929 pt. A PPTX save keeps them exactly. The engine has no save options for ODP.
+- **CLI behavior:** none.
 
 ## Aspose.Words 26.9.0
 

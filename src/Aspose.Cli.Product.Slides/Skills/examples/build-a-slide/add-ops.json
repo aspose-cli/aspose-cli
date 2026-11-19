@@ -1,0 +1,6 @@
+{"ops": [
+  {"add": "autoShape", "in": "slide/256", "args": {"shapeType": "Rectangle", "x": 60, "y": 40, "width": 600, "height": 60}, "props": {"text": "Quarterly review"}},
+  {"add": "table", "in": "slide/256", "args": {"x": 60, "y": 140, "columnWidths": [200, 200], "rowHeights": [30, 30]}},
+  {"add": "notes", "in": "slide/256"},
+  {"add": "slide", "args": {"index": 1, "layout": 2147483650}}
+]}
