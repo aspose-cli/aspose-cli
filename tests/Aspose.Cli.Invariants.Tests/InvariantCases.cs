@@ -479,10 +479,21 @@ internal static class InvariantCases
         ["words md"] = ["--encoding", "utf-8"],
     };
 
+    /// <summary>
+    /// The options an output format of a product takes, by product and format: a PDF/A output is
+    /// Document.Convert, whose ConvertErrorAction has no default.
+    /// </summary>
+    private static readonly Dictionary<string, string[]> TargetOptions = new(StringComparer.Ordinal)
+    {
+        ["pdf pdfa-1b"] = ["--convert-error-action", "Delete"],
+        ["pdf pdfa-2b"] = ["--convert-error-action", "Delete"],
+        ["pdf pdfa-3b"] = ["--convert-error-action", "Delete"],
+    };
+
     private static InvariantCase Conversion(string product, string verb, string source, string target, string shard, bool slow)
     {
         string input = "input." + source;
-        var invocation = new Invocation([product, verb, input, "--to", target, .. TextInputOptions.GetValueOrDefault($"{product} {source}", [])]);
+        var invocation = new Invocation([product, verb, input, "--to", target, .. TextInputOptions.GetValueOrDefault($"{product} {source}", []), .. TargetOptions.GetValueOrDefault($"{product} {target}", [])]);
         invocation.Files[input] = new ScenarioFile { Fixture = $"{product}.{source}" };
         if (verb == "convert" && TextInputOptions.TryGetValue($"{product} {target}", out string[]? text))
         {
@@ -616,7 +627,7 @@ internal static class InvariantCases
     /// <summary>
     /// Each operation of a product with a secret field, by name, written with every secret field
     /// naming <see cref="SecretVariable"/> and every other required field the first value of its
-    /// enum: an <c>op</c> operation by its fields, and an action of an object table
+    /// enum, or a list of its first member: an <c>op</c> operation by its fields, and an action of an object table
     /// (<c>do.&lt;action&gt;</c>) by its <c>args</c>. One that needs another required value is left out.
     /// </summary>
     private static IEnumerable<(string Name, JsonObject Operation)> SecretOperations(JsonNode definitions, CliProduct product)
@@ -665,6 +676,12 @@ internal static class InvariantCases
         }
         foreach (string name in (required as JsonArray ?? []).Select(static name => name!.GetValue<string>()).Where(name => name != skip && !secrets.Contains(name)))
         {
+            if (properties[name]?["items"]?["enum"] is JsonArray { Count: > 0 } members)
+            {
+                // A list of enum members, such as the permissions an encryption grants: its first member.
+                fields[name] = new JsonArray(members[0]!.DeepClone());
+                continue;
+            }
             if (properties[name]?["enum"] is not JsonArray { Count: > 0 } values)
             {
                 return null;
@@ -728,12 +745,18 @@ internal static class InvariantCases
             // file rather than its input, and a compare writes its redline.
             invocation.Add("--out", "output." + ScenarioFixtures.PrimaryFormat(product));
         }
-        if (command.Options.FirstOrDefault(static option => option.Name == "--what") is { } what
-            && what.AllowedValues.Contains("text"))
+        CliOption? what = command.Options.FirstOrDefault(static option => option.Name == "--what");
+        if (what is not null && what.AllowedValues.Contains("text"))
         {
             // Files a document embeds, copied byte for byte, are no engine output and are not
             // disclosed (D6), so an extraction discloses the text the engine reads.
             invocation.Args[invocation.Args.IndexOf("--what") + 1] = "text";
+        }
+        else if (what is not null && what.AllowedValues.Contains("forms") && command.Option("--form-format") is { AllowedValues.Count: > 0 } format)
+        {
+            // Without text, the form data the engine exports, which it writes for any document.
+            invocation.Args[invocation.Args.IndexOf("--what") + 1] = "forms";
+            invocation.Add("--form-format", format.AllowedValues[0]);
         }
         yield return Case(EvaluationDisclosed, $"{command}", product, slow: false, invocation, new ScenarioExpectation
         {

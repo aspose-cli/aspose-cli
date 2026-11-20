@@ -2,14 +2,13 @@ using System.Text.Json.Serialization;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
-/// <summary>Result of <c>pdf create</c>.</summary>
+/// <summary>Result of <c>pdf create</c>: the PDF written and what it was created from.</summary>
 public sealed record PdfCreateResult() : EngineResultEnvelope("create-result")
 {
-    /// <summary>The PDF written.</summary>
+    /// <summary>The created PDF.</summary>
     [JsonPropertyOrder(-49)]
     public required OutputInfo Output { get; init; }
 
-    /// <summary>The source files the PDF was created from, in command-line order: each image of <c>--from-images</c>, or the one HTML, Markdown or text file.</summary>
-    [MinItems(1)]
+    /// <summary>The template the PDF was saved from; empty for the engine's new document.</summary>
     public required IReadOnlyList<SourceInput> Inputs { get; init; }
 }

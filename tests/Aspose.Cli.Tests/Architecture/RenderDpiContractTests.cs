@@ -20,11 +20,10 @@ public sealed partial class RenderDpiContractTests : IDisposable
     public void RenderDpi_AcceptedRangeAgreesWithCapabilitiesAndResultSchema()
     {
         File.WriteAllText(_workspace.File("table.csv"), "a,b\n1,2\n");
-        File.WriteAllText(_workspace.File("text.txt"), "Dpi range.\n");
-        File.WriteAllText(_workspace.File("outline.md"), "# Dpi range\n");
+        File.WriteAllText(_workspace.File("text.html"), "<html><body><p>Dpi range.</p></body></html>");
         _workspace.Run("cells", "convert", "table.csv", "--to", "xlsx", "--out", "table.xlsx", "--separator", ",", "--encoding", "utf-8",
             "--convert-numbers", "true", "--convert-dates", "false", "--culture", "en-US", "--output-format", "json").Succeeded();
-        _workspace.Run("pdf", "create", "document.pdf", "--from-text", "text.txt", "--output-format", "json").Succeeded();
+        _workspace.Run("pdf", "convert", "text.html", "--out", "document.pdf", "--output-format", "json").Succeeded();
         _workspace.Run("words", "create", "document.docx", "--output-format", "json").Succeeded();
         _workspace.Run("slides", "create", "deck.pptx", "--output-format", "json").Succeeded();
         var inputs = new Dictionary<string, string>(StringComparer.Ordinal)

@@ -3,7 +3,9 @@ using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Input;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Pdf;
 using Aspose.Pdf.Facades;
 
@@ -46,8 +48,53 @@ internal sealed class PdfDocumentLoader
     internal LoadedPdf OpenPublishedCandidate(string path, Secret? password) =>
         InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password)));
 
+    /// <summary>
+    /// Imports an HTML page: new Document(stream, new HtmlLoadOptions(folder) { CustomLoaderOfExternalResources }),
+    /// the engine's default page size and margins.
+    /// </summary>
+    internal LoadedPdf OpenHtml(string path, HtmlImportResources resources) =>
+        InputOpening.Open(_outputs, _resourceBudgets, path, () =>
+        {
+            FileStream? stream = null;
+            try
+            {
+                stream = InputFiles.OpenRead(path);
+                var document = new Document(stream, new HtmlLoadOptions(resources.BaseDirectory) { CustomLoaderOfExternalResources = resources.Load });
+                resources.ThrowIfFailed();
+                var loaded = new LoadedPdf(document, PasswordType.None, false, false, false, stream);
+                stream = null;
+                return loaded;
+            }
+            catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
+            {
+                // An import that throws has failed inside the engine: the page is no PDF that could
+                // be corrupt. The references the loader supplied nothing for are listed as they are.
+                resources.ThrowIfFailed();
+                if (resources.NotSupplied() is { } details)
+                {
+                    throw EngineErrors.EngineFailed($"PDF failed inside its document engine: {exception.Message}", exception, details);
+                }
+
+                throw;
+            }
+            finally
+            {
+                stream?.Dispose();
+            }
+        });
+
     private LoadedPdf OpenCore(string path, PasswordSource password)
     {
+        if (PdfFormats.IsHtmlInput(path))
+        {
+            throw CliErrors.FormatUnsupported(Loading.Unreadable(path, "it is html, which only convert reads"));
+        }
+
+        if (PdfFormats.IsMarkdownInput(path))
+        {
+            throw CliErrors.FormatUnsupported(Loading.Unreadable(path, "it is Markdown, which no PDF command reads: the engine's Markdown import has no hook for the resources a file names; Words reads Markdown"));
+        }
+
         EnsurePdfHeader(path);
 
         FileStream? stream = null;
@@ -136,8 +183,14 @@ internal sealed class PdfDocumentLoader
 /// <param name="Source">The input stream the document reads from.</param>
 internal sealed record LoadedPdf(
     Document Document, PasswordType PasswordType, bool HasOpenPassword, bool HasOwnerPassword, bool OpenPasswordIsOwner, Stream Source)
-    : IOpenedInput, IDisposable
+    : IOpenedDocument<Document>
 {
+    /// <inheritdoc />
+    public string FormatId => "pdf";
+
+    /// <inheritdoc />
+    public IReadOnlyList<Warning> Warnings => [];
+
     /// <summary>Whether the file is encrypted, as it was opened; a later decryption does not change it.</summary>
     public bool Encrypted { get; } = Document.IsEncrypted;
 

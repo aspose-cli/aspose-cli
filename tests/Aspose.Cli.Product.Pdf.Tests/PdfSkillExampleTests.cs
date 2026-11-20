@@ -11,23 +11,24 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 public sealed class PdfSkillExampleTests
 {
     [Fact]
-    public void AssembleReviewReport_ProducesAValidFilledAndStampedArchive()
+    public void FillAndStamp_ProducesAFilledAndStampedReport()
     {
+        PdfEngineFixture.RequireLicense();
         using var workspace = new TempWorkspace();
-        InstalledSkillExampleResult result = InstalledSkillExample.Run(workspace, "aspose-cli-pdf", "assemble-review-report");
+        InstalledSkillExampleResult result = InstalledSkillExample.Run(workspace, "aspose-cli-pdf", "fill-and-stamp");
 
-        Assert.Contains(result.Outputs, output => output["profile"]?.GetValue<string>() == "pdfa-2b"
-            && output["valid"]!.GetValue<bool>());
-        using var archive = new Document(Path.Combine(result.Directory, "review.archive.pdf"));
-        Assert.Equal(2, archive.Pages.Count);
+        Assert.NotEmpty(result.Outputs);
+        using var report = new Document(Path.Combine(result.Directory, "report.filled.pdf"));
+        Assert.Equal(2, report.Pages.Count);
         for (int number = 1; number <= 2; number++)
         {
             var absorber = new TextAbsorber();
-            archive.Pages[number].Accept(absorber);
+            report.Pages[number].Accept(absorber);
             Assert.Contains($"Page {number} of 2", absorber.Text, StringComparison.Ordinal);
             Assert.Contains("DRAFT", absorber.Text, StringComparison.Ordinal);
         }
-        Assert.Equal("Quarterly Review", ((TextBoxField)archive.Form["ReportTitle"]).Value);
-        Assert.Equal("Executive Committee", ((TextBoxField)archive.Form["PreparedFor"]).Value);
+
+        Assert.Equal("Quarterly Review", ((TextBoxField)report.Form["ReportTitle"]).Value);
+        Assert.Equal("Executive Committee", ((TextBoxField)report.Form["PreparedFor"]).Value);
     }
 }

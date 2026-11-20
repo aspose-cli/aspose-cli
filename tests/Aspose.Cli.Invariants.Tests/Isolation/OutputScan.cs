@@ -37,7 +37,7 @@ internal static partial class OutputScan
     public static bool IsPdf(ReadOnlySpan<byte> content) => content.StartsWith("%PDF"u8);
 
     /// <summary>
-    /// Where the text occurs in the JSON result of <c>pdf read</c> on a written file, or null. A PDF
+    /// Where the text occurs in the JSON result of <c>pdf read --kind text</c> on a written file, or null. A PDF
     /// stream holds a font subset's glyph numbers rather than letters, so no byte scan finds its
     /// text, and the layout can break the text over lines. A read that fails or stops short is a
     /// finding too, because the text must be absent, not unseen.
@@ -53,7 +53,7 @@ internal static partial class OutputScan
         {
             return $"{name}: its text could not be searched to the end, pdf read returned part of it";
         }
-        string shown = string.Concat(result["pages"]!.AsArray().SelectMany(static page => page!["text"]!.GetValue<string>()).Where(static letter => !char.IsWhiteSpace(letter)));
+        string shown = string.Concat(result["objects"]!.AsArray().SelectMany(static page => page!["props"]!["text"]!.GetValue<string>()).Where(static letter => !char.IsWhiteSpace(letter)));
         return shown.Contains(text, StringComparison.Ordinal) ? $"{name}: shows the marker text '{text}'" : null;
     }
 

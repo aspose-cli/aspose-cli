@@ -13,6 +13,84 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 /// </summary>
 public sealed class PdfKnownIssueTests
 {
+    /// <summary>
+    /// The HTML importer throws when the loader supplies no bytes for a font an @font-face rule
+    /// names, where it imports the page without a picture the loader supplies no bytes for.
+    /// </summary>
+    [LicensedFact]
+    public void HtmlImport_ThrowsOnAFontTheLoaderSuppliesNothingFor()
+    {
+        using var fixture = new PdfEngineFixture();
+        File.WriteAllText(fixture.File("font.html"), "<html><head><style>@font-face { font-family: F; src: url('font.ttf'); } p { font-family: F; }</style></head><body><p>Text</p></body></html>");
+        File.WriteAllText(fixture.File("image.html"), "<html><body><p>Text</p><img src=\"image.png\"></body></html>");
+
+        Exception? Import(string name) => Record.Exception(() =>
+        {
+            using var document = new Document(fixture.File(name), new HtmlLoadOptions(fixture.Temp.Path + Path.DirectorySeparatorChar)
+            {
+                CustomLoaderOfExternalResources = static _ => new LoadOptions.ResourceLoadingResult([]) { LoadingCancelled = false },
+            });
+            document.Save(fixture.File(name + ".pdf"));
+        });
+
+        Exception? font = Import("font.html");
+        Exception? image = Import("image.html");
+        KnownIssue.Reproduces("PDF-HTML-EMPTY-FONT", font is not null && image is null, $"font: {font?.GetType().Name} {font?.Message}; image: {image?.GetType().Name}");
+    }
+
+    /// <summary>
+    /// The HTML importer throws NullReferenceException for an object element whose data the
+    /// loader supplies no bytes for, where it imports the page without such an image.
+    /// </summary>
+    [LicensedFact]
+    public void HtmlImport_ThrowsOnAnObjectTheLoaderSuppliesNothingFor()
+    {
+        using var fixture = new PdfEngineFixture();
+        File.WriteAllText(fixture.File("object.html"), "<html><body><p>Text</p><object data=\"missing.svg\"></object></body></html>");
+        File.WriteAllText(fixture.File("image.html"), "<html><body><p>Text</p><img src=\"missing.png\"></body></html>");
+
+        Exception? Import(string name) => Record.Exception(() =>
+        {
+            using var document = new Document(fixture.File(name), new HtmlLoadOptions(fixture.Temp.Path + Path.DirectorySeparatorChar)
+            {
+                CustomLoaderOfExternalResources = static _ => new LoadOptions.ResourceLoadingResult([]) { LoadingCancelled = false },
+            });
+            document.Save(fixture.File(name + ".pdf"));
+        });
+
+        Exception? missingObject = Import("object.html");
+        Exception? missingImage = Import("image.html");
+        KnownIssue.Reproduces("PDF-HTML-EMPTY-OBJECT", missingObject is NullReferenceException && missingImage is null,
+            $"object: {missingObject?.GetType().Name} {missingObject?.Message}; image: {missingImage?.GetType().Name}");
+    }
+
+    /// <summary>
+    /// Without a license, the page collection counts six pages, its enumerator gives four and the
+    /// fifth page cannot be read. It runs only without a license: a licensed run sets the license
+    /// for the whole process.
+    /// </summary>
+    [Fact]
+    public void EvaluationCollections_CountMoreThanTheyEnumerate()
+    {
+        Assert.SkipWhen(TestLicense.Path is not null, "Evaluation mode only: a licensed run sets the license for the whole process.");
+        // Evaluation mode refuses a fifth page added in memory too, so the document is a file.
+        using var fixture = new PdfEngineFixture();
+        var objects = new List<string> { "<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Count 6 /Kids [3 0 R 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R] >>" };
+        objects.AddRange(Enumerable.Repeat("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>", 6));
+        PdfEngineFixture.WriteRawPdf(fixture.File("six.pdf"), objects);
+        using var document = new Document(fixture.File("six.pdf"));
+
+        int enumerated = 0;
+        foreach (Page _ in document.Pages)
+        {
+            enumerated++;
+        }
+
+        Exception? fifth = Record.Exception(() => document.Pages[5].Annotations.Count);
+        KnownIssue.Reproduces("PDF-EVALUATION-COLLECTIONS", document.Pages.Count == 6 && enumerated == 4 && fifth is not null,
+            $"count {document.Pages.Count}, enumerated {enumerated}, page 5: {fifth?.GetType().Name} {fifth?.Message}");
+    }
+
     [LicensedFact]
     public async Task HtmlAndMarkdownImports_FetchNetworkResourcesPastTheLoader()
     {
@@ -248,7 +326,7 @@ public sealed class PdfKnownIssueTests
     public void PdfaConversion_TypesAnUntypedAttachmentAsPdf()
     {
         using var fixture = new PdfEngineFixture();
-        string input = PdfNavigationTests.CreateAttachmentOnlyNameTree(fixture, "attachments.pdf");
+        string input = CreateAttachmentOnlyNameTree(fixture, "attachments.pdf");
         string output = fixture.File("archive.pdf");
         using (var document = new Document(input))
         {
@@ -374,7 +452,7 @@ public sealed class PdfKnownIssueTests
     public void NamedDestinations_ThrowForANameTreeWithoutDests()
     {
         using var fixture = new PdfEngineFixture();
-        string input = PdfNavigationTests.CreateAttachmentOnlyNameTree(fixture, "attachments.pdf");
+        string input = CreateAttachmentOnlyNameTree(fixture, "attachments.pdf");
 
         using var document = new Document(input);
         Exception? names = Record.Exception(() => document.NamedDestinations.Names);
@@ -653,7 +731,7 @@ public sealed class PdfKnownIssueTests
     public void TextSearch_ReadsAGapBetweenRunsAsASpace()
     {
         using var fixture = new PdfEngineFixture();
-        string input = PdfMutateTests.WriteSpacedRuns(fixture, "autospace.pdf", "2026", "年", "10", "月");
+        string input = WriteSpacedRuns(fixture, "autospace.pdf", "2026", "年", "10", "月");
 
         using var document = new Document(input);
         var absorber = new Aspose.Pdf.Text.TextAbsorber();
@@ -671,7 +749,7 @@ public sealed class PdfKnownIssueTests
     public void Redaction_MovesTheRunsThatFollowTheRemovedText()
     {
         using var fixture = new PdfEngineFixture();
-        string input = fixture.CreateRawDocument("runs.pdf", pages: 1, textContent: PdfMutateTests.ConsecutiveRuns);
+        string input = fixture.CreateRawDocument("runs.pdf", pages: 1, textContent: ConsecutiveRuns);
 
         using var document = new Document(input);
         Page page = document.Pages[1];
@@ -845,7 +923,7 @@ public sealed class PdfKnownIssueTests
                 new Aspose.Pdf.Devices.PngDevice(new Aspose.Pdf.Devices.Resolution(dpi)).Process(page, png);
                 png.Position = 0;
                 using SkiaSharp.SKBitmap bitmap = SkiaSharp.SKBitmap.Decode(png);
-                missing += PdfEngineFixture.DarkestUnderscorePixel(bitmap, page, box, dpi / 72d) < 250 ? 0 : 1;
+                missing += DarkestUnderscorePixel(bitmap, page, box, dpi / 72d) < 250 ? 0 : 1;
             }
 
             return missing;
@@ -1099,5 +1177,159 @@ public sealed class PdfKnownIssueTests
             "<< /Title (Zero) /Parent 5 0 R /Prev 6 0 R /Dest [3 0 R /XYZ 0 0 0] >>",
         ];
         PdfEngineFixture.WriteRawPdf(path, objects);
+    }
+
+    [LicensedFact]
+    public void EmbeddedFilesKeys_ThrowsOnADocumentWithoutAttachments()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var document = new Document(fixture.CreateDocument("plain.pdf", pages: 1));
+
+        Exception? keys = Record.Exception(() => document.EmbeddedFiles.Keys);
+
+        KnownIssue.Reproduces(
+            "PDF-ATTACHMENT-KEYS-EMPTY",
+            keys is not null && document.EmbeddedFiles.Count == 0,
+            $"EmbeddedFiles.Keys threw {keys?.GetType().Name ?? "nothing"} with Count {document.EmbeddedFiles.Count}");
+    }
+
+    [LicensedFact]
+    public void AttachmentDescription_SetOnAReadAttachment_IsNotSaved()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("attached.pdf");
+        string output = fixture.File("described.pdf");
+        using (var document = new Document())
+        {
+            document.Pages.Add();
+            document.EmbeddedFiles.Add(new FileSpecification(new MemoryStream("a"u8.ToArray()), "a.txt", "before"));
+            document.Save(input);
+        }
+
+        using (var document = new Document(input))
+        {
+            document.EmbeddedFiles[1].Description = "after";
+            document.EmbeddedFiles[1].MIMEType = "text/plain";
+            document.Save(output);
+        }
+
+        using var saved = new Document(output);
+        KnownIssue.Reproduces(
+            "PDF-ATTACHMENT-DESCRIPTION-NOT-SAVED",
+            saved.EmbeddedFiles[1].Description == "before" && saved.EmbeddedFiles[1].MIMEType == "text/plain",
+            $"the saved description is '{saved.EmbeddedFiles[1].Description}', the media type '{saved.EmbeddedFiles[1].MIMEType}'");
+    }
+
+    [LicensedFact]
+    public void PageCopy_WithinItsDocument_DoublesTheWidgetsOfTheCopy()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("form.pdf");
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            document.Form.Add(new Aspose.Pdf.Forms.TextBoxField(page, new Rectangle(50, 700, 250, 720)) { PartialName = "name" }, 1);
+            document.Form.Add(new Aspose.Pdf.Forms.TextBoxField(page, new Rectangle(50, 650, 250, 670)) { PartialName = "date" }, 1);
+            document.Save(input);
+        }
+
+        string output = fixture.File("copied.pdf");
+        using (var document = new Document(input))
+        {
+            document.Pages.Insert(1, document.Pages[1]);
+            document.Save(output);
+        }
+
+        using var copied = new Document(output);
+        KnownIssue.Reproduces(
+            "PDF-PAGE-COPY-OWN-WIDGETS",
+            copied.Form.Count == 2 && copied.Pages[1].Annotations.Count == 2 * copied.Pages[2].Annotations.Count,
+            $"after the copy the form has {copied.Form.Count} fields, the copy {copied.Pages[1].Annotations.Count} widgets and the original {copied.Pages[2].Annotations.Count}");
+    }
+
+    [LicensedFact]
+    public void PageImages_WhenRead_AddAnEmptyXObjectDictionary()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateRawDocument("plain.pdf", pages: 1);
+        string untouched = fixture.File("untouched.pdf");
+        string read = fixture.File("read.pdf");
+        using (var document = new Document(input))
+        {
+            document.Save(untouched);
+        }
+
+        using (var document = new Document(input))
+        {
+            _ = document.Pages[1].Resources.Images.Count;
+            document.Save(read);
+        }
+
+        KnownIssue.Reproduces(
+            "PDF-IMAGES-READ-WRITES",
+            !Encoding.Latin1.GetString(File.ReadAllBytes(untouched)).Contains("/XObject", StringComparison.Ordinal)
+                && Encoding.Latin1.GetString(File.ReadAllBytes(read)).Contains("/XObject", StringComparison.Ordinal),
+            "the save after reading Page.Resources.Images writes an /XObject dictionary the save without it does not");
+    }
+
+    /// <summary>One line of three runs drawn one after another.</summary>
+    private const string ConsecutiveRuns = "BT /F1 12 Tf 72 720 Td (Name: ) Tj (Jane Roe) Tj ( signed the order.) Tj ET";
+
+    /// <summary>One page and one attachment: the name tree has EmbeddedFiles and no Dests.</summary>
+    private static string CreateAttachmentOnlyNameTree(PdfEngineFixture fixture, string name)
+    {
+        string path = fixture.File(name);
+        using var document = new Document();
+        document.Pages.Add().Paragraphs.Add(new Aspose.Pdf.Text.TextFragment("Attachments only"));
+        document.EmbeddedFiles.Add("figures.csv", new FileSpecification(new MemoryStream("a,b"u8.ToArray()), "figures.csv", "Figures")
+        {
+            Name = "figures.csv",
+            UnicodeName = "figures.csv",
+        });
+        document.Save(path);
+        return path;
+    }
+
+    /// <summary>
+    /// One line of runs, each placed 3 points after the previous one ends, the space Word's
+    /// automatic spacing leaves between East Asian text and digits.
+    /// </summary>
+    private static string WriteSpacedRuns(PdfEngineFixture fixture, string fileName, params string[] runs)
+    {
+        string path = fixture.File(fileName);
+        using var document = new Document();
+        var builder = new Aspose.Pdf.Text.TextBuilder(document.Pages.Add());
+        Aspose.Pdf.Text.Font font = Aspose.Pdf.Text.FontRepository.FindFont("SimSun");
+        double x = 72;
+        foreach (string run in runs)
+        {
+            var fragment = new Aspose.Pdf.Text.TextFragment(run) { Position = new Aspose.Pdf.Text.Position(x, 700) };
+            fragment.TextState.Font = font;
+            fragment.TextState.FontSize = 12;
+            builder.AppendText(fragment);
+            x += font.MeasureString(run, 12) + 3;
+        }
+
+        document.Save(path);
+        return path;
+    }
+
+    /// <summary>
+    /// The darkest red level in <paramref name="bitmap"/>, a render of <paramref name="page"/> at
+    /// <paramref name="scale"/> pixels per point, of the band where the underscores of the text
+    /// in <paramref name="box"/> are drawn.
+    /// </summary>
+    private static int DarkestUnderscorePixel(SkiaSharp.SKBitmap bitmap, Page page, Rectangle box, double scale)
+    {
+        int darkest = 255;
+        for (int x = (int)((box.LLX + 1) * scale); x < (int)((box.URX - 1) * scale); x++)
+        {
+            for (int y = (int)((page.Rect.Height - box.URY) * scale); y < Math.Min(bitmap.Height, (int)((page.Rect.Height - box.LLY + 3) * scale)); y++)
+            {
+                darkest = Math.Min(darkest, bitmap.GetPixel(x, y).Red);
+            }
+        }
+
+        return darkest;
     }
 }

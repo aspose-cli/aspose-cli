@@ -11,7 +11,7 @@ internal static class ValidateCommand
         profile.AcceptOnlyFromAmong("pdfa-1b", "pdfa-2b", "pdfa-3b");
         return new(
             "validate",
-            "Validate a PDF against a PDF/A profile.",
+            "Validate a PDF against a PDF/A profile with Document.Validate; the result holds its return value and its log.",
             new CommandTraits { Input = PdfInputs.Document },
             [profile],
             (parse, standard) => new PdfValidateRequest
@@ -24,11 +24,11 @@ internal static class ValidateCommand
             Examples =
             [
                 "pdf validate archive.pdf --profile pdfa-2b",
-                "pdf validate archive.pdf --profile pdfa-1b --output-format json",
+                "pdf validate locked.pdf --profile pdfa-1b --password-env PDF_PASSWORD",
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "pdf-standards", "PDF/A profiles and conformance"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
             ],
         };
     }

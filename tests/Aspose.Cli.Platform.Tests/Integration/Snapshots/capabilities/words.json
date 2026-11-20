@@ -2856,7 +2856,7 @@
         "address": {
           "type": "string",
           "minLength": 1,
-          "description": "An object's address: 'document' for the document itself, otherwise segments and keys from the document down, such as each kind's x-addresses shows. read gives every object's address. A form that starts with {kind} continues an address of an object of that kind, one of the kind's own forms."
+          "description": "An object's address: 'document' for the document itself, otherwise segments and keys from the document down, such as each kind's x-addresses shows. read gives every object's address. A form that starts with {kind} continues an address of an object of that kind, one of the kind's own forms. In a key that is a name, a / is written \\/ and a \\ is written \\\\."
         },
         "set": {
           "type": "object",

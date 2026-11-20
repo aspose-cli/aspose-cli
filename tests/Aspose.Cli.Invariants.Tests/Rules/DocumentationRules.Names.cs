@@ -41,7 +41,6 @@ internal static partial class ContractRules
     {
         ["build_property"] = "the MSBuild property prefix an analyzer reads",
         ["field_1"] = "a name Aspose.Pdf gives a form field it creates, in a KNOWN-ISSUES.md entry",
-        ["PDF_A_2B"] = "the Aspose.Pdf conformance name that pdfa-2b maps to",
         ["REG_BINARY"] = "a Windows registry value type, in a KNOWN-ISSUES.md entry",
         ["REG_DWORD"] = "a Windows registry value type, in a KNOWN-ISSUES.md entry",
         ["SCREAMING_SNAKE_CASE"] = "the name of a naming style",
@@ -98,11 +97,12 @@ internal static partial class ContractRules
         {
             SourceFindings[] findings = [.. projects.Select(names.Of), .. documents.Select(names.Of)];
             HashSet<string> used = [.. findings.SelectMany(static finding => finding.Exempted)];
-            // No C# source writes an operation as JSON: an edit's help names its ops document by
-            // file, and the object table's operations are no operations of this reading.
+            // No C# source writes an operation as JSON or an operation's field: an edit's help names
+            // its ops document by file, and the object table's operations and rows are no
+            // operations or fields of this reading.
             (string Group, SourceFindings[] Findings, string[] Without)[] groups =
             [
-                ("the C# sources", [.. projects.Select(names.Of)], ["operation json"]),
+                ("the C# sources", [.. projects.Select(names.Of)], ["operation json", "field"]),
                 ("the Markdown files", [.. documents.Select(names.Of)], []),
             ];
             string[] silent = [.. documents.Where(document => names.Of(document).Kinds.Length == 0).Select(static document => document.Subject)];
@@ -140,16 +140,16 @@ internal static partial class ContractRules
     {
         (string? Product, string Wrong, string Right, string Problem)[] samples =
         [
-            ("pdf", """{"op":"set_properties","titel":"Edited"}""", """{"op":"set_properties","title":"Edited"}""",
-                "'set_properties' has no field 'titel'"),
-            ("pdf", """{"op":"set_page_labels","ranges":[{"startPage":1,"label":"A-"}]}""", """{"op":"set_page_labels","ranges":[{"startPage":1,"prefix":"A-"}]}""",
-                "'set_page_labels' has no field 'ranges.label'"),
+            ("pdf", """{"do":"stamp_text","args":{"page":"page/1","valeu":"DRAFT"}}""", """{"do":"stamp_text","args":{"page":"page/1","value":"DRAFT"}}""",
+                "'do.stamp_text' has no field 'args.valeu'"),
+            ("pdf", """{"do":"redact_area","agrs":{"page":"page/1","rect":"0,0,10,10"}}""", """{"do":"redact_area","args":{"page":"page/1","rect":"0,0,10,10"}}""",
+                "'do.redact_area' has no field 'agrs'"),
             (null, "aspose-cli slides read deck.pptx --scope shapes", "aspose-cli slides read deck.pptx --kind shape",
                 "'slides read' has no option '--scope'"),
-            (null, "aspose-cli pdf inspect report.pdf --detail outlines", "aspose-cli pdf inspect report.pdf --detail outline",
-                "'pdf inspect --detail' has no value 'outlines'"),
-            ("pdf", """{"op":"set_properties", ..., "titel":"Edited"}""", """{"op":"set_properties", ..., "title":"Edited"}""",
-                "'set_properties' has no field 'titel'"),
+            (null, "aspose-cli pdf extract report.pdf --what image --out-dir images", "aspose-cli pdf extract report.pdf --what images --out-dir images",
+                "'pdf extract --what' has no value 'image'"),
+            ("pdf", """{"do":"stamp_text", ..., "agrs":{"value":"DRAFT"}}""", """{"do":"stamp_text", ..., "args":{"value":"DRAFT"}}""",
+                "'do.stamp_text' has no field 'agrs'"),
             (null, "slides query deck.pptx", "slides read deck.pptx", "'slides' has no command 'query'"),
             (null, "license frobnicate", "license status", "'license' has no command 'frobnicate'"),
             (null, "docs licencing", "docs licensing", "'docs' has no topic 'licencing'"),
@@ -160,20 +160,12 @@ internal static partial class ContractRules
             (null, "words merge a.docx", "words edit a.docx --ops ops.json --in-place", "'words' has no command 'merge'"),
             (null, "cells read book.xlsx --kind chart name", "cells read book.xlsx --kind chart --kind name",
                 "'cells read --kind' takes one value per occurrence, so 'name' after '--kind chart' is an argument"),
-            (null, "pdf create scans.pdf --from-images a.png b.png", "pdf create scans.pdf --from-images a.png --from-images b.png",
-                "'pdf create --from-images' takes one value per occurrence, so 'b.png' after '--from-images a.png' is an argument"),
             (null, "pdf split report.pdf --by pages --groups 1-3 4-6", "pdf split report.pdf --by pages --groups 1-3 --groups 4-6",
                 "'pdf split --groups' takes one value per occurrence, so '4-6' after '--groups 1-3' is an argument"),
         ];
-        // Prose that is no JSON and no command, so it has no fenced form: a field named after its
-        // operation, and a repeatable option written with two of its values.
-        (string? Product, string Wrong, string Right, string Problem)[] prose =
-        [
-            ("pdf", "set_page_labels.ranges.label", "set_page_labels.ranges.prefix",
-                "'set_page_labels' has no field 'ranges.label'"),
-            ("pdf", "inspect --detail outline fonts", "inspect --detail outline --detail fonts",
-                "'--detail' takes one value per occurrence; repeat the option: '--detail outline --detail fonts'"),
-        ];
+        // Prose that is no JSON and no command, so it has no fenced form. No command has a
+        // repeatable option that lists its values, which prose could write two of.
+        (string? Product, string Wrong, string Right, string Problem)[] prose = [];
         foreach ((string? product, string wrong, string right, string problem, bool fenced) in samples
             .Select(static sample => (sample.Product, sample.Wrong, sample.Right, sample.Problem, true))
             .Concat(prose.Select(static sample => (sample.Product, sample.Wrong, sample.Right, sample.Problem, false))))

@@ -67,21 +67,6 @@ internal static partial class ContractRules
         }
     }
 
-    private static IEnumerable<InvariantCase> R21Declared(CliCatalog catalog)
-    {
-        CliProduct[] products = [.. PublishedSchema.OpsProducts(catalog)];
-        foreach (CliProduct product in products)
-        {
-            foreach (string op in product.Ops)
-            {
-                string subject = PublishedSchema.OpSubject(product, op).Name;
-                yield return Check("C-R21", subject, () => ReadBack(product, op).Problems);
-                yield return Check("C-R21", $"{subject} unclassified", () =>
-                    ReadBack(product, op).Unclassified is { Count: > 0 } fields ? [$"unclassified: {string.Join(", ", fields)}"] : []);
-            }
-        }
-    }
-
     /// <summary>The read-back problems of one op's classified state fields, and the fields nobody has classified.</summary>
     private static (List<string> Problems, List<string> Unclassified) ReadBack(CliProduct product, string op)
     {

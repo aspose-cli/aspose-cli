@@ -1,7 +1,7 @@
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
-/// The core every product's <c>edit --verify</c> reports: whether the staged output passed, the
+/// The core of an edit's verification: whether the staged output passed, the
 /// issues found, and the operations checked and not checked. A product derives one record that
 /// declares only its own evidence, which its result schema then lists beside the core; the record
 /// may be inherited across assemblies.

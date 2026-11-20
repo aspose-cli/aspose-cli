@@ -11,4 +11,7 @@ public sealed record PdfMergeResult() : EngineResultEnvelope("merge-result")
 
     /// <summary>The documents merged, in order.</summary>
     public required IReadOnlyList<InputInfo> Inputs { get; init; }
+
+    /// <summary>What PdfFileEditor.Concatenate returned.</summary>
+    public required bool Concatenated { get; init; }
 }

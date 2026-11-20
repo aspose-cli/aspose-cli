@@ -30,14 +30,12 @@ public sealed class StandardInputSecretCliTests
     {
         using var workspace = new TempWorkspace();
         ScenarioLicense.Project(workspace.Path);
-        File.WriteAllText(workspace.File("text.txt"), "Hello\n");
-        string[] source = product == "pdf" ? ["--from-text", "text.txt"] : [];
-        string read = product is "slides" or "cells" or "words" ? "read" : "inspect";
+        const string read = "read";
 
-        Succeeds(Piped(workspace, Utf8.GetBytes(Password + "\n"), [product, "create", file, .. source, "--encrypt-stdin", "--output-format", "json"]));
+        Succeeds(Piped(workspace, Utf8.GetBytes(Password + "\n"), [product, "create", file, "--encrypt-stdin", "--output-format", "json"]));
         Succeeds(workspace.RunWithEnv(PasswordVariable, product, read, file, "--password-env", "PW", "--output-format", "json"));
 
-        workspace.RunWithEnv(PasswordVariable, [product, "create", "env-" + file, .. source, "--encrypt-env", "PW", "--output-format", "json"]).Succeeded();
+        workspace.RunWithEnv(PasswordVariable, [product, "create", "env-" + file, "--encrypt-env", "PW", "--output-format", "json"]).Succeeded();
         Succeeds(Piped(workspace, Utf8.GetBytes(Password + "\n"), [product, read, "env-" + file, "--password-stdin", "--output-format", "json"]));
     }
 

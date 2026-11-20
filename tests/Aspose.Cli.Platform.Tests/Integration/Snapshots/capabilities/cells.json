@@ -1968,7 +1968,7 @@
         "address": {
           "type": "string",
           "minLength": 1,
-          "description": "An object's address: 'workbook' for the document itself, otherwise segments and keys from the document down, such as each kind's x-addresses shows. read gives every object's address."
+          "description": "An object's address: 'workbook' for the document itself, otherwise segments and keys from the document down, such as each kind's x-addresses shows. read gives every object's address. In a key that is a name, a / is written \\/ and a \\ is written \\\\."
         },
         "set": {
           "type": "object",

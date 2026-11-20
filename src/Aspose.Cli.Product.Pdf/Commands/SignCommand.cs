@@ -1,10 +1,14 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
+/// <summary>
+/// <c>pdf sign</c>: the parameters of PdfFileSignature.Sign, each stated by the caller: the page, whether
+/// the signature is visible, the engine's rectangle of a visible one, and what the PKCS7 signature
+/// carries. A parameter not given is not set.
+/// </summary>
 internal static class SignCommand
 {
     public static CommandDefinition<PdfSignRequest, PdfSignResult> Create()
@@ -17,54 +21,48 @@ internal static class SignCommand
         PasswordOptions certificatePassword = PasswordOptions.Required(PdfOptionNames.CertificatePasswordPrefix, "the PKCS#12 certificate");
         var visible = new Option<bool>("--visible")
         {
-            Description = "Place a visible signature appearance on the selected page.",
+            Description = "The visible parameter of PdfFileSignature.Sign: the signature has an appearance on the page. Takes --rect.",
         };
         var page = new Option<int>("--page")
         {
-            DefaultValueFactory = _ => 1,
-            Description = "1-based page for the signature field.",
+            Required = true,
+            Description = "The page parameter of PdfFileSignature.Sign, from 1.",
         };
         var rect = new Option<string?>(PdfOptionNames.Rect)
         {
-            Description = "Visible rectangle x,y,width,height in PDF points from the page's top-left corner, as redact_area and 'pdf render --grid' measure. Default: 180x60, 36 points from the bottom-left corner, smaller on a page too small for it.",
+            Description = "The rectangle of a visible signature, the engine's System.Drawing.Rectangle the call takes: x,y,width,height in whole points, x and y the lower-left corner in the page's user space. Required with --visible.",
         }.WithInput(InputKind.None);
-        var reason = new Option<string?>(PdfOptionNames.Reason) { Description = "Signing reason stored in the signature." }.WithInput(InputKind.None);
-        var location = new Option<string?>(PdfOptionNames.Location) { Description = "Signing location stored in the signature." }.WithInput(InputKind.None);
-        var contact = new Option<string?>(PdfOptionNames.Contact) { Description = "Signer contact stored in the signature." }.WithInput(InputKind.None);
+        var reason = new Option<string?>(PdfOptionNames.Reason) { Description = "PKCS7.Reason." }.WithInput(InputKind.None);
+        var location = new Option<string?>(PdfOptionNames.Location) { Description = "PKCS7.Location." }.WithInput(InputKind.None);
+        var contact = new Option<string?>(PdfOptionNames.Contact) { Description = "PKCS7.ContactInfo." }.WithInput(InputKind.None);
+        var font = new Option<string?>("--font") { Description = "SignatureCustomAppearance.FontFamilyName of a visible signature; not given, the engine's default appearance." }.WithInput(InputKind.None);
         return new(
             "sign",
-            "Apply a PKCS#7 signature and verify the saved signature field.",
+            "Sign a PDF with a PKCS#7 signature through PdfFileSignature.Sign, and read the new signature back from the saved file.",
             new CommandTraits
             {
                 Input = PdfInputs.Document with { PasswordSubject = "the input PDF" },
                 Output = OutputTarget.File("Signed PDF path. Default: <input>.signed.pdf.", PdfFormats.Document, derivedMarker: ".signed"),
                 UsesFonts = true,
             },
-            [certificate, .. certificatePassword.Options, visible, page, rect, reason, location, contact],
+            [certificate, .. certificatePassword.Options, visible, page, rect, reason, location, contact, font],
             (parse, standard) =>
             {
                 bool isVisible = parse.GetValue(visible);
                 string? rectangleText = parse.GetValue(rect);
-                if (!isVisible && rectangleText is not null)
+                if (isVisible != rectangleText is not null)
                 {
-                    throw CliErrors.OptionInvalid(
-                        PdfOptionNames.Rect,
-                        "a rectangle has no effect on an invisible signature");
+                    throw CliErrors.OptionInvalid(PdfOptionNames.Rect, isVisible ? "a visible signature takes its rectangle" : "an invisible signature has no rectangle");
                 }
 
                 int pageNumber = parse.GetValue(page);
                 OptionGuards.EnsureInRange("--page", pageNumber, 1, int.MaxValue);
-                string input = standard.Input;
-                string certificatePath = standard.RequiredInputFile(certificate);
-                ResolvedOutput output = standard.Output;
-                Secret certificateSecret = standard.Password(certificatePassword);
-
                 return new PdfSignRequest
                 {
-                    Input = input,
-                    CertificatePath = certificatePath,
-                    CertificatePassword = certificateSecret,
-                    Output = output,
+                    Input = standard.Input,
+                    CertificatePath = standard.RequiredInputFile(certificate),
+                    Output = standard.Output,
+                    CertificatePassword = standard.Password(certificatePassword),
                     Password = standard.InputPassword,
                     Page = pageNumber,
                     Visible = isVisible,
@@ -72,31 +70,31 @@ internal static class SignCommand
                     Reason = parse.GetValue(reason),
                     Location = parse.GetValue(location),
                     Contact = parse.GetValue(contact),
+                    Font = parse.GetValue(font),
                 };
             })
         {
             Examples =
             [
-                "pdf sign contract.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD",
-                "pdf sign contract.pdf --certificate signer.pfx --certificate-password-stdin --visible --page 2 --rect 36,700,180,60 --reason Approved --out signed.pdf",
+                "pdf sign contract.pdf --page 1 --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD",
+                "pdf sign contract.pdf --page 2 --certificate signer.pfx --certificate-password-stdin --visible --rect 36,36,180,60 --reason Approved --out signed.pdf",
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "forms-security", "signatures, permissions and encryption"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
             ],
         };
     }
 
-    internal static PdfSignatureRect ParseRect(string text)
+    private static System.Drawing.Rectangle ParseRect(string text)
     {
-        double[] values = PdfNumberList.Parse(text, PdfOptionNames.Rect);
-        if (values.Length != 4 || values[2] <= 0 || values[3] <= 0)
+        string[] parts = text.Split(',');
+        int[] values = new int[4];
+        if (parts.Length != 4 || parts.Select((part, index) => int.TryParse(part.Trim(), System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out values[index])).Any(static parsed => !parsed))
         {
-            throw CliErrors.OptionInvalid(
-                PdfOptionNames.Rect,
-                $"'{text}' must contain x,y and positive width,height");
+            throw CliErrors.OptionInvalid(PdfOptionNames.Rect, $"'{text}' is not x,y,width,height, four whole numbers");
         }
 
-        return new PdfSignatureRect(values[0], values[1], values[2], values[3]);
+        return new System.Drawing.Rectangle(values[0], values[1], values[2], values[3]);
     }
 }

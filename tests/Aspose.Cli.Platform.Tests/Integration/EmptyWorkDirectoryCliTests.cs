@@ -21,7 +21,7 @@ public sealed class EmptyWorkDirectoryCliTests
             commands.Add("cells create out.xlsx", workDir);
             commands.Add("words create out.docx", workDir);
             commands.Add("slides create out.pptx", workDir);
-            commands.Add("pdf create out.pdf --from-text text.txt", workDir);
+            commands.Add("pdf create out.pdf", workDir);
         }
 
         return commands;
@@ -48,7 +48,7 @@ public sealed class EmptyWorkDirectoryCliTests
         Directory.CreateDirectory(workspace.File("sub"));
         File.Copy(workspace.File("text.txt"), workspace.File("sub/text.txt"));
 
-        workspace.Run("pdf", "create", "out.pdf", "--from-text", "text.txt", "--workdir", "sub", "--output-format", "json").Succeeded();
+        workspace.Run("pdf", "create", "out.pdf", "--workdir", "sub", "--output-format", "json").Succeeded();
 
         Assert.True(File.Exists(workspace.File("sub/out.pdf")));
         Assert.False(File.Exists(workspace.File("out.pdf")));

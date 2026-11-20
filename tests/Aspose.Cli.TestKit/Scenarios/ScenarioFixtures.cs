@@ -49,7 +49,7 @@ public static class ScenarioFixtures
     private static readonly Dictionary<string, string> Operations = new(StringComparer.Ordinal)
     {
         ["cells"] = """{"ops":[{"set":"sheet/Sheet1/cell/D1","props":{"value":"edited"}}]}""",
-        ["pdf"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
+        ["pdf"] = """{"ops":[{"set":"document","props":{"info.title":"Edited"}}]}""",
         ["slides"] = """{"ops":[{"set":"presentation","props":{"title":"Edited"}}]}""",
         ["words"] = """{"ops":[{"set":"document","props":{"builtInDocumentProperties.title":"Edited"}}]}""",
     };
@@ -160,7 +160,12 @@ public static class ScenarioFixtures
                 Require(workspace.Run("cells", "edit", file, "--ops", "ops.json", "--in-place", "--output-format", "json"));
                 break;
             case "pdf":
-                Require(workspace.Run("pdf", "create", file, "--from-text", "source.txt", "--output-format", "json"));
+                File.WriteAllText(workspace.File("source.html"),
+                    $"<html><body><p>{SampleText}</p><p>The second paragraph of the seed document.</p></body></html>");
+                Require(workspace.Run("pdf", "convert", "source.html", "--out", file, "--output-format", "json"));
+                // A custom information entry, so a read lists more than the document.
+                File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"add":"info","args":{"key":"Department","value":"Invariants"}}]}""");
+                Require(workspace.Run("pdf", "edit", file, "--ops", "ops.json", "--in-place", "--output-format", "json"));
                 break;
             case "slides":
                 (string first, string second) = SlidesDeck(workspace, file);
@@ -233,9 +238,9 @@ public static class ScenarioFixtures
         File.WriteAllText(workspace.File("media.html"),
             """<html><body><img src="picture.png" width="60"><table style="border-collapse:collapse"><tr><td style="border:1px solid black">Item</td><td style="border:1px solid black">Amount</td></tr><tr><td style="border:1px solid black">First</td><td style="border:1px solid black">1</td></tr></table></body></html>""");
         string target = "media." + primary;
-        Require(workspace.Run("pdf", "create", target, "--from-html", "media.html", "--output-format", "json"));
+        Require(workspace.Run("pdf", "convert", "media.html", "--out", target, "--output-format", "json"));
         File.WriteAllText(workspace.File("note.txt"), SampleText);
-        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"op":"add_attachment","path":"note.txt"}]}""");
+        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"add":"attachment","args":{"file":"note.txt","name":"note.txt"}}]}""");
         Require(workspace.Run("pdf", "edit", target, "--ops", "ops.json", "--in-place", "--output-format", "json"));
         return File.ReadAllBytes(workspace.File(target));
     }
@@ -291,11 +296,11 @@ public static class ScenarioFixtures
                 File.WriteAllBytes(workspace.File("picture.png"), System.Convert.FromBase64String(RichPicture));
                 File.WriteAllText(workspace.File("rich.html"),
                     $"""<html><body><h1>Rich seed</h1><p>{Marker("body")}</p><img src="picture.png" width="40"><form><input type="text" name="field" value="seed"></form></body></html>""");
-                Require(workspace.Run("pdf", "create", file, "--from-html", "rich.html", "--output-format", "json"));
-                operations = $$"""
-                    [{"op":"set_form_field","name":"field","value":"{{Marker("form field value")}}"},
-                    {"op":"add_header_text","text":"{{Marker("header")}}"},
-                    {"op":"add_footer_text","text":"{{Marker("footer")}}"}]
+                Require(workspace.Run("pdf", "convert", "rich.html", "--out", file, "--output-format", "json"));
+                operations = $$$"""
+                    [{"set":"field/field","props":{"value":"{{{Marker("form field value")}}}"}},
+                    {"do":"stamp_text","args":{"page":"page/1","value":"{{{Marker("header")}}}","horizontalAlignment":"Center","verticalAlignment":"Top"}},
+                    {"do":"stamp_text","args":{"page":"page/1","value":"{{{Marker("footer")}}}","horizontalAlignment":"Center","verticalAlignment":"Bottom"}}]
                     """;
                 break;
             case "slides":
@@ -379,7 +384,7 @@ public static class ScenarioFixtures
         if (product == "pdf")
         {
             File.WriteAllText(workspace.File("ops.json"),
-                $$"""{"ops":[{"op":"encrypt_document","userPasswordEnv":"{{PasswordVariable}}","ownerPasswordEnv":"{{PasswordVariable}}"}]}""");
+                $$$"""{"ops":[{"do":"encrypt","args":{"userPasswordEnv":"{{{PasswordVariable}}}","ownerPasswordEnv":"{{{PasswordVariable}}}","permissions":[],"cryptoAlgorithm":"AESx256"}}]}""");
         }
         Require(workspace.RunWithEnv(environment, args));
         return File.ReadAllBytes(workspace.File(target));

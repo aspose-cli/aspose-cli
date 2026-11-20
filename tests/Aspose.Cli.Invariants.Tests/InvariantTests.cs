@@ -215,7 +215,9 @@ public sealed partial class KnownViolationsTests
     {
         // C-R41 checked the --if-match precondition, which went with the option; its number is not reused.
         // C-R43 checked the TEXT_NOT_REPLACED of a replace_text, which went with the Words operations.
-        string[] retired = ["C-R41", "C-R43"];
+        // C-R19 (a set_ operation replaces, an add_ one adds), C-R21 (an operation's state fields read
+        // back) and C-R29 (an edit's verification) judged the named operations, which went with PDF's.
+        string[] retired = ["C-R19", "C-R21", "C-R29", "C-R41", "C-R43"];
         string[] numbered = [.. Enumerable.Range(1, 44).Select(static number => $"C-R{number:00}").Except(retired)];
         // A rule whose cases another generator owns (C-R07: SameNameOptions) has no entry of its own.
         string[] registered = [.. ContractRules.All.Select(static rule => rule.Id)];

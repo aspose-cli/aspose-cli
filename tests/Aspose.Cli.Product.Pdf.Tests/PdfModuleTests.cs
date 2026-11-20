@@ -7,20 +7,8 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 public sealed class PdfModuleTests
     : ProductContractTests<PdfModule>
 {
-    protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs => [new(PdfOp.Catalog.SchemaId, CanonicalOps)];
-
-    [Fact]
-    public void OperationBatch_RejectsNullOperations()
-    {
-        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            Parse("""{"ops":null}"""));
-        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
-    }
-
-    [Fact]
-    public void OperationObjects_RejectUnknownNestedFields() =>
-        AssertOperationObjectIsStrict<PdfOp>(
-            """{"op":"crop_pages","pages":"1","rect":{"x":0,"y":0,"width":10,"height":10}}""", "rect");
+    /// <summary>PDF reads no product-owned input document: its edit document is the object table's.</summary>
+    protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } = [];
 
     [Fact]
     public Task EveryDefaultInputFormatHasPositiveRoutingEvidence() =>
@@ -29,92 +17,4 @@ public sealed class PdfModuleTests
             {
                 ["pdf"] = ProductRoutingContract.Utf8("%PDF-1.7\n"),
             });
-
-    [Fact]
-    public void CanonicalOps_CoverEveryRegisteredOperation() =>
-        Assert.Equal(
-            PdfOp.Catalog.Names.Order(StringComparer.Ordinal),
-            CanonicalOps.Ops
-                .Select(PdfOp.Catalog.NameOf)
-                .Order(StringComparer.Ordinal));
-
-    [Theory]
-    [InlineData("""{"op":"insert_page","at":1}""", """{"at":1}""")]
-    [InlineData("""{"op":"crop_pages","pages":"1","rect":{"x":0,"y":0,"width":10,"height":10}}""", """{"box":"crop"}""")]
-    [InlineData("""{"op":"add_watermark_text","text":"DRAFT"}""", """{"fontSize":48,"color":"#808080","opacity":0.35,"rotation":-45,"layer":"over"}""")]
-    [InlineData("""{"op":"add_watermark_image","path":"image.png"}""", """{"opacity":0.35,"scalePercent":50,"layer":"over"}""")]
-    [InlineData("""{"op":"add_page_numbers"}""", """{"text":"Page {n} of {N}","placement":"bottom-center","start":1}""")]
-    [InlineData("""{"op":"add_header_text","text":"Header"}""", """{"alignment":"center"}""")]
-    [InlineData("""{"op":"add_footer_text","text":"Footer"}""", """{"alignment":"center"}""")]
-    [InlineData("""{"op":"redact_text","find":"hidden"}""", """{"fillColor":"#000000"}""")]
-    [InlineData("""{"op":"redact_area","page":1,"rect":{"x":0,"y":0,"width":10,"height":10}}""", """{"fillColor":"#000000"}""")]
-    [InlineData("""{"op":"clear_properties"}""", """{"xmp":true,"documentInfo":true}""")]
-    [InlineData("""{"op":"set_page_labels","ranges":[{"startPage":1}]}""", """{"ranges":[{"startPage":1,"numberStyle":"decimal","start":1}]}""")]
-    [InlineData("""{"op":"encrypt_document","ownerPasswordEnv":"OWNER"}""", """{"permissions":{"print":false,"copy":false,"modify":false,"annotate":false,"fillForms":false,"extractAccessibility":false,"assemble":false,"printHighResolution":false}}""")]
-    [InlineData("""{"op":"optimize_document"}""", """{"removeUnusedObjects":true,"compressStreams":true}""")]
-    [InlineData("""{"op":"optimize_document","removeUnusedObjects":false,"compressStreams":false}""", """{"removeUnusedObjects":false,"compressStreams":false}""")]
-    [InlineData("""{"op":"add_watermark_text","text":"DRAFT","fontSize":0,"rotation":0,"opacity":0}""", """{"fontSize":0,"rotation":0,"opacity":0,"color":"#808080"}""")]
-    [InlineData("""{"op":"encrypt_document","ownerPasswordEnv":"OWNER","permissions":{"copy":true,"print":false}}""", """{"permissions":{"print":false,"copy":true,"modify":false,"annotate":false,"fillForms":false,"extractAccessibility":false,"assemble":false,"printHighResolution":false}}""")]
-    public void OperationFields_PreserveDefaultsAndExplicitValues(string input, string expected) =>
-        AssertOperationDefaults<PdfOp>(input, expected);
-
-    [Theory]
-    [InlineData("""{"op":"add_watermark_text","text":"DRAFT","pages":null}""")]
-    [InlineData("""{"op":"add_page_numbers","text":null}""")]
-    [InlineData("""{"op":"add_watermark_text","text":"DRAFT","color":null}""")]
-    [InlineData("""{"op":"add_bookmark","title":null,"page":1}""")]
-    public void Fields_RejectExplicitNullAsInvalidOperations(string operation)
-    {
-        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            Parse($$"""{"ops":[{{operation}}]}"""));
-        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
-    }
-
-    [Fact]
-    public void EncryptionPermissions_RejectExplicitNull()
-    {
-        Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            Parse(
-                """{"ops":[{"op":"encrypt_document","ownerPasswordEnv":"OWNER","permissions":null}]}"""));
-    }
-
-    private static PdfOpsBatch CanonicalOps { get; } = new()
-    {
-        Schema = PdfOp.Catalog.SchemaId,
-        SchemaVersion = 2,
-        Ops =
-        [
-            new RotatePagesOp { Pages = "1", Rotation = 90 },
-            new DeletePagesOp { Pages = "3" },
-            new MovePagesOp { Pages = "2", To = 1 },
-            new ImportPagesOp { Path = "D:/data/append.pdf", Pages = "1", At = 2, SourcePasswordEnv = "PDF_PASSWORD" },
-            new InsertPageOp { At = 2, PageSize = new PageSizeInput { Preset = "a4" } },
-            new CropPagesOp { Pages = "1", Box = "crop", Rect = new PdfRectInput { X = 10, Y = 20, Width = 500, Height = 700 } },
-            new SetPageSizeOp { Pages = "1", PageSize = new PageSizeInput { Preset = "letter" }, ScaleContent = true },
-            new AddWatermarkTextOp { Pages = "1-", Text = "DRAFT" },
-            new AddWatermarkImageOp { Path = "D:/data/logo.png" },
-            new AddPageNumbersOp(),
-            new AddHeaderTextOp { Text = "Quarterly report" },
-            new AddFooterTextOp { Text = "Confidential" },
-            new AddStampImageOp { Page = 1, Path = "D:/data/sign.png", Rect = new PdfRectInput { X = 20, Y = 30, Width = 120, Height = 60 } },
-            new AddHyperlinkOp { Page = 1, Rect = new PdfRectInput { X = 20, Y = 100, Width = 160, Height = 20 }, Url = "https://example.com" },
-            new RedactTextOp { Find = "secret", Regex = false },
-            new RedactAreaOp { Page = 1, Rect = new PdfRectInput { X = 20, Y = 140, Width = 160, Height = 20 } },
-            new SetPropertiesOp { Title = "Quarterly report", Custom = new SortedDictionary<string, string> { ["Department"] = "Finance" } },
-            new ClearPropertiesOp(),
-            new AddBookmarkOp { Title = "Overview", Page = 1 },
-            new DeleteBookmarksOp(),
-            new Aspose.Cli.Product.Pdf.Contracts.AddAttachmentOp { Path = "D:/data/source.csv", Name = "source.csv" },
-            new Aspose.Cli.Product.Pdf.Contracts.DeleteAttachmentOp { Name = "old.csv" },
-            new SetPageLabelsOp { Ranges = [new PdfPageLabelRange { StartPage = 1, NumberStyle = "roman-lower" }] },
-            new SetFormFieldOp { Name = "Customer", Value = "Contoso" },
-            new FlattenFormsOp(),
-            new EncryptDocumentOp { OwnerPasswordEnv = "PDF_OWNER_PASSWORD" },
-            new DecryptDocumentOp(),
-            new OptimizeDocumentOp { DownsampleImagesDpi = 150, ImageQuality = 75 },
-        ],
-    };
-
-    private static PdfOpsBatch Parse(string json) =>
-        PdfOp.Catalog.Parse<PdfOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

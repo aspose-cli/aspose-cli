@@ -1,4 +1,3 @@
-using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO.Output;
 
@@ -10,11 +9,6 @@ internal static class RenderCommand
     {
         var pages = new PartSelectionOptions("page");
         var dpi = new DpiOption();
-        var grid = new Option<int?>(PdfOptionNames.Grid)
-        {
-            Description = "Draw a labelled coordinate grid with a line every <grid> points on png or jpeg output, "
-                + "measured from the top-left corner as redact_area takes them.",
-        }.InRange(PdfRenderRequest.MinimumGrid, PdfRenderRequest.MaximumGrid);
         return new(
             "render",
             "Render one or more PDF pages.",
@@ -26,7 +20,7 @@ internal static class RenderCommand
                 UsesFonts = true,
                 Target = TargetFormat.Render(PdfFormats.Definitions),
             },
-            [.. pages.Options, .. dpi.Options, grid],
+            [.. pages.Options, .. dpi.Options],
             (parse, standard) =>
             {
                 PageRange? selection = pages.Read(parse);
@@ -38,7 +32,6 @@ internal static class RenderCommand
                     Output = output,
                     Pages = selection,
                     Dpi = resolution,
-                    Grid = parse.GetInRange(grid),
                     Password = standard.InputPassword,
                 };
             })
@@ -46,12 +39,11 @@ internal static class RenderCommand
             Examples =
             [
                 "pdf render report.pdf --pages 1-2 --out page.png",
-                "pdf render report.pdf --pages 3 --grid 50 --out grid.png",
+                "pdf render report.pdf --to svg --pages 3 --out page.svg",
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "verification", "read-back, rendering and PDF/A evidence"),
-                CommandHelpLink.Docs(PdfModule.Manifest, "editing", "the page coordinates redact_area takes"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
             ],
         };
     }

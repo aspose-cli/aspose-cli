@@ -17,17 +17,17 @@
   },
   "steps": [
     { "args": ["cells", "read", "text.xlsx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
-    { "args": ["pdf", "inspect", "text.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
+    { "args": ["pdf", "read", "text.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
     { "args": ["slides", "read", "text.pptx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
     { "args": ["words", "read", "text.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
     { "args": ["cells", "read", "zip.xlsx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
-    { "args": ["pdf", "inspect", "zip.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
+    { "args": ["pdf", "read", "zip.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
     { "args": ["slides", "read", "zip.pptx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
     { "args": ["words", "read", "zip.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
     { "args": ["cells", "read", "ole.xlsx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
-    { "args": ["pdf", "inspect", "ole.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
+    { "args": ["pdf", "read", "ole.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
     { "args": ["slides", "read", "ole.pptx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
     { "args": ["words", "read", "ole.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } },
-    { "args": ["pdf", "inspect", "header.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } }
+    { "args": ["pdf", "read", "header.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "json": [{ "path": "error.details.detected", "exists": false }], "files": { "nothingWritten": true } } }
   ]
 }

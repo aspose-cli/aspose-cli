@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
-/// <summary>Result of <c>pdf sign</c>: the signature applied and read back from the saved file.</summary>
+/// <summary>Result of <c>pdf sign</c>: the signature fields the saved file holds signed that the input did not.</summary>
 public sealed record PdfSignResult() : EngineResultEnvelope("sign-result")
 {
     /// <summary>The PDF signed.</summary>
@@ -13,16 +13,6 @@ public sealed record PdfSignResult() : EngineResultEnvelope("sign-result")
     [JsonPropertyOrder(-49)]
     public required OutputInfo Output { get; init; }
 
-    /// <summary>The signature field as the saved file reports it.</summary>
-    public required PdfSignatureInfo Signature { get; init; }
-
-    /// <summary>Whether the signature has a visible appearance on the page.</summary>
-    public required bool Visible { get; init; }
-
-    /// <summary>The 1-based page of the signature field.</summary>
-    [Minimum(1)]
-    public required int Page { get; init; }
-
-    /// <summary>Where a visible signature lies on its page; absent for an invisible one.</summary>
-    public PdfRect? Rect { get; init; }
+    /// <summary>The signature fields the saved file holds signed that the input did not, read back from it.</summary>
+    public required IReadOnlyList<PdfSignatureInfo> Signatures { get; init; }
 }

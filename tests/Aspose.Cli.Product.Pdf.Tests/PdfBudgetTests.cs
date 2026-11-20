@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Pdf.Tests;
 
-/// <summary>Extraction and stamping are charged for what they actually read and decode.</summary>
+/// <summary>Extraction is charged for what it actually reads and decodes.</summary>
 public sealed class PdfBudgetTests
 {
     [Fact]
@@ -29,30 +29,6 @@ public sealed class PdfBudgetTests
     }
 
     [Fact]
-    public void TextOutputs_SeparateEveryPageEvenWhenAPageHasNoText()
-    {
-        using var fixture = new PdfEngineFixture();
-        string input = fixture.CreateRawDocument("blank-first.pdf", pages: 2, textPages: new HashSet<int> { 2 });
-        string converted = fixture.File("blank-first.txt");
-
-        PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = input, Output = TestOutput.At(converted, format: "txt") });
-        string extracted = Assert.Single(PdfExtract.Run(fixture.Session, new PdfExtractRequest
-        {
-            Input = input,
-            Output = new ResolvedDirectory(fixture.File("blank-first")),
-            What = "text",
-        }).Outputs).Path;
-
-        foreach (string text in new[] { File.ReadAllText(converted), File.ReadAllText(extracted) })
-        {
-            string[] pages = text.Split('\f');
-            Assert.Equal(2, pages.Length);
-            Assert.DoesNotContain("page 2", pages[0], StringComparison.Ordinal);
-            Assert.Contains("Portable PDF page 2", pages[1], StringComparison.Ordinal);
-        }
-    }
-
-    [Fact]
     public void ExtractImages_RefusesAnOversizedImageBeforeDecodingIt()
     {
         using var fixture = new PdfEngineFixture();
@@ -71,38 +47,4 @@ public sealed class PdfBudgetTests
         Assert.False(Directory.Exists(output) && Directory.EnumerateFiles(output).Any());
     }
 
-    [Fact]
-    public void WatermarkImage_ChargesTheImageOnceWhateverThePageCount()
-    {
-        using var fixture = new PdfEngineFixture();
-        string image = fixture.File("mark.png");
-        string source = fixture.CreateRawDocument("with-image.pdf", pages: 1, imagePages: new HashSet<int> { 1 });
-        string extracted = Assert.Single(PdfExtract.Run(fixture.Session, new PdfExtractRequest
-        {
-            Input = source,
-            Output = new ResolvedDirectory(fixture.File("mark")),
-            What = "images",
-        }).Outputs).Path;
-        File.Copy(extracted, image);
-        string input = fixture.CreateDocument("pages.pdf", pages: 3);
-
-        long onePage = InputBytesCharged(fixture, input, "1", "one.pdf");
-        long threePages = InputBytesCharged(fixture, input, "1-3", "three.pdf");
-
-        Assert.Equal(onePage, threePages);
-
-        long InputBytesCharged(PdfEngineFixture owner, string path, string pages, string output)
-        {
-            ProductTestInvocation invocation = ProductTestBudgets.Start<PdfModule>();
-            long before = invocation.ResourceBudgets.Remaining(ResourceBudgetKinds.InputBytes);
-            var session = PdfActivation.Session(owner.Outputs(invocation.Writer), invocation.ResourceBudgets);
-            PdfEdit.Run(session, new PdfEditRequest
-            {
-                Input = path,
-                Batch = new PdfOpsBatch { Ops = [new AddWatermarkImageOp { Path = image, Pages = pages }] },
-                Output = TestOutput.At(owner.File(output)),
-            });
-            return before - invocation.ResourceBudgets.Remaining(ResourceBudgetKinds.InputBytes);
-        }
-    }
 }

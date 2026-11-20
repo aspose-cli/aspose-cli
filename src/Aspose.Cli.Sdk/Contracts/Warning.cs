@@ -73,9 +73,6 @@ public static class WarningCodes
     /// </summary>
     public static readonly WarningCode LossyConversion = new("LOSSY_CONVERSION");
 
-    /// <summary>A change invalidated a digital signature of the input.</summary>
-    public static readonly WarningCode SignatureInvalidated = new("SIGNATURE_INVALIDATED");
-
     /// <summary>Without a license, the engine loaded only the start of the input.</summary>
     public static readonly WarningCode EvaluationInputTruncated = new("EVALUATION_INPUT_TRUNCATED");
 
@@ -92,9 +89,6 @@ public static class WarningCodes
     /// <summary>A list inside a result was capped; <c>details.list</c> names the list.</summary>
     public static readonly WarningCode ListTruncated = new("LIST_TRUNCATED");
 
-    /// <summary>An edit went through restrictions the input declares but the engine does not enforce.</summary>
-    public static readonly WarningCode ProtectionNotEnforced = new("PROTECTION_NOT_ENFORCED");
-
     /// <summary>
     /// An operation applied but changed nothing, such as a replacement that matched no text;
     /// <c>details</c> names the operation by <c>id</c> and <c>op</c> and says why in <c>reason</c>.
@@ -108,12 +102,10 @@ public static class WarningCodes
         EvaluationMode,
         RemoteResourcesBlocked,
         LossyConversion,
-        SignatureInvalidated,
         EvaluationInputTruncated,
         EvaluationInputMarked,
         EncryptionRemoved,
         ListTruncated,
-        ProtectionNotEnforced,
         OpNoEffect,
     ];
 }

@@ -12,7 +12,7 @@ namespace Aspose.Cli.Sdk.Operations;
 /// that entry. <c>details.reason</c> is one of <see cref="OpsInvalidReasons"/> and
 /// <c>details.field</c> the path of the field it is about, when it is about one; the message
 /// explains it and names the operation the same way, such as
-/// <c>Operation op-0002 (insert_page)</c>. A list of names the caller can choose from appears
+/// <c>Operation op-0002 (stamp_text)</c>. A list of names the caller can choose from appears
 /// once, as <c>details.available</c>, and the message's last sentence names the same list.
 /// </summary>
 internal static class OperationErrors

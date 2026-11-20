@@ -5,31 +5,31 @@ namespace Aspose.Cli.Product.Pdf.Commands;
 internal static class EditCommand
 {
     public static CommandDefinition<PdfEditRequest, PdfEditResult> Create() =>
-        EditDefinition.Create<PdfOp, PdfOpsBatch, PdfEditRequest, PdfEditResult>(
-            new BoundedEditCommand<PdfOp, PdfOpsBatch>(new BoundedEditDefinition<PdfOp, PdfOpsBatch>
-            {
-                Contracts = ProductJsonContext.Definition,
-                VerifyDescription = "Read the staged output back and check the effect of each form, redaction, bookmark, metadata, attachment and page operation.",
-                Writes = PdfFormats.Document,
-            }),
-            "Apply one validated, atomic PDF operation batch.",
+        TableCommands.Edit<PdfEditRequest, PdfEditResult>(
+            PdfModule.Table,
+            "Apply a batch of set, add, delete and do operations to a PDF; nothing is written when one fails.",
             new CommandTraits
             {
                 Input = PdfInputs.Document,
                 Encrypt = PdfInputs.EncryptedPdf,
                 UsesFonts = true,
             },
-            [],
-            static (_, edit, _) => new PdfEditRequest(edit),
+            PdfFormats.Document,
+            static edit => new PdfEditRequest
+            {
+                Input = edit.Input,
+                Batch = edit.Batch,
+                Output = edit.Output,
+                Password = edit.Password,
+                EncryptPassword = edit.EncryptPassword,
+            },
             examples:
             [
-                "pdf edit report.pdf --ops ops.json --out reviewed.pdf --verify",
+                "pdf edit form.pdf --ops ops.json --out filled.pdf",
                 "pdf edit report.pdf --in-place --ops ops.json",
             ],
             links:
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "editing", "fixed-layout operations and safe mutation"),
-                CommandHelpLink.Schema<PdfOp>("the operation JSON schema"),
-                CommandHelpLink.Docs(PdfModule.Manifest, "verification", "what --verify reads back"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "addresses, the operation shapes and the read-back"),
             ]);
 }

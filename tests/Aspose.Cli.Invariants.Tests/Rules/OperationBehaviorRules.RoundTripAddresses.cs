@@ -28,19 +28,6 @@ internal static partial class ContractRules
     /// <summary>The items of each product's reads, first match wins.</summary>
     internal static IReadOnlyDictionary<string, ReadItem[]> ReadItems { get; } = new Dictionary<string, ReadItem[]>(StringComparer.Ordinal)
     {
-        ["pdf"] =
-        [
-            Derived(@"^pdf (inspect|read): (pdf|fonts|signatures|layers|forms\.(kind|fieldCount|readOnly)|window|pageCount|content)\b"),
-            Derived(@"^pdf inspect: (properties\.(creationDate|modificationDate|creator|producer))\b"),
-            Item(@"^pdf (inspect|read): pages\[(\d+)\]", (m, at) => [$"page/{at($"pages[{m[2]}].page") ?? Next(m[2])}"]),
-            Item(@"^pdf inspect: pageLabels\[(\d+)\]", (m, _) => [$"page-label/{Next(m[1])}"]),
-            Item(@"^pdf inspect: outline\[(\d+)\]", (m, at) => [$"bookmark/{at($"outline[{m[1]}].bookmark")}"]),
-            Item(@"^pdf inspect: links\[(\d+)\]", (m, at) => [$"page/{at($"links[{m[1]}].page")}"]),
-            Item(@"^pdf inspect: forms\.fields\[(\d+)\]", (m, at) => [$"field/{at($"forms.fields[{m[1]}].name")}"]),
-            Item(@"^pdf inspect: attachments\[(\d+)\]", (m, at) => [$"attachment/{at($"attachments[{m[1]}].name")}"]),
-            Item(@"^pdf inspect: permissions\b", static (_, _) => ["security/encryption"]),
-            Item(@"^pdf inspect: properties\.([^.\[]+)", static (m, _) => [$"property/{m[1]}"]),
-        ],
     };
 
     private static ReadItem Item([StringSyntax(StringSyntaxAttribute.Regex)] string place, Func<string[], Func<string, string?>, IEnumerable<string>> items) =>
@@ -132,7 +119,4 @@ internal static partial class ContractRules
                 break;
         }
     }
-
-    private static string Next(string index) => (int.Parse(index, CultureInfo.InvariantCulture) + 1).ToString(CultureInfo.InvariantCulture);
-
 }

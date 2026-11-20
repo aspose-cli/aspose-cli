@@ -72,32 +72,6 @@ public sealed class PdfEngineFormatTests
                 Assert.True((engine.Write == PdfEngineWrite.Tiff) == format.Raster, $"{format.Id}: TIFF write and Raster disagree");
             }
 
-            Assert.True((engine.Encoded is not null) == (engine.Device is not null), $"{format.Id}: device and encoding disagree");
-        }
-    }
-
-    /// <summary>
-    /// A page with a grid is encoded as the engine device encodes the page without one: the same
-    /// image format and, for JPEG, the same quantization tables, which the quality sets.
-    /// </summary>
-    [Fact]
-    public void GridEncoding_UsesTheDeviceQuality()
-    {
-        using var document = new Aspose.Pdf.Document();
-        document.Pages.Add().Paragraphs.Add(new Aspose.Pdf.Text.TextFragment("Grid"));
-        var resolution = new Aspose.Pdf.Devices.Resolution(72);
-        foreach (PdfEngineFormat engine in PdfEngineFormats.All.Where(static entry => entry.Device is not null))
-        {
-            using var device = new MemoryStream();
-            engine.Device!(resolution).Process(document.Pages[1], device);
-            using var png = new MemoryStream();
-            new Aspose.Pdf.Devices.PngDevice(resolution).Process(document.Pages[1], png);
-            png.Position = 0;
-            using SkiaSharp.SKBitmap bitmap = SkiaSharp.SKBitmap.Decode(png);
-            using SkiaSharp.SKData encoded = bitmap.Encode(engine.Encoded!.Format, engine.Encoded.Quality);
-
-            Assert.Equal(Signature(device.ToArray()), Signature(encoded.ToArray()));
-            Assert.Equal(QuantizationTables(device.ToArray()), QuantizationTables(encoded.ToArray()));
         }
     }
 
@@ -120,33 +94,6 @@ public sealed class PdfEngineFormatTests
     [InlineData("pdfa-3b")]
     public void EveryValidateProfile_HasAnEngineProfile(string profile) =>
         Assert.NotNull(PdfEngineFormats.Archive(profile));
-
-    private static string Signature(byte[] image) => Convert.ToHexString(image, 0, 3);
-
-    /// <summary>The payloads of the DQT segments of a JPEG, in order; empty for any other image.</summary>
-    private static string QuantizationTables(byte[] image)
-    {
-        var tables = new List<string>();
-        if (image.Length < 2 || image[0] != 0xFF || image[1] != 0xD8)
-        {
-            return string.Empty;
-        }
-
-        int at = 2;
-        while (at + 4 <= image.Length && image[at] == 0xFF && image[at + 1] != 0xDA)
-        {
-            int length = (image[at + 2] << 8) | image[at + 3];
-            if (image[at + 1] == 0xDB)
-            {
-                tables.Add(Convert.ToHexString(image, at + 4, length - 2));
-            }
-
-            at += 2 + length;
-        }
-
-        Assert.NotEmpty(tables);
-        return string.Join("|", tables);
-    }
 
     /// <summary>Whether the entry names everything its write kind needs.</summary>
     private static bool Writable(PdfEngineFormat? engine) => engine?.Write switch

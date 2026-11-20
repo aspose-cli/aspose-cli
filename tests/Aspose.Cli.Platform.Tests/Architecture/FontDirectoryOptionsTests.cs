@@ -25,14 +25,13 @@ public sealed class FontDirectoryOptionsTests
         ["cells search"] = false,
         ["cells create"] = false,
         ["cells edit"] = true, // the autofit actions measure text
-        ["pdf inspect"] = false,
         ["pdf read"] = false,
         ["pdf search"] = false,
-        ["pdf create"] = true, // lays out text, HTML and Markdown
+        ["pdf create"] = false,
         ["pdf merge"] = false,
         ["pdf split"] = false,
         ["pdf extract"] = false,
-        ["pdf edit"] = true, // text stamps, watermarks and form appearances
+        ["pdf edit"] = true, // text stamps and form appearances
         ["pdf validate"] = false,
         ["pdf sign"] = true, // the visible signature appearance
         ["slides read"] = false,

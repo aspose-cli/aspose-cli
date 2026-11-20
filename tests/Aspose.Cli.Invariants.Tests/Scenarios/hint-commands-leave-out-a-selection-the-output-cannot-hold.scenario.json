@@ -77,8 +77,8 @@
       }
     },
     {
-      "args": ["pdf", "convert", "doc.pdf", "--to", "docx", "--pages", "1", "--out", "p.docx"],
-      "expect": { "exitCode": 0, "files": { "present": ["p.docx"] } }
+      "args": ["pdf", "convert", "doc.pdf", "--to", "html", "--pages", "1", "--out", "p.html"],
+      "expect": { "exitCode": 0, "files": { "present": ["p.html"] } }
     },
     {
       "args": ["words", "convert", "doc.docx", "--pages", "1", "--to", "md"],

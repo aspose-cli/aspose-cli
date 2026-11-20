@@ -23,6 +23,8 @@ public static class ConvertOnlyInputs
         [("words", ".azw3")] = [],
         [("words", ".chm")] = [],
         [("words", ".pdf")] = [],
+        [("pdf", ".htm")] = [],
+        [("pdf", ".html")] = [],
     };
 
     /// <summary>The options convert reads <paramref name="path"/> with when only convert opens it in <paramref name="product"/>, or null.</summary>

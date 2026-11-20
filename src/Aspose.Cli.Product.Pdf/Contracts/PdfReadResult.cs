@@ -2,43 +2,25 @@ using System.Text.Json.Serialization;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
-/// <summary>Windowed page text returned by <c>pdf read</c>.</summary>
+/// <summary>
+/// Result of <c>pdf read</c>: a window of the document's objects in document order, each with
+/// every row of the table it has, and the whole document's inventory.
+/// </summary>
 public sealed record PdfReadResult() : WindowedResultEnvelope("read-result")
 {
-    /// <summary>The PDF read.</summary>
+    /// <summary>The document read.</summary>
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }
 
-    /// <summary>What was returned of each page, as <c>--content</c> chose: <c>text</c> in reading order, or <c>layout</c>, which keeps the page's spacing.</summary>
-    [AllowedValues(typeof(PdfReadContents))]
-    public required string Content { get; init; }
+    /// <summary>The objects of the window, in document order, each with its address, kind and rows; last, since it grows with the document.</summary>
+    [JsonPropertyOrder(1000)]
+    public required IReadOnlyList<TableObject> Objects { get; init; }
 
-    /// <summary>How many pages the document has, whatever <c>--pages</c> selected.</summary>
-    [Minimum(0)]
-    public required int PageCount { get; init; }
+    /// <summary>How many objects of each kind of content the document holds: under read the kinds read lists, under notRead the others.</summary>
+    [JsonPropertyOrder(850)]
+    public required TableInventory Inventory { get; init; }
 
-    /// <summary>The text of each page in the window, in page order.</summary>
-    public required IReadOnlyList<PdfPageText> Pages { get; init; }
-
-    /// <summary>
-    /// The pages of the window that have no extractable text and appear image-dominated, so they
-    /// are probably scanned; absent when there are none.
-    /// </summary>
-    [UniqueItems]
-    [Minimum(1)]
-    public IReadOnlyList<int>? ScannedPagesSuspected { get; init; }
-}
-
-/// <summary>The text of one PDF page.</summary>
-public sealed record PdfPageText
-{
-    /// <summary>The 1-based page number that operations address.</summary>
-    [Minimum(1)]
-    public required int Page { get; init; }
-
-    /// <summary>The page's text.</summary>
-    public required string Text { get; init; }
-
-    /// <summary>Whether the text was cut to stay within <c>--max-chars</c>.</summary>
-    public required bool ContentTruncated { get; init; }
+    /// <summary>The warnings Aspose.PDF reported while it loaded the document, as it reported them; omitted when there were none.</summary>
+    [JsonPropertyOrder(860)]
+    public IReadOnlyList<EngineWarning>? EngineWarnings { get; init; }
 }

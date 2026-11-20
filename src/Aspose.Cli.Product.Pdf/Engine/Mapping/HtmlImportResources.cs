@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Pdf;
@@ -5,89 +6,113 @@ using Aspose.Pdf;
 namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 
 /// <summary>
-/// Adapts the document resource policy to the Aspose.PDF HTML importer: verified files beneath
-/// the HTML directory are supplied and every other local reference, shares included, is
-/// omitted. The importer requests a network resource before it calls this loader (known issue
-/// PDF-HTML-EGRESS in KNOWN-ISSUES.md), so the process's <see cref="NetworkGate"/>, not this
-/// loader, decides whether that request leaves the process. By default the gate blocked it and
-/// the loader supplies nothing; with network resources allowed, the importer keeps what it
-/// fetched and the result discloses every address.
+/// The resources of an HTML page the engine imports, through its
+/// <see cref="HtmlLoadOptions.CustomLoaderOfExternalResources"/>: ordinary files beneath the
+/// page's folder are supplied, inline data: addresses get the bytes they hold, and every other
+/// reference gets nothing (SECURITY.md); it keeps the references it supplied nothing for. The
+/// importer requests some http(s) resources itself as well, which the process's network gate
+/// blocks and lists (KNOWN-ISSUES PDF-HTML-EGRESS).
 /// </summary>
-internal sealed class HtmlImportResources(string htmlPath, ResourceBudgetLedger budgets, bool allowNetwork) : IDisposable
+internal sealed class HtmlImportResources(string htmlPath, ResourceBudgetLedger budgets) : IDisposable
 {
-    private const int ListedAddresses = 20;
     private readonly LocalDocumentResourceLoader _local = new(htmlPath, budgets);
-    private readonly object _gate = new();
     private readonly List<string> _network = [];
 
-    /// <summary>The native directory form of the verified origin, with its trailing separator.</summary>
+    /// <summary>The native directory form of the page's folder, with its trailing separator.</summary>
     internal string BaseDirectory => new Uri(_local.BaseUri).LocalPath;
 
-    internal LoadOptions.ResourceLoadingResult Load(string resourceUri)
+    internal LoadOptions.ResourceLoadingResult Load(string resourceUri) =>
+        // Inline data, such as a font the engine's own HTML export embeds, is in the page itself:
+        // its bytes are supplied as the address states them, with no file and no network read.
+        IsInline(resourceUri) ? new LoadOptions.ResourceLoadingResult(Inline(resourceUri))
+        // A network address is the gate's, which blocked the request and lists it. Cancelling the
+        // loader would let the engine's own loader read the resource, so nothing is supplied instead.
+        : IsNetwork(resourceUri) ? Network(resourceUri)
+        : _local.TryRead(resourceUri, out byte[] data)
+            ? new LoadOptions.ResourceLoadingResult(data)
+            : new LoadOptions.ResourceLoadingResult([]) { LoadingCancelled = false };
+
+    private LoadOptions.ResourceLoadingResult Network(string resourceUri)
     {
-        if (IsNetwork(resourceUri))
+        lock (_network)
         {
-            if (!allowNetwork)
-            {
-                // The gate blocked the request and lists it; supply nothing in its place.
-                return new LoadOptions.ResourceLoadingResult([]) { LoadingCancelled = false };
-            }
-
-            lock (_gate)
-            {
-                if (!_network.Contains(resourceUri, StringComparer.Ordinal))
-                {
-                    _network.Add(resourceUri);
-                }
-            }
-
-            // Cancelling this loader keeps what the importer already fetched.
-            return new LoadOptions.ResourceLoadingResult([]) { LoadingCancelled = true };
+            _network.Add(resourceUri);
         }
 
-        if (_local.TryRead(resourceUri, out byte[] data))
-        {
-            return new LoadOptions.ResourceLoadingResult(data);
-        }
-
-        // Cancelling the custom loader would enable the SDK default loader.
         return new LoadOptions.ResourceLoadingResult([]) { LoadingCancelled = false };
     }
+
+    /// <summary>
+    /// The references the loader supplied no bytes for, each with why, once each: network
+    /// addresses, and local references the local loader left out. Null when there are none.
+    /// </summary>
+    internal JsonObject? NotSupplied()
+    {
+        string[] network;
+        lock (_network)
+        {
+            network = [.. _network];
+        }
+
+        OmittedResource[] all =
+        [
+            .. network.Select(static reference => new OmittedResource(reference, "a network address")),
+            .. _local.Omitted,
+        ];
+        OmittedResource[] distinct = [.. all.DistinctBy(static item => item.Reference, StringComparer.Ordinal)];
+        return distinct.Length == 0
+            ? null
+            : new JsonObject
+            {
+                ["notSupplied"] = new JsonArray([.. distinct.Select(static item => (JsonNode)new JsonObject
+                {
+                    ["reference"] = item.Reference,
+                    ["reason"] = item.Reason,
+                })]),
+            };
+    }
+
+    private static bool IsInline(string reference) =>
+        reference.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && reference.Contains(',', StringComparison.Ordinal);
+
+    /// <summary>The bytes a <c>data:</c> address holds: base64 when its header says so, else percent-encoded text.</summary>
+    private static byte[] Inline(string reference)
+    {
+        int comma = reference.IndexOf(',', StringComparison.Ordinal);
+        string header = reference[..comma];
+        string payload = reference[(comma + 1)..];
+        if (!header.EndsWith(";base64", StringComparison.OrdinalIgnoreCase))
+        {
+            return System.Text.Encoding.UTF8.GetBytes(Uri.UnescapeDataString(payload));
+        }
+
+        try
+        {
+            return Convert.FromBase64String(Uri.UnescapeDataString(payload));
+        }
+        catch (FormatException)
+        {
+            return [];
+        }
+    }
+
+    // Any absolute address but a local file, a share or inline data.
+    private static bool IsNetwork(string reference) =>
+        Uri.TryCreate(reference, UriKind.Absolute, out Uri? uri)
+        && !uri.IsFile && !string.Equals(uri.Scheme, "data", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Rethrows a captured budget, deadline or resource failure.</summary>
     internal void ThrowIfFailed() => _local.ThrowIfFailed();
 
-    /// <summary>The omitted-resource and network-request warnings, after any failure.</summary>
+    /// <summary>The warning that names the resources left out, after any failure.</summary>
     internal IReadOnlyList<Warning> Warnings
     {
         get
         {
             ThrowIfFailed();
-            var warnings = new List<Warning>();
-            if (_local.Warning is { } omitted)
-            {
-                warnings.Add(omitted);
-            }
-
-            lock (_gate)
-            {
-                if (_network.Count > 0)
-                {
-                    string listed = string.Join(", ", _network.Take(ListedAddresses));
-                    string more = _network.Count > ListedAddresses ? $", and {_network.Count - ListedAddresses} more" : "";
-                    warnings.Add(new Warning(PdfDiagnostics.NetworkResourcesRequested, $"The HTML importer requested {_network.Count} network resource(s): {listed}{more}."));
-                }
-            }
-
-            return warnings;
+            return _local.Warning is { } omitted ? [omitted] : [];
         }
     }
 
     public void Dispose() => _local.Dispose();
-
-    // Any absolute address but a local file, a share or inline data. Shares resolve as file
-    // references, which the importer passes to this loader before reading them.
-    private static bool IsNetwork(string reference) =>
-        Uri.TryCreate(reference, UriKind.Absolute, out Uri? uri)
-        && !uri.IsFile && !string.Equals(uri.Scheme, "data", StringComparison.OrdinalIgnoreCase);
 }

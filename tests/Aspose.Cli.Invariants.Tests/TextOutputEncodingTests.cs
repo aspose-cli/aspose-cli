@@ -43,7 +43,8 @@ public sealed class TextOutputEncodingTests : IDisposable
         Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx").ExitCode);
         var cell = new JsonObject { ["set"] = "sheet/Sheet1/cell/A1", ["props"] = new JsonObject { ["value"] = Title } };
         Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--ops", new JsonObject { ["ops"] = new JsonArray(cell) }.ToJsonString()).ExitCode);
-        Assert.Equal(0, _workspace.Run("pdf", "create", "document.pdf", "--from-markdown", "source.md").ExitCode);
+        File.WriteAllText(_workspace.File("source.html"), $"<html><body><h1>{Title}</h1><p>{Title}</p></body></html>", new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        Assert.Equal(0, _workspace.Run("pdf", "convert", "source.html", "--out", "document.pdf").ExitCode);
 
         (string Product, string Input, string Target)[] conversions =
         [

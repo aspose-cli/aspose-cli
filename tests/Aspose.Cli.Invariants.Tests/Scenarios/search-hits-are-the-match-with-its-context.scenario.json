@@ -1,5 +1,5 @@
 {
-  "name": "every product's search hit is the match itself: in PDF with the text around it as context, in Cells, Slides and Words with the address of the object, the row and the offset in that row's text where it was found",
+  "name": "every product's search hit is the match itself: in Cells, Slides and Words with the address of the object, the row and the offset in that row's text where it was found, in PDF with the page's text address, the row and the rectangle the engine found it in",
   "files": { "book.xlsx": { "fixture": "cells.xlsx" }, "doc.pdf": { "fixture": "pdf.pdf" }, "deck.pptx": { "fixture": "slides.pptx" }, "doc.docx": { "fixture": "words.docx" } },
   "steps": [
     {
@@ -15,7 +15,7 @@
         ]
       }
     },
-    { "args": ["pdf", "search", "doc.pdf", "--pattern", "invariant"], "expect": { "exitCode": 0, "json": [{ "path": "hits[0].text", "equals": "invariant" }, { "path": "hits[0].context", "contains": "Hello invariant world" }] } },
+    { "args": ["pdf", "search", "doc.pdf", "--pattern", "invariant"], "expect": { "exitCode": 0, "json": [{ "path": "hits[0].text", "equals": "invariant" }, { "path": "hits[0].at", "equals": "page/1/text" }, { "path": "hits[0].row", "equals": "text" }, { "path": "hits[0].rect", "exists": true }] } },
     {
       "args": ["slides", "search", "deck.pptx", "--pattern", "hello"],
       "expect": {

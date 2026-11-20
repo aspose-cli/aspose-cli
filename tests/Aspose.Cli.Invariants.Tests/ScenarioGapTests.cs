@@ -16,7 +16,7 @@ public sealed class ScenarioGapTests
     /// be reported, although it shares the password refusal's exit code.
     /// </summary>
     [Theory]
-    [InlineData("secret-hidden | pdf edit encrypt_document", ScenarioRunner.ExitCodeCheck, "exit 3 FILE_NOT_FOUND")]
+    [InlineData("secret-hidden | pdf edit encrypt", ScenarioRunner.ExitCodeCheck, "exit 3 FILE_NOT_FOUND")]
     [InlineData("secret-hidden | words edit unprotect", ScenarioRunner.ErrorCheck, "FILE_NOT_FOUND")]
     public void OperationSecretCase_RefusesAFailureOtherThanThePasswords(string id, string check, string start)
     {

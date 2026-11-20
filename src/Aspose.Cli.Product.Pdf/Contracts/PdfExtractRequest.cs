@@ -34,9 +34,6 @@ public static class PdfExtractKinds
     /// <summary>The embedded files.</summary>
     public const string Attachments = "attachments";
 
-    /// <summary>The text of the selected pages, as one file.</summary>
-    public const string Text = "text";
-
     /// <summary>The tables found on the selected pages, one CSV file each.</summary>
     public const string Tables = "tables";
 
@@ -44,5 +41,5 @@ public static class PdfExtractKinds
     public const string Forms = "forms";
 
     /// <summary>Every value, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Images, Attachments, Text, Tables, Forms];
+    public static IReadOnlyList<string> All { get; } = [Images, Attachments, Tables, Forms];
 }

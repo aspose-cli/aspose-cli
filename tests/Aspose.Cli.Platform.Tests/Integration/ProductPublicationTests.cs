@@ -8,21 +8,20 @@ namespace Aspose.Cli.IntegrationTests;
 
 public sealed class ProductPublicationTests
 {
-    public static TheoryData<string, string, string[], string> EditCases => new()
+    public static TheoryData<string, string, string> EditCases => new()
     {
-        { "words", "docx", [], """{"ops":[{"set":"document","props":{"builtInDocumentProperties.title":"Edited"}}]}""" },
-        { "slides", "pptx", [], """{"ops":[{"set":"slide/256","props":{"hidden":true}}]}""" },
-        { "pdf", "pdf", ["--from-text", "source.txt"], """{"ops":[{"op":"set_properties","title":"Edited"}]}""" },
+        { "words", "docx", """{"ops":[{"set":"document","props":{"builtInDocumentProperties.title":"Edited"}}]}""" },
+        { "slides", "pptx", """{"ops":[{"set":"slide/256","props":{"hidden":true}}]}""" },
+        { "pdf", "pdf", """{"ops":[{"set":"document","props":{"info.title":"Edited"}}]}""" },
     };
 
     [Category(TestCategory.Slow)]
     [Theory]
     [MemberData(nameof(EditCases))]
-    public void EditPublishesTheCandidate(string product, string extension,
-        string[] sourceOptions, string ops)
+    public void EditPublishesTheCandidate(string product, string extension, string ops)
     {
         using var workspace = new TempWorkspace();
-        string input = CreateInput(workspace, product, extension, sourceOptions);
+        string input = CreateInput(workspace, product, extension);
         string output = workspace.File("edited." + extension);
         CliResult edited = workspace.Run([product, "edit", input, "--ops", ops, "--out", output,
             "--output-format", "json", "--max-input-bytes", new FileInfo(input).Length.ToString()]);
@@ -37,13 +36,12 @@ public sealed class ProductPublicationTests
     /// staging beside the file.
     /// </summary>
     [Theory]
-    [InlineData("slides", "pptx", new string[0], """{"ops":[{"set":"slide/256","props":{"hidden":true}}]}""")]
-    [InlineData("pdf", "pdf", new[] { "--from-text", "source.txt" }, """{"ops":[{"op":"set_properties","title":"Edited"}]}""")]
-    public void InPlaceEdit_WhoseEngineHoldsItsInput_LeavesNoStaging(string product, string extension,
-        string[] sourceOptions, string ops)
+    [InlineData("slides", "pptx", """{"ops":[{"set":"slide/256","props":{"hidden":true}}]}""")]
+    [InlineData("pdf", "pdf", """{"ops":[{"set":"document","props":{"info.title":"Edited"}}]}""")]
+    public void InPlaceEdit_WhoseEngineHoldsItsInput_LeavesNoStaging(string product, string extension, string ops)
     {
         using var workspace = new TempWorkspace();
-        string input = CreateInput(workspace, product, extension, sourceOptions);
+        string input = CreateInput(workspace, product, extension);
 
         workspace.Run([product, "edit", input, "--ops", ops, "--in-place", "--output-format", "json"]).Succeeded();
 
@@ -59,8 +57,8 @@ public sealed class ProductPublicationTests
     public void ReportedOutputsDescribeThePublishedFiles()
     {
         using var workspace = new TempWorkspace();
-        string document = CreateInput(workspace, "words", "docx", []);
-        string deck = CreateInput(workspace, "slides", "pptx", []);
+        string document = CreateInput(workspace, "words", "docx");
+        string deck = CreateInput(workspace, "slides", "pptx");
 
         CliResult converted = workspace.Run(["words", "convert", document, "--to", "pdf", "--out", workspace.File("converted.pdf"),
             "--output-format", "json"]);
@@ -108,7 +106,7 @@ public sealed class ProductPublicationTests
     {
         const string certificatePassword = "publication-test-certificate";
         using var workspace = new TempWorkspace();
-        string input = CreateInput(workspace, "pdf", "pdf", ["--from-text", "source.txt"]);
+        string input = CreateInput(workspace, "pdf", "pdf");
         string output = workspace.File("signed.pdf");
 
         CliResult signed = workspace.RunWithEnv(
@@ -116,13 +114,12 @@ public sealed class ProductPublicationTests
             ["pdf", "sign", input,
              "--certificate", CreateCertificate(workspace, certificatePassword),
              "--certificate-password-env", "ASPOSE_CLI_TEST_CERT_PASSWORD",
-             "--out", output, "--output-format", "json"]);
+             "--page", "1", "--out", output, "--output-format", "json"]);
 
         signed.Succeeded();
         Assert.True(File.Exists(output));
-        JsonNode signature = JsonNode.Parse(signed.StdOut)!["signature"]!;
-        Assert.True(signature["signed"]!.GetValue<bool>());
-        Assert.True(signature["intact"]!.GetValue<bool>());
+        JsonNode signature = Assert.Single(JsonNode.Parse(signed.StdOut)!["signatures"]!.AsArray())!;
+        Assert.True(signature["verify"]!.GetValue<bool>());
     }
 
     private static string CreateCertificate(TempWorkspace workspace, string password)
@@ -139,12 +136,17 @@ public sealed class ProductPublicationTests
         return path;
     }
 
-    private static string CreateInput(TempWorkspace workspace, string product, string extension, string[] sourceOptions)
+    private static string CreateInput(TempWorkspace workspace, string product, string extension)
     {
-        File.WriteAllText(workspace.File("source.txt"), "Anchor");
-        File.WriteAllText(workspace.File("source.md"), "# Anchor\n\nBody");
         string input = workspace.File("input." + extension);
-        workspace.Run([product, "create", input, .. sourceOptions]).Succeeded();
+        if (product == "pdf")
+        {
+            File.WriteAllText(workspace.File("source.html"), "<html><body><p>Anchor</p></body></html>");
+            workspace.Run(["pdf", "convert", workspace.File("source.html"), "--out", input]).Succeeded();
+            return input;
+        }
+
+        workspace.Run([product, "create", input]).Succeeded();
         return input;
     }
 }

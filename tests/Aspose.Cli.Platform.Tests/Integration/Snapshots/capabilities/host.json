@@ -1301,6 +1301,9 @@
             "list": {
               "description": "The result field holding a list that was capped, such as outline."
             },
+            "notSupplied": {
+              "description": "The resources a document names that the CLI's resource loader supplied no bytes for, each as {reference, reason}: the reference as the document writes it and why nothing was supplied, such as a network address."
+            },
             "offset": {
               "description": "The byte offset of the problem in an input."
             },
@@ -2047,8 +2050,6 @@
       "required": [
         "at",
         "row",
-        "offset",
-        "length",
         "text"
       ],
       "additionalProperties": false,
@@ -2062,17 +2063,21 @@
           "type": "string"
         },
         "offset": {
-          "description": "Where the match starts in the row's text, counted in UTF-16 code units from 0.",
+          "description": "Where the match starts in the row's text, counted in UTF-16 code units from 0; omitted for a match the engine's own search found, which gives no offset.",
           "type": "integer",
           "minimum": 0
         },
         "length": {
-          "description": "The match's length in UTF-16 code units.",
+          "description": "The match's length in UTF-16 code units; omitted with offset.",
           "type": "integer",
           "minimum": 0
         },
         "text": {
-          "description": "The matched text, as the row holds it.",
+          "description": "The matched text, as the row holds it, or as the engine's own search gives it.",
+          "type": "string"
+        },
+        "rect": {
+          "description": "The rectangle the engine's own search gives for the match, as the engine writes it, such as a PDF text fragment's Rectangle, LLX,LLY,URX,URY in points; omitted for any other match.",
           "type": "string"
         }
       }
@@ -3290,13 +3295,6 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "PROTECTION_NOT_ENFORCED",
-      "owner": "common",
-      "severity": "warning",
-      "category": "warning",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "REMOTE_RESOURCES_BLOCKED",
       "owner": "common",
       "severity": "warning",
@@ -3317,13 +3315,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "SIGNATURE_INVALIDATED",
-      "owner": "common",
-      "severity": "warning",
-      "category": "warning",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

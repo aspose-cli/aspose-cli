@@ -38,9 +38,11 @@ public sealed class RegexTimeoutTests
             "cells" => ("text.xlsx", new JsonObject(),
                 new[] { new JsonArray("cells", "create", "text.xlsx"), new JsonArray("cells", "edit", "text.xlsx", "--in-place", "--ops", Cell()) },
                 new JsonArray("cells", "search", "text.xlsx", "--regex", "--pattern", Pattern)),
-            "pdf" => ("text.pdf", new JsonObject { ["text.txt"] = Source(Text + "\n") },
-                new[] { new JsonArray("pdf", "create", "text.pdf", "--from-text", "text.txt") },
-                Edit("pdf", "text.pdf", new JsonObject { ["op"] = "redact_text", ["find"] = Pattern, ["regex"] = true })),
+            // PDF takes a regular expression in its search. The text is a paragraph of a page
+            // converted from HTML.
+            "pdf" => ("text.pdf", new JsonObject { ["text.html"] = Source($"<html><body><p>{Text}</p></body></html>") },
+                new[] { new JsonArray("pdf", "convert", "text.html", "--out", "text.pdf") },
+                new JsonArray("pdf", "search", "text.pdf", "--regex", "--pattern", Pattern)),
             // Slides takes a regular expression in its search; its edit's replace_text matches text as
             // it is. The text is a shape's on the one slide of the engine's new presentation, slide 256.
             "slides" => ("text.pptx", new JsonObject(),
@@ -80,9 +82,6 @@ public sealed class RegexTimeoutTests
 
         ScenarioRunner.Run(Scenario.Parse(scenario.ToJsonString())).AssertPassed();
     }
-
-    private static JsonArray Edit(string product, string document, JsonObject op) =>
-        new(product, "edit", document, "--ops", new JsonArray(op).ToJsonString());
 
     private static string Cell() =>
         new JsonObject

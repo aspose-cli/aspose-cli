@@ -421,13 +421,8 @@ public sealed class CliContractTests : IDisposable
     [Fact]
     public void SchemaOperation_ReturnsExactViewAndUnknownIdsAreActionable()
     {
-        CliResult capabilitiesResult = _workspace.Run(
-            "capabilities", "pdf", "edit", "--output-format", "json");
-        Assert.Equal(0, capabilitiesResult.ExitCode);
-        JsonNode capabilities = Parse(capabilitiesResult.StdOut);
-        JsonNode operation = capabilities["products"]![0]!["operations"]![0]!;
-        string schemaId = operation["inputSchema"]!.GetValue<string>();
-        string operationId = operation["ops"]![0]!.GetValue<string>();
+        const string schemaId = "v2/pdf/ops";
+        const string operationId = "field";
 
         CliResult selected = _workspace.Run(
             "schema", schemaId, "--operation", operationId);
@@ -435,7 +430,7 @@ public sealed class CliContractTests : IDisposable
         Assert.Equal(string.Empty, selected.StdErr);
         JsonNode selectedSchema = Parse(selected.StdOut);
         Assert.Equal(
-            $"https://schemas.aspose.com/aspose-cli/{schemaId}.schema.json",
+            $"https://schemas.aspose.com/aspose-cli/{schemaId}.schema.json#/$defs/{operationId}",
             selectedSchema["$id"]!.GetValue<string>());
 
         CliResult unknown = _workspace.Run(

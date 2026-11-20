@@ -59,16 +59,16 @@ public sealed class OutputScanTests
     /// <summary>A read that fails, or returns part of the text without the marker, has not shown the marker absent.</summary>
     [Theory]
     [InlineData(5, "")]
-    [InlineData(0, """{"window":{"truncated":true},"pages":[{"text":"Heading"}]}""")]
+    [InlineData(0, """{"window":{"truncated":true},"objects":[{"at":"page/1/text","kind":"text","props":{"text":"Heading"}}]}""")]
     public void APdfReadThatFailsOrStopsShort_IsAFinding(int exitCode, string stdOut) =>
         Assert.NotNull(OutputScan.FindInPdfRead("output.pdf", new CliResult(exitCode, stdOut, "refused"), Marker));
 
     private static string? FindInCreatedPdf(TempWorkspace workspace, string name, string text)
     {
         File.WriteAllText(workspace.File($"{name}.html"), $"""<html><body><h1>Heading</h1><div style="width:40px">{text}</div></body></html>""");
-        CliResult created = workspace.Run("pdf", "create", $"{name}.pdf", "--from-html", $"{name}.html");
+        CliResult created = workspace.Run("pdf", "convert", $"{name}.html", "--out", $"{name}.pdf");
         Assert.True(created.ExitCode == 0, created.StdErr);
-        return OutputScan.FindInPdfRead($"{name}.pdf", workspace.Run("pdf", "read", $"{name}.pdf", "--output-format", "json"), Marker);
+        return OutputScan.FindInPdfRead($"{name}.pdf", workspace.Run("pdf", "read", $"{name}.pdf", "--kind", "text", "--output-format", "json"), Marker);
     }
 
     private static byte[] Sample(string container, SKColor colour) => container switch

@@ -15,10 +15,6 @@ public sealed class RepeatableOptionTests : IDisposable
 
     public RepeatableOptionTests()
     {
-        foreach (string name in new[] { "1.png", "2.png", "3.png", "4.png" })
-        {
-            File.WriteAllBytes(_workspace.File(name), ResourceHttpServer.Image);
-        }
     }
 
     public void Dispose() => _workspace.Dispose();
@@ -46,20 +42,13 @@ public sealed class RepeatableOptionTests : IDisposable
         Assert.Equal("SalesTotal", Assert.Single(objects, static item => item!["kind"]!.GetValue<string>() == "name")!["props"]!["fullText"]!.GetValue<string>());
     }
 
-    [Fact]
-    public void FromImages_Repeated_BeforeTheOutput_MakesOnePagePerImage()
-    {
-        Require(_workspace.Run("pdf", "create", "--from-images", "1.png", "--from-images", "2.png", "out.pdf"));
-
-        Assert.Equal(2, PageCount("out.pdf"));
-    }
-
     // Four pages, which evaluation mode still reads whole.
     [Fact]
     public void Groups_Repeated_BeforeTheFile_SplitsOnePartPerGroup()
     {
-        Require(_workspace.Run(
-            "pdf", "create", "four.pdf", "--from-images", "1.png", "--from-images", "2.png", "--from-images", "3.png", "--from-images", "4.png"));
+        File.WriteAllText(_workspace.File("page.html"), "<html><body><p>One page</p></body></html>");
+        Require(_workspace.Run("pdf", "convert", "page.html", "--out", "page.pdf"));
+        Require(_workspace.Run("pdf", "merge", "page.pdf", "page.pdf", "page.pdf", "page.pdf", "--out", "four.pdf"));
 
         CliResult split = Require(_workspace.Run(
             "pdf", "split", "--by", "pages", "--groups", "1-2", "--groups", "3-4", "four.pdf", "--out-dir", "parts", "--output-format", "json"));
@@ -72,8 +61,8 @@ public sealed class RepeatableOptionTests : IDisposable
 
     private int PageCount(string file)
     {
-        CliResult inspected = Require(_workspace.Run("pdf", "inspect", file, "--output-format", "json"));
-        return JsonNode.Parse(inspected.StdOut)!["pdf"]!["pageCount"]!.GetValue<int>();
+        CliResult read = Require(_workspace.Run("pdf", "read", file, "--output-format", "json"));
+        return JsonNode.Parse(read.StdOut)!["inventory"]!["read"]!["pages"]!.GetValue<int>();
     }
 
     private static CliResult Require(CliResult result)

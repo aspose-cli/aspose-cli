@@ -43,10 +43,6 @@ internal static class IsolationCases
     /// </summary>
     public static readonly IReadOnlyDictionary<string, string[]?> SourceFormats = new Dictionary<string, string[]?>(StringComparer.Ordinal)
     {
-        ["--from-html"] = ["html"],
-        ["--from-markdown"] = ["md"],
-        ["--from-images"] = ["svg"],
-        ["--from-text"] = ["txt"],
         ["--template"] = null,
     };
 
@@ -202,7 +198,7 @@ internal static class IsolationCases
             + $"exit {result.ExitCode}; written: {string.Join(", ", written)}{Environment.NewLine}{Truncate(result.StdOut + result.StdErr)}";
 
         List<string> leaks = Leaks(workspace.Path, written, result, IsolationLayout.SentinelColour, IsolationLayout.Marker,
-            path => process.Run(layout.Input, string.Empty, ["pdf", "read", path, "--output-format", "json"]));
+            path => process.Run(layout.Input, string.Empty, ["pdf", "read", path, "--kind", "text", "--max-objects", "10000", "--output-format", "json"]));
         Assert.True(server.RequestCount == 0, Describe($"The command asked the loopback server for: {string.Join("; ", server.Requests)}"));
         int connections = item.Kind == ReferenceKind.Pipe ? await pipe.SettledConnections() : pipe.Connections;
         Assert.True(connections == 0, Describe($"The command opened the pipe {IsolationPipe.DevicePath(pipe.Name)} that the document names, {connections} time(s): something opened a reference by its path."));

@@ -97,8 +97,8 @@ public sealed class CommandDefinition<TRequest, TResult>
     public IReadOnlyList<CommandHelpLink> Links { get; init; } = [];
 
     /// <summary>
-    /// Describes the operation documents the command applies, given its path below the product;
-    /// <see cref="EditDefinition"/> sets it from the vocabulary's catalog.
+    /// Describes the operation documents the command applies, given its path below the product,
+    /// from an operation vocabulary's catalog.
     /// </summary>
     internal Func<string, ProductOperationCommand>? Operations { get; init; }
 
@@ -166,61 +166,5 @@ public sealed class CommandDefinition<TRequest, TResult>
         {
             throw restated;
         }
-    }
-}
-
-/// <summary>Defines a product's bounded, atomic edit command as a <see cref="CommandDefinition{TRequest, TResult}"/>.</summary>
-public static class EditDefinition
-{
-    /// <summary>
-    /// Defines an edit command on the shared bounded-edit skeleton (<see cref="BoundedEditCommand{TOp, TBatch}"/>):
-    /// <c>--ops</c>, <c>--dry-run</c>,
-    /// <c>--verify</c> and the mutation output. <c>bind</c> receives the composed,
-    /// path-normalized batch with its resolved secrets.
-    /// </summary>
-    /// <param name="edit">The product's edit skeleton, which <paramref name="checkUsage"/> may consult.</param>
-    /// <param name="description">The command help.</param>
-    /// <param name="traits">The edited document, its output password and fonts; the edit publishes to a mutation output.</param>
-    /// <param name="parameters">The product's own arguments and options, each kind in help order.</param>
-    /// <param name="bind">Maps the batch and the command line to the request.</param>
-    /// <param name="checkUsage">
-    /// Rejects a combination of the product's own options that needs no input; it runs once the
-    /// input paths are resolved, before the document's content, the operation document, standard
-    /// input or any secret is read.
-    /// </param>
-    /// <param name="name">The command name.</param>
-    /// <param name="examples">The help examples.</param>
-    /// <param name="links">The help's further-reading links.</param>
-    public static CommandDefinition<TRequest, TResult> Create<TOp, TBatch, TRequest, TResult>(
-        BoundedEditCommand<TOp, TBatch> edit,
-        string description,
-        CommandTraits traits,
-        IReadOnlyList<Symbol> parameters,
-        Func<ParseResult, BoundedEditInvocation<TBatch>, StandardInvocation, TRequest> bind,
-        Action<ParseResult>? checkUsage = null,
-        string name = "edit",
-        IReadOnlyList<string>? examples = null,
-        IReadOnlyList<CommandHelpLink>? links = null)
-        where TOp : BoundedOperation, IOperationVocabulary<TOp>
-        where TBatch : BoundedOperationEnvelope<TOp>
-        where TResult : ResultEnvelope
-    {
-        ArgumentNullException.ThrowIfNull(edit);
-        ArgumentNullException.ThrowIfNull(bind);
-        return new CommandDefinition<TRequest, TResult>(
-            name,
-            description,
-            edit.EditTraits(traits),
-            edit.EditParameters(parameters),
-            (parse, standard) =>
-            {
-                checkUsage?.Invoke(parse);
-                return bind(parse, edit.Read(parse, standard, traits.Encrypt is not null), standard);
-            })
-        {
-            Examples = examples ?? [],
-            Links = links ?? [],
-            Operations = TOp.Catalog.Describe,
-        };
     }
 }
