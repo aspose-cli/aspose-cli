@@ -1,119 +1,44 @@
-using System.Diagnostics;
-using System.Text.Json;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.IO.Extraction;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Cli.Sdk.Text;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Words;
 using Aspose.Words.Drawing;
-using Aspose.Words.Tables;
-using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
-/// <summary>Serves <c>words extract</c>: bounded document assets written into a guarded directory.</summary>
+/// <summary><c>words extract</c>: the bytes of each image a document stores, ImageData.ImageBytes, as the document stores them.</summary>
 internal static class WordsExtract
 {
-    /// <summary>Extracts bounded document artifacts into a guarded directory.</summary>
     internal static WordsExtractResult Run(WordsSession session, WordsExtractRequest request)
     {
         LicenseState state = session.Outputs.License;
-        using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
-        // Images are copied as the document stores them, once the evaluation watermark is skipped.
-        using ExtractionGuard guard = session.Outputs.BeginExtraction(
-            request.Output.Path,
-            request.Output.Overwrite,
-            request.What == WordsExtractTargets.Images ? ExtractionContent.EmbeddedFiles : ExtractionContent.Derived, request.ByteOrderMark);
-        var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
+        var log = new EngineWarningLog();
+        using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password, log);
+        using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite, ExtractionContent.EmbeddedFiles, byteOrderMark: false);
         var outputs = new List<WordsExtractedOutput>();
-        var warnings = new List<Warning>();
-        if (request.What == WordsExtractTargets.Images)
+        int number = 0;
+        // A linked image stores no bytes: reading them would fetch the link.
+        foreach (Shape shape in loaded.Document.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage && !shape.ImageData.IsLinkOnly))
         {
-            int number = 0;
-            int linked = 0;
-            foreach (Shape shape in loaded.Document.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static s => s.HasImage))
-            {
-                // A link-only image has no stored bytes; reading them would fetch the link.
-                if (shape.ImageData.IsLinkOnly)
-                {
-                    linked++;
-                    continue;
-                }
-
-                // The watermark picture an evaluation save draws is no image of the document.
-                if (loaded.Evaluation && WordsEvaluation.IsWatermark(shape))
-                {
-                    continue;
-                }
-
-                byte[] bytes = shape.ImageData.ImageBytes;
-                string extension = FileFormatUtil.ImageTypeToExtension(shape.ImageData.ImageType);
-                PublishedFile file = guard.StageAllBytes($"image-{++number:000}{extension}", bytes);
-                outputs.Add(new WordsExtractedOutput(FileObjects.Companion(file)) { Block = index.FindBlock(shape) });
-            }
-
-            if (linked > 0)
-            {
-                warnings.Add(new Warning(WordsDiagnostics.LinkedImagesSkipped, $"{linked} linked image(s) store no bytes in the document and were not extracted.")
-                {
-                    AffectsCompleteness = true,
-                });
-            }
-        }
-        else if (request.What == WordsExtractTargets.Comments)
-        {
-            IReadOnlyList<WordsCommentData> comments = loaded.Document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
-                .Select(comment => new WordsCommentData { Author = comment.Author, Text = WordsText.Of(comment), Block = index.FindBlock(comment) }).ToArray();
-            string json = JsonSerializer.Serialize(
-                comments,
-                ProductJsonContext.Definition.LocalOptions);
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(json);
-            PublishedFile file = guard.StageAllBytes("comments.json", bytes);
-            outputs.Add(new WordsExtractedOutput(FileObjects.Companion(file)));
-        }
-        else if (request.What == WordsExtractTargets.Text)
-        {
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(WordsText.Lines(index.Entries.Select(static entry => entry.Node)));
-            PublishedFile file = guard.StageAllBytes("document.txt", bytes);
-            outputs.Add(new WordsExtractedOutput(FileObjects.Companion(file)));
-            warnings.AddRange(EnvelopeParts.CombineWarnings(WordsText.CommentsLeftOut(index.Entries.Select(static entry => entry.Node))) ?? []);
-        }
-        else if (request.What == WordsExtractTargets.Tables)
-        {
-            int number = 0;
-            foreach (BlockEntry entry in index.Entries.Where(static entry => entry.Node is Table))
-            {
-                byte[] bytes = Csv((Table)entry.Node, request.ByteOrderMark);
-                PublishedFile file = guard.StageAllBytes($"table-{++number:000}.csv", bytes);
-                outputs.Add(new WordsExtractedOutput(FileObjects.Companion(file)) { Block = entry.Index });
-            }
-        }
-        else
-        {
-            throw new UnreachableException($"--what {request.What} reached the engine, which ExtractCommand refuses.");
+            ImageType type = shape.ImageData.ImageType;
+            // FileFormatUtil.ImageTypeToExtension names no extension for a type the engine does not know, such as an SVG picture's.
+            string extension = type is ImageType.Unknown or ImageType.NoImage ? string.Empty : FileFormatUtil.ImageTypeToExtension(type);
+            PublishedFile file = guard.StageAllBytes($"image-{++number:000}{extension}", shape.ImageData.ImageBytes);
+            outputs.Add(new WordsExtractedOutput(FileObjects.Companion(file)) { ImageType = type.ToString() });
         }
 
         guard.Commit();
         return new WordsExtractResult
         {
-            Input = InfoProjection.Source(request.Input, loaded),
+            Input = FileObjects.Input(request.Input, loaded.FormatId, loaded.Protection.Encrypted),
             What = request.What,
             Outputs = outputs,
+            EngineWarnings = log.Warnings.Count == 0 ? null : log.Warnings,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(InputWarnings(loaded), warnings),
+            Warnings = loaded.Warnings.Count == 0 ? null : loaded.Warnings,
         };
     }
-
-    /// <summary>
-    /// A table as RFC 4180 CSV in UTF-8, with a byte order mark when asked, which spreadsheet
-    /// programs need to read it as UTF-8: one record per row and one field per cell, the cell's visible text
-    /// with a line break between its paragraphs and for each manual line break. Merged cells stay as the document stores them:
-    /// a cell spanning columns can be one field, so rows can have different field counts, and a
-    /// cell a merge covers is an empty field.
-    /// </summary>
-    private static byte[] Csv(Table table, bool byteOrderMark) => CsvText.Encode(
-        table.Rows.Cast<Row>().Select(static row => row.Cells.Select(static cell => WordsText.LineBreaks(WordsText.Of(cell), "\n"))),
-        byteOrderMark);
 }

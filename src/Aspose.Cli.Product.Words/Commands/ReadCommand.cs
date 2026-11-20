@@ -1,76 +1,33 @@
-using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class ReadCommand
 {
-    public static CommandDefinition<WordsReadRequest, WordsReadResult> Create()
-    {
-        var blocks = new Option<string?>("--blocks") { Description = "Blocks to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every block." }.WithInput(InputKind.None);
-        var section = new Option<int?>("--section") { Description = "Read one 1-based section; with --blocks, only its blocks in that range." };
-        var content = new Option<string>("--content")
-        {
-            Description = "How much of each block to return: its text, only the headings, or the text with its runs and paragraph format.",
-            DefaultValueFactory = _ => WordsReadContents.Text,
-        }.WithInput(InputKind.None);
-        content.AcceptOnlyFromAmong([.. WordsReadContents.All]);
-        var maxChars = new MaxCharactersOption("the text of the returned blocks, including repeated text and run projections");
-        var maxBlocks = new Option<int>("--max-blocks") { DefaultValueFactory = _ => 200, Description = "Maximum projected blocks." }.InRange(1, 100_000);
-        return new(
-            "read",
-            "Read a bounded, stable window of document blocks.",
+    public static CommandDefinition<WordsReadRequest, WordsReadResult> Create() =>
+        TableCommands.Read<WordsReadRequest, WordsReadResult>(
+            WordsModule.Table,
+            "Read a document's objects, each with every row of the object table, and its inventory.",
             new CommandTraits { Input = WordsInputs.Document },
-            [blocks, section, content, .. maxChars.Options, maxBlocks],
-            (parse, standard) =>
+            static read => new WordsReadRequest
             {
-                string? range = parse.GetValue(blocks);
-                int characters = maxChars.Read(parse);
-                int count = parse.GetInRange(maxBlocks);
-                return new WordsReadRequest
-                {
-                    Input = standard.Input,
-                    Blocks = range is null ? null : PageRange.ParseOption(blocks.Name, range),
-                    Section = parse.GetValue(section),
-                    Content = parse.GetValue(content) ?? WordsReadContents.Text,
-                    MaxCharacters = characters,
-                    MaxBlocks = count,
-                    Password = standard.InputPassword,
-                };
-            })
-        {
-            Finish = static (_, request, result, _) =>
-                result with { Window = result.Window with { Next = Next(request, result) } },
-            Examples =
+                Input = read.Input,
+                Password = read.Password,
+                At = read.At,
+                From = read.From,
+                Kinds = read.Kinds,
+                MaxObjects = read.MaxObjects,
+            },
+            examples:
             [
-                "words read contract.docx --blocks 1-30 --content full --output-format json",
-                "words read contract.docx --section 2 --content outline",
+                "words read contract.docx",
+                "words read contract.docx --kind paragraph --max-objects 40",
+                "words read contract.docx --at section/0/body/range",
+                "words read contract.docx --at section/0/body/table/0 --kind cell --kind paragraph --kind run",
             ],
-            Links =
+            links:
             [
-                CommandHelpLink.Docs(WordsModule.Manifest, "editing", "the document block model and edit operations"),
-                new("aspose-cli docs reading", "reading every product within bounded windows"),
+                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "addresses, windows and the inventory"),
             ],
-        };
-    }
-
-    /// <summary>
-    /// The option values of the read that resumes where this one stopped, or null when it covered
-    /// the selection. The section and content filters stay as given, so the block range may name
-    /// blocks the filters then skip.
-    /// </summary>
-    private static IReadOnlyDictionary<string, string>? Next(WordsReadRequest request, WordsReadResult result)
-    {
-        if (!result.Window.Truncated || result.BlockCount == 0)
-        {
-            return null;
-        }
-
-        IReadOnlyList<int> selection = request.Blocks?.Resolve(result.BlockCount, WordsDiagnostics.BlockNotFound, "block")
-            ?? Enumerable.Range(1, result.BlockCount).ToArray();
-        return ReadContinuation.After(
-                selection,
-                [.. result.Blocks.Select(static block => new ReadPart(block.Block, block.ContentTruncated))],
-                request.MaxCharacters)?.Next("--blocks");
-    }
+            listedWhenNamed: WordsKinds.ListedWhenNamed);
 }

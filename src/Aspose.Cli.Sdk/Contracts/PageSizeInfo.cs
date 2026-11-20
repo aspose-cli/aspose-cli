@@ -100,13 +100,3 @@ public static class PageNumberStyles
     public const string LettersLower = "letters-lower";
     public const string None = "none";
 }
-
-/// <summary>
-/// Which formatting content brought in from another document keeps: its own
-/// (<c>keep-source</c>) or that of the document it joins (<c>use-destination</c>).
-/// </summary>
-public static class FormattingModes
-{
-    public const string KeepSource = "keep-source";
-    public const string UseDestination = "use-destination";
-}

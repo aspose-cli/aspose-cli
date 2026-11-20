@@ -12,6 +12,8 @@ public static class WordsFormats
     /// OpenDocument and text formats: <see cref="FormatDescriptor.ConvertOrder"/> ranks those
     /// groups, each in declaration order.
     /// </summary>
+    private static readonly IReadOnlyList<string> EditableIds = ["doc", "dot", "docx", "docm", "dotx", "dotm", "flatopc", "rtf", "wordml", "odt", "ott"];
+
     internal static readonly IReadOnlyList<FormatDescriptor> Definitions =
     [
         FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, true, ".doc") with { Protectable = true, Recognition = WordsFormatRecognition.CompoundDocument },
@@ -78,100 +80,26 @@ public static class WordsFormats
         FormatDescriptor.Declare("svg", FormatUse.Render, false, ".svg"),
     ];
 
-    public static IReadOnlyList<string> LoadIds { get; } =
-        Definitions.IdsFor(FormatUse.Input);
+    /// <summary>The formats edit writes, and read, search, edit and render open: the engine reads and saves the whole document in each.</summary>
+    internal static IReadOnlyList<FormatDescriptor> Editable { get; } =
+        [.. Definitions.Where(static format => EditableIds.Contains(format.Id, StringComparer.Ordinal))];
 
-    /// <summary>
-    /// What each declared format keeps and how the commands treat it, one row per format id in
-    /// declaration order. A product test keeps the rows in step with <see cref="Definitions"/>.
-    /// </summary>
-    internal static IReadOnlyList<WordsFormatTraits> Traits { get; } =
-    [
-        new("doc") { Word = true, KeepsRevisions = true, KeepsMacros = true, Editable = true },
-        new("dot") { Word = true, KeepsRevisions = true, KeepsMacros = true, Editable = true },
-        new("docx") { Word = true, KeepsRevisions = true, Editable = true },
-        new("docm") { Word = true, KeepsRevisions = true, KeepsMacros = true, Editable = true },
-        new("dotx") { Word = true, KeepsRevisions = true, Editable = true },
-        new("dotm") { Word = true, KeepsRevisions = true, KeepsMacros = true, Editable = true },
-        new("flatopc") { Word = true, KeepsRevisions = true, Editable = true },
-        new("rtf") { KeepsRevisions = true, Editable = true },
-        new("wordml") { Word = true, KeepsRevisions = true, KeepsMacros = true, Editable = true },
-        new("html"),
-        new("mhtml"),
-        new("odt") { KeepsRevisions = true, Editable = true },
-        new("ott") { KeepsRevisions = true, Editable = true },
-        new("txt"),
-        new("md"),
-        new("pdf") { FixedPage = true },
-        new("epub"),
-        new("mobi"),
-        new("azw3"),
-        new("chm"),
-        new("xps") { FixedPage = true },
-        new("openxps") { FixedPage = true },
-        new("ps") { FixedPage = true },
-        new("pcl") { FixedPage = true },
-        new("html-fixed") { FixedPage = true },
-        new("png"),
-        new("jpeg"),
-        new("svg"),
-    ];
-
-    private static readonly Dictionary<string, WordsFormatTraits> TraitsById =
-        Traits.ToDictionary(static traits => traits.Id, StringComparer.Ordinal);
-
-    /// <summary>The fixed-page convert formats, which can hold a selection of the pages.</summary>
-    public static IReadOnlyList<string> FixedPageFormats { get; } = [.. Traits.Where(static traits => traits.FixedPage).Select(static traits => traits.Id)];
-
-    /// <summary>Microsoft Word formats, which keep fields, revisions and protection.</summary>
-    public static IReadOnlyList<string> WordIds { get; } = [.. Traits.Where(static traits => traits.Word).Select(static traits => traits.Id)];
-
-    /// <summary>
-    /// Formats that store tracked changes as revisions a reviewer can accept or reject: the
-    /// Word formats, RTF and OpenDocument text. Other outputs show or drop the changes.
-    /// </summary>
-    public static IReadOnlyList<string> RevisionIds { get; } = [.. Traits.Where(static traits => traits.KeepsRevisions).Select(static traits => traits.Id)];
-
-    /// <summary>Formats that keep a document's macros (its VBA project).</summary>
-    public static IReadOnlyList<string> MacroIds { get; } = [.. Traits.Where(static traits => traits.KeepsMacros).Select(static traits => traits.Id)];
-
-    /// <summary>Whether a format is a Microsoft Word format (see <see cref="WordIds"/>).</summary>
-    internal static bool IsWord(string id) => Of(id)?.Word == true;
-
-    /// <summary>Whether a format keeps tracked changes as revisions (see <see cref="RevisionIds"/>).</summary>
-    internal static bool KeepsRevisions(string id) => Of(id)?.KeepsRevisions == true;
-
-    /// <summary>Whether a format keeps a document's macros (see <see cref="MacroIds"/>).</summary>
-    internal static bool KeepsMacros(string id) => Of(id)?.KeepsMacros == true;
-
-    public static bool IsLoad(string id) => LoadIds.Contains(id, StringComparer.Ordinal);
-
-    /// <summary>The formats compare writes its redline in: every convert format.</summary>
+    /// <summary>The formats convert writes, in the order its help lists them.</summary>
     internal static IReadOnlyList<FormatDescriptor> Writable { get; } =
         [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert)).OrderBy(static format => format.ConvertOrder)];
 
-    /// <summary>
-    /// The formats create and edit write: those that reopen as the document they saved, with its
-    /// styles, sections, headers, fields and tracked changes, so a later edit works on the same
-    /// document: the Word formats, RTF and OpenDocument text (<see cref="WordsFormatTraits.Editable"/>).
-    /// Every other convert format is a fixed-page, web, text or e-book rendition that loses part of
-    /// the document; convert writes it from one of these.
-    /// </summary>
-    internal static IReadOnlyList<FormatDescriptor> Editable { get; } =
-        [.. Writable.Where(static format => Of(format.Id)?.Editable == true)];
+    /// <summary>The formats whose output has pages, which --pages selects.</summary>
+    internal static IReadOnlyList<string> FixedPageFormats { get; } = ["pdf", "xps", "openxps", "ps", "pcl", "html-fixed"];
 
-    /// <summary>The format split writes every part in: docx.</summary>
-    internal static IReadOnlyList<FormatDescriptor> SplitParts { get; } = [.. Definitions.Where(static format => format.Id == "docx")];
+    /// <summary>Whether edit writes <paramref name="id"/>.</summary>
+    internal static bool IsEditable(string id) => EditableIds.Contains(id, StringComparer.Ordinal);
 
-    /// <summary>A CSV merge data file, whose header row names the columns.</summary>
-    internal static FormatDescriptor CsvMergeData { get; } = new("csv", FormatUse.Input, ".csv");
+    /// <summary>Whether <paramref name="id"/> is plain text or Markdown, which convert reads with the options the caller stated.</summary>
+    internal static bool IsText(string id) => IsPlainText(id) || IsMarkdown(id);
 
-    /// <summary>
-    /// The files mail_merge and repeat_table_row read rows from: CSV, or else JSON, an array of
-    /// flat objects.
-    /// </summary>
-    internal static IReadOnlyList<FormatDescriptor> MergeData { get; } = [CsvMergeData, new("json", FormatUse.Input, ".json")];
+    /// <summary>Whether <paramref name="id"/> is plain text, which TxtLoadOptions read.</summary>
+    internal static bool IsPlainText(string id) => id == "txt";
 
-    /// <summary>The traits of a format id, or null when the product declares no such format.</summary>
-    private static WordsFormatTraits? Of(string id) => TraitsById.GetValueOrDefault(id);
+    /// <summary>Whether <paramref name="id"/> is Markdown, which MarkdownLoadOptions read and MarkdownSaveOptions write.</summary>
+    internal static bool IsMarkdown(string id) => id == "md";
 }

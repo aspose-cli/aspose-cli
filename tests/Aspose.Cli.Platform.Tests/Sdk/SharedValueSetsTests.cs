@@ -57,10 +57,9 @@ public sealed class SharedValueSetsTests
     }
 
     [Fact]
-    public void NumberStylesAndFormattingModes_AreTheSharedValueSets()
+    public void NumberStyles_AreTheSharedValueSet()
     {
         Assert.Equal(["decimal", "roman-upper", "roman-lower", "letters-upper", "letters-lower", "none"], Constants(typeof(PageNumberStyles)));
-        Assert.Equal(["keep-source", "use-destination"], Constants(typeof(FormattingModes)));
     }
 
     /// <summary>The string constants of a value set, in declaration order.</summary>

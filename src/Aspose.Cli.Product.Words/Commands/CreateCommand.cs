@@ -1,7 +1,5 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -9,53 +7,31 @@ internal static class CreateCommand
 {
     public static CommandDefinition<WordsCreateRequest, WordsCreateResult> Create()
     {
-        var markdown = new Option<string?>("--from-markdown") { Description = "Create from a Markdown file." }.WithInput(InputKind.File);
-        var text = new Option<string?>("--from-text") { Description = "Create from a UTF-8 text file." }.WithInput(InputKind.File);
-        var template = new Option<string?>("--template") { Description = "Document whose styles, page setup, headers and footers the new document uses; its body is replaced by --from-markdown or --from-text content." }.WithInput(InputKind.File);
-        var title = new Option<string?>("--title") { Description = "Set the built-in title property." }.WithInput(InputKind.None);
+        var template = new Option<string?>("--template") { Description = "A document to save as the new one. Default: the engine's new document, new Document()." }.WithInput(InputKind.File);
         return new(
             "create",
-            "Create a document from at most one content source, optionally inside a template; without either it is blank.",
+            "Create a document: the engine's new document, or a copy of a template saved in the output's format.",
             new CommandTraits
             {
-                Output = OutputTarget.CreatedFile("Document path to create.", WordsFormats.Editable),
+                Output = OutputTarget.CreatedFile("Path of the document to create, e.g. report.docx.", WordsFormats.Editable),
                 Encrypt = WordsInputs.EncryptedDocument,
-                UsesFonts = true,
             },
-            [markdown, text, template, title],
-            (parse, standard) =>
+            [template],
+            (parse, standard) => new WordsCreateRequest
             {
-                if (parse.GetValue(markdown) is not null && parse.GetValue(text) is not null)
-                {
-                    throw CliErrors.Usage(["Choose at most one of --from-markdown or --from-text; without either the document is blank or the template's."]);
-                }
-
-                SourceFile? markdownFile = standard.Source(markdown);
-                SourceFile? textFile = standard.Source(text);
-                SourceFile? templateFile = standard.Source(template);
-                ResolvedOutput output = standard.Output;
-                Secret? encryptPassword = standard.EncryptPassword();
-                return new WordsCreateRequest
-                {
-                    Output = output,
-                    Markdown = markdownFile,
-                    Text = textFile,
-                    Template = templateFile,
-                    Title = parse.GetValue(title),
-                    EncryptPassword = encryptPassword,
-                };
+                Output = standard.Output,
+                Template = standard.Source(template),
+                EncryptPassword = standard.EncryptPassword(),
             })
         {
             Examples =
             [
-                "words create report.docx --from-markdown report.md --template brand.docx --title \"Quarterly report\"",
-                "words create letter.docx --template letter.dotx",
                 "words create notes.docx",
+                "words create letter.docx --template letter.dotx",
             ],
             Links =
             [
-                CommandHelpLink.Docs(WordsModule.Manifest, "report-from-markdown", "a report from Markdown and a template"),
-                CommandHelpLink.Docs(WordsModule.Manifest, "document-standards", "professional document construction"),
+                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
             ],
         };
     }

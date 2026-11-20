@@ -21,8 +21,7 @@ public sealed class UsageErrorTests : IDisposable
     public void Dispose() => _workspace.Dispose();
 
     [Theory]
-    [InlineData("words inspect a.docx --bogus", "option", "--bogus")]
-    [InlineData("words split a.docx --out-dir parts", "option", "--by")]
+    [InlineData("words read a.docx --bogus", "option", "--bogus")]
     [InlineData("words read", "argument", "file")]
     public void ACommandLineThatDoesNotParse_IsAUsageErrorNamingTheParameter(string commandLine, string key, string parameter)
     {
@@ -38,7 +37,6 @@ public sealed class UsageErrorTests : IDisposable
     }
 
     [Theory]
-    [InlineData("words inspect a.docx --detail bogus", "--detail")]
     [InlineData("words convert a.docx --to docx --out a.foo", "--out")]
     [InlineData("words render a.docx --dpi 99999", "--dpi")]
     [InlineData("words render a.docx --pages 1-x", "--pages")]
@@ -52,7 +50,6 @@ public sealed class UsageErrorTests : IDisposable
     }
 
     [Theory]
-    [InlineData("words split a.docx --out-dir parts", "--by", "heading1, pages, sections")]
     [InlineData("pdf validate report.pdf", "--profile", "pdfa-1b, pdfa-2b, pdfa-3b")]
     public void AMissingOptionWithValues_ListsThem(string commandLine, string option, string values)
     {
@@ -66,7 +63,7 @@ public sealed class UsageErrorTests : IDisposable
     [Fact]
     public void AMissingSecretVariable_OffersStandardInput()
     {
-        JsonNode error = Refused("words inspect a.docx --password-env ASPOSE_CLI_TEST_UNSET_SECRET", "OPTION_INVALID");
+        JsonNode error = Refused("words read a.docx --password-env ASPOSE_CLI_TEST_UNSET_SECRET", "OPTION_INVALID");
 
         Assert.Equal("--password-env", error["details"]!["option"]!.GetValue<string>());
     }
@@ -136,8 +133,8 @@ public sealed class UsageErrorTests : IDisposable
     /// <summary>An argument left over that follows no unknown option is still named.</summary>
     [Theory]
     [InlineData("words read a.docx extra.docx", "Unrecognized command or argument 'extra.docx'.")]
-    [InlineData("words inspect a.docx --bogus", "Unrecognized command or argument '--bogus'.")]
-    [InlineData("words inspect a.docx --bogus --detail fonts", "Unrecognized command or argument '--bogus'.")]
+    [InlineData("words read a.docx --bogus", "Unrecognized command or argument '--bogus'.")]
+    [InlineData("words read a.docx --bogus --kind paragraph", "Unrecognized command or argument '--bogus'.")]
     public void AStrayArgument_IsStillNamed(string commandLine, string problem)
     {
         JsonNode error = Refused(commandLine, "USAGE_ERROR");

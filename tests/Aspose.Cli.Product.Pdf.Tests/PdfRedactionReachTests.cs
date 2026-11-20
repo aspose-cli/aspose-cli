@@ -488,6 +488,6 @@ public sealed class PdfRedactionReachTests
     private static PdfSearchRequest Find(string input, string pattern) => new()
     {
         Input = input,
-        Query = new Aspose.Cli.Sdk.Text.SearchQuery(Aspose.Cli.Sdk.Text.TextSearch.Create(pattern, regex: false, caseSensitive: false), 100, Scope: null),
+        Query = new Aspose.Cli.Sdk.Text.SearchQuery(Aspose.Cli.Sdk.Text.TextSearch.Create(pattern, regex: false, caseSensitive: false), 100),
     };
 }

@@ -1319,56 +1319,6 @@
             "originalPath": {
               "description": "Where the original that a publication moved aside is now, when the publication could not move it back."
             },
-            "part": {
-              "description": "The kind of part of a document that holds text an operation found and left as it was, one of these tokens.",
-              "type": "string",
-              "oneOf": [
-                {
-                  "const": "header-footer",
-                  "description": "A header or footer."
-                },
-                {
-                  "const": "comment",
-                  "description": "A comment."
-                },
-                {
-                  "const": "chart-title",
-                  "description": "The title of a chart."
-                },
-                {
-                  "const": "chart-data",
-                  "description": "The data of a chart, such as its categories and series names."
-                },
-                {
-                  "const": "axis-title",
-                  "description": "The title of a chart's axis."
-                },
-                {
-                  "const": "text-box",
-                  "description": "A text box, or another drawing that holds text."
-                },
-                {
-                  "const": "data-label",
-                  "description": "A data label of a chart."
-                },
-                {
-                  "const": "alt-text",
-                  "description": "The alternative text of a picture or shape, which screen readers and exported PDFs carry."
-                },
-                {
-                  "const": "layout",
-                  "description": "The text of a slide layout or master, which every slide on it shows."
-                },
-                {
-                  "const": "formula",
-                  "description": "The formula of a cell, such as a text literal in it."
-                },
-                {
-                  "const": "typed-value",
-                  "description": "A cell that shows the text but holds a number, a date, a boolean or an error, not text."
-                }
-              ]
-            },
             "path": {
               "description": "The absolute path of the file the error is about."
             },
@@ -3383,13 +3333,6 @@
       "exitCode": 4,
       "category": "validation",
       "detailsSchemaId": "v2/common/not-found-details"
-    },
-    {
-      "code": "TEXT_NOT_REPLACED",
-      "owner": "common",
-      "severity": "warning",
-      "category": "warning",
-      "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
       "code": "USAGE_ERROR",

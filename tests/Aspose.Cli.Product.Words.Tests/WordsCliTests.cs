@@ -1,436 +1,219 @@
+using System.Text;
 using System.Text.Json.Nodes;
 using Aspose.Words;
 using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
-public sealed class WordsCliTests : IClassFixture<WordsFixture>, IDisposable
+/// <summary>
+/// The Words commands through the built CLI, with or without a license: the options each command
+/// states to the engine, what it writes and what its result says. Each command is a process of
+/// its own; without a license the engine adds its paragraph to every document it opens, so the
+/// cases find what they change by search, not by a fixed position.
+/// </summary>
+public sealed class WordsCliTests : IDisposable
 {
     private readonly TempWorkspace _workspace = new();
 
-    /// <summary>
-    /// The fixture applies the Words license in a licensed run before a test builds its input with
-    /// the SDK, so an input is whole whichever test of the process runs first.
-    /// </summary>
-    public WordsCliTests(WordsFixture fixture) => ArgumentNullException.ThrowIfNull(fixture);
-
-    [Category(TestCategory.Slow)]
     [Fact]
-    public void CreateEditAndQuery_RoundTripsThroughTheBuiltCli()
+    public void ConvertText_ReadsItWithTheOptionsStated()
     {
-        File.WriteAllText(
-            _workspace.File("source.md"),
-            "# Contract\n\nOriginal clause.\n");
-        Assert.Equal(0, _workspace.Run(
-            "words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
+        File.WriteAllText(_workspace.File("notes.txt"), "First line\n  Indented line\n", Encoding.UTF8);
 
-        const string operations =
-            """
-            {
-              "ops": [
-                { "op": "set_text", "target": { "block": 2 }, "text": "Updated clause." },
-                { "op": "insert_toc", "at": { "block": 2 }, "position": "after" },
-                { "op": "set_header", "paragraphs": [{ "text": "Document header" }] }
-              ]
-            }
-            """;
-        CliResult edited = _workspace.RunWithInput(
-            operations,
-            "words", "edit", "contract.docx", "--ops", "-",
-            "--in-place", "--verify", "--output-format", "json");
-        CliResult read = _workspace.Run(
-            "words", "read", "contract.docx", "--blocks", "2", "--output-format", "json");
-
-        Assert.True(edited.ExitCode == 0, edited.StdErr);
-        Assert.True(JsonNode.Parse(edited.StdOut)!["verification"]!["ok"]!.GetValue<bool>());
-        Assert.True(read.ExitCode == 0, read.StdErr);
-        Assert.Equal(
-            "Updated clause.",
-            JsonNode.Parse(read.StdOut)!["blocks"]![0]!["text"]!.GetValue<string>());
-        var reopened = new Document(_workspace.File("contract.docx"));
-        Assert.Contains(reopened.Range.Fields.Cast<Aspose.Words.Fields.Field>(),
-            field => field.Type == Aspose.Words.Fields.FieldType.FieldTOC
-                && field.GetFieldCode().Contains("1-3", StringComparison.Ordinal));
-        Assert.Contains("Document header",
-            reopened.FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary].GetText(),
-            StringComparison.Ordinal);
-
-    }
-
-    [Fact]
-    public void WordsCommands_ReadADocumentByItsContentWhateverItsExtension()
-    {
-        var document = new Document();
-        new DocumentBuilder(document).Write("Supplier contract.");
-        document.Save(_workspace.File("contract.pdf"), SaveFormat.Docx);
-
-        CliResult converted = _workspace.Run(
-            "words", "convert", "contract.pdf", "--to", "docx", "--out", "contract.docx", "--output-format", "json");
+        CliResult converted = _workspace.Run("words", "convert", "notes.txt", "--to", "docx", "--encoding", "utf-8",
+            "--auto-numbering-detection", "false", "--detect-numbering-with-whitespaces", "false", "--detect-hyperlinks", "false", "--leading-spaces", "Preserve");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
-        Assert.Equal("docx", JsonNode.Parse(converted.StdOut)!["input"]!["format"]!.GetValue<string>());
+        Assert.Contains("  Indented line", new Document(_workspace.File("notes.docx")).GetText(), StringComparison.Ordinal);
     }
 
-    [Category(TestCategory.Slow)]
-    [Fact]
-    public void Edit_DisclosesAnOutputEvaluationModeCutShortWhenSavingIt()
-    {
-        // Evaluation mode keeps about 200 paragraphs of a document it lays out or saves, so of
-        // five copies of a 60-paragraph letter only the first four, the fourth cut short, remain.
-        var template = new Document();
-        var builder = new DocumentBuilder(template);
-        builder.InsertField("MERGEFIELD Name");
-        builder.Writeln();
-        for (int index = 1; index < 60; index++)
-        {
-            builder.Writeln($"Clause {index}.");
-        }
-        template.Save(_workspace.File("letter.docx"));
-        string records = string.Join(",", Enumerable.Range(1, 5).Select(static index => $$"""{ "Name": "Person {{index}}" }"""));
-
-        CliResult result = _workspace.RunWithInput(
-            $$"""{ "ops": [ { "op": "mail_merge", "items": [{{records}}] } ] }""",
-            "words", "edit", "letter.docx", "--ops", "-", "--out", "letters.docx",
-            "--verify", "--license-mode", "evaluation", "--output-format", "json");
-
-        // The input was whole, so the write pipeline's disclosure names the notice the output
-        // ends with; no product check says it a second time. Verification reports the output
-        // incomplete, so the edit exits 8 with the output still written.
-        JsonNode edited = JsonNode.Parse(result.StdOut)!;
-        JsonNode[] warnings = [.. edited["warnings"]!.AsArray().Select(static item => item!)];
-        JsonNode disclosure = warnings.Single(static item => item["code"]!.GetValue<string>() == "EVALUATION_MODE");
-        Assert.Contains("evaluation mode cut the content short", disclosure["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.DoesNotContain(warnings, static item => item["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED");
-        JsonNode verification = edited["verification"]!;
-        Assert.False(verification["ok"]!.GetValue<bool>());
-        Assert.Equal(["OUTPUT_TRUNCATED"], verification["issues"]!.AsArray().Select(static issue => issue!["code"]!.GetValue<string>()));
-        Assert.True(result.ExitCode == 8, result.StdErr + result.StdOut);
-        Assert.True(File.Exists(_workspace.File("letters.docx")));
-    }
-
-    /// <summary>
-    /// An SVG beside the Markdown that names a picture outside the Markdown's directory, by an
-    /// absolute path, a parent path or a file URI, is imported without it: no part of the
-    /// document holds the picture or its name, and the result reports the removed reference.
-    /// </summary>
     [Theory]
-    [InlineData("absolute")]
-    [InlineData("parent")]
-    [InlineData("uri")]
-    public void CreateFromMarkdown_AnSvgNamingAPictureOutsideTheDirectory_KeepsThePictureOut(string reference)
+    [InlineData("--encoding")]
+    [InlineData("--auto-numbering-detection")]
+    [InlineData("--detect-numbering-with-whitespaces")]
+    [InlineData("--detect-hyperlinks")]
+    [InlineData("--leading-spaces")]
+    public void ConvertText_WithoutATextOption_IsRefusedNamingIt(string left)
     {
-        string outside = Directory.CreateDirectory(_workspace.File("outside")).FullName;
-        Directory.CreateDirectory(_workspace.File("doc"));
-        byte[] sentinel = Convert.FromBase64String(
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==");
-        string sentinelPath = Path.Combine(outside, "sentinel.png");
-        File.WriteAllBytes(sentinelPath, sentinel);
-        string href = reference switch
+        File.WriteAllText(_workspace.File("notes.txt"), "Text\n");
+        string[] options = ["--encoding", "utf-8", "--auto-numbering-detection", "false", "--detect-numbering-with-whitespaces", "false", "--detect-hyperlinks", "false", "--leading-spaces", "Trim"];
+        int at = Array.IndexOf(options, left);
+
+        CliResult refused = _workspace.Run(["words", "convert", "notes.txt", "--to", "docx", .. options[..at], .. options[(at + 2)..]]);
+
+        Assert.Equal(2, refused.ExitCode);
+        Assert.Contains(left, Error(refused)["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("notes.docx")));
+    }
+
+    [Fact]
+    public void ConvertMarkdown_TakesTheEncodingOnly()
+    {
+        File.WriteAllText(_workspace.File("notes.md"), "# Title\n\nBody text.\n", Encoding.UTF8);
+
+        CliResult converted = _workspace.Run("words", "convert", "notes.md", "--to", "docx", "--encoding", "utf-8");
+        CliResult refused = _workspace.Run("words", "convert", "notes.md", "--to", "docx", "--encoding", "utf-8", "--detect-hyperlinks", "false", "--out", "other.docx");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Contains("Body text.", new Document(_workspace.File("notes.docx")).GetText(), StringComparison.Ordinal);
+        Assert.Equal(2, refused.ExitCode);
+        Assert.Contains("--detect-hyperlinks", Error(refused)["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("read")]
+    [InlineData("search")]
+    [InlineData("edit")]
+    [InlineData("render")]
+    public void TextOnlyConvertReads_IsFormatUnsupported(string verb)
+    {
+        File.WriteAllText(_workspace.File("notes.md"), "# Title\n");
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"do":"update_fields"}]}""");
+        string[] tail = verb switch
         {
-            "absolute" => sentinelPath,
-            "parent" => "../outside/sentinel.png",
-            _ => new Uri(sentinelPath).AbsoluteUri,
+            "search" => ["--pattern", "Title"],
+            "edit" => ["--ops", "ops.json", "--out", "out.md"],
+            _ => [],
         };
-        File.WriteAllText(_workspace.File("doc/diagram.svg"),
-            $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="40" height="40"><rect width="40" height="40" fill="#0000ff"/><image xlink:href="{System.Security.SecurityElement.Escape(href)}" width="40" height="40"/></svg>""");
-        File.WriteAllText(_workspace.File("doc/source.md"), "# Diagram\n\n![Diagram](diagram.svg)\n");
 
-        CliResult created = _workspace.Run("words", "create", "doc/out.docx", "--from-markdown", "doc/source.md", "--output-format", "json");
+        CliResult refused = _workspace.Run(["words", verb, "notes.md", .. tail]);
 
-        Assert.True(created.ExitCode == 0, created.StdErr);
-        Assert.Contains(JsonNode.Parse(created.StdOut)!["warnings"]!.AsArray(),
-            static warning => warning!["code"]!.GetValue<string>() == "REMOTE_RESOURCES_BLOCKED");
-        using System.IO.Compression.ZipArchive archive = System.IO.Compression.ZipFile.OpenRead(_workspace.File("doc/out.docx"));
-        Assert.Contains(archive.Entries, static entry => entry.FullName.StartsWith("word/media/", StringComparison.Ordinal));
-        foreach (System.IO.Compression.ZipArchiveEntry entry in archive.Entries)
-        {
-            using Stream stream = entry.Open();
-            using var buffer = new MemoryStream();
-            stream.CopyTo(buffer);
-            byte[] part = buffer.ToArray();
-            Assert.False(part.AsSpan().SequenceEqual(sentinel), entry.FullName);
-            Assert.DoesNotContain("sentinel", System.Text.Encoding.Latin1.GetString(part), StringComparison.OrdinalIgnoreCase);
-        }
-    }
-
-    /// <summary>
-    /// An encrypted template is refused before anything is written.
-    /// </summary>
-    [Fact]
-    public void Create_FromAnEncryptedTemplate_IsPasswordRequired()
-    {
-        var template = new Document();
-        Style brand = template.Styles.Add(StyleType.Paragraph, "Brand Heading");
-        brand.Font.Size = 31;
-        new DocumentBuilder(template).Writeln("Letterhead.");
-        template.Save(_workspace.File("locked.docx"), new Aspose.Words.Saving.OoxmlSaveOptions(SaveFormat.Docx) { Password = "template-secret" });
-        File.WriteAllText(_workspace.File("body.txt"), "Dear customer,\n");
-
-        CliResult refused = _workspace.Run(
-            "words", "create", "letter.docx", "--template", "locked.docx", "--from-text", "body.txt", "--output-format", "json");
-
-        Assert.Equal(3, refused.ExitCode);
-        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
-        Assert.Equal("PASSWORD_REQUIRED", error["code"]!.GetValue<string>());
-        Assert.False(File.Exists(_workspace.File("letter.docx")));
-    }
-
-    [Fact]
-    public void Read_NextKeepsANonContiguousRangeAndTheSectionFilter()
-    {
-        File.WriteAllText(_workspace.File("source.md"), "# Title\n\nOne.\n\nTwo.\n\nThree.\n\nFour.\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "notes.docx", "--from-markdown", "source.md").ExitCode);
-
-        // Both queries only read the document, so they run at once.
-        CliResult spread = null!, section = null!;
-        Parallel.Invoke(
-            () => spread = _workspace.Run(
-                "words", "read", "notes.docx", "--blocks", "1,3,5", "--max-blocks", "1", "--output-format", "json"),
-            () => section = _workspace.Run(
-                "words", "read", "notes.docx", "--section", "1", "--blocks", "2-3", "--max-blocks", "1", "--output-format", "json"));
-
-        Assert.True(spread.ExitCode == 0, spread.StdErr);
-        JsonNode spreadNext = JsonNode.Parse(spread.StdOut)!["window"]!["next"]!;
-        Assert.Equal(("3,5", "20000"), (spreadNext["blocks"]!.GetValue<string>(), spreadNext["max-chars"]!.GetValue<string>()));
-        Assert.True(section.ExitCode == 0, section.StdErr);
-        JsonNode read = JsonNode.Parse(section.StdOut)!;
-        Assert.Equal(2, Assert.Single(read["blocks"]!.AsArray())!["block"]!.GetValue<int>());
-        Assert.Equal(("3", "20000"), (read["window"]!["next"]!["blocks"]!.GetValue<string>(), read["window"]!["next"]!["max-chars"]!.GetValue<string>()));
-    }
-
-    [Fact]
-    public void Search_WindowNextReturnsTheFollowingHits()
-    {
-        File.WriteAllText(_workspace.File("source.md"), "needle one\n\nneedle two\n\nneedle three\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "notes.docx", "--from-markdown", "source.md").ExitCode);
-
-        CliResult first = _workspace.Run(
-            "words", "search", "notes.docx", "--pattern", "needle", "--max-hits", "2", "--output-format", "json");
-
-        Assert.True(first.ExitCode == 0, first.StdErr);
-        JsonNode page = JsonNode.Parse(first.StdOut)!;
-        Assert.Equal(["needle one", "needle two"], HitTexts(page));
-        JsonNode window = page["window"]!;
-        Assert.Equal("hit", window["unit"]!.GetValue<string>());
-        Assert.Equal(2, window["returned"]!.GetValue<int>());
-        Assert.True(window["truncated"]!.GetValue<bool>());
-        JsonNode next = window["next"]!;
-        Assert.Equal("2", next["skip"]!.GetValue<string>());
-
-        CliResult second = _workspace.RunNext(next, "words", "search", "notes.docx", "--pattern", "needle", "--max-hits", "2", "--output-format", "json");
-
-        Assert.True(second.ExitCode == 0, second.StdErr);
-        JsonNode rest = JsonNode.Parse(second.StdOut)!;
-        Assert.Equal(["needle three"], HitTexts(rest));
-        Assert.False(rest["window"]!["truncated"]!.GetValue<bool>());
-        Assert.Null(rest["window"]!["next"]);
+        Assert.Equal("FORMAT_UNSUPPORTED", Error(refused)["code"]!.GetValue<string>());
     }
 
     [Theory]
-    [InlineData(null, "deletion:合同期限为三年|insertion:合同期限为五年")]
-    [InlineData("char", "deletion:三|insertion:五")]
-    public void Compare_GranularityCharMarksASingleChangedChineseCharacter(string? granularity, string expected)
+    [InlineData("9")]
+    [InlineData("1-9")]
+    [InlineData("2-")]
+    public void Render_OfAPagePastTheLast_IsPageNotFound_AndWritesNothing(string pages)
     {
-        foreach ((string name, string text) in new[] { ("left.docx", "合同期限为三年。"), ("right.docx", "合同期限为五年。") })
-        {
-            var document = new Document();
-            new DocumentBuilder(document).Write(text);
-            document.Save(_workspace.File(name));
-        }
+        WriteDocument("doc.docx", "One page.");
 
-        string[] option = granularity is null ? [] : ["--granularity", granularity];
-        CliResult compared = _workspace.Run(["words", "compare", "left.docx", "right.docx", "--output-format", "json", .. option]);
+        CliResult refused = _workspace.Run("words", "render", "doc.docx", "--pages", pages, "--out", "page.png");
+
+        Assert.Equal("PAGE_NOT_FOUND", Error(refused)["code"]!.GetValue<string>());
+        Assert.Empty(Directory.GetFiles(_workspace.Path, "page*.png"));
+    }
+
+    [Fact]
+    public void Render_DrawsEveryPageByDefault()
+    {
+        WriteDocument("doc.docx", "One page.");
+
+        CliResult rendered = _workspace.Run("words", "render", "doc.docx", "--out", "page.png");
+
+        Assert.True(rendered.ExitCode == 0, rendered.StdErr);
+        Assert.NotEmpty(JsonNode.Parse(rendered.StdOut)!["outputs"]!.AsArray());
+    }
+
+    [Theory]
+    [InlineData("--author")]
+    [InlineData("--date-time")]
+    public void Compare_TakesTheAuthorAndTheDateTime(string left)
+    {
+        WriteDocument("a.docx", "Original text.");
+        WriteDocument("b.docx", "Changed text.");
+        string[] options = ["--author", "Reviewer", "--date-time", "2026-03-01T09:00:00"];
+        int at = Array.IndexOf(options, left);
+
+        CliResult refused = _workspace.Run(["words", "compare", "a.docx", "b.docx", "--out", "redline.docx", .. options[..at], .. options[(at + 2)..]]);
+
+        Assert.Equal(2, refused.ExitCode);
+        Assert.False(File.Exists(_workspace.File("redline.docx")));
+    }
+
+    [Fact]
+    public void Compare_WritesTheRedline_WithTheEnginesRevisionCount()
+    {
+        WriteDocument("a.docx", "Original text.");
+        WriteDocument("b.docx", "Changed text.");
+
+        CliResult compared = _workspace.Run("words", "compare", "a.docx", "b.docx", "--author", "Reviewer", "--date-time", "2026-03-01T09:00:00", "--out", "redline.docx");
 
         Assert.True(compared.ExitCode == 0, compared.StdErr);
-        Assert.Equal(
-            expected,
-            string.Join('|', JsonNode.Parse(compared.StdOut)!["samples"]!.AsArray()
-                .Select(static sample => $"{sample!["kind"]!.GetValue<string>()}:{sample["text"]?.GetValue<string>()}")));
+        var redline = new Document(_workspace.File("redline.docx"));
+        Assert.Equal(redline.Revisions.Count, JsonNode.Parse(compared.StdOut)!["revisionCount"]!.GetValue<int>());
+        Assert.Contains(redline.Revisions.Cast<Revision>(), static revision => revision.Author == "Reviewer");
     }
 
-    /// <summary>
-    /// A replace_text regex reads ^, $, \A, \z and the x option at each paragraph, as words
-    /// search does (WORDS-REGEX-ANCHORS), so it replaces every match search finds.
-    /// </summary>
-    [Category(TestCategory.Slow)]
-    [Theory]
-    [InlineData(@"^(\d)\.(\d)", "x Scope|x Terms|x Notices|See 1.4 later")]
-    [InlineData(@"(?m)^1\.\d", "x Scope|x Terms|x Notices|See 1.4 later")]
-    [InlineData(@"(Scope|Terms|later)$", "1.1 x|1.2 x|1.3 Notices|See 1.4 x")]
-    [InlineData(@"\A1\.\d", "x Scope|x Terms|x Notices|See 1.4 later")]
-    [InlineData(@"(Notices|later)\z", "1.1 Scope|1.2 Terms|1.3 x|See 1.4 x")]
-    [InlineData(@"(?x) ^ 1 \. \d  # a clause number", "x Scope|x Terms|x Notices|See 1.4 later")]
-    public void ReplaceText_AnchorsAtEachParagraphAsSearchDoes(string find, string expected)
-    {
-        File.WriteAllText(_workspace.File("source.md"), "1.1 Scope\n\n1.2 Terms\n\n1.3 Notices\n\nSee 1.4 later\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
-
-        CliResult searched = _workspace.Run("words", "search", "contract.docx", "--pattern", find, "--regex", "--output-format", "json");
-        CliResult edited = EditWith(new JsonObject { ["op"] = "replace_text", ["find"] = find, ["replace"] = "x", ["regex"] = true });
-
-        Assert.True(searched.ExitCode == 0, searched.StdErr);
-        Assert.True(edited.ExitCode == 0, edited.StdErr);
-        int hits = JsonNode.Parse(searched.StdOut)!["hits"]!.AsArray().Count;
-        Assert.Equal(hits, JsonNode.Parse(edited.StdOut)!["applied"]![0]!["itemsAffected"]!.GetValue<int>());
-        CliResult read = _workspace.Run("words", "read", "edited.docx", "--output-format", "json");
-        Assert.Equal(
-            expected,
-            string.Join('|', JsonNode.Parse(read.StdOut)!["blocks"]!.AsArray().Select(static block => block!["text"]!.GetValue<string>())
-                .Where(static text => text.Length > 0 && !text.Contains("Aspose", StringComparison.Ordinal))));
-    }
-
-    /// <summary>
-    /// An escaped ^ or $, a negated class and a $ inside a class are no anchors, and a literal
-    /// find is never read as a pattern, so each replaces what it matches.
-    /// </summary>
-    [Category(TestCategory.Slow)]
-    [Theory]
-    [InlineData(@"\^2", true, "Cost x and $5 [a]")]
-    [InlineData(@"\$5", true, "Cost ^2 and x [a]")]
-    [InlineData(@"[$]5", true, "Cost ^2 and x [a]")]
-    [InlineData(@"\[[^b]\]", true, "Cost ^2 and $5 x")]
-    [InlineData("^2", false, "Cost x and $5 [a]")]
-    [InlineData("(?i)COST", true, "x ^2 and $5 [a]")]
-    [InlineData("(?i:COST)", true, "x ^2 and $5 [a]")]
-    public void ReplaceText_AcceptsCharactersThatAreNoAnchor(string find, bool regex, string expected)
-    {
-        File.WriteAllText(_workspace.File("source.txt"), "Cost ^2 and $5 [a]\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-text", "source.txt").ExitCode);
-
-        CliResult edited = EditWith(new JsonObject { ["op"] = "replace_text", ["find"] = find, ["replace"] = "x", ["regex"] = regex });
-
-        Assert.True(edited.ExitCode == 0, edited.StdErr);
-        CliResult read = _workspace.Run("words", "read", "edited.docx", "--output-format", "json");
-        Assert.Contains(
-            JsonNode.Parse(read.StdOut)!["blocks"]!.AsArray().Select(static block => block!["text"]!.GetValue<string>()),
-            text => text == expected);
-    }
-
-    private CliResult EditWith(JsonObject op)
-    {
-        File.WriteAllText(_workspace.File("ops.json"), new JsonObject { ["ops"] = new JsonArray(op) }.ToJsonString());
-        return _workspace.Run("words", "edit", "contract.docx", "--ops", "ops.json", "--out", "edited.docx", "--output-format", "json");
-    }
-
-    /// <summary>
-    /// Each hit carries its 1-based occurrence among the matches of the document, as a PDF search
-    /// hit does, so two hits in one paragraph are told apart; a later window keeps the numbers.
-    /// </summary>
     [Fact]
-    public void Search_NumbersEachMatchOfTheDocument()
+    public void Create_WritesTheEnginesNewDocument_OrATemplateCopy()
     {
-        File.WriteAllText(_workspace.File("source.md"), "Party A pays Party B, and Party B signs.\n\nParty B keeps a copy.\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
+        WriteDocument("template.docx", "Template text.");
 
-        CliResult all = _workspace.Run("words", "search", "contract.docx", "--pattern", "Party B", "--output-format", "json");
-        CliResult later = _workspace.Run("words", "search", "contract.docx", "--pattern", "Party B", "--skip", "1", "--output-format", "json");
+        CliResult blank = _workspace.Run("words", "create", "blank.docx");
+        CliResult copy = _workspace.Run("words", "create", "copy.docx", "--template", "template.docx");
 
-        Assert.True(all.ExitCode == 0, all.StdErr);
-        Assert.Equal(["1:1", "1:2", "2:3"], Occurrences(JsonNode.Parse(all.StdOut)!));
-        Assert.True(later.ExitCode == 0, later.StdErr);
-        Assert.Equal(["1:2", "2:3"], Occurrences(JsonNode.Parse(later.StdOut)!));
-
-        static IEnumerable<string> Occurrences(JsonNode result) => result["hits"]!.AsArray()
-            .Select(static hit => $"{hit!["block"]!.GetValue<int>()}:{hit["occurrence"]?.GetValue<int>()}");
+        Assert.True(blank.ExitCode == 0, blank.StdErr);
+        Assert.True(copy.ExitCode == 0, copy.StdErr);
+        Assert.Contains("Template text.", new Document(_workspace.File("copy.docx")).GetText(), StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// Merge data that names one column or property twice cannot say which value a field takes,
-    /// so the merge refuses it as invalid data.
-    /// </summary>
-    [Category(TestCategory.Slow)]
-    [Theory]
-    [InlineData("data.csv", "Name,Name\nAva,Noah\n")]
-    [InlineData("data.json", """[{"Name":"Ava","Name":"Noah"}]""")]
-    public void MailMerge_RefusesDataThatNamesAFieldTwice(string dataName, string data)
-    {
-        var template = new Document();
-        new DocumentBuilder(template).InsertField("MERGEFIELD Name");
-        template.Save(_workspace.File("letter.docx"));
-        File.WriteAllText(_workspace.File(dataName), data);
-
-        CliResult result = _workspace.RunWithInput(
-            $$"""{ "ops": [ { "op": "mail_merge", "path": "{{dataName}}" } ] }""",
-            "words", "edit", "letter.docx", "--ops", "-", "--out", "letters.docx", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("MERGE_DATA_INVALID", error["code"]!.GetValue<string>());
-        Assert.Contains("'Name'", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.False(File.Exists(_workspace.File("letters.docx")));
-    }
-
-    /// <summary>
-    /// A replace_text expression that backtracks catastrophically stops at its execution budget
-    /// and writes nothing, although the engine's replace ignores the budget. The budget judges the
-    /// text the replace searches: text a tracked change deletes is not there, so the forty letters
-    /// around a deleted one are one run of letters.
-    /// </summary>
-    [Category(TestCategory.Slow)]
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ReplaceText_StopsARegexThatRunsPastItsBudget(bool deletedLetterBetween)
+    [Fact]
+    public void Extract_WritesTheBytesOfEachStoredImage()
     {
         var document = new Document();
-        var builder = new DocumentBuilder(document);
-        builder.Write(new string('a', 20));
-        builder.Write(deletedLetterBetween ? "x" : string.Empty);
-        builder.Write(new string('a', 20) + "!");
-        if (deletedLetterBetween)
-        {
-            document.StartTrackRevisions("Ann", new DateTime(2026, 9, 1));
-            document.Range.Replace("x", string.Empty);
-            document.StopTrackRevisions();
-        }
+        new DocumentBuilder(document).InsertImage(WordsTableRoundTripTests.Png());
+        document.Save(_workspace.File("pictures.docx"));
 
-        document.Save(_workspace.File("runaway.docx"));
+        CliResult extracted = _workspace.Run("words", "extract", "pictures.docx", "--what", "images", "--out-dir", "images");
 
-        CliResult result = ReplaceRunaway();
-
-        Assert.Equal(9, result.ExitCode);
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPERATION_TIMEOUT", error["code"]!.GetValue<string>());
-        Assert.Equal("regex", error["details"]!["phase"]!.GetValue<string>());
-        Assert.False(File.Exists(_workspace.File("replaced.docx")));
+        Assert.True(extracted.ExitCode == 0, extracted.StdErr);
+        Assert.Contains(Directory.GetFiles(_workspace.File("images")), file => File.ReadAllBytes(file).AsSpan().SequenceEqual(WordsTableRoundTripTests.Png()));
     }
 
-    /// <summary>
-    /// A field's code is not text the replace searches, so letters that would run past the
-    /// budget in a hyperlink's address do not stop an edit whose text they are not.
-    /// </summary>
-    [Category(TestCategory.Slow)]
     [Fact]
-    public void ReplaceText_DoesNotJudgeTheBudgetOnAFieldCode()
+    public void EditInPlace_LeavesOnlyTheDocument_AndReadsTheChangeBack()
     {
-        // The address alone runs the expression past its budget; the shown text "ab" matches it.
-        const string Find = "(a+)+b";
-        string address = "https://example.com/" + new string('a', 40) + "!";
-        Assert.Throws<System.Text.RegularExpressions.RegexMatchTimeoutException>(
-            () => Aspose.Cli.Sdk.Text.SafeRegex.Create(Find, caseSensitive: true).IsMatch(address));
+        WriteDocument("doc.docx", "Contoso plans.");
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"do":"replace","args":{"pattern":"Contoso","replacement":"Fabrikam"}}]}""");
+
+        CliResult edited = _workspace.Run("words", "edit", "doc.docx", "--in-place", "--ops", "ops.json");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        Assert.Equal(1, JsonNode.Parse(edited.StdOut)!["ops"]![0]!["returned"]!.GetValue<int>());
+        Assert.Equal(["doc.docx", "ops.json"], Directory.EnumerateFileSystemEntries(_workspace.Path).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.Contains("Fabrikam plans.", new Document(_workspace.File("doc.docx")).GetText(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SearchHit_NamesTheParagraph_ThatEditTakes()
+    {
+        WriteDocument("doc.docx", "Contoso plans.");
+
+        CliResult found = _workspace.Run("words", "search", "doc.docx", "--pattern", "Contoso");
+        string at = JsonNode.Parse(found.StdOut)!["hits"]![0]!["at"]!.GetValue<string>();
+        File.WriteAllText(_workspace.File("ops.json"), $$$"""{"ops":[{"set":"{{{at}}}","props":{"paragraphFormat.alignment":"Center"}}]}""");
+        CliResult edited = _workspace.Run("words", "edit", "doc.docx", "--ops", "ops.json", "--out", "out.docx");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        Assert.Equal("Center", JsonNode.Parse(edited.StdOut)!["ops"]![0]!["now"]!["paragraphFormat.alignment"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void EncryptedDocument_IsReadWithItsPassword()
+    {
         var document = new Document();
-        new DocumentBuilder(document).InsertHyperlink("ab", address, false);
-        document.Save(_workspace.File("runaway.docx"));
+        new DocumentBuilder(document).Write("Secret text.");
+        document.Save(_workspace.File("secret.docx"), new Aspose.Words.Saving.OoxmlSaveOptions { Password = "pw" });
 
-        CliResult result = ReplaceRunaway(Find);
+        CliResult refused = _workspace.Run("words", "read", "secret.docx");
+        CliResult read = _workspace.RunWithEnv(new Dictionary<string, string?> { ["DOC_PASSWORD"] = "pw" }, "words", "read", "secret.docx", "--password-env", "DOC_PASSWORD", "--at", "section/0/body/range");
 
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.True(File.Exists(_workspace.File("replaced.docx")));
+        Assert.NotEqual(0, refused.ExitCode);
+        Assert.True(read.ExitCode == 0, read.StdErr);
+        Assert.True(JsonNode.Parse(read.StdOut)!["input"]!["encrypted"]!.GetValue<bool>());
+        Assert.Contains("Secret text.", read.StdOut, StringComparison.Ordinal);
     }
 
-    // Runs the expression over runaway.docx; it must end well within the regex budget's reach.
-    private CliResult ReplaceRunaway(string find = "(a+)+b")
+    private void WriteDocument(string name, string text)
     {
-        var clock = System.Diagnostics.Stopwatch.StartNew();
-        CliResult result = _workspace.RunWithInput(
-            $$"""{ "ops": [ { "op": "replace_text", "find": "{{find}}", "replace": "b", "regex": true } ] }""",
-            "words", "edit", "runaway.docx", "--ops", "-", "--out", "replaced.docx", "--output-format", "json");
-        clock.Stop();
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"took {clock.Elapsed}");
-        return result;
+        var document = new Document();
+        new DocumentBuilder(document).Write(text);
+        document.Save(_workspace.File(name));
     }
+
+    private static JsonNode Error(CliResult result) => JsonNode.Parse(result.StdErr)!["error"]!;
 
     public void Dispose() => _workspace.Dispose();
-
-    private static IEnumerable<string> HitTexts(JsonNode result) =>
-        result["hits"]!.AsArray().Select(static hit => hit!["context"]!.GetValue<string>());
 }

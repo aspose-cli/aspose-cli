@@ -1,58 +1,9 @@
 using Aspose.Cli.Sdk.Diagnostics;
-using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Words;
 
+/// <summary>Words declares no error or warning code of its own: every error is one of the SDK's, and the engine's warnings are passed on as it reported them.</summary>
 internal static class WordsDiagnostics
 {
-    internal static readonly ErrorCode BlockNotFound = ErrorCode.NotFound("BLOCK_NOT_FOUND");
-    internal static readonly ErrorCode SectionNotFound = ErrorCode.NotFound("SECTION_NOT_FOUND");
-    internal static readonly ErrorCode AnchorNotFound = ErrorCode.NotFound("ANCHOR_NOT_FOUND");
-    internal static readonly ErrorCode RevisionNotFound = ErrorCode.NotFound("REVISION_NOT_FOUND");
-    internal static readonly ErrorCode MergeDataInvalid = Validation("MERGE_DATA_INVALID");
-    internal static readonly ErrorCode RevisionsUnresolved =
-        new("REVISIONS_UNRESOLVED", ExitCode.InputError);
-
-    internal static readonly WarningCode TrackedChangesPresent = new("TRACKED_CHANGES_PRESENT");
-    internal static readonly WarningCode MacrosDropped = new("MACROS_DROPPED");
-    internal static readonly WarningCode LayoutMayDiffer = new("LAYOUT_MAY_DIFFER");
-    internal static readonly WarningCode LinkedImagesSkipped = new("LINKED_IMAGES_SKIPPED");
-    internal static readonly WarningCode MergeValueMissing = new("MERGE_VALUE_MISSING");
-    internal static readonly WarningCode FontsEmbedded = new("FONTS_EMBEDDED");
-    internal static readonly WarningCode SplitSingleHeading = new("SPLIT_SINGLE_HEADING");
-    internal static readonly WarningCode PageNumbersRemoved = new("PAGE_NUMBERS_REMOVED");
-    internal static readonly WarningCode CommentsNotInText = new("COMMENTS_NOT_IN_TEXT");
-
-    internal static readonly DiagnosticDescriptor FieldCountMismatch = DiagnosticDescriptor.Verification("FIELD_COUNT_MISMATCH");
-    internal static readonly DiagnosticDescriptor RevisionCountMismatch = DiagnosticDescriptor.Verification("REVISION_COUNT_MISMATCH");
-    internal static readonly DiagnosticDescriptor ProtectionMismatch = DiagnosticDescriptor.Verification("PROTECTION_MISMATCH");
-    internal static readonly DiagnosticDescriptor OutputTruncated = DiagnosticDescriptor.Verification("OUTPUT_TRUNCATED");
-    internal static readonly DiagnosticDescriptor PageNumbersMismatch = DiagnosticDescriptor.Verification("PAGE_NUMBERS_MISMATCH");
-
-    internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
-    [
-        DiagnosticDescriptor.Error(BlockNotFound),
-        DiagnosticDescriptor.Error(SectionNotFound),
-        DiagnosticDescriptor.Error(AnchorNotFound),
-        DiagnosticDescriptor.Error(RevisionNotFound),
-        DiagnosticDescriptor.Error(MergeDataInvalid),
-        DiagnosticDescriptor.Error(RevisionsUnresolved),
-        DiagnosticDescriptor.Warning(TrackedChangesPresent),
-        DiagnosticDescriptor.Warning(MacrosDropped),
-        DiagnosticDescriptor.Warning(LayoutMayDiffer),
-        DiagnosticDescriptor.Warning(LinkedImagesSkipped),
-        DiagnosticDescriptor.Warning(MergeValueMissing),
-        DiagnosticDescriptor.Warning(FontsEmbedded),
-        DiagnosticDescriptor.Warning(SplitSingleHeading),
-        DiagnosticDescriptor.Warning(PageNumbersRemoved),
-        DiagnosticDescriptor.Warning(CommentsNotInText),
-        FieldCountMismatch,
-        RevisionCountMismatch,
-        ProtectionMismatch,
-        OutputTruncated,
-        PageNumbersMismatch,
-    ];
-
-    private static ErrorCode Validation(string code) =>
-        new(code, ExitCode.ValidationError);
+    internal static IReadOnlyList<DiagnosticDescriptor> All { get; } = [];
 }

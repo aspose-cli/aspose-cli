@@ -12,11 +12,6 @@
       "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "nothingWritten": true }, "hidden": ["Scenario-New-Secret-7d2a"] }
     },
     {
-      "args": ["words", "edit", "wordml.xml", "--ops", "ops.json", "--in-place", "--encrypt-env", "NEW_PASSWORD", "--dry-run"],
-      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
-      "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "nothingWritten": true } }
-    },
-    {
       "args": ["words", "edit", "damaged.xml", "--ops", "ops.json", "--in-place", "--encrypt-env", "NEW_PASSWORD"],
       "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
       "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "nothingWritten": true } }

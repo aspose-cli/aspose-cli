@@ -24,7 +24,7 @@ public sealed class LicenseModeTests : IDisposable
         ProjectLicense("<License>synthetic invalid fixture</License>"u8.ToArray());
 
         CliResult configured = _workspace.Run(
-            ["words", "create", "configured.docx", "--from-markdown", "brief.md", "--output-format", "json"]);
+            ["words", "create", "configured.docx", "--output-format", "json"]);
         Assert.Equal(7, configured.ExitCode);
         Assert.Equal("LICENSE_INVALID", Error(configured)["code"]!.GetValue<string>());
 
@@ -46,7 +46,7 @@ public sealed class LicenseModeTests : IDisposable
         ProjectLicense(File.ReadAllBytes(TestLicense.Path!));
 
         JsonNode licensed = _workspace.Run(
-            "words", "create", "licensed.docx", "--from-markdown", "brief.md", "--output-format", "json").Json();
+            "words", "create", "licensed.docx", "--output-format", "json").Json();
         JsonNode requested = Create("requested.docx");
 
         Assert.Null(licensed["license"]);
@@ -59,7 +59,7 @@ public sealed class LicenseModeTests : IDisposable
     private JsonNode Create(string output)
     {
         CliResult result = _workspace.Run(
-            ["words", "create", output, "--from-markdown", "brief.md", "--license-mode", "evaluation", "--output-format", "json"]);
+            ["words", "create", output, "--license-mode", "evaluation", "--output-format", "json"]);
         Assert.True(result.ExitCode == 0, result.StdErr);
         JsonNode created = JsonNode.Parse(result.StdOut)!;
         // The disclosure says the evaluation was asked for, not that a license is missing.

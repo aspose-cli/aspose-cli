@@ -18,7 +18,7 @@ public sealed class CorruptInputDetectionTests
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File(file), content);
 
-        CliResult result = workspace.Run("words", "inspect", file, "--output-format", "json");
+        CliResult result = workspace.Run("words", "read", file, "--output-format", "json");
 
         // The extension names words and no product recognizes the content: a damaged file, not a renamed one.
         Assert.Equal(3, result.ExitCode);

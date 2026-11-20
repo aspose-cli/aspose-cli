@@ -31,47 +31,13 @@ public sealed class BoundedEditCommandTests : IDisposable
     public void Dispose() => _temp.Dispose();
 
     [Fact]
-    public void Read_AppendsCompiledDirectivesToTheDocumentAndPreparesTheWholeBatch()
+    public void Read_RequiresADocument()
     {
-        BoundedEditInvocation<TestBatch> invocation = Read(
-            WithDirectives(),
-            "--ops", """{"ops":[{"op":"set","value":1}]}""", "--set", "2", "--set", "3");
-
-        Assert.Equal([1, 2, 3], invocation.Batch.Ops.Cast<SetOp>().Select(static op => op.Value));
-        Assert.Equal(["op-0001", "op-0002", "op-0003"], invocation.Batch.Ops.Select(static op => op.Id));
-    }
-
-    [Fact]
-    public void Read_ComposesADirectiveOnlyBatchThroughTheCatalog()
-    {
-        CliException invalid = Assert.Throws<CliException>(() => Read(WithDirectives(), "--set", "-1"));
-
-        Assert.Equal(ErrorCodes.OpsInvalid, invalid.Code);
-        Assert.Equal(["op-0001"], Read(WithDirectives(), "--set", "4").Batch.Ops.Select(static op => op.Id));
-    }
-
-    [Fact]
-    public void Read_RejectsABadDirectiveBeforeReadingTheDocument()
-    {
-        CliException error = Assert.Throws<CliException>(() => Read(
-            WithDirectives(), "--ops", "missing-ops.json", "--set", "not-a-number"));
-
-        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Contains("--set", error.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Read_RequiresADocumentOrADirective()
-    {
-        CliException error = Assert.Throws<CliException>(() => Read(WithDirectives()));
         CliException plain = Assert.Throws<CliException>(() => Read(Plain()));
 
-        Assert.Equal(ErrorCodes.UsageError, error.Code);
-        Assert.Contains("--set", error.Message, StringComparison.Ordinal);
         Assert.Equal(ErrorCodes.UsageError, plain.Code);
         Assert.Equal("Give --ops (an ops JSON document).", plain.Message);
         Assert.Empty(Parse(Plain()).Errors);
-        Assert.Empty(Parse(WithDirectives()).Errors);
     }
 
     [Fact]
@@ -369,7 +335,6 @@ public sealed class BoundedEditCommandTests : IDisposable
         var edit = new BoundedEditCommand<TestOp, TestBatch>(Definition() with
         {
             VerifyDescription = "Verify.",
-            SetDirectives = new("Set a value.", static _ => new SetOp { Value = 0 }, static ops => new TestBatch { Ops = ops }),
         });
         Command edited = Edit(
             edit, Runner(),
@@ -415,16 +380,6 @@ public sealed class BoundedEditCommandTests : IDisposable
     };
 
     private static BoundedEditCommand<TestOp, TestBatch> Plain() => new(Definition());
-
-    private static BoundedEditCommand<TestOp, TestBatch> WithDirectives() => new(Definition() with
-    {
-        SetDirectives = new(
-            "Set a value.",
-            static text => int.TryParse(text, out int value)
-                ? new SetOp { Value = value }
-                : throw CliErrors.OptionInvalid("--set", $"'{text}' is not a number"),
-            static ops => new TestBatch { Ops = ops }),
-    });
 
     private BoundedEditInvocation<TestBatch> Read(
         BoundedEditCommand<TestOp, TestBatch> command,

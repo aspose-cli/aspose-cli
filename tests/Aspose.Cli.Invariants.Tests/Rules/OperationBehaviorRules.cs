@@ -18,7 +18,6 @@ internal static partial class ContractRules
     {
         ["--pages"] = "page",
         ["--slides"] = "slide",
-        ["--blocks"] = "block",
         ["--range"] = "cell",
     };
 
@@ -27,7 +26,6 @@ internal static partial class ContractRules
     {
         ["--pages"] = "1-",
         ["--slides"] = "1-",
-        ["--blocks"] = "1-",
         ["--range"] = "A1:B3",
     };
 
@@ -37,7 +35,7 @@ internal static partial class ContractRules
         ["cells"] = """[{"add":"sheet","args":{"index":1,"sheetType":"Worksheet","sheetName":"Extra"}},{"set":"sheet/Extra/cell/A1","props":{"value":"Second sheet"}}]""",
         ["pdf"] = null,
         ["slides"] = null,
-        ["words"] = """[{"op":"insert_break","at":{"block":2},"position":"after","kind":"page"}]""",
+        ["words"] = """[{"do":"insert_break","args":{"paragraph":"section/0/body/paragraph/0","breakType":"PageBreak"}}]""",
     };
 
     private static readonly ConcurrentDictionary<string, Lazy<(JsonArray Applied, string? Failure)>> Batches = new(StringComparer.Ordinal);
@@ -79,8 +77,8 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The smallest valid invocation of a writing command for its dry run: a compare names the
-    /// redline it would write, a license installation an existing file, and a Skill
+    /// The smallest valid invocation of a writing command for its dry run: a license installation
+    /// an existing file, and a Skill
     /// installation a bundled Skill for a host's project directory, the workspace.
     /// </summary>
     private static Invocation DryRunInvocation(CliCommand command)
@@ -95,9 +93,6 @@ internal static partial class ContractRules
             case "skill install":
                 invocation.Replace(invocation.Args[^1], "aspose-cli-platform");
                 invocation.Add("--host", "codex");
-                break;
-            case var _ when command.Verb == "compare" && command.Has("--out"):
-                invocation.Add("--out", "output." + ScenarioFixtures.PrimaryFormat(command.Product!));
                 break;
         }
         return invocation;

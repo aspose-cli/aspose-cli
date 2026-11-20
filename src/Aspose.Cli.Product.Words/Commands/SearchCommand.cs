@@ -1,44 +1,22 @@
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class SearchCommand
 {
-    public static CommandDefinition<WordsSearchRequest, WordsSearchResult> Create()
-    {
-        var search = new SearchOptions(new SearchScopeGrammar(
-            "Search scope: body (the main text, without the comments and footnotes it anchors), "
-                + "headers-footers, footnotes (with endnotes), comments or all.",
-            WordsTextScopes.Names,
-            WordsTextScopes.Body));
-        return new(
-            "search",
-            "Search bounded document scopes with regex timeout protection.",
+    public static CommandDefinition<WordsSearchRequest, WordsSearchResult> Create() =>
+        TableCommands.Search<WordsSearchRequest, WordsSearchResult>(
+            "Search the text of a document's paragraphs, as Paragraph.GetText() gives it; each hit names the paragraph's address.",
             new CommandTraits { Input = WordsInputs.Document },
-            search.Options,
-            (parse, standard) =>
-            {
-                SearchQuery query = search.Read(parse);
-                return new WordsSearchRequest
-                {
-                    Input = standard.Input,
-                    Query = query,
-                    Password = standard.InputPassword,
-                };
-            })
-        {
-            Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
-            Examples =
+            static search => new WordsSearchRequest { Input = search.Input, Password = search.Password, Query = search.Query },
+            static (request, result) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
+            examples:
             [
-                "words search contract.docx --pattern TODO --scope all",
-                "words search contract.docx --pattern \"Section\\s+\\d+\" --regex --max-hits 20",
+                "words search contract.docx --pattern Contoso",
+                "words search contract.docx --pattern \"20[0-9]{2}\" --regex",
             ],
-            Links =
+            links:
             [
                 CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
-                new("aspose-cli docs reading", "reading every product within bounded windows"),
-            ],
-        };
-    }
+            ]);
 }

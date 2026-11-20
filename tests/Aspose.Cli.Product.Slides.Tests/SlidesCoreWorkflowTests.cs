@@ -29,7 +29,7 @@ public sealed class SlidesCoreWorkflowTests
             new SlidesSearchRequest
             {
                 Input = searchable,
-                Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: true), 1, Scope: null),
+                Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: true), 1),
             });
         TableHit hit = Assert.Single(search.Hits);
         Assert.Equal("Slide", hit.Text);

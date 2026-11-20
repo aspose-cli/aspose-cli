@@ -22,7 +22,7 @@ public sealed class EvaluationMarkDisclosureTests
     private const string EvaluationModeWarning = "EVALUATION_MODE";
 
     /// <summary>The products that recognize the marks evaluation mode writes.</summary>
-    private static readonly string[] Products = [.. ScenarioFixtures.Products.Where(static product => product is not ("slides" or "cells"))];
+    private static readonly string[] Products = [.. ScenarioFixtures.Products.Where(static product => product is not ("slides" or "cells" or "words"))];
 
     [LicensedFact]
     public async Task EveryProduct_DisclosesAnEvaluationMarkedInputWithTheSameSdkCode()
@@ -80,7 +80,6 @@ public sealed class EvaluationMarkDisclosureTests
     private static readonly IReadOnlyDictionary<string, string> AddingOperations = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["pdf"] = """{"ops":[{"op":"add_bookmark","title":"Again","page":1}]}""",
-        ["words"] = """{"ops":[{"op":"insert_paragraphs","at":{"block":2},"position":"after","paragraphs":[{"text":"Added"}]}]}""",
     };
 
     private static JsonNode Edit(TempWorkspace workspace, string product, string input, string output, params string[] extra) =>

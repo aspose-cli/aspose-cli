@@ -46,8 +46,11 @@ public sealed class RegexTimeoutTests
             "slides" => ("text.pptx", new JsonObject(),
                 new[] { new JsonArray("slides", "create", "text.pptx"), new JsonArray("slides", "edit", "text.pptx", "--in-place", "--ops", TextBox()) },
                 new JsonArray("slides", "search", "text.pptx", "--regex", "--pattern", Pattern)),
-            "words" => ("text.docx", new JsonObject { ["text.txt"] = Source(Text + "\n") },
-                new[] { new JsonArray("words", "create", "text.docx", "--from-text", "text.txt") }, Edit("words", "text.docx", ReplaceText())),
+            // Words takes a regular expression in its search; its edit's replace_regex is the engine's
+            // own (WORDS-REGEX-TIMEOUT). The text is a run of the engine's new document's first paragraph.
+            "words" => ("text.docx", new JsonObject(),
+                new[] { new JsonArray("words", "create", "text.docx"), new JsonArray("words", "edit", "text.docx", "--in-place", "--ops", Run()) },
+                new JsonArray("words", "search", "text.docx", "--regex", "--pattern", Pattern)),
             _ => throw new ArgumentOutOfRangeException(nameof(product), product, null),
         };
         string output = Path.GetFileNameWithoutExtension(document) + ".out" + Path.GetExtension(document);
@@ -99,8 +102,11 @@ public sealed class RegexTimeoutTests
             }),
         }.ToJsonString();
 
-    private static JsonObject Source(string text) => new() { ["text"] = text };
+    private static string Run() =>
+        new JsonObject
+        {
+            ["ops"] = new JsonArray(new JsonObject { ["add"] = "run", ["in"] = "section/0/body/paragraph/0", ["args"] = new JsonObject { ["text"] = Text } }),
+        }.ToJsonString();
 
-    private static JsonObject ReplaceText(string pattern = Pattern) =>
-        new() { ["op"] = "replace_text", ["find"] = pattern, ["replace"] = "b", ["regex"] = true };
+    private static JsonObject Source(string text) => new() { ["text"] = text };
 }

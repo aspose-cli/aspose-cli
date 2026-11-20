@@ -95,24 +95,6 @@ public sealed partial class BoundedEditTargetTests
             ops.Add(new JsonObject { ["op"] = "rotate_pages", ["pages"] = "1-", ["rotation"] = 180 });
             return ("input.pdf", ops);
         });
-        yield return ("words", workspace => (Create(workspace, "words", "input.docx", "--from-markdown",
-            string.Join("\n\n", Enumerable.Range(1, Bound + 1).Select(static block =>
-                $"Hello {block}{(block <= Bound ? " Mark" : string.Empty)}"))), Replacements()));
-    }
-
-    /// <summary>Replaces the word only the first 100 parts hold, then the word every part holds.</summary>
-    private static JsonArray Replacements() =>
-    [
-        new JsonObject { ["op"] = "replace_text", ["find"] = "Mark", ["replace"] = "Sign" },
-        new JsonObject { ["op"] = "replace_text", ["find"] = "Hello", ["replace"] = "Hi" },
-    ];
-
-    private static string Create(TempWorkspace workspace, string product, string input, string option, string markdown)
-    {
-        File.WriteAllText(workspace.File("source.md"), markdown);
-        CliResult created = workspace.Run(product, "create", input, option, "source.md", "--output-format", "json");
-        Assert.True(created.ExitCode == 0, $"{product} create: {created.StdErr}");
-        return input;
     }
 
     /// <summary>A count or length compared with 100, such as <c>pages.Count is &gt; 0 and &lt;= 100</c>.</summary>

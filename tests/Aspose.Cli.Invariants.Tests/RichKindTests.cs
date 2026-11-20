@@ -5,10 +5,9 @@ using Xunit;
 namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
-/// The tokens by which C-R42 and C-R43 expect a warning to name each kind of a rich fixture
+/// The tokens by which C-R42 expects a warning to name each kind of a rich fixture
 /// (<see cref="ScenarioFixtures.Kinds"/>) are tokens the CLI can send: the error-payload schema
-/// publishes each <see cref="RichKind.Content"/> among the <c>details.content</c> tokens and each
-/// <see cref="RichKind.Part"/> among the <c>details.part</c> tokens. A token outside them would
+/// publishes each <see cref="RichKind.Content"/> among the <c>details.content</c> tokens. A token outside them would
 /// make a rule demand a warning no product can give.
 /// </summary>
 public sealed class RichKindTests
@@ -21,14 +20,6 @@ public sealed class RichKindTests
         string[] published = Tokens(Details()["content"]?["items"]?["oneOf"]);
         Assert.All(ScenarioFixtures.Kinds.Where(static kind => kind.Content is not null), kind =>
             Assert.True(published.Contains(kind.Content), $"The {kind.Name} kind expects details.content '{kind.Content}', which {ErrorPayload} does not publish: [{string.Join(", ", published)}]."));
-    }
-
-    [Fact]
-    public void EveryPartToken_IsOneTheErrorPayloadPublishes()
-    {
-        string[] published = Tokens(Details()["part"]?["oneOf"]);
-        Assert.All(ScenarioFixtures.Kinds.Where(static kind => kind.Part is not null), kind =>
-            Assert.True(published.Contains(kind.Part), $"The {kind.Name} kind expects details.part '{kind.Part}', which {ErrorPayload} does not publish: [{string.Join(", ", published)}]."));
     }
 
     private static JsonNode Details() =>

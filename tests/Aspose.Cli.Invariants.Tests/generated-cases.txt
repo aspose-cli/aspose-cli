@@ -74,11 +74,9 @@ C-R06 | words convert
 C-R06 | words create
 C-R06 | words edit
 C-R06 | words extract
-C-R06 | words inspect
 C-R06 | words read
 C-R06 | words render
 C-R06 | words search
-C-R06 | words split
 C-R08 | aspose-cli
 C-R08 | capabilities
 C-R08 | cells convert
@@ -117,20 +115,28 @@ C-R08 | words convert
 C-R08 | words create
 C-R08 | words edit
 C-R08 | words extract
-C-R08 | words inspect
 C-R08 | words read
 C-R08 | words render
 C-R08 | words search
-C-R08 | words split
 C-R09 | --allow-network-resources
+C-R09 | --auto-numbering-detection
 C-R09 | --bom
 C-R09 | --case-sensitive
 C-R09 | --certificate-password-stdin
 C-R09 | --convert-dates
 C-R09 | --convert-numbers
+C-R09 | --detect-hyperlinks
+C-R09 | --detect-numbering-with-whitespaces
 C-R09 | --dry-run
 C-R09 | --encrypt-stdin
+C-R09 | --ignore-case-changes
+C-R09 | --ignore-comments
+C-R09 | --ignore-fields
+C-R09 | --ignore-footnotes
 C-R09 | --ignore-formatting
+C-R09 | --ignore-headers-and-footers
+C-R09 | --ignore-tables
+C-R09 | --ignore-textboxes
 C-R09 | --in-place
 C-R09 | --left-password-stdin
 C-R09 | --overwrite
@@ -139,7 +145,6 @@ C-R09 | --regex
 C-R09 | --right-password-stdin
 C-R09 | --sample
 C-R09 | --summary
-C-R09 | --track-changes
 C-R09 | --user
 C-R09 | --verbose
 C-R09 | --verify
@@ -193,12 +198,9 @@ C-R10 | words edit --encrypt-stdin with --password-stdin
 C-R10 | words edit --ops with --password-stdin
 C-R10 | words edit declared
 C-R10 | words extract declared
-C-R10 | words inspect declared
 C-R10 | words read declared
 C-R10 | words render declared
 C-R10 | words search declared
-C-R10 | words split --encrypt-stdin with --password-stdin
-C-R10 | words split declared
 C-R11 | cells convert --dry-run
 C-R11 | cells create --dry-run
 C-R11 | cells create declared
@@ -227,10 +229,8 @@ C-R11 | words compare --dry-run
 C-R11 | words convert --dry-run
 C-R11 | words create --dry-run
 C-R11 | words create declared
-C-R11 | words edit --dry-run
 C-R11 | words extract --dry-run
 C-R11 | words render --dry-run
-C-R11 | words split --dry-run
 C-R12 | cells render of every unit by default
 C-R12 | cells render one unit
 C-R12 | pdf render of every unit by default
@@ -241,7 +241,6 @@ C-R12 | slides render of every unit by default
 C-R12 | slides render one unit
 C-R12 | words render of every unit by default
 C-R12 | words render one unit
-C-R12 | words split --by pages --every 1
 C-R13 | cells convert --out out.pdf without --to
 C-R13 | cells convert --to pdf --out out.xlsx
 C-R13 | cells convert declared
@@ -285,7 +284,6 @@ C-R14 | slides render --out -
 C-R14 | words compare --out -
 C-R14 | words convert --out -
 C-R14 | words edit --out -
-C-R14 | words inspect -- -input.docx
 C-R14 | words render --out -
 C-R15 | cells read --max-objects 1
 C-R15 | cells read declared
@@ -301,10 +299,7 @@ C-R15 | slides read --max-objects 1
 C-R15 | slides read declared
 C-R15 | slides search --max-hits 1
 C-R15 | slides search declared
-C-R15 | words read --blocks 1- --max-blocks 1
-C-R15 | words read --blocks 1- --max-chars 1
-C-R15 | words read --max-blocks 1
-C-R15 | words read --max-chars 1
+C-R15 | words read --max-objects 1
 C-R15 | words read declared
 C-R15 | words search --max-hits 1
 C-R15 | words search declared
@@ -339,16 +334,9 @@ C-R16 | slides render --slides all
 C-R16 | words convert --pages 1-x
 C-R16 | words convert --pages 99
 C-R16 | words convert --pages all
-C-R16 | words op clear_list with a malformed selection
-C-R16 | words read --blocks 1-x
-C-R16 | words read --blocks 99
-C-R16 | words read --blocks all
 C-R16 | words render --pages 1-x
 C-R16 | words render --pages 99
 C-R16 | words render --pages all
-C-R16 | words split --pages 1-x
-C-R16 | words split --pages 99
-C-R16 | words split --pages all
 C-R17 | aspose-cli values
 C-R17 | cells convert values
 C-R17 | cells render values
@@ -464,71 +452,12 @@ C-R17 | v2/words/convert-result
 C-R17 | v2/words/create-result
 C-R17 | v2/words/edit-result
 C-R17 | v2/words/extract-result
-C-R17 | v2/words/inspect-result
-C-R17 | v2/words/ops
-C-R17 | v2/words/ops#accept_revisions
-C-R17 | v2/words/ops#add_comment
-C-R17 | v2/words/ops#clear_list
-C-R17 | v2/words/ops#color
-C-R17 | v2/words/ops#define_style
-C-R17 | v2/words/ops#delete_blocks
-C-R17 | v2/words/ops#delete_comments
-C-R17 | v2/words/ops#delete_section
-C-R17 | v2/words/ops#delete_watermark
-C-R17 | v2/words/ops#format_text
-C-R17 | v2/words/ops#id
-C-R17 | v2/words/ops#import_sections
-C-R17 | v2/words/ops#insert_bookmark
-C-R17 | v2/words/ops#insert_break
-C-R17 | v2/words/ops#insert_field
-C-R17 | v2/words/ops#insert_hyperlink
-C-R17 | v2/words/ops#insert_image
-C-R17 | v2/words/ops#insert_markdown
-C-R17 | v2/words/ops#insert_paragraphs
-C-R17 | v2/words/ops#insert_section
-C-R17 | v2/words/ops#insert_table
-C-R17 | v2/words/ops#insert_toc
-C-R17 | v2/words/ops#mail_merge
-C-R17 | v2/words/ops#pageSizeInput
-C-R17 | v2/words/ops#pages
-C-R17 | v2/words/ops#position
-C-R17 | v2/words/ops#protect_document
-C-R17 | v2/words/ops#refresh_fields
-C-R17 | v2/words/ops#reject_revisions
-C-R17 | v2/words/ops#repeat_table_row
-C-R17 | v2/words/ops#replace_text
-C-R17 | v2/words/ops#set_default_font
-C-R17 | v2/words/ops#set_footer
-C-R17 | v2/words/ops#set_header
-C-R17 | v2/words/ops#set_list
-C-R17 | v2/words/ops#set_page_numbers
-C-R17 | v2/words/ops#set_page_setup
-C-R17 | v2/words/ops#set_properties
-C-R17 | v2/words/ops#set_style
-C-R17 | v2/words/ops#set_table_cell
-C-R17 | v2/words/ops#set_table_pagination
-C-R17 | v2/words/ops#set_table_style
-C-R17 | v2/words/ops#set_text
-C-R17 | v2/words/ops#set_watermark
-C-R17 | v2/words/ops#unprotect_document
-C-R17 | v2/words/ops#webLink
-C-R17 | v2/words/ops#wordsListInput
-C-R17 | v2/words/ops#wordsMarginInput
-C-R17 | v2/words/ops#wordsPageSetupInput
-C-R17 | v2/words/ops#wordsParagraphInput
-C-R17 | v2/words/ops#wordsTarget
 C-R17 | v2/words/read-result
 C-R17 | v2/words/render-result
 C-R17 | v2/words/search-result
-C-R17 | v2/words/split-result
-C-R17 | words compare values
 C-R17 | words convert values
 C-R17 | words extract values
-C-R17 | words inspect values
-C-R17 | words read values
 C-R17 | words render values
-C-R17 | words search values
-C-R17 | words split values
 C-R18 | v2/cells/convert-result
 C-R18 | v2/cells/create-result
 C-R18 | v2/cells/edit-result
@@ -624,63 +553,9 @@ C-R18 | v2/words/convert-result
 C-R18 | v2/words/create-result
 C-R18 | v2/words/edit-result
 C-R18 | v2/words/extract-result
-C-R18 | v2/words/inspect-result
-C-R18 | v2/words/ops
-C-R18 | v2/words/ops#accept_revisions
-C-R18 | v2/words/ops#add_comment
-C-R18 | v2/words/ops#clear_list
-C-R18 | v2/words/ops#color
-C-R18 | v2/words/ops#define_style
-C-R18 | v2/words/ops#delete_blocks
-C-R18 | v2/words/ops#delete_comments
-C-R18 | v2/words/ops#delete_section
-C-R18 | v2/words/ops#delete_watermark
-C-R18 | v2/words/ops#format_text
-C-R18 | v2/words/ops#id
-C-R18 | v2/words/ops#import_sections
-C-R18 | v2/words/ops#insert_bookmark
-C-R18 | v2/words/ops#insert_break
-C-R18 | v2/words/ops#insert_field
-C-R18 | v2/words/ops#insert_hyperlink
-C-R18 | v2/words/ops#insert_image
-C-R18 | v2/words/ops#insert_markdown
-C-R18 | v2/words/ops#insert_paragraphs
-C-R18 | v2/words/ops#insert_section
-C-R18 | v2/words/ops#insert_table
-C-R18 | v2/words/ops#insert_toc
-C-R18 | v2/words/ops#mail_merge
-C-R18 | v2/words/ops#pageSizeInput
-C-R18 | v2/words/ops#pages
-C-R18 | v2/words/ops#position
-C-R18 | v2/words/ops#protect_document
-C-R18 | v2/words/ops#refresh_fields
-C-R18 | v2/words/ops#reject_revisions
-C-R18 | v2/words/ops#repeat_table_row
-C-R18 | v2/words/ops#replace_text
-C-R18 | v2/words/ops#set_default_font
-C-R18 | v2/words/ops#set_footer
-C-R18 | v2/words/ops#set_header
-C-R18 | v2/words/ops#set_list
-C-R18 | v2/words/ops#set_page_numbers
-C-R18 | v2/words/ops#set_page_setup
-C-R18 | v2/words/ops#set_properties
-C-R18 | v2/words/ops#set_style
-C-R18 | v2/words/ops#set_table_cell
-C-R18 | v2/words/ops#set_table_pagination
-C-R18 | v2/words/ops#set_table_style
-C-R18 | v2/words/ops#set_text
-C-R18 | v2/words/ops#set_watermark
-C-R18 | v2/words/ops#unprotect_document
-C-R18 | v2/words/ops#webLink
-C-R18 | v2/words/ops#wordsListInput
-C-R18 | v2/words/ops#wordsMarginInput
-C-R18 | v2/words/ops#wordsPageSetupInput
-C-R18 | v2/words/ops#wordsParagraphInput
-C-R18 | v2/words/ops#wordsTarget
 C-R18 | v2/words/read-result
 C-R18 | v2/words/render-result
 C-R18 | v2/words/search-result
-C-R18 | v2/words/split-result
 C-R19 | pdf add_attachment applied twice
 C-R19 | pdf add_bookmark applied twice
 C-R19 | pdf add_footer_text applied twice
@@ -722,83 +597,6 @@ C-R19 | v2/pdf/ops#set_form_field
 C-R19 | v2/pdf/ops#set_page_labels
 C-R19 | v2/pdf/ops#set_page_size
 C-R19 | v2/pdf/ops#set_properties
-C-R19 | v2/words/ops#accept_revisions
-C-R19 | v2/words/ops#add_comment
-C-R19 | v2/words/ops#clear_list
-C-R19 | v2/words/ops#define_style
-C-R19 | v2/words/ops#delete_blocks
-C-R19 | v2/words/ops#delete_comments
-C-R19 | v2/words/ops#delete_section
-C-R19 | v2/words/ops#delete_watermark
-C-R19 | v2/words/ops#format_text
-C-R19 | v2/words/ops#import_sections
-C-R19 | v2/words/ops#insert_bookmark
-C-R19 | v2/words/ops#insert_break
-C-R19 | v2/words/ops#insert_field
-C-R19 | v2/words/ops#insert_hyperlink
-C-R19 | v2/words/ops#insert_image
-C-R19 | v2/words/ops#insert_markdown
-C-R19 | v2/words/ops#insert_paragraphs
-C-R19 | v2/words/ops#insert_section
-C-R19 | v2/words/ops#insert_table
-C-R19 | v2/words/ops#insert_toc
-C-R19 | v2/words/ops#mail_merge
-C-R19 | v2/words/ops#protect_document
-C-R19 | v2/words/ops#refresh_fields
-C-R19 | v2/words/ops#reject_revisions
-C-R19 | v2/words/ops#repeat_table_row
-C-R19 | v2/words/ops#replace_text
-C-R19 | v2/words/ops#set_default_font
-C-R19 | v2/words/ops#set_footer
-C-R19 | v2/words/ops#set_header
-C-R19 | v2/words/ops#set_list
-C-R19 | v2/words/ops#set_page_numbers
-C-R19 | v2/words/ops#set_page_setup
-C-R19 | v2/words/ops#set_properties
-C-R19 | v2/words/ops#set_style
-C-R19 | v2/words/ops#set_table_cell
-C-R19 | v2/words/ops#set_table_pagination
-C-R19 | v2/words/ops#set_table_style
-C-R19 | v2/words/ops#set_text
-C-R19 | v2/words/ops#set_watermark
-C-R19 | v2/words/ops#unprotect_document
-C-R19 | words add_comment applied twice
-C-R19 | words set_default_font applied twice
-C-R19 | words set_footer applied twice
-C-R19 | words set_header applied twice
-C-R19 | words set_list applied twice
-C-R19 | words set_page_numbers applied twice
-C-R19 | words set_page_setup applied twice
-C-R19 | words set_properties applied twice
-C-R19 | words set_style applied twice
-C-R19 | words set_table_cell applied twice
-C-R19 | words set_table_pagination applied twice
-C-R19 | words set_table_style applied twice
-C-R19 | words set_text applied twice
-C-R19 | words set_watermark applied twice
-C-R20 | ops field alignment across products
-C-R20 | ops field author across products
-C-R20 | ops field caseSensitive across products
-C-R20 | ops field color across products
-C-R20 | ops field custom across products
-C-R20 | ops field find across products
-C-R20 | ops field font across products
-C-R20 | ops field fontSize across products
-C-R20 | ops field height across products
-C-R20 | ops field keywords across products
-C-R20 | ops field name across products
-C-R20 | ops field numberStyle across products
-C-R20 | ops field pageSize across products
-C-R20 | ops field path across products
-C-R20 | ops field preset across products
-C-R20 | ops field regex across products
-C-R20 | ops field sourcePasswordEnv across products
-C-R20 | ops field start across products
-C-R20 | ops field subject across products
-C-R20 | ops field text across products
-C-R20 | ops field title across products
-C-R20 | ops field url across products
-C-R20 | ops field width across products
 C-R20 | v2/cells/convert-result fixednames
 C-R20 | v2/cells/convert-result spelling
 C-R20 | v2/cells/convert-result variants
@@ -1480,356 +1278,146 @@ C-R20 | v2/words/edit-result variants
 C-R20 | v2/words/extract-result fixednames
 C-R20 | v2/words/extract-result spelling
 C-R20 | v2/words/extract-result variants
-C-R20 | v2/words/inspect-result fixednames
-C-R20 | v2/words/inspect-result spelling
-C-R20 | v2/words/inspect-result variants
-C-R20 | v2/words/ops field alignment
-C-R20 | v2/words/ops field allowRowBreakAcrossPages
-C-R20 | v2/words/ops field at
-C-R20 | v2/words/ops field author
-C-R20 | v2/words/ops field basedOn
-C-R20 | v2/words/ops field block
-C-R20 | v2/words/ops field blocks
-C-R20 | v2/words/ops field bold
-C-R20 | v2/words/ops field bookmark
-C-R20 | v2/words/ops field bottom
-C-R20 | v2/words/ops field caseSensitive
-C-R20 | v2/words/ops field code
-C-R20 | v2/words/ops field color
-C-R20 | v2/words/ops field column
-C-R20 | v2/words/ops field columnCount
-C-R20 | v2/words/ops field custom
-C-R20 | v2/words/ops field eastAsianFont
-C-R20 | v2/words/ops field faded
-C-R20 | v2/words/ops field find
-C-R20 | v2/words/ops field font
-C-R20 | v2/words/ops field fontSize
-C-R20 | v2/words/ops field formatting
-C-R20 | v2/words/ops field headerRowCount
-C-R20 | v2/words/ops field heading
-C-R20 | v2/words/ops field height
-C-R20 | v2/words/ops field highlight
-C-R20 | v2/words/ops field inline
-C-R20 | v2/words/ops field italic
-C-R20 | v2/words/ops field items
-C-R20 | v2/words/ops field keepTogether
-C-R20 | v2/words/ops field keepWithNext
-C-R20 | v2/words/ops field keywords
-C-R20 | v2/words/ops field kind
-C-R20 | v2/words/ops field latinFont
-C-R20 | v2/words/ops field left
-C-R20 | v2/words/ops field level
-C-R20 | v2/words/ops field list
-C-R20 | v2/words/ops field location
-C-R20 | v2/words/ops field margins
-C-R20 | v2/words/ops field markdown
-C-R20 | v2/words/ops field match
-C-R20 | v2/words/ops field maxLevel
-C-R20 | v2/words/ops field maxReplacementCount
-C-R20 | v2/words/ops field name
-C-R20 | v2/words/ops field nth
-C-R20 | v2/words/ops field numberFormat
-C-R20 | v2/words/ops field numberStyle
-C-R20 | v2/words/ops field orientation
-C-R20 | v2/words/ops field pageSetup
-C-R20 | v2/words/ops field pageSize
-C-R20 | v2/words/ops field paragraphs
-C-R20 | v2/words/ops field passwordEnv
-C-R20 | v2/words/ops field path
-C-R20 | v2/words/ops field position
-C-R20 | v2/words/ops field preset
-C-R20 | v2/words/ops field protection
-C-R20 | v2/words/ops field regex
-C-R20 | v2/words/ops field regions
-C-R20 | v2/words/ops field replace
-C-R20 | v2/words/ops field revisions
-C-R20 | v2/words/ops field right
-C-R20 | v2/words/ops field row
-C-R20 | v2/words/ops field rowCount
-C-R20 | v2/words/ops field scope
-C-R20 | v2/words/ops field section
-C-R20 | v2/words/ops field sourcePasswordEnv
-C-R20 | v2/words/ops field spaceAfter
-C-R20 | v2/words/ops field spaceBefore
-C-R20 | v2/words/ops field start
-C-R20 | v2/words/ops field style
-C-R20 | v2/words/ops field subject
-C-R20 | v2/words/ops field tableStyle
-C-R20 | v2/words/ops field target
-C-R20 | v2/words/ops field text
-C-R20 | v2/words/ops field title
-C-R20 | v2/words/ops field top
-C-R20 | v2/words/ops field underline
-C-R20 | v2/words/ops field url
-C-R20 | v2/words/ops field values
-C-R20 | v2/words/ops field what
-C-R20 | v2/words/ops field wholeWord
-C-R20 | v2/words/ops field width
-C-R20 | v2/words/ops fixednames
 C-R20 | v2/words/ops ranges
 C-R20 | v2/words/ops secrets
-C-R20 | v2/words/ops spelling
-C-R20 | v2/words/ops variants
-C-R20 | v2/words/ops#accept_revisions fixednames
-C-R20 | v2/words/ops#accept_revisions ranges
-C-R20 | v2/words/ops#accept_revisions secrets
-C-R20 | v2/words/ops#accept_revisions spelling
-C-R20 | v2/words/ops#accept_revisions variants
-C-R20 | v2/words/ops#add_comment fixednames
-C-R20 | v2/words/ops#add_comment ranges
-C-R20 | v2/words/ops#add_comment secrets
-C-R20 | v2/words/ops#add_comment spelling
-C-R20 | v2/words/ops#add_comment variants
-C-R20 | v2/words/ops#clear_list fixednames
-C-R20 | v2/words/ops#clear_list ranges
-C-R20 | v2/words/ops#clear_list secrets
-C-R20 | v2/words/ops#clear_list spelling
-C-R20 | v2/words/ops#clear_list variants
-C-R20 | v2/words/ops#color fixednames
-C-R20 | v2/words/ops#color ranges
-C-R20 | v2/words/ops#color secrets
-C-R20 | v2/words/ops#color spelling
-C-R20 | v2/words/ops#color variants
-C-R20 | v2/words/ops#define_style fixednames
-C-R20 | v2/words/ops#define_style ranges
-C-R20 | v2/words/ops#define_style secrets
-C-R20 | v2/words/ops#define_style spelling
-C-R20 | v2/words/ops#define_style units
-C-R20 | v2/words/ops#define_style variants
-C-R20 | v2/words/ops#delete_blocks fixednames
-C-R20 | v2/words/ops#delete_blocks ranges
-C-R20 | v2/words/ops#delete_blocks secrets
-C-R20 | v2/words/ops#delete_blocks spelling
-C-R20 | v2/words/ops#delete_blocks variants
-C-R20 | v2/words/ops#delete_comments fixednames
-C-R20 | v2/words/ops#delete_comments ranges
-C-R20 | v2/words/ops#delete_comments secrets
-C-R20 | v2/words/ops#delete_comments spelling
-C-R20 | v2/words/ops#delete_comments variants
-C-R20 | v2/words/ops#delete_section fixednames
-C-R20 | v2/words/ops#delete_section ranges
-C-R20 | v2/words/ops#delete_section secrets
-C-R20 | v2/words/ops#delete_section spelling
-C-R20 | v2/words/ops#delete_section variants
-C-R20 | v2/words/ops#delete_watermark fixednames
-C-R20 | v2/words/ops#delete_watermark ranges
-C-R20 | v2/words/ops#delete_watermark secrets
-C-R20 | v2/words/ops#delete_watermark spelling
-C-R20 | v2/words/ops#delete_watermark variants
-C-R20 | v2/words/ops#format_text fixednames
-C-R20 | v2/words/ops#format_text ranges
-C-R20 | v2/words/ops#format_text secrets
-C-R20 | v2/words/ops#format_text spelling
-C-R20 | v2/words/ops#format_text units
-C-R20 | v2/words/ops#format_text variants
-C-R20 | v2/words/ops#id fixednames
-C-R20 | v2/words/ops#id ranges
-C-R20 | v2/words/ops#id secrets
-C-R20 | v2/words/ops#id spelling
-C-R20 | v2/words/ops#id variants
-C-R20 | v2/words/ops#import_sections fixednames
-C-R20 | v2/words/ops#import_sections ranges
-C-R20 | v2/words/ops#import_sections secrets
-C-R20 | v2/words/ops#import_sections spelling
-C-R20 | v2/words/ops#import_sections variants
-C-R20 | v2/words/ops#insert_bookmark fixednames
-C-R20 | v2/words/ops#insert_bookmark ranges
-C-R20 | v2/words/ops#insert_bookmark secrets
-C-R20 | v2/words/ops#insert_bookmark spelling
-C-R20 | v2/words/ops#insert_bookmark variants
-C-R20 | v2/words/ops#insert_break fixednames
-C-R20 | v2/words/ops#insert_break ranges
-C-R20 | v2/words/ops#insert_break secrets
-C-R20 | v2/words/ops#insert_break spelling
-C-R20 | v2/words/ops#insert_break variants
-C-R20 | v2/words/ops#insert_field fixednames
-C-R20 | v2/words/ops#insert_field ranges
-C-R20 | v2/words/ops#insert_field secrets
-C-R20 | v2/words/ops#insert_field spelling
-C-R20 | v2/words/ops#insert_field variants
-C-R20 | v2/words/ops#insert_hyperlink fixednames
-C-R20 | v2/words/ops#insert_hyperlink ranges
-C-R20 | v2/words/ops#insert_hyperlink secrets
-C-R20 | v2/words/ops#insert_hyperlink spelling
-C-R20 | v2/words/ops#insert_hyperlink variants
-C-R20 | v2/words/ops#insert_image fixednames
-C-R20 | v2/words/ops#insert_image ranges
-C-R20 | v2/words/ops#insert_image secrets
-C-R20 | v2/words/ops#insert_image spelling
-C-R20 | v2/words/ops#insert_image units
-C-R20 | v2/words/ops#insert_image variants
-C-R20 | v2/words/ops#insert_markdown fixednames
-C-R20 | v2/words/ops#insert_markdown ranges
-C-R20 | v2/words/ops#insert_markdown secrets
-C-R20 | v2/words/ops#insert_markdown spelling
-C-R20 | v2/words/ops#insert_markdown variants
-C-R20 | v2/words/ops#insert_paragraphs fixednames
-C-R20 | v2/words/ops#insert_paragraphs ranges
-C-R20 | v2/words/ops#insert_paragraphs secrets
-C-R20 | v2/words/ops#insert_paragraphs spelling
-C-R20 | v2/words/ops#insert_paragraphs variants
-C-R20 | v2/words/ops#insert_section fixednames
-C-R20 | v2/words/ops#insert_section ranges
-C-R20 | v2/words/ops#insert_section secrets
-C-R20 | v2/words/ops#insert_section spelling
-C-R20 | v2/words/ops#insert_section variants
-C-R20 | v2/words/ops#insert_table fixednames
-C-R20 | v2/words/ops#insert_table ranges
-C-R20 | v2/words/ops#insert_table secrets
-C-R20 | v2/words/ops#insert_table spelling
-C-R20 | v2/words/ops#insert_table variants
-C-R20 | v2/words/ops#insert_toc fixednames
-C-R20 | v2/words/ops#insert_toc ranges
-C-R20 | v2/words/ops#insert_toc secrets
-C-R20 | v2/words/ops#insert_toc spelling
-C-R20 | v2/words/ops#insert_toc variants
-C-R20 | v2/words/ops#mail_merge fixednames
-C-R20 | v2/words/ops#mail_merge ranges
-C-R20 | v2/words/ops#mail_merge secrets
-C-R20 | v2/words/ops#mail_merge spelling
-C-R20 | v2/words/ops#mail_merge variants
-C-R20 | v2/words/ops#pageSizeInput fixednames
-C-R20 | v2/words/ops#pageSizeInput ranges
-C-R20 | v2/words/ops#pageSizeInput secrets
-C-R20 | v2/words/ops#pageSizeInput spelling
-C-R20 | v2/words/ops#pageSizeInput variants
-C-R20 | v2/words/ops#pages fixednames
-C-R20 | v2/words/ops#pages ranges
-C-R20 | v2/words/ops#pages secrets
-C-R20 | v2/words/ops#pages spelling
-C-R20 | v2/words/ops#pages variants
-C-R20 | v2/words/ops#position fixednames
-C-R20 | v2/words/ops#position ranges
-C-R20 | v2/words/ops#position secrets
-C-R20 | v2/words/ops#position spelling
-C-R20 | v2/words/ops#position variants
-C-R20 | v2/words/ops#protect_document fixednames
-C-R20 | v2/words/ops#protect_document ranges
-C-R20 | v2/words/ops#protect_document secrets
-C-R20 | v2/words/ops#protect_document spelling
-C-R20 | v2/words/ops#protect_document variants
-C-R20 | v2/words/ops#refresh_fields fixednames
-C-R20 | v2/words/ops#refresh_fields ranges
-C-R20 | v2/words/ops#refresh_fields secrets
-C-R20 | v2/words/ops#refresh_fields spelling
-C-R20 | v2/words/ops#refresh_fields variants
-C-R20 | v2/words/ops#reject_revisions fixednames
-C-R20 | v2/words/ops#reject_revisions ranges
-C-R20 | v2/words/ops#reject_revisions secrets
-C-R20 | v2/words/ops#reject_revisions spelling
-C-R20 | v2/words/ops#reject_revisions variants
-C-R20 | v2/words/ops#repeat_table_row fixednames
-C-R20 | v2/words/ops#repeat_table_row ranges
-C-R20 | v2/words/ops#repeat_table_row secrets
-C-R20 | v2/words/ops#repeat_table_row spelling
-C-R20 | v2/words/ops#repeat_table_row variants
-C-R20 | v2/words/ops#replace_text fixednames
-C-R20 | v2/words/ops#replace_text ranges
-C-R20 | v2/words/ops#replace_text secrets
-C-R20 | v2/words/ops#replace_text spelling
-C-R20 | v2/words/ops#replace_text variants
-C-R20 | v2/words/ops#set_default_font fixednames
-C-R20 | v2/words/ops#set_default_font ranges
-C-R20 | v2/words/ops#set_default_font secrets
-C-R20 | v2/words/ops#set_default_font spelling
-C-R20 | v2/words/ops#set_default_font units
-C-R20 | v2/words/ops#set_default_font variants
-C-R20 | v2/words/ops#set_footer fixednames
-C-R20 | v2/words/ops#set_footer ranges
-C-R20 | v2/words/ops#set_footer secrets
-C-R20 | v2/words/ops#set_footer spelling
-C-R20 | v2/words/ops#set_footer variants
-C-R20 | v2/words/ops#set_header fixednames
-C-R20 | v2/words/ops#set_header ranges
-C-R20 | v2/words/ops#set_header secrets
-C-R20 | v2/words/ops#set_header spelling
-C-R20 | v2/words/ops#set_header variants
-C-R20 | v2/words/ops#set_list fixednames
-C-R20 | v2/words/ops#set_list ranges
-C-R20 | v2/words/ops#set_list secrets
-C-R20 | v2/words/ops#set_list spelling
-C-R20 | v2/words/ops#set_list variants
-C-R20 | v2/words/ops#set_page_numbers fixednames
-C-R20 | v2/words/ops#set_page_numbers ranges
-C-R20 | v2/words/ops#set_page_numbers secrets
-C-R20 | v2/words/ops#set_page_numbers spelling
-C-R20 | v2/words/ops#set_page_numbers variants
-C-R20 | v2/words/ops#set_page_setup fixednames
-C-R20 | v2/words/ops#set_page_setup ranges
-C-R20 | v2/words/ops#set_page_setup secrets
-C-R20 | v2/words/ops#set_page_setup spelling
-C-R20 | v2/words/ops#set_page_setup variants
-C-R20 | v2/words/ops#set_properties fixednames
-C-R20 | v2/words/ops#set_properties ranges
-C-R20 | v2/words/ops#set_properties secrets
-C-R20 | v2/words/ops#set_properties spelling
-C-R20 | v2/words/ops#set_properties variants
-C-R20 | v2/words/ops#set_style fixednames
-C-R20 | v2/words/ops#set_style ranges
-C-R20 | v2/words/ops#set_style secrets
-C-R20 | v2/words/ops#set_style spelling
-C-R20 | v2/words/ops#set_style variants
-C-R20 | v2/words/ops#set_table_cell fixednames
-C-R20 | v2/words/ops#set_table_cell ranges
-C-R20 | v2/words/ops#set_table_cell secrets
-C-R20 | v2/words/ops#set_table_cell spelling
-C-R20 | v2/words/ops#set_table_cell variants
-C-R20 | v2/words/ops#set_table_pagination fixednames
-C-R20 | v2/words/ops#set_table_pagination ranges
-C-R20 | v2/words/ops#set_table_pagination secrets
-C-R20 | v2/words/ops#set_table_pagination spelling
-C-R20 | v2/words/ops#set_table_pagination variants
-C-R20 | v2/words/ops#set_table_style fixednames
-C-R20 | v2/words/ops#set_table_style ranges
-C-R20 | v2/words/ops#set_table_style secrets
-C-R20 | v2/words/ops#set_table_style spelling
-C-R20 | v2/words/ops#set_table_style variants
-C-R20 | v2/words/ops#set_text fixednames
-C-R20 | v2/words/ops#set_text ranges
-C-R20 | v2/words/ops#set_text secrets
-C-R20 | v2/words/ops#set_text spelling
-C-R20 | v2/words/ops#set_text variants
-C-R20 | v2/words/ops#set_watermark fixednames
-C-R20 | v2/words/ops#set_watermark ranges
-C-R20 | v2/words/ops#set_watermark secrets
-C-R20 | v2/words/ops#set_watermark spelling
-C-R20 | v2/words/ops#set_watermark variants
-C-R20 | v2/words/ops#unprotect_document fixednames
-C-R20 | v2/words/ops#unprotect_document ranges
-C-R20 | v2/words/ops#unprotect_document secrets
-C-R20 | v2/words/ops#unprotect_document spelling
-C-R20 | v2/words/ops#unprotect_document variants
-C-R20 | v2/words/ops#webLink fixednames
-C-R20 | v2/words/ops#webLink ranges
-C-R20 | v2/words/ops#webLink secrets
-C-R20 | v2/words/ops#webLink spelling
-C-R20 | v2/words/ops#webLink variants
-C-R20 | v2/words/ops#wordsListInput fixednames
-C-R20 | v2/words/ops#wordsListInput ranges
-C-R20 | v2/words/ops#wordsListInput secrets
-C-R20 | v2/words/ops#wordsListInput spelling
-C-R20 | v2/words/ops#wordsListInput variants
-C-R20 | v2/words/ops#wordsMarginInput fixednames
-C-R20 | v2/words/ops#wordsMarginInput ranges
-C-R20 | v2/words/ops#wordsMarginInput secrets
-C-R20 | v2/words/ops#wordsMarginInput spelling
-C-R20 | v2/words/ops#wordsMarginInput units
-C-R20 | v2/words/ops#wordsMarginInput variants
-C-R20 | v2/words/ops#wordsPageSetupInput fixednames
-C-R20 | v2/words/ops#wordsPageSetupInput ranges
-C-R20 | v2/words/ops#wordsPageSetupInput secrets
-C-R20 | v2/words/ops#wordsPageSetupInput spelling
-C-R20 | v2/words/ops#wordsPageSetupInput variants
-C-R20 | v2/words/ops#wordsParagraphInput fixednames
-C-R20 | v2/words/ops#wordsParagraphInput ranges
-C-R20 | v2/words/ops#wordsParagraphInput secrets
-C-R20 | v2/words/ops#wordsParagraphInput spelling
-C-R20 | v2/words/ops#wordsParagraphInput variants
-C-R20 | v2/words/ops#wordsTarget fixednames
-C-R20 | v2/words/ops#wordsTarget ranges
-C-R20 | v2/words/ops#wordsTarget secrets
-C-R20 | v2/words/ops#wordsTarget spelling
-C-R20 | v2/words/ops#wordsTarget variants
+C-R20 | v2/words/ops#add ranges
+C-R20 | v2/words/ops#add secrets
+C-R20 | v2/words/ops#add.bookmark ranges
+C-R20 | v2/words/ops#add.bookmark secrets
+C-R20 | v2/words/ops#add.cell ranges
+C-R20 | v2/words/ops#add.cell secrets
+C-R20 | v2/words/ops#add.comment ranges
+C-R20 | v2/words/ops#add.comment secrets
+C-R20 | v2/words/ops#add.customProperty ranges
+C-R20 | v2/words/ops#add.customProperty secrets
+C-R20 | v2/words/ops#add.field ranges
+C-R20 | v2/words/ops#add.field secrets
+C-R20 | v2/words/ops#add.footnote ranges
+C-R20 | v2/words/ops#add.footnote secrets
+C-R20 | v2/words/ops#add.headerFooter ranges
+C-R20 | v2/words/ops#add.headerFooter secrets
+C-R20 | v2/words/ops#add.image ranges
+C-R20 | v2/words/ops#add.image secrets
+C-R20 | v2/words/ops#add.list ranges
+C-R20 | v2/words/ops#add.list secrets
+C-R20 | v2/words/ops#add.paragraph ranges
+C-R20 | v2/words/ops#add.paragraph secrets
+C-R20 | v2/words/ops#add.row ranges
+C-R20 | v2/words/ops#add.row secrets
+C-R20 | v2/words/ops#add.run ranges
+C-R20 | v2/words/ops#add.run secrets
+C-R20 | v2/words/ops#add.style ranges
+C-R20 | v2/words/ops#add.style secrets
+C-R20 | v2/words/ops#add.table ranges
+C-R20 | v2/words/ops#add.table secrets
+C-R20 | v2/words/ops#address ranges
+C-R20 | v2/words/ops#address secrets
+C-R20 | v2/words/ops#body ranges
+C-R20 | v2/words/ops#body secrets
+C-R20 | v2/words/ops#bookmark ranges
+C-R20 | v2/words/ops#bookmark secrets
+C-R20 | v2/words/ops#cell ranges
+C-R20 | v2/words/ops#cell secrets
+C-R20 | v2/words/ops#comment ranges
+C-R20 | v2/words/ops#comment secrets
+C-R20 | v2/words/ops#customProperty ranges
+C-R20 | v2/words/ops#customProperty secrets
+C-R20 | v2/words/ops#delete ranges
+C-R20 | v2/words/ops#delete secrets
+C-R20 | v2/words/ops#do ranges
+C-R20 | v2/words/ops#do secrets
+C-R20 | v2/words/ops#do.accept_all_revisions ranges
+C-R20 | v2/words/ops#do.accept_all_revisions secrets
+C-R20 | v2/words/ops#do.accept_revision ranges
+C-R20 | v2/words/ops#do.accept_revision secrets
+C-R20 | v2/words/ops#do.append_document ranges
+C-R20 | v2/words/ops#do.append_document secrets
+C-R20 | v2/words/ops#do.clone ranges
+C-R20 | v2/words/ops#do.clone secrets
+C-R20 | v2/words/ops#do.insert_break ranges
+C-R20 | v2/words/ops#do.insert_break secrets
+C-R20 | v2/words/ops#do.mail_merge ranges
+C-R20 | v2/words/ops#do.mail_merge secrets
+C-R20 | v2/words/ops#do.mail_merge_regions ranges
+C-R20 | v2/words/ops#do.mail_merge_regions secrets
+C-R20 | v2/words/ops#do.protect ranges
+C-R20 | v2/words/ops#do.protect secrets
+C-R20 | v2/words/ops#do.reject_all_revisions ranges
+C-R20 | v2/words/ops#do.reject_all_revisions secrets
+C-R20 | v2/words/ops#do.reject_revision ranges
+C-R20 | v2/words/ops#do.reject_revision secrets
+C-R20 | v2/words/ops#do.remove_list_numbers ranges
+C-R20 | v2/words/ops#do.remove_list_numbers secrets
+C-R20 | v2/words/ops#do.remove_self_only ranges
+C-R20 | v2/words/ops#do.remove_self_only secrets
+C-R20 | v2/words/ops#do.remove_watermark ranges
+C-R20 | v2/words/ops#do.remove_watermark secrets
+C-R20 | v2/words/ops#do.replace ranges
+C-R20 | v2/words/ops#do.replace secrets
+C-R20 | v2/words/ops#do.replace_regex ranges
+C-R20 | v2/words/ops#do.replace_regex secrets
+C-R20 | v2/words/ops#do.set_column_count ranges
+C-R20 | v2/words/ops#do.set_column_count secrets
+C-R20 | v2/words/ops#do.set_image_watermark ranges
+C-R20 | v2/words/ops#do.set_image_watermark secrets
+C-R20 | v2/words/ops#do.set_text_watermark ranges
+C-R20 | v2/words/ops#do.set_text_watermark secrets
+C-R20 | v2/words/ops#do.start_track_revisions ranges
+C-R20 | v2/words/ops#do.start_track_revisions secrets
+C-R20 | v2/words/ops#do.stop_track_revisions ranges
+C-R20 | v2/words/ops#do.stop_track_revisions secrets
+C-R20 | v2/words/ops#do.unprotect ranges
+C-R20 | v2/words/ops#do.unprotect secrets
+C-R20 | v2/words/ops#do.update_field ranges
+C-R20 | v2/words/ops#do.update_field secrets
+C-R20 | v2/words/ops#do.update_fields ranges
+C-R20 | v2/words/ops#do.update_fields secrets
+C-R20 | v2/words/ops#do.update_list_labels ranges
+C-R20 | v2/words/ops#do.update_list_labels secrets
+C-R20 | v2/words/ops#do.update_page_layout ranges
+C-R20 | v2/words/ops#do.update_page_layout secrets
+C-R20 | v2/words/ops#do.update_toc_page_numbers ranges
+C-R20 | v2/words/ops#do.update_toc_page_numbers secrets
+C-R20 | v2/words/ops#do.update_word_count ranges
+C-R20 | v2/words/ops#do.update_word_count secrets
+C-R20 | v2/words/ops#document ranges
+C-R20 | v2/words/ops#document secrets
+C-R20 | v2/words/ops#field ranges
+C-R20 | v2/words/ops#field secrets
+C-R20 | v2/words/ops#footnote ranges
+C-R20 | v2/words/ops#footnote secrets
+C-R20 | v2/words/ops#headerFooter ranges
+C-R20 | v2/words/ops#headerFooter secrets
+C-R20 | v2/words/ops#layout ranges
+C-R20 | v2/words/ops#layout secrets
+C-R20 | v2/words/ops#list ranges
+C-R20 | v2/words/ops#list secrets
+C-R20 | v2/words/ops#listLevel ranges
+C-R20 | v2/words/ops#listLevel secrets
+C-R20 | v2/words/ops#move ranges
+C-R20 | v2/words/ops#move secrets
+C-R20 | v2/words/ops#paragraph ranges
+C-R20 | v2/words/ops#paragraph secrets
+C-R20 | v2/words/ops#range ranges
+C-R20 | v2/words/ops#range secrets
+C-R20 | v2/words/ops#revision ranges
+C-R20 | v2/words/ops#revision secrets
+C-R20 | v2/words/ops#row ranges
+C-R20 | v2/words/ops#row secrets
+C-R20 | v2/words/ops#run ranges
+C-R20 | v2/words/ops#run secrets
+C-R20 | v2/words/ops#sdt ranges
+C-R20 | v2/words/ops#sdt secrets
+C-R20 | v2/words/ops#section ranges
+C-R20 | v2/words/ops#section secrets
+C-R20 | v2/words/ops#set ranges
+C-R20 | v2/words/ops#set secrets
+C-R20 | v2/words/ops#shape ranges
+C-R20 | v2/words/ops#shape secrets
+C-R20 | v2/words/ops#style ranges
+C-R20 | v2/words/ops#style secrets
+C-R20 | v2/words/ops#table ranges
+C-R20 | v2/words/ops#table secrets
 C-R20 | v2/words/read-result fixednames
 C-R20 | v2/words/read-result spelling
 C-R20 | v2/words/read-result variants
@@ -1839,9 +1427,6 @@ C-R20 | v2/words/render-result variants
 C-R20 | v2/words/search-result fixednames
 C-R20 | v2/words/search-result spelling
 C-R20 | v2/words/search-result variants
-C-R20 | v2/words/split-result fixednames
-C-R20 | v2/words/split-result spelling
-C-R20 | v2/words/split-result variants
 C-R21 | pdf add_attachment reads back
 C-R21 | pdf add_bookmark reads back
 C-R21 | pdf add_hyperlink reads back
@@ -1908,116 +1493,11 @@ C-R21 | v2/pdf/ops#set_page_size
 C-R21 | v2/pdf/ops#set_page_size unclassified
 C-R21 | v2/pdf/ops#set_properties
 C-R21 | v2/pdf/ops#set_properties unclassified
-C-R21 | v2/words/ops#accept_revisions
-C-R21 | v2/words/ops#accept_revisions unclassified
-C-R21 | v2/words/ops#add_comment
-C-R21 | v2/words/ops#add_comment unclassified
-C-R21 | v2/words/ops#clear_list
-C-R21 | v2/words/ops#clear_list unclassified
-C-R21 | v2/words/ops#define_style
-C-R21 | v2/words/ops#define_style unclassified
-C-R21 | v2/words/ops#delete_blocks
-C-R21 | v2/words/ops#delete_blocks unclassified
-C-R21 | v2/words/ops#delete_comments
-C-R21 | v2/words/ops#delete_comments unclassified
-C-R21 | v2/words/ops#delete_section
-C-R21 | v2/words/ops#delete_section unclassified
-C-R21 | v2/words/ops#delete_watermark
-C-R21 | v2/words/ops#delete_watermark unclassified
-C-R21 | v2/words/ops#format_text
-C-R21 | v2/words/ops#format_text unclassified
-C-R21 | v2/words/ops#import_sections
-C-R21 | v2/words/ops#import_sections unclassified
-C-R21 | v2/words/ops#insert_bookmark
-C-R21 | v2/words/ops#insert_bookmark unclassified
-C-R21 | v2/words/ops#insert_break
-C-R21 | v2/words/ops#insert_break unclassified
-C-R21 | v2/words/ops#insert_field
-C-R21 | v2/words/ops#insert_field unclassified
-C-R21 | v2/words/ops#insert_hyperlink
-C-R21 | v2/words/ops#insert_hyperlink unclassified
-C-R21 | v2/words/ops#insert_image
-C-R21 | v2/words/ops#insert_image unclassified
-C-R21 | v2/words/ops#insert_markdown
-C-R21 | v2/words/ops#insert_markdown unclassified
-C-R21 | v2/words/ops#insert_paragraphs
-C-R21 | v2/words/ops#insert_paragraphs unclassified
-C-R21 | v2/words/ops#insert_section
-C-R21 | v2/words/ops#insert_section unclassified
-C-R21 | v2/words/ops#insert_table
-C-R21 | v2/words/ops#insert_table unclassified
-C-R21 | v2/words/ops#insert_toc
-C-R21 | v2/words/ops#insert_toc unclassified
-C-R21 | v2/words/ops#mail_merge
-C-R21 | v2/words/ops#mail_merge unclassified
-C-R21 | v2/words/ops#protect_document
-C-R21 | v2/words/ops#protect_document unclassified
-C-R21 | v2/words/ops#refresh_fields
-C-R21 | v2/words/ops#refresh_fields unclassified
-C-R21 | v2/words/ops#reject_revisions
-C-R21 | v2/words/ops#reject_revisions unclassified
-C-R21 | v2/words/ops#repeat_table_row
-C-R21 | v2/words/ops#repeat_table_row unclassified
-C-R21 | v2/words/ops#replace_text
-C-R21 | v2/words/ops#replace_text unclassified
-C-R21 | v2/words/ops#set_default_font
-C-R21 | v2/words/ops#set_default_font unclassified
-C-R21 | v2/words/ops#set_footer
-C-R21 | v2/words/ops#set_footer unclassified
-C-R21 | v2/words/ops#set_header
-C-R21 | v2/words/ops#set_header unclassified
-C-R21 | v2/words/ops#set_list
-C-R21 | v2/words/ops#set_list unclassified
-C-R21 | v2/words/ops#set_page_numbers
-C-R21 | v2/words/ops#set_page_numbers unclassified
-C-R21 | v2/words/ops#set_page_setup
-C-R21 | v2/words/ops#set_page_setup unclassified
-C-R21 | v2/words/ops#set_properties
-C-R21 | v2/words/ops#set_properties unclassified
-C-R21 | v2/words/ops#set_style
-C-R21 | v2/words/ops#set_style unclassified
-C-R21 | v2/words/ops#set_table_cell
-C-R21 | v2/words/ops#set_table_cell unclassified
-C-R21 | v2/words/ops#set_table_pagination
-C-R21 | v2/words/ops#set_table_pagination unclassified
-C-R21 | v2/words/ops#set_table_style
-C-R21 | v2/words/ops#set_table_style unclassified
-C-R21 | v2/words/ops#set_text
-C-R21 | v2/words/ops#set_text unclassified
-C-R21 | v2/words/ops#set_watermark
-C-R21 | v2/words/ops#set_watermark unclassified
-C-R21 | v2/words/ops#unprotect_document
-C-R21 | v2/words/ops#unprotect_document unclassified
-C-R21 | words add_comment reads back
-C-R21 | words define_style reads back
-C-R21 | words format_text reads back
-C-R21 | words insert_break reads back
-C-R21 | words insert_field reads back
-C-R21 | words insert_hyperlink reads back
-C-R21 | words insert_image reads back
-C-R21 | words insert_paragraphs reads back
-C-R21 | words insert_section reads back
-C-R21 | words insert_table reads back
-C-R21 | words insert_toc reads back
-C-R21 | words protect_document reads back
-C-R21 | words set_default_font reads back
-C-R21 | words set_footer reads back
-C-R21 | words set_header reads back
-C-R21 | words set_list reads back
-C-R21 | words set_page_numbers reads back
-C-R21 | words set_page_setup reads back
-C-R21 | words set_properties reads back
-C-R21 | words set_style reads back
-C-R21 | words set_table_pagination reads back
-C-R21 | words set_table_style reads back
-C-R21 | words set_text reads back
-C-R21 | words set_watermark reads back
 C-R22 | cells edit --ops with a bare array
 C-R22 | pdf edit --ops with a bare array
 C-R22 | slides edit --ops with a bare array
 C-R22 | words edit --ops with a bare array
 C-R23 | pdf inspect succeeds in JSON mode
-C-R23 | words inspect succeeds in JSON mode
 C-R24 | common exit codes follow their category
 C-R24 | input file errors exit 3
 C-R24 | internal errors exit 1
@@ -2031,8 +1511,7 @@ C-R24 | pdf validate of a PDF that is not PDF/A
 C-R24 | timeouts exit 9
 C-R24 | unsupported format or content errors exit 6
 C-R24 | usage and option value errors exit 2
-C-R24 | words create interrupted by Ctrl+C
-C-R24 | words exit codes follow their category
+C-R24 | words convert interrupted by Ctrl+C
 C-R25 | cells corrupt input error details
 C-R25 | cells input over budget error details
 C-R25 | cells invalid option value error details
@@ -2080,11 +1559,8 @@ C-R25 | words invalid option value error details
 C-R25 | words missing argument error details
 C-R25 | words missing input error details
 C-R25 | words missing target error details
-C-R25 | words several invalid operations error details
 C-R25 | words unknown command error details
 C-R25 | words unknown created extension error details
-C-R25 | words unknown field error details
-C-R25 | words unknown op error details
 C-R25 | words unknown option error details
 C-R25 | words unknown output extension error details
 C-R25 | words unwritable output error details
@@ -2108,25 +1584,16 @@ C-R26 | slides convert --to gif as giff
 C-R26 | words command compare as cmopare
 C-R26 | words convert --out extension .azw3 as .azw33
 C-R26 | words convert --to azw3 as azw33
-C-R26 | words inspect --detail bookmarks as bookmarkss
-C-R26 | words inspect option --detail as --dteail
-C-R26 | words op accept_revisions as accept_revisionss
-C-R26 | words op accept_revisions field author as atuhor
-C-R26 | words op protect_document protection read-only as raed-only
 C-R27 | common warning codes
 C-R27 | pdf warning codes
 C-R27 | warning envelope shape
-C-R27 | words warning codes
 C-R28 | codes declared once
 C-R28 | common code names
 C-R28 | common not-found details
 C-R28 | evaluation codes
 C-R28 | pdf code names
 C-R28 | pdf not-found details
-C-R28 | words code names
-C-R28 | words not-found details
 C-R29 | pdf edit
-C-R29 | words edit
 C-R30 | cells operations have samples
 C-R30 | pdf add_attachment
 C-R30 | pdf add_bookmark
@@ -2161,53 +1628,7 @@ C-R30 | pdf set_properties
 C-R30 | pdf targets read <unit>/<address>
 C-R30 | slides operations have samples
 C-R30 | v2/pdf/edit-result applied
-C-R30 | v2/words/edit-result applied
-C-R30 | words accept_revisions
-C-R30 | words add_comment
-C-R30 | words applied[] has no index
-C-R30 | words clear_list
-C-R30 | words define_style
-C-R30 | words delete_blocks
-C-R30 | words delete_comments
-C-R30 | words delete_section
-C-R30 | words delete_watermark
-C-R30 | words delete_watermark on a document without a watermark
-C-R30 | words format_text
-C-R30 | words import_sections
-C-R30 | words insert_bookmark
-C-R30 | words insert_break
-C-R30 | words insert_field
-C-R30 | words insert_hyperlink
-C-R30 | words insert_image
-C-R30 | words insert_markdown
-C-R30 | words insert_paragraphs
-C-R30 | words insert_section
-C-R30 | words insert_table
-C-R30 | words insert_toc
-C-R30 | words mail_merge
 C-R30 | words operations have samples
-C-R30 | words protect_document
-C-R30 | words refresh_fields
-C-R30 | words reject_revisions
-C-R30 | words repeat_table_row
-C-R30 | words replace_text
-C-R30 | words set_default_font
-C-R30 | words set_footer
-C-R30 | words set_header
-C-R30 | words set_list
-C-R30 | words set_list on a number style and a first number
-C-R30 | words set_list on a parenthesized number format
-C-R30 | words set_page_numbers
-C-R30 | words set_page_setup
-C-R30 | words set_properties
-C-R30 | words set_style
-C-R30 | words set_table_cell
-C-R30 | words set_table_pagination
-C-R30 | words set_table_style
-C-R30 | words set_text
-C-R30 | words set_watermark
-C-R30 | words targets read <unit>/<address>
-C-R30 | words unprotect_document
 C-R31 | cells edit paths
 C-R31 | cells render paths
 C-R31 | pdf edit paths
@@ -2332,20 +1753,14 @@ C-R31 | v2/words/edit-result fields
 C-R31 | v2/words/edit-result outputs
 C-R31 | v2/words/extract-result fields
 C-R31 | v2/words/extract-result outputs
-C-R31 | v2/words/inspect-result fields
-C-R31 | v2/words/inspect-result outputs
 C-R31 | v2/words/read-result fields
 C-R31 | v2/words/read-result outputs
 C-R31 | v2/words/render-result fields
 C-R31 | v2/words/render-result outputs
 C-R31 | v2/words/search-result fields
 C-R31 | v2/words/search-result outputs
-C-R31 | v2/words/split-result fields
-C-R31 | v2/words/split-result outputs
 C-R31 | words edit paths
-C-R31 | words inspect paths
 C-R31 | words render paths
-C-R31 | words split units
 C-R32 | v2/cells/read-result input
 C-R32 | v2/cells/read-result units
 C-R32 | v2/cells/search-result hits
@@ -2610,113 +2025,6 @@ C-R33 | v2/words/edit-result none
 C-R33 | v2/words/extract-result envelope
 C-R33 | v2/words/extract-result names
 C-R33 | v2/words/extract-result none
-C-R33 | v2/words/inspect-result envelope
-C-R33 | v2/words/inspect-result names
-C-R33 | v2/words/inspect-result none
-C-R33 | v2/words/ops names
-C-R33 | v2/words/ops none
-C-R33 | v2/words/ops#accept_revisions names
-C-R33 | v2/words/ops#accept_revisions none
-C-R33 | v2/words/ops#add_comment names
-C-R33 | v2/words/ops#add_comment none
-C-R33 | v2/words/ops#clear_list names
-C-R33 | v2/words/ops#clear_list none
-C-R33 | v2/words/ops#color names
-C-R33 | v2/words/ops#color none
-C-R33 | v2/words/ops#define_style names
-C-R33 | v2/words/ops#define_style none
-C-R33 | v2/words/ops#delete_blocks names
-C-R33 | v2/words/ops#delete_blocks none
-C-R33 | v2/words/ops#delete_comments names
-C-R33 | v2/words/ops#delete_comments none
-C-R33 | v2/words/ops#delete_section names
-C-R33 | v2/words/ops#delete_section none
-C-R33 | v2/words/ops#delete_watermark names
-C-R33 | v2/words/ops#delete_watermark none
-C-R33 | v2/words/ops#format_text names
-C-R33 | v2/words/ops#format_text none
-C-R33 | v2/words/ops#id names
-C-R33 | v2/words/ops#id none
-C-R33 | v2/words/ops#import_sections names
-C-R33 | v2/words/ops#import_sections none
-C-R33 | v2/words/ops#insert_bookmark names
-C-R33 | v2/words/ops#insert_bookmark none
-C-R33 | v2/words/ops#insert_break names
-C-R33 | v2/words/ops#insert_break none
-C-R33 | v2/words/ops#insert_field names
-C-R33 | v2/words/ops#insert_field none
-C-R33 | v2/words/ops#insert_hyperlink names
-C-R33 | v2/words/ops#insert_hyperlink none
-C-R33 | v2/words/ops#insert_image names
-C-R33 | v2/words/ops#insert_image none
-C-R33 | v2/words/ops#insert_markdown names
-C-R33 | v2/words/ops#insert_markdown none
-C-R33 | v2/words/ops#insert_paragraphs names
-C-R33 | v2/words/ops#insert_paragraphs none
-C-R33 | v2/words/ops#insert_section names
-C-R33 | v2/words/ops#insert_section none
-C-R33 | v2/words/ops#insert_table names
-C-R33 | v2/words/ops#insert_table none
-C-R33 | v2/words/ops#insert_toc names
-C-R33 | v2/words/ops#insert_toc none
-C-R33 | v2/words/ops#mail_merge names
-C-R33 | v2/words/ops#mail_merge none
-C-R33 | v2/words/ops#pageSizeInput names
-C-R33 | v2/words/ops#pageSizeInput none
-C-R33 | v2/words/ops#pages names
-C-R33 | v2/words/ops#pages none
-C-R33 | v2/words/ops#position names
-C-R33 | v2/words/ops#position none
-C-R33 | v2/words/ops#protect_document names
-C-R33 | v2/words/ops#protect_document none
-C-R33 | v2/words/ops#refresh_fields names
-C-R33 | v2/words/ops#refresh_fields none
-C-R33 | v2/words/ops#reject_revisions names
-C-R33 | v2/words/ops#reject_revisions none
-C-R33 | v2/words/ops#repeat_table_row names
-C-R33 | v2/words/ops#repeat_table_row none
-C-R33 | v2/words/ops#replace_text names
-C-R33 | v2/words/ops#replace_text none
-C-R33 | v2/words/ops#set_default_font names
-C-R33 | v2/words/ops#set_default_font none
-C-R33 | v2/words/ops#set_footer names
-C-R33 | v2/words/ops#set_footer none
-C-R33 | v2/words/ops#set_header names
-C-R33 | v2/words/ops#set_header none
-C-R33 | v2/words/ops#set_list names
-C-R33 | v2/words/ops#set_list none
-C-R33 | v2/words/ops#set_page_numbers names
-C-R33 | v2/words/ops#set_page_numbers none
-C-R33 | v2/words/ops#set_page_setup names
-C-R33 | v2/words/ops#set_page_setup none
-C-R33 | v2/words/ops#set_properties names
-C-R33 | v2/words/ops#set_properties none
-C-R33 | v2/words/ops#set_style names
-C-R33 | v2/words/ops#set_style none
-C-R33 | v2/words/ops#set_table_cell names
-C-R33 | v2/words/ops#set_table_cell none
-C-R33 | v2/words/ops#set_table_pagination names
-C-R33 | v2/words/ops#set_table_pagination none
-C-R33 | v2/words/ops#set_table_style names
-C-R33 | v2/words/ops#set_table_style none
-C-R33 | v2/words/ops#set_text names
-C-R33 | v2/words/ops#set_text none
-C-R33 | v2/words/ops#set_watermark names
-C-R33 | v2/words/ops#set_watermark none
-C-R33 | v2/words/ops#unprotect_document names
-C-R33 | v2/words/ops#unprotect_document none
-C-R33 | v2/words/ops#webLink names
-C-R33 | v2/words/ops#webLink none
-C-R33 | v2/words/ops#wordsListInput names
-C-R33 | v2/words/ops#wordsListInput none
-C-R33 | v2/words/ops#wordsMarginInput names
-C-R33 | v2/words/ops#wordsMarginInput none
-C-R33 | v2/words/ops#wordsPageSetupInput names
-C-R33 | v2/words/ops#wordsPageSetupInput none
-C-R33 | v2/words/ops#wordsParagraphInput names
-C-R33 | v2/words/ops#wordsParagraphInput none
-C-R33 | v2/words/ops#wordsTarget names
-C-R33 | v2/words/ops#wordsTarget none
 C-R33 | v2/words/read-result envelope
 C-R33 | v2/words/read-result names
 C-R33 | v2/words/read-result none
@@ -2726,9 +2034,6 @@ C-R33 | v2/words/render-result none
 C-R33 | v2/words/search-result envelope
 C-R33 | v2/words/search-result names
 C-R33 | v2/words/search-result none
-C-R33 | v2/words/split-result envelope
-C-R33 | v2/words/split-result names
-C-R33 | v2/words/split-result none
 C-R34 | capabilities
 C-R34 | cells convert
 C-R34 | cells create
@@ -2771,11 +2076,9 @@ C-R34 | words convert
 C-R34 | words create
 C-R34 | words edit
 C-R34 | words extract
-C-R34 | words inspect
 C-R34 | words read
 C-R34 | words render
 C-R34 | words search
-C-R34 | words split
 C-R35 | --version
 C-R35 | --version in JSON mode
 C-R35 | aspose-cli --help
@@ -2825,11 +2128,9 @@ C-R35 | words convert --help
 C-R35 | words create --help
 C-R35 | words edit --help
 C-R35 | words extract --help
-C-R35 | words inspect --help
 C-R35 | words read --help
 C-R35 | words render --help
 C-R35 | words search --help
-C-R35 | words split --help
 C-R36 | cells convert --to
 C-R36 | cells formats
 C-R36 | cells render --to
@@ -2843,7 +2144,6 @@ C-R36 | words convert --to
 C-R36 | words formats
 C-R36 | words render --to
 C-R37 | pdf inspect --verbose in json mode
-C-R37 | words inspect --verbose in json mode
 C-R38 | KNOWN-ISSUES.md
 C-R38 | README.md
 C-R38 | src reading
@@ -2882,41 +2182,15 @@ C-R39 | pdf set_page_labels round trip
 C-R39 | pdf set_page_size round trip
 C-R39 | pdf set_properties round trip
 C-R39 | slides round-trip exemptions
-C-R39 | words add_comment round trip
-C-R39 | words define_style round trip
-C-R39 | words format_text round trip
-C-R39 | words insert_break round trip
-C-R39 | words insert_field round trip
-C-R39 | words insert_hyperlink round trip
-C-R39 | words insert_image round trip
-C-R39 | words insert_paragraphs round trip
-C-R39 | words insert_section round trip
-C-R39 | words insert_table round trip
-C-R39 | words insert_toc round trip
-C-R39 | words protect_document round trip
 C-R39 | words round-trip exemptions
-C-R39 | words set_default_font round trip
-C-R39 | words set_footer round trip
-C-R39 | words set_header round trip
-C-R39 | words set_list round trip
-C-R39 | words set_page_numbers round trip
-C-R39 | words set_page_setup round trip
-C-R39 | words set_properties round trip
-C-R39 | words set_style round trip
-C-R39 | words set_table_pagination round trip
-C-R39 | words set_table_style round trip
-C-R39 | words set_text round trip
-C-R39 | words set_watermark round trip
 C-R40 | convert file shape
 C-R40 | create file shape
 C-R40 | edit file shape
 C-R40 | extract file shape
 C-R40 | historical shapes
-C-R40 | inspect file shape
 C-R40 | read file shape
 C-R40 | render file shape
 C-R40 | search file shape
-C-R40 | split file shape
 C-R42 | cells edit xlsx -> .xlsx
 C-R42 | pdf convert pdf -> docx
 C-R42 | pdf convert pdf -> epub
@@ -2930,37 +2204,7 @@ C-R42 | pdf convert pdf -> txt
 C-R42 | pdf convert pdf -> xlsx
 C-R42 | pdf edit pdf -> .pdf
 C-R42 | slides edit pptx -> .pptx
-C-R42 | words convert docx -> azw3
-C-R42 | words convert docx -> doc
-C-R42 | words convert docx -> docm
-C-R42 | words convert docx -> docx
-C-R42 | words convert docx -> dot
-C-R42 | words convert docx -> dotm
-C-R42 | words convert docx -> dotx
-C-R42 | words convert docx -> epub
-C-R42 | words convert docx -> flatopc
-C-R42 | words convert docx -> html
-C-R42 | words convert docx -> html-fixed
-C-R42 | words convert docx -> md
-C-R42 | words convert docx -> mhtml
-C-R42 | words convert docx -> mobi
-C-R42 | words convert docx -> odt
-C-R42 | words convert docx -> ott
-C-R42 | words convert docx -> pdf
-C-R42 | words convert docx -> rtf
-C-R42 | words convert docx -> txt
-C-R42 | words convert docx -> wordml
-C-R42 | words edit docx -> .doc
-C-R42 | words edit docx -> .docm
 C-R42 | words edit docx -> .docx
-C-R42 | words edit docx -> .dot
-C-R42 | words edit docx -> .dotm
-C-R42 | words edit docx -> .dotx
-C-R42 | words edit docx -> .odt
-C-R42 | words edit docx -> .ott
-C-R42 | words edit docx -> .rtf
-C-R42 | words edit docx -> .xml
-C-R43 | words replace_text
 C-R44 | cells set chart at a missing address
 C-R44 | cells set comment at a missing address
 C-R44 | cells set dataField at a missing address
@@ -2986,6 +2230,21 @@ C-R44 | slides set run at a missing address
 C-R44 | slides set series at a missing address
 C-R44 | slides set shape at a missing address
 C-R44 | slides set slide at a missing address
+C-R44 | words set bookmark at a missing address
+C-R44 | words set cell at a missing address
+C-R44 | words set comment at a missing address
+C-R44 | words set customProperty at a missing address
+C-R44 | words set field at a missing address
+C-R44 | words set footnote at a missing address
+C-R44 | words set listLevel at a missing address
+C-R44 | words set paragraph at a missing address
+C-R44 | words set row at a missing address
+C-R44 | words set run at a missing address
+C-R44 | words set sdt at a missing address
+C-R44 | words set section at a missing address
+C-R44 | words set shape at a missing address
+C-R44 | words set style at a missing address
+C-R44 | words set table at a missing address
 corrupt-input | cells convert
 corrupt-input | cells edit
 corrupt-input | cells read
@@ -3012,21 +2271,14 @@ corrupt-input | words compare
 corrupt-input | words convert
 corrupt-input | words edit
 corrupt-input | words extract
-corrupt-input | words inspect
 corrupt-input | words read
 corrupt-input | words render
 corrupt-input | words search
-corrupt-input | words split
 dry-run | pdf edit --dry-run
 dry-run | pdf edit --dry-run --in-place
 dry-run | pdf edit --dry-run --out out.pdf
 dry-run | pdf edit --in-place
 dry-run | pdf edit --out out.pdf
-dry-run | words edit --dry-run
-dry-run | words edit --dry-run --in-place
-dry-run | words edit --dry-run --out out.docx
-dry-run | words edit --in-place
-dry-run | words edit --out out.docx
 evaluation-disclosed | cells convert
 evaluation-disclosed | cells create
 evaluation-disclosed | cells edit
@@ -3047,9 +2299,7 @@ evaluation-disclosed | words compare
 evaluation-disclosed | words convert
 evaluation-disclosed | words create
 evaluation-disclosed | words edit
-evaluation-disclosed | words extract
 evaluation-disclosed | words render
-evaluation-disclosed | words split
 invalid-enum | aspose-cli --license-mode autoo
 invalid-enum | cells convert --to csvv
 invalid-enum | cells render --to jpegg
@@ -3071,14 +2321,9 @@ invalid-enum | skill install --host calude-code
 invalid-enum | slides convert --to giff
 invalid-enum | slides extract --what mediaa
 invalid-enum | slides render --to jpegg
-invalid-enum | words compare --granularity charr
 invalid-enum | words convert --to azw33
-invalid-enum | words extract --what cmoments
-invalid-enum | words inspect --detail bookmarkss
-invalid-enum | words read --content fulll
+invalid-enum | words extract --what iamges
 invalid-enum | words render --to jpegg
-invalid-enum | words search --scope alll
-invalid-enum | words split --by haeding1
 missing-input | cells convert
 missing-input | cells edit
 missing-input | cells read
@@ -3105,11 +2350,9 @@ missing-input | words compare
 missing-input | words convert
 missing-input | words edit
 missing-input | words extract
-missing-input | words inspect
 missing-input | words read
 missing-input | words render
 missing-input | words search
-missing-input | words split
 output-reopens | cells convert csv -> pdf
 output-reopens | cells convert csv -> xlsx
 output-reopens | cells convert tsv -> pdf
@@ -3263,40 +2506,21 @@ read-only | pdf search
 read-only | pdf validate
 read-only | slides read
 read-only | slides search
-read-only | words inspect
-read-only | words inspect --detail bookmarks
-read-only | words inspect --detail comments
-read-only | words inspect --detail fields
-read-only | words inspect --detail fonts
-read-only | words inspect --detail images
-read-only | words inspect --detail outline
-read-only | words inspect --detail properties
-read-only | words inspect --detail revisions
-read-only | words inspect --detail sections
-read-only | words inspect --detail styles
-read-only | words inspect --detail tables
 read-only | words read
 read-only | words search
 same-name-option | --at
-same-name-option | --author
 same-name-option | --bom
-same-name-option | --by
 same-name-option | --case-sensitive
-same-name-option | --content
-same-name-option | --detail
 same-name-option | --dpi
 same-name-option | --dry-run
+same-name-option | --encoding
 same-name-option | --encrypt
 same-name-option | --encrypt-env
 same-name-option | --encrypt-stdin
-same-name-option | --every
 same-name-option | --font-dir
 same-name-option | --from
-same-name-option | --from-markdown
-same-name-option | --from-text
 same-name-option | --in-place
 same-name-option | --kind
-same-name-option | --max-chars
 same-name-option | --max-hits
 same-name-option | --max-objects
 same-name-option | --ops
@@ -3315,7 +2539,6 @@ same-name-option | --skip
 same-name-option | --slides
 same-name-option | --template
 same-name-option | --to
-same-name-option | --verify
 same-name-option | --what
 secret-hidden | cells convert --encrypt
 secret-hidden | cells convert --encrypt-env
@@ -3335,6 +2558,8 @@ secret-hidden | cells edit --password-env
 secret-hidden | cells edit --password-env with a wrong password
 secret-hidden | cells edit --password-stdin
 secret-hidden | cells edit --password-stdin with a wrong password
+secret-hidden | cells edit protect_workbook
+secret-hidden | cells edit unprotect_workbook
 secret-hidden | cells read --password
 secret-hidden | cells read --password with a wrong password
 secret-hidden | cells read --password-env
@@ -3505,20 +2730,14 @@ secret-hidden | words edit --password-env
 secret-hidden | words edit --password-env with a wrong password
 secret-hidden | words edit --password-stdin
 secret-hidden | words edit --password-stdin with a wrong password
-secret-hidden | words edit protect_document
-secret-hidden | words edit unprotect_document
+secret-hidden | words edit protect
+secret-hidden | words edit unprotect
 secret-hidden | words extract --password
 secret-hidden | words extract --password with a wrong password
 secret-hidden | words extract --password-env
 secret-hidden | words extract --password-env with a wrong password
 secret-hidden | words extract --password-stdin
 secret-hidden | words extract --password-stdin with a wrong password
-secret-hidden | words inspect --password
-secret-hidden | words inspect --password with a wrong password
-secret-hidden | words inspect --password-env
-secret-hidden | words inspect --password-env with a wrong password
-secret-hidden | words inspect --password-stdin
-secret-hidden | words inspect --password-stdin with a wrong password
 secret-hidden | words read --password
 secret-hidden | words read --password with a wrong password
 secret-hidden | words read --password-env
@@ -3537,15 +2756,6 @@ secret-hidden | words search --password-env
 secret-hidden | words search --password-env with a wrong password
 secret-hidden | words search --password-stdin
 secret-hidden | words search --password-stdin with a wrong password
-secret-hidden | words split --encrypt
-secret-hidden | words split --encrypt-env
-secret-hidden | words split --encrypt-stdin
-secret-hidden | words split --password
-secret-hidden | words split --password with a wrong password
-secret-hidden | words split --password-env
-secret-hidden | words split --password-env with a wrong password
-secret-hidden | words split --password-stdin
-secret-hidden | words split --password-stdin with a wrong password
 unknown-command | capabilities as cpaabilities
 unknown-command | cells as cellss
 unknown-command | cells convert as cnovert
@@ -3592,11 +2802,9 @@ unknown-command | words convert as cnovert
 unknown-command | words create as cerate
 unknown-command | words edit as editt
 unknown-command | words extract as etxract
-unknown-command | words inspect as isnpect
 unknown-command | words read as readd
 unknown-command | words render as rneder
 unknown-command | words search as saerch
-unknown-command | words split as splitt
 unknown-field | pdf add_attachment.path as pathh
 unknown-field | pdf add_bookmark.title as titlee
 unknown-field | pdf add_footer_text.pages as pagess
@@ -3624,45 +2832,6 @@ unknown-field | pdf set_form_field.name as namee
 unknown-field | pdf set_page_labels.ranges as rnages
 unknown-field | pdf set_page_size.pages as pagess
 unknown-field | pdf set_properties.title as titlee
-unknown-field | words accept_revisions.author as atuhor
-unknown-field | words add_comment.target as traget
-unknown-field | words clear_list.target as traget
-unknown-field | words define_style.name as namee
-unknown-field | words delete_blocks.target as traget
-unknown-field | words delete_comments.author as atuhor
-unknown-field | words delete_section.section as scetion
-unknown-field | words format_text.target as traget
-unknown-field | words import_sections.path as pathh
-unknown-field | words insert_bookmark.target as traget
-unknown-field | words insert_break.at as att
-unknown-field | words insert_field.at as att
-unknown-field | words insert_hyperlink.at as att
-unknown-field | words insert_image.at as att
-unknown-field | words insert_markdown.at as att
-unknown-field | words insert_paragraphs.at as att
-unknown-field | words insert_section.at as att
-unknown-field | words insert_table.at as att
-unknown-field | words insert_toc.at as att
-unknown-field | words mail_merge.path as pathh
-unknown-field | words protect_document.protection as portection
-unknown-field | words refresh_fields.what as whatt
-unknown-field | words reject_revisions.author as atuhor
-unknown-field | words repeat_table_row.target as traget
-unknown-field | words replace_text.find as findd
-unknown-field | words set_default_font.font as fontt
-unknown-field | words set_footer.section as scetion
-unknown-field | words set_header.section as scetion
-unknown-field | words set_list.target as traget
-unknown-field | words set_page_numbers.section as scetion
-unknown-field | words set_page_setup.section as scetion
-unknown-field | words set_properties.title as titlee
-unknown-field | words set_style.target as traget
-unknown-field | words set_table_cell.target as traget
-unknown-field | words set_table_pagination.target as traget
-unknown-field | words set_table_style.target as traget
-unknown-field | words set_text.target as traget
-unknown-field | words set_watermark.text as textt
-unknown-field | words unprotect_document.passwordEnv as psaswordEnv
 unknown-op | pdf add_attachment as add_attachmentt
 unknown-op | pdf add_bookmark as add_bookmarkk
 unknown-op | pdf add_footer_text as add_footer_textt
@@ -3691,46 +2860,6 @@ unknown-op | pdf set_form_field as ste_form_field
 unknown-op | pdf set_page_labels as ste_page_labels
 unknown-op | pdf set_page_size as ste_page_size
 unknown-op | pdf set_properties as ste_properties
-unknown-op | words accept_revisions as accept_revisionss
-unknown-op | words add_comment as add_commentt
-unknown-op | words clear_list as celar_list
-unknown-op | words define_style as dfeine_style
-unknown-op | words delete_blocks as dleete_blocks
-unknown-op | words delete_comments as dleete_comments
-unknown-op | words delete_section as dleete_section
-unknown-op | words delete_watermark as dleete_watermark
-unknown-op | words format_text as fromat_text
-unknown-op | words import_sections as ipmort_sections
-unknown-op | words insert_bookmark as isnert_bookmark
-unknown-op | words insert_break as isnert_break
-unknown-op | words insert_field as isnert_field
-unknown-op | words insert_hyperlink as isnert_hyperlink
-unknown-op | words insert_image as isnert_image
-unknown-op | words insert_markdown as isnert_markdown
-unknown-op | words insert_paragraphs as isnert_paragraphs
-unknown-op | words insert_section as isnert_section
-unknown-op | words insert_table as isnert_table
-unknown-op | words insert_toc as isnert_toc
-unknown-op | words mail_merge as mial_merge
-unknown-op | words protect_document as portect_document
-unknown-op | words refresh_fields as rferesh_fields
-unknown-op | words reject_revisions as rjeect_revisions
-unknown-op | words repeat_table_row as rpeeat_table_row
-unknown-op | words replace_text as rpelace_text
-unknown-op | words set_default_font as ste_default_font
-unknown-op | words set_footer as ste_footer
-unknown-op | words set_header as ste_header
-unknown-op | words set_list as ste_list
-unknown-op | words set_page_numbers as ste_page_numbers
-unknown-op | words set_page_setup as ste_page_setup
-unknown-op | words set_properties as ste_properties
-unknown-op | words set_style as ste_style
-unknown-op | words set_table_cell as ste_table_cell
-unknown-op | words set_table_pagination as ste_table_pagination
-unknown-op | words set_table_style as ste_table_style
-unknown-op | words set_text as ste_text
-unknown-op | words set_watermark as ste_watermark
-unknown-op | words unprotect_document as upnrotect_document
 unknown-option | aspose-cli --help as --helpp
 unknown-option | aspose-cli --license as --lciense
 unknown-option | aspose-cli --license-mode as --lciense-mode
@@ -3998,10 +3127,18 @@ unknown-option | slides search --pattern as --ptatern
 unknown-option | slides search --regex as --regexx
 unknown-option | slides search --skip as --skipp
 unknown-option | words compare --author as --atuhor
+unknown-option | words compare --date-time as --dtae-time
 unknown-option | words compare --dry-run as --dyr-run
 unknown-option | words compare --font-dir as --fnot-dir
 unknown-option | words compare --granularity as --garnularity
+unknown-option | words compare --ignore-case-changes as --ingore-case-changes
+unknown-option | words compare --ignore-comments as --ingore-comments
+unknown-option | words compare --ignore-fields as --ingore-fields
+unknown-option | words compare --ignore-footnotes as --ingore-footnotes
 unknown-option | words compare --ignore-formatting as --ingore-formatting
+unknown-option | words compare --ignore-headers-and-footers as --ingore-headers-and-footers
+unknown-option | words compare --ignore-tables as --ingore-tables
+unknown-option | words compare --ignore-textboxes as --ingore-textboxes
 unknown-option | words compare --left-password as --lfet-password
 unknown-option | words compare --left-password-env as --lfet-password-env
 unknown-option | words compare --left-password-stdin as --lfet-password-stdin
@@ -4010,11 +3147,16 @@ unknown-option | words compare --overwrite as --oevrwrite
 unknown-option | words compare --right-password as --rgiht-password
 unknown-option | words compare --right-password-env as --rgiht-password-env
 unknown-option | words compare --right-password-stdin as --rgiht-password-stdin
+unknown-option | words convert --auto-numbering-detection as --atuo-numbering-detection
+unknown-option | words convert --detect-hyperlinks as --dteect-hyperlinks
+unknown-option | words convert --detect-numbering-with-whitespaces as --dteect-numbering-with-whitespaces
 unknown-option | words convert --dry-run as --dyr-run
+unknown-option | words convert --encoding as --ecnoding
 unknown-option | words convert --encrypt as --ecnrypt
 unknown-option | words convert --encrypt-env as --ecnrypt-env
 unknown-option | words convert --encrypt-stdin as --ecnrypt-stdin
 unknown-option | words convert --font-dir as --fnot-dir
+unknown-option | words convert --leading-spaces as --laeding-spaces
 unknown-option | words convert --out as --outt
 unknown-option | words convert --overwrite as --oevrwrite
 unknown-option | words convert --pages as --pagess
@@ -4026,14 +3168,8 @@ unknown-option | words create --dry-run as --dyr-run
 unknown-option | words create --encrypt as --ecnrypt
 unknown-option | words create --encrypt-env as --ecnrypt-env
 unknown-option | words create --encrypt-stdin as --ecnrypt-stdin
-unknown-option | words create --font-dir as --fnot-dir
-unknown-option | words create --from-markdown as --form-markdown
-unknown-option | words create --from-text as --form-text
 unknown-option | words create --overwrite as --oevrwrite
 unknown-option | words create --template as --tmeplate
-unknown-option | words create --title as --titlee
-unknown-option | words edit --author as --atuhor
-unknown-option | words edit --dry-run as --dyr-run
 unknown-option | words edit --encrypt as --ecnrypt
 unknown-option | words edit --encrypt-env as --ecnrypt-env
 unknown-option | words edit --encrypt-stdin as --ecnrypt-stdin
@@ -4045,10 +3181,6 @@ unknown-option | words edit --overwrite as --oevrwrite
 unknown-option | words edit --password as --psasword
 unknown-option | words edit --password-env as --psasword-env
 unknown-option | words edit --password-stdin as --psasword-stdin
-unknown-option | words edit --set as --sett
-unknown-option | words edit --track-changes as --tarck-changes
-unknown-option | words edit --verify as --vreify
-unknown-option | words extract --bom as --bomm
 unknown-option | words extract --dry-run as --dyr-run
 unknown-option | words extract --out-dir as --otu-dir
 unknown-option | words extract --overwrite as --oevrwrite
@@ -4056,19 +3188,13 @@ unknown-option | words extract --password as --psasword
 unknown-option | words extract --password-env as --psasword-env
 unknown-option | words extract --password-stdin as --psasword-stdin
 unknown-option | words extract --what as --whatt
-unknown-option | words inspect --detail as --dteail
-unknown-option | words inspect --font-dir as --fnot-dir
-unknown-option | words inspect --password as --psasword
-unknown-option | words inspect --password-env as --psasword-env
-unknown-option | words inspect --password-stdin as --psasword-stdin
-unknown-option | words read --blocks as --bolcks
-unknown-option | words read --content as --cnotent
-unknown-option | words read --max-blocks as --mxa-blocks
-unknown-option | words read --max-chars as --mxa-chars
+unknown-option | words read --at as --att
+unknown-option | words read --from as --fromm
+unknown-option | words read --kind as --kindd
+unknown-option | words read --max-objects as --mxa-objects
 unknown-option | words read --password as --psasword
 unknown-option | words read --password-env as --psasword-env
 unknown-option | words read --password-stdin as --psasword-stdin
-unknown-option | words read --section as --scetion
 unknown-option | words render --dpi as --dpii
 unknown-option | words render --dry-run as --dyr-run
 unknown-option | words render --font-dir as --fnot-dir
@@ -4086,21 +3212,7 @@ unknown-option | words search --password-env as --psasword-env
 unknown-option | words search --password-stdin as --psasword-stdin
 unknown-option | words search --pattern as --ptatern
 unknown-option | words search --regex as --regexx
-unknown-option | words search --scope as --scopee
 unknown-option | words search --skip as --skipp
-unknown-option | words split --by as --byy
-unknown-option | words split --dry-run as --dyr-run
-unknown-option | words split --encrypt as --ecnrypt
-unknown-option | words split --encrypt-env as --ecnrypt-env
-unknown-option | words split --encrypt-stdin as --ecnrypt-stdin
-unknown-option | words split --every as --everyy
-unknown-option | words split --font-dir as --fnot-dir
-unknown-option | words split --out-dir as --otu-dir
-unknown-option | words split --overwrite as --oevrwrite
-unknown-option | words split --pages as --pagess
-unknown-option | words split --password as --psasword
-unknown-option | words split --password-env as --psasword-env
-unknown-option | words split --password-stdin as --psasword-stdin
 unwritable-output | cells convert --to csv --out out.ppt
 unwritable-output | cells convert --to html --out out.ppt
 unwritable-output | cells convert --to json --out out.ppt

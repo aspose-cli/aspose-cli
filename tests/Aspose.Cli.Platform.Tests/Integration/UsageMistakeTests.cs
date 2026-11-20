@@ -62,10 +62,11 @@ public sealed class UsageMistakeTests : IDisposable
 
     /// <summary>A switch takes a value only when one is written, and an option beside it keeps its own.</summary>
     [Theory]
-    [InlineData("words create s1.docx --overwrite --title Data", "s1.docx")]
+    [InlineData("words create s1.docx --overwrite --template t.docx", "s1.docx")]
     [InlineData("cells create s2.xlsx --overwrite true", "s2.xlsx")]
     public void ASwitch_StaysOptional(string commandLine, string file)
     {
+        Created("words", "t.docx");
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
         Assert.True(result.ExitCode == 0, result.StdErr);
@@ -156,20 +157,7 @@ public sealed class UsageMistakeTests : IDisposable
         File.WriteAllText(_workspace.File("in.md"), "# Title\n\nBody\n");
 
         Assert.Equal(0, _workspace.Run("pdf", "create", "new.pdf", "--from-markdown", "in.md", "--output-format", "json").ExitCode);
-        Assert.Equal(0, _workspace.Run("words", "create", "titled.docx", "--title", "--out", "--output-format", "json").ExitCode);
         Assert.True(File.Exists(_workspace.File("new.pdf")));
-        Assert.True(File.Exists(_workspace.File("titled.docx")));
-    }
-
-    // -- The names a search is written with from other tools ---------------------------------------
-
-    /// <summary>The products whose search has <c>--scope</c> keep it.</summary>
-    [Fact]
-    public void TheScopeOfTheOtherProducts_StillParses()
-    {
-        Created("words", "a.docx");
-
-        Assert.Equal(0, _workspace.Run("words", "search", "a.docx", "--pattern", "total", "--scope", "all", "--output-format", "json").ExitCode);
     }
 
     // -- A command line that holds a password -------------------------------------------------------

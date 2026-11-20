@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -8,19 +7,15 @@ using Xunit;
 namespace Aspose.Cli.Platform.Tests.Sdk;
 
 /// <summary>
-/// The SDK builds the warnings that name what an output or an operation left behind from closed
-/// sets of tokens: <c>ContentLoss</c> a <c>LOSSY_CONVERSION</c> with the <c>ContentKind</c> tokens
-/// in <c>details.content</c>, and <c>UnreplacedText</c> a <c>TEXT_NOT_REPLACED</c> with the
-/// <c>TextPart</c> token in <c>details.part</c>. A product picks a member of a set; a token outside
-/// it does not compile, and neither does a <c>TEXT_NOT_REPLACED</c> it makes or reads itself.
+/// The SDK builds the warning that names what an output left out from a closed set of tokens:
+/// <c>ContentLoss</c> a <c>LOSSY_CONVERSION</c> with the <c>ContentKind</c> tokens in
+/// <c>details.content</c>. A product picks a member of the set; a token outside it does not compile.
 /// </summary>
 public sealed class ContentLossTests
 {
     private const string Message = "The pdf output leaves out 2 comment(s): 2 on worksheet 'Data'.";
 
     public static TheoryData<string> Kinds() => [.. ContentKind.All.Select(static kind => kind.Token)];
-
-    public static TheoryData<string> Parts() => [.. TextPart.All.Select(static part => part.Token)];
 
     [Theory]
     [MemberData(nameof(Kinds))]
@@ -71,8 +66,7 @@ public sealed class ContentLossTests
 
     /// <summary>
     /// The kinds are kebab-case plural nouns, each once, and the set lists every kind the type
-    /// declares; the parts are kebab-case, each once, and the set lists every part. Each has the
-    /// sentence the schema publishes as its meaning.
+    /// declares. Each has the sentence the schema publishes as its meaning.
     /// </summary>
     [Fact]
     public void TheSets_ListEveryDeclaredMemberAsADistinctKebabCaseToken()
@@ -82,53 +76,16 @@ public sealed class ContentLossTests
         Assert.Equal(ContentKind.All.Count, ContentKind.All.Select(static kind => kind.Token).Distinct(StringComparer.Ordinal).Count());
         Assert.All(ContentKind.All, static kind => Assert.Matches("^[a-z]+(-[a-z]+)*s$", kind.Token));
         Assert.All(ContentKind.All, static kind => Assert.Matches(@"^[A-Z].*\.$", kind.Description));
-
-        Assert.Equal(Declared<TextPart>().Select(static part => part.Token).Order(StringComparer.Ordinal),
-            TextPart.All.Select(static part => part.Token).Order(StringComparer.Ordinal));
-        Assert.Equal(TextPart.All.Count, TextPart.All.Select(static part => part.Token).Distinct(StringComparer.Ordinal).Count());
-        Assert.All(TextPart.All, static part => Assert.Matches("^[a-z]+(-[a-z]+)*$", part.Token));
-        Assert.All(TextPart.All, static part => Assert.Matches(@"^[A-Z].*\.$", part.Description));
     }
-
-    [Theory]
-    [MemberData(nameof(Parts))]
-    public void EveryPart_MakesATextNotReplacedThatNamesItAndTheOperation(string token)
-    {
-        TextPart part = Assert.Single(TextPart.All, part => part.Token == token);
-
-        Warning warning = UnreplacedText.Found(part, new Operation { Id = "rename" }, "replace_text",
-            "Operation rename (replace_text) found a match in the comment of cell B2 and left it as it was.",
-            "comment/Data!B2", static () => true, docs: "cells/editing").Warning;
-
-        Assert.Equal(WarningCodes.TextNotReplaced, warning.Code);
-        Assert.Equal("TEXT_NOT_REPLACED", warning.Code.Name);
-        Assert.Equal("comment/Data!B2", warning.Location);
-        Assert.Equal("cells/editing", warning.Docs);
-        Assert.False(warning.AffectsCompleteness);
-        Assert.True(JsonNode.DeepEquals(new JsonObject { ["id"] = "rename", ["op"] = "replace_text", ["part"] = token }, warning.Details),
-            warning.Details?.ToJsonString());
-        Assert.Contains(WarningCodes.TextNotReplaced, WarningCodes.All);
-    }
-
-    /// <summary>A warning about an operation needs the id the batch gave it.</summary>
-    [Fact]
-    public void UnreplacedText_RefusesAnOperationWithoutAnId() =>
-        Assert.Throws<ArgumentException>(() => UnreplacedText.Found(TextPart.Comment, new Operation(), "replace_text", "m", "comment/Data!B2", static () => true));
 
     /// <summary>
-    /// A product picks a member of a set: a token written as a string, or a member it makes
-    /// itself, does not compile, while the same call with a member of the set does. The warning
-    /// of an <c>UnreplacedText</c> is the runner's to report, and its code is the SDK's alone.
+    /// A product picks a member of the set: a token written as a string, or a member it makes
+    /// itself, does not compile, while the same call with a member of the set does.
     /// </summary>
     [Theory]
     [InlineData("""ContentLoss.Warning([ContentKind.Comments], "m", "h")""", true)]
     [InlineData("""ContentLoss.Warning(["comments"], "m", "h")""", false)]
     [InlineData("""ContentLoss.Warning([new ContentKind("comments")], "m", "h")""", false)]
-    [InlineData("""UnreplacedText.Found(TextPart.Comment, operation, "replace_text", "m", "comment/Data!B2", () => true)""", true)]
-    [InlineData("""UnreplacedText.Found("comment", operation, "replace_text", "m", "comment/Data!B2", () => true)""", false)]
-    [InlineData("""UnreplacedText.Found(new TextPart("comment"), operation, "replace_text", "m", "comment/Data!B2", () => true)""", false)]
-    [InlineData("""UnreplacedText.Found(TextPart.Comment, operation, "replace_text", "m", "comment/Data!B2", () => true).Warning""", false)]
-    [InlineData("""new Warning(WarningCodes.TextNotReplaced, "m")""", false)]
     public void ATokenOutsideTheSet_DoesNotCompile(string call, bool compiles)
     {
         string source = $$"""

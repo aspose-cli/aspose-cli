@@ -8,11 +8,12 @@
         "exitCode": 0,
         "json": [
           { "path": "window.returned", "equals": 2 },
-          { "path": "hits[0].block", "equals": 2 },
+          { "path": "hits[0].at", "startsWith": "section/0/body/paragraph/" },
           { "path": "hits[0].text", "equals": "The" },
-          { "path": "hits[1].block", "equals": 2 },
+          { "path": "hits[0].offset", "equals": 0 },
+          { "path": "hits[1].at", "startsWith": "section/0/body/paragraph/" },
           { "path": "hits[1].text", "equals": "the" },
-          { "path": "hits[1].context", "equals": "The first paragraph of the seed document." }
+          { "path": "hits[1].offset", "equals": 23 }
         ]
       }
     }

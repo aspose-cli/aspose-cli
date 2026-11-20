@@ -85,7 +85,7 @@ internal static partial class ContractRules
                 }
                 JsonNode? value = SchemaValue(schema);
                 yield return Check("C-R44", $"{product.Id} set {kind} at a missing address",
-                    () => MissingAddress(product.Id, form, row, value), shard: product.Id, slow: !fast);
+                    () => MissingAddress(product.Id, form, row, value, definitions), shard: product.Id, slow: !fast);
                 fast = false;
             }
         }
@@ -99,7 +99,7 @@ internal static partial class ContractRules
     /// The kind's own keys are <see cref="MissingKeys"/>; a step without a key names nothing in a
     /// parent that holds none.
     /// </summary>
-    private static IEnumerable<string> MissingAddress(string product, string[] form, string row, JsonNode? value)
+    private static IEnumerable<string> MissingAddress(string product, string[] form, string row, JsonNode? value, JsonObject definitions)
     {
         int own = Array.FindLastIndex(form, static part => !IsKeyPart(part));
         string segment = form[own];
@@ -117,7 +117,7 @@ internal static partial class ContractRules
             {
                 yield break;
             }
-            var pattern = new Regex("^" + FormPattern(form[..own]) + "$", RegexOptions.CultureInvariant);
+            var pattern = new Regex("^" + FormPattern(form[..own], definitions) + "$", RegexOptions.CultureInvariant);
             string[] candidates = [.. addresses.Where(address => pattern.IsMatch(address))];
             string[] Below(string candidate) => [.. addresses.Where(address => address.StartsWith(candidate + "/", StringComparison.Ordinal))];
             parent = ownKeys.Length == 0
@@ -161,14 +161,21 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>Every address the product's read lists for its rich fixture, or the failure of that read; neither when evaluation mode stops it.</summary>
+    /// <summary>
+    /// Every address the product's read lists for its rich fixture, each kind of its schema named,
+    /// so a kind listed only when named is listed too; or the failure of that read; neither when
+    /// evaluation mode stops it.
+    /// </summary>
     private static (string[]? Addresses, string? Failure) ReadRichAddresses(string product)
     {
         using var workspace = new RuleWorkspace();
         string input = "input." + OperationRuns.Extension(product);
         workspace.Seed(input, ScenarioFixtures.Read($"{product}.rich"));
         CliCommand read = CliCatalog.Current.Command($"{product} read");
-        RuleRun run = workspace.Json([.. read.Tokens, input, .. read.Has("--max-objects") ? new[] { "--max-objects", "10000" } : []]);
+        string[] kinds = read.Has("--kind") && PublishedSchema.Document($"v2/{product}/ops")["$defs"] is JsonObject definitions
+            ? [.. definitions.Where(static definition => definition.Value?["x-addresses"] is JsonArray).SelectMany(static definition => new[] { "--kind", definition.Key })]
+            : [];
+        RuleRun run = workspace.Json([.. read.Tokens, input, .. kinds, .. read.Has("--max-objects") ? new[] { "--max-objects", "10000" } : []]);
         if (run.ExitCode != 0)
         {
             return run.Unjudged ? (null, null) : (null, $"{product} read of the rich fixture failed: {run.Describe()}");
@@ -183,17 +190,30 @@ internal static partial class ContractRules
     /// <summary>Whether a part of an address form is a key, such as <c>&lt;id&gt;</c> or the optional <c>[&lt;index&gt;]</c>.</summary>
     private static bool IsKeyPart(string part) => part.StartsWith('<') || part.StartsWith('[');
 
-    /// <summary>The pattern of the addresses an address form names: a segment as it is, a key by its kind, an optional key or none.</summary>
-    private static string FormPattern(string[] form)
+    /// <summary>
+    /// The pattern of the addresses an address form names: a segment as it is, a key by its kind,
+    /// an optional key or none, and a <c>{kind}</c> token, which stands for the address of an
+    /// object of that kind: any address that ends with the kind's own segment and a key.
+    /// </summary>
+    private static string FormPattern(string[] form, JsonObject definitions)
     {
         var pattern = new StringBuilder();
         foreach (string part in form)
         {
             pattern.Append(part.StartsWith('[')
                 ? $"(?:/{KeyPatterns[part.Trim('[', ']')]})?"
-                : (pattern.Length == 0 ? string.Empty : "/") + (part.StartsWith('<') ? KeyPatterns[part] : Regex.Escape(part)));
+                : (pattern.Length == 0 ? string.Empty : "/") + (part.StartsWith('<') ? KeyPatterns[part] : part.StartsWith('{') ? TokenPattern(part, definitions) : Regex.Escape(part)));
         }
         return pattern.ToString();
+    }
+
+    /// <summary>The addresses of a <c>{kind}</c> token's kind: any address ending with the last segment of the kind's first address form and a key.</summary>
+    private static string TokenPattern(string token, JsonObject definitions)
+    {
+        string kind = token.Trim('{', '}');
+        string segment = definitions[kind]?["x-addresses"]?[0]?.GetValue<string>().Split('/').Last(static part => !IsKeyPart(part) && !part.StartsWith('{'))
+            ?? throw new InvalidOperationException($"The address token {token} names no kind of the schema.");
+        return $"(?:.+/)?{Regex.Escape(segment)}/[^/]+";
     }
 
     /// <summary>A value a row's schema accepts: its first enum value, else one of its first type that is not null.</summary>

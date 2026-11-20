@@ -13,9 +13,6 @@ public sealed class OperationTimeoutIdTests
 {
     private const string Pattern = "(a+)+$";
 
-    // Words refuses a replace_text anchor, so its expression fails at a letter instead.
-    private const string UnanchoredPattern = "(a+)+b";
-
     // Nested repetition over forty letters and a mismatch backtracks far beyond the one-second budget.
     private static readonly string Text = new string('a', 40) + "!";
 
@@ -36,8 +33,6 @@ public sealed class OperationTimeoutIdTests
             "pdf" => ("text.pdf", new JsonObject { ["text.txt"] = Source(Text + "\n") },
                 new JsonArray("pdf", "create", "text.pdf", "--from-text", "text.txt"),
                 new JsonObject { ["op"] = "redact_text", ["find"] = Pattern, ["regex"] = true }),
-            "words" => ("text.docx", new JsonObject { ["text.txt"] = Source(Text + "\n") },
-                new JsonArray("words", "create", "text.docx", "--from-text", "text.txt"), ReplaceText(UnanchoredPattern)),
             _ => throw new ArgumentOutOfRangeException(nameof(product), product, null),
         };
         string name = op["op"]!.GetValue<string>();

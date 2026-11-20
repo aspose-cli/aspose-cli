@@ -356,9 +356,22 @@ public static partial class ScenarioRunner
                 }
                 continue;
             }
-            // The command that only reads a file: inspect, or read for a product without inspect.
+            // The command that only reads a file: inspect, or read for a product without inspect;
+            // an input only convert opens is converted to the product's own format beside it.
             string verb = catalog.Commands.Any(command => command.Words == $"{reader} inspect") ? "inspect" : "read";
-            CliResult reopened = Execute(workspace, [reader, verb, path, "--output-format", "json"], env: null, stdin: null);
+            string? converted = null;
+            string[] reopen = [reader, verb, path, "--output-format", "json"];
+            if (ConvertOnlyInputs.Options(reader, path) is { } options)
+            {
+                verb = "convert";
+                converted = Path.Combine(Path.GetDirectoryName(path)!, $"reopened-{Guid.NewGuid():N}.{ScenarioFixtures.PrimaryFormat(reader)}");
+                reopen = [reader, verb, path, .. options, "--out", converted, "--output-format", "json"];
+            }
+            CliResult reopened = Execute(workspace, reopen, env: null, stdin: null);
+            if (converted is not null)
+            {
+                File.Delete(converted);
+            }
             if (reopened.ExitCode != 0)
             {
                 JsonNode? failure = ErrorOf(reopened.StdErr);

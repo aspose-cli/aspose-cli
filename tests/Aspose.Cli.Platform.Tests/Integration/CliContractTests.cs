@@ -422,7 +422,7 @@ public sealed class CliContractTests : IDisposable
     public void SchemaOperation_ReturnsExactViewAndUnknownIdsAreActionable()
     {
         CliResult capabilitiesResult = _workspace.Run(
-            "capabilities", "words", "edit", "--output-format", "json");
+            "capabilities", "pdf", "edit", "--output-format", "json");
         Assert.Equal(0, capabilitiesResult.ExitCode);
         JsonNode capabilities = Parse(capabilitiesResult.StdOut);
         JsonNode operation = capabilities["products"]![0]!["operations"]![0]!;

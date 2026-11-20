@@ -18,6 +18,9 @@ public sealed record WordsRenderResult() : EngineResultEnvelope("render-result")
     [Minimum(RenderPixelGuard.MinimumDpi)]
     [Maximum(RenderPixelGuard.MaximumDpi)]
     public int? Dpi { get; init; }
+
+    /// <summary>The warnings Aspose.Words reported, as it reported them; omitted when there were none.</summary>
+    public IReadOnlyList<EngineWarning>? EngineWarnings { get; init; }
 }
 
 /// <summary>One rendered page and its image file.</summary>

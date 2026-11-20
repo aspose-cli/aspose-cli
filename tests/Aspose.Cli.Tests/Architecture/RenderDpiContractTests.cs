@@ -25,7 +25,7 @@ public sealed partial class RenderDpiContractTests : IDisposable
         _workspace.Run("cells", "convert", "table.csv", "--to", "xlsx", "--out", "table.xlsx", "--separator", ",", "--encoding", "utf-8",
             "--convert-numbers", "true", "--convert-dates", "false", "--culture", "en-US", "--output-format", "json").Succeeded();
         _workspace.Run("pdf", "create", "document.pdf", "--from-text", "text.txt", "--output-format", "json").Succeeded();
-        _workspace.Run("words", "create", "document.docx", "--from-markdown", "outline.md", "--output-format", "json").Succeeded();
+        _workspace.Run("words", "create", "document.docx", "--output-format", "json").Succeeded();
         _workspace.Run("slides", "create", "deck.pptx", "--output-format", "json").Succeeded();
         var inputs = new Dictionary<string, string>(StringComparer.Ordinal)
         {

@@ -6,45 +6,20 @@
     "changed.md": { "text": "The notice period is **sixty** days.\n" }
   },
   "steps": [
-    { "args": ["words", "create", "plain.docx", "--from-markdown", "plain.md"], "expect": { "exitCode": 0 } },
-    { "args": ["words", "create", "bold.docx", "--from-markdown", "bold.md"], "expect": { "exitCode": 0 } },
-    { "args": ["words", "create", "changed.docx", "--from-markdown", "changed.md"], "expect": { "exitCode": 0 } },
+    { "args": ["words", "convert", "plain.md", "--to", "docx", "--encoding", "utf-8", "--out", "plain.docx"], "expect": { "exitCode": 0 } },
+    { "args": ["words", "convert", "bold.md", "--to", "docx", "--encoding", "utf-8", "--out", "bold.docx"], "expect": { "exitCode": 0 } },
+    { "args": ["words", "convert", "changed.md", "--to", "docx", "--encoding", "utf-8", "--out", "changed.docx"], "expect": { "exitCode": 0 } },
     {
-      "args": ["words", "compare", "plain.docx", "bold.docx"],
-      "expect": {
-        "exitCode": 0,
-        "json": [
-          { "path": "identical", "equals": false },
-          { "path": "revisions.formatChangeCount", "equals": 1 },
-          { "path": "samples[0].kind", "equals": "format-change" }
-        ],
-        "files": { "nothingWritten": true }
-      }
+      "args": ["words", "compare", "plain.docx", "bold.docx", "--author", "Reviewer", "--date-time", "2026-03-01T09:00:00", "--out", "formatting.docx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "revisionCount", "equals": 1 }], "files": { "present": ["formatting.docx"] } }
     },
     {
-      "args": ["words", "compare", "plain.docx", "bold.docx", "--ignore-formatting"],
-      "expect": {
-        "exitCode": 0,
-        "json": [
-          { "path": "identical", "equals": true },
-          { "path": "revisions", "equals": { "insertionCount": 0, "deletionCount": 0, "formatChangeCount": 0, "moveCount": 0 } },
-          { "path": "samples", "equals": [] }
-        ],
-        "files": { "nothingWritten": true }
-      }
+      "args": ["words", "compare", "plain.docx", "bold.docx", "--ignore-formatting", "--author", "Reviewer", "--date-time", "2026-03-01T09:00:00", "--out", "ignored.docx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "revisionCount", "equals": 0 }] }
     },
     {
-      "args": ["words", "compare", "plain.docx", "changed.docx", "--ignore-formatting"],
-      "expect": {
-        "exitCode": 0,
-        "json": [
-          { "path": "identical", "equals": false },
-          { "path": "revisions.insertionCount", "equals": 1 },
-          { "path": "revisions.deletionCount", "equals": 1 },
-          { "path": "revisions.formatChangeCount", "equals": 0 }
-        ],
-        "files": { "nothingWritten": true }
-      }
+      "args": ["words", "compare", "plain.docx", "changed.docx", "--ignore-formatting", "--author", "Reviewer", "--date-time", "2026-03-01T09:00:00", "--out", "text.docx"],
+      "expect": { "exitCode": 0, "json": [{ "path": "revisionCount", "equals": 2 }] }
     }
   ]
 }

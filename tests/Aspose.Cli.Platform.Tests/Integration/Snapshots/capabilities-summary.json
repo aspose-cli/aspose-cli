@@ -260,7 +260,7 @@
     {
       "id": "words",
       "name": "Words",
-      "description": "Word-processing document automation with layout fidelity.",
+      "description": "Read, edit, convert and render documents through the Aspose.Words object model.",
       "engine": "aspose",
       "engineVersion": "<build>",
       "loadFormats": [
@@ -319,31 +319,27 @@
       "commands": [
         {
           "command": "compare",
-          "description": "Semantically compare two documents and optionally save a redline."
+          "description": "Compare a changed document with the original, Document.Compare, and write the redline: a copy of the original whose revisions are the differences."
         },
         {
           "command": "convert",
-          "description": "Convert a document using the detected input format."
+          "description": "Convert a document to another format with the engine's options for it. An html, html-fixed or md output is one file: it holds its images, fonts and styles itself."
         },
         {
           "command": "create",
-          "description": "Create a document from at most one content source, optionally inside a template; without either it is blank."
+          "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format."
         },
         {
           "command": "edit",
-          "description": "Apply one validated, atomic Words operation batch."
+          "description": "Apply a batch of set, add, delete, move and do operations to a document; nothing is written when one fails."
         },
         {
           "command": "extract",
-          "description": "Extract bounded document assets."
-        },
-        {
-          "command": "inspect",
-          "description": "Show document structure, safety state and metadata."
+          "description": "Write the bytes of each image the document stores, ImageData.ImageBytes, one file per image in document order; a linked image stores none."
         },
         {
           "command": "read",
-          "description": "Read a bounded, stable window of document blocks."
+          "description": "Read a document's objects, each with every row of the object table, and its inventory."
         },
         {
           "command": "render",
@@ -351,60 +347,10 @@
         },
         {
           "command": "search",
-          "description": "Search bounded document scopes with regex timeout protection."
-        },
-        {
-          "command": "split",
-          "description": "Split a document into safe, deterministically named DOCX files."
+          "description": "Search the text of a document's paragraphs, as Paragraph.GetText() gives it; each hit names the paragraph's address."
         }
       ],
-      "operations": [
-        {
-          "command": "edit",
-          "ops": [
-            "accept_revisions",
-            "add_comment",
-            "clear_list",
-            "define_style",
-            "delete_blocks",
-            "delete_comments",
-            "delete_section",
-            "delete_watermark",
-            "format_text",
-            "import_sections",
-            "insert_bookmark",
-            "insert_break",
-            "insert_field",
-            "insert_hyperlink",
-            "insert_image",
-            "insert_markdown",
-            "insert_paragraphs",
-            "insert_section",
-            "insert_table",
-            "insert_toc",
-            "mail_merge",
-            "protect_document",
-            "refresh_fields",
-            "reject_revisions",
-            "repeat_table_row",
-            "replace_text",
-            "set_default_font",
-            "set_footer",
-            "set_header",
-            "set_list",
-            "set_page_numbers",
-            "set_page_setup",
-            "set_properties",
-            "set_style",
-            "set_table_cell",
-            "set_table_pagination",
-            "set_table_style",
-            "set_text",
-            "set_watermark",
-            "unprotect_document"
-          ]
-        }
-      ]
+      "operations": []
     }
   ]
 }

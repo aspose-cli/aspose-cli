@@ -140,16 +140,16 @@ internal static partial class ContractRules
     {
         (string? Product, string Wrong, string Right, string Problem)[] samples =
         [
-            ("words", """{"op":"set_page_setup","size":{"preset":"letter"}}""", """{"op":"set_page_setup","pageSize":{"preset":"letter"}}""",
-                "'set_page_setup' has no field 'size'"),
-            ("words", """{"op":"insert_paragraphs","at":{"block":2},"paragraphs":[{"text":"a","level":2}]}""", """{"op":"insert_paragraphs","at":{"block":2},"paragraphs":[{"text":"a","list":{"level":2}}]}""",
-                "'insert_paragraphs' has no field 'paragraphs.level'"),
+            ("pdf", """{"op":"set_properties","titel":"Edited"}""", """{"op":"set_properties","title":"Edited"}""",
+                "'set_properties' has no field 'titel'"),
+            ("pdf", """{"op":"set_page_labels","ranges":[{"startPage":1,"label":"A-"}]}""", """{"op":"set_page_labels","ranges":[{"startPage":1,"prefix":"A-"}]}""",
+                "'set_page_labels' has no field 'ranges.label'"),
             (null, "aspose-cli slides read deck.pptx --scope shapes", "aspose-cli slides read deck.pptx --kind shape",
                 "'slides read' has no option '--scope'"),
             (null, "aspose-cli pdf inspect report.pdf --detail outlines", "aspose-cli pdf inspect report.pdf --detail outline",
                 "'pdf inspect --detail' has no value 'outlines'"),
-            ("words", """{"op":"set_page_setup", ..., "size":{"preset":"letter"}}""", """{"op":"set_page_setup", ..., "pageSize":{"preset":"letter"}}""",
-                "'set_page_setup' has no field 'size'"),
+            ("pdf", """{"op":"set_properties", ..., "titel":"Edited"}""", """{"op":"set_properties", ..., "title":"Edited"}""",
+                "'set_properties' has no field 'titel'"),
             (null, "slides query deck.pptx", "slides read deck.pptx", "'slides' has no command 'query'"),
             (null, "license frobnicate", "license status", "'license' has no command 'frobnicate'"),
             (null, "docs licencing", "docs licensing", "'docs' has no topic 'licencing'"),
@@ -169,10 +169,10 @@ internal static partial class ContractRules
         // operation, and a repeatable option written with two of its values.
         (string? Product, string Wrong, string Right, string Problem)[] prose =
         [
-            ("words", "insert_paragraphs.paragraphs.level", "insert_paragraphs.paragraphs.list.level",
-                "'insert_paragraphs' has no field 'paragraphs.level'"),
-            ("words", "inspect --detail sections fields", "inspect --detail sections --detail fields",
-                "'--detail' takes one value per occurrence; repeat the option: '--detail sections --detail fields'"),
+            ("pdf", "set_page_labels.ranges.label", "set_page_labels.ranges.prefix",
+                "'set_page_labels' has no field 'ranges.label'"),
+            ("pdf", "inspect --detail outline fonts", "inspect --detail outline --detail fonts",
+                "'--detail' takes one value per occurrence; repeat the option: '--detail outline --detail fonts'"),
         ];
         foreach ((string? product, string wrong, string right, string problem, bool fenced) in samples
             .Select(static sample => (sample.Product, sample.Wrong, sample.Right, sample.Problem, true))

@@ -49,7 +49,7 @@ public sealed class ScenarioTests
               "files": { "notes.txt": { "text": "Hello" } },
               "steps": [
                 {
-                  "args": ["words", "inspect", "missing.docx"],
+                  "args": ["words", "read", "missing.docx"],
                   "expect": {
                     "exitCode": 0,
                     "error": "FILE_CORRUPT",
@@ -113,7 +113,7 @@ public sealed class ScenarioTests
               "name": "a path under the workspace",
               "steps": [
                 {
-                  "args": ["words", "inspect", "sub/missing.docx"],
+                  "args": ["words", "read", "sub/missing.docx"],
                   "expect": {
                     "error": "FILE_NOT_FOUND",
                     "json": [
@@ -152,7 +152,7 @@ public sealed class ScenarioTests
     {
         InvalidDataException rejected = Assert.Throws<InvalidDataException>(() => Scenario.Parse($$$"""
             {"name":"a selector of a code no warning has","files":{"brief.md":{"text":"# Brief"}},
-             "steps":[{"args":["words","create","brief.docx","--from-markdown","brief.md"],
+             "steps":[{"args":["words","create","brief.docx"],
                "expect":{"exitCode":0,"json":[{"path":"warnings[code={{{code}}}][0]","exists":false}]}}]}
             """));
 

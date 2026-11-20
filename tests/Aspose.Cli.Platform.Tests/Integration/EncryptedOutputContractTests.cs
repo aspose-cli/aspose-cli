@@ -22,7 +22,7 @@ public sealed partial class EncryptedOutputContractTests
                 ["cells", "convert", "book.xlsx", "--to", "csv", "--out", "book.csv"], "book.csv", "csv"),
             ["slides convert"] = (["slides", "create", "deck.pptx"],
                 ["slides", "convert", "deck.pptx", "--to", "odp", "--out", "deck.odp"], "deck.odp", "odp"),
-            ["words create"] = (null, ["words", "create", "doc.rtf", "--from-text", "content.txt"], "doc.rtf", "rtf"),
+            ["words create"] = (null, ["words", "create", "doc.rtf"], "doc.rtf", "rtf"),
         };
 
     public static TheoryData<string> Commands => [.. Cases.Keys];
@@ -69,7 +69,7 @@ public sealed partial class EncryptedOutputContractTests
         ScenarioLicense.Project(workspace.Path);
         var variables = new Dictionary<string, string?> { [PasswordVariable] = "output-secret" };
         File.WriteAllText(workspace.File("content.md"), "# One\n\nFirst part.\n");
-        CliResult created = workspace.Run([product, "create", input, .. product == "words" ? ["--from-markdown", "content.md"] : Array.Empty<string>(), "--output-format", "json"]);
+        CliResult created = workspace.Run([product, "create", input, "--output-format", "json"]);
         Assert.True(created.ExitCode == 0, created.StdErr);
 
         CliResult refused = workspace.RunWithEnv(variables,

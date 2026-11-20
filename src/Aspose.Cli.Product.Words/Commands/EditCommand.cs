@@ -1,77 +1,35 @@
-using System.CommandLine;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class EditCommand
 {
-    private const string BookmarkPrefix = "bookmark:";
-
-    private static readonly BoundedEditDefinition<WordsOp, WordsOpsBatch> Definition = new()
-    {
-        Contracts = ProductJsonContext.Definition,
-        SetDirectives = new(
-            "Replace a bookmark's text as bookmark:NAME=TEXT; repeatable, applied after the --ops document. "
-                + "Example: --set \"bookmark:ClientName=Contoso Ltd.\".",
-            ParseSet,
-            static ops => new WordsOpsBatch { Ops = ops }),
-        VerifyDescription = "Compare the staged document after save and reopen to report semantic verification.",
-        Writes = WordsFormats.Editable,
-    };
-
-    public static CommandDefinition<WordsEditRequest, WordsEditResult> Create()
-    {
-        var trackChanges = new Option<bool>(WordsOptionNames.TrackChanges) { Description = "Track this batch as revisions; only content insertions and deletions are tracked." };
-        var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." }.WithInput(InputKind.None);
-        return EditDefinition.Create<WordsOp, WordsOpsBatch, WordsEditRequest, WordsEditResult>(
-            new BoundedEditCommand<WordsOp, WordsOpsBatch>(Definition),
-            "Apply one validated, atomic Words operation batch.",
+    public static CommandDefinition<WordsEditRequest, WordsEditResult> Create() =>
+        TableCommands.Edit<WordsEditRequest, WordsEditResult>(
+            WordsModule.Table,
+            "Apply a batch of set, add, delete, move and do operations to a document; nothing is written when one fails.",
             new CommandTraits
             {
-                Input = WordsInputs.Document with { Description = "Document to edit." },
+                Input = WordsInputs.Document,
                 Encrypt = WordsInputs.EncryptedDocument,
                 UsesFonts = true,
             },
-            [trackChanges, author],
-            (parse, edit, _) => new WordsEditRequest(edit)
+            WordsFormats.Editable,
+            static edit => new WordsEditRequest
             {
-                TrackChanges = parse.GetValue(trackChanges),
-                Author = parse.GetValue(author),
-            },
-            checkUsage: parse =>
-            {
-                if (parse.GetValue(trackChanges) && string.IsNullOrWhiteSpace(parse.GetValue(author)))
-                {
-                    throw CliErrors.OptionInvalid(
-                        "--author",
-                        "--track-changes requires a non-empty author");
-                }
+                Input = edit.Input,
+                Batch = edit.Batch,
+                Output = edit.Output,
+                Password = edit.Password,
+                EncryptPassword = edit.EncryptPassword,
             },
             examples:
             [
-                "words edit contract.docx --in-place --verify --set \"bookmark:Client=Contoso\"",
-                "words edit contract.docx --in-place --ops ops.json --verify",
+                "words edit contract.docx --ops ops.json --out revised.docx",
+                "words edit contract.docx --in-place --ops ops.json",
             ],
             links:
             [
-                CommandHelpLink.Docs(WordsModule.Manifest, "editing", "addressing and operation recipes"),
-                CommandHelpLink.Schema<WordsOp>("the exact edit-batch contract"),
+                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "addresses, the five operation shapes and the read-back"),
             ]);
-    }
-
-    private static WordsOp ParseSet(string value)
-    {
-        int equals = value.IndexOf('=');
-        if (!value.StartsWith(BookmarkPrefix, StringComparison.Ordinal) || equals <= BookmarkPrefix.Length)
-        {
-            throw CliErrors.OptionInvalid("--set", $"invalid directive '{value}'");
-        }
-
-        return new SetTextOp
-        {
-            Target = new WordsTarget { Bookmark = value[BookmarkPrefix.Length..equals] },
-            Text = value[(equals + 1)..],
-        };
-    }
 }

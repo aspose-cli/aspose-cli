@@ -41,18 +41,6 @@ internal static partial class ContractRules
             Item(@"^pdf inspect: permissions\b", static (_, _) => ["security/encryption"]),
             Item(@"^pdf inspect: properties\.([^.\[]+)", static (m, _) => [$"property/{m[1]}"]),
         ],
-        ["words"] =
-        [
-            Derived(@"^words (inspect|read): (content|window|blockCount|outline|fields|bookmarks|fonts|images|revisions)\b"),
-            Derived(@"^words inspect: document\.(sectionCount|blockCount|paragraphCount|tableCount|pageCount|wordCount|hasRevisions|revisionCount|revisionAuthors|commentCount|signed|hasMacros)\b"),
-            Item(@"^words inspect: document\.watermark\b", static (_, _) => ["watermark/1"]),
-            Item(@"^words inspect: document\.protection\b", static (_, _) => ["protection/document"]),
-            Item(@"^words inspect: properties\.([^.\[]+)", static (m, _) => [$"property/{m[1]}"]),
-            Item(@"^words inspect: sections\[(\d+)\]", (m, at) => [$"section/{at($"sections[{m[1]}].section")}"]),
-            Item(@"^words inspect: styles\[(\d+)\]", (m, at) => [$"style/{at($"styles[{m[1]}].name")}"]),
-            Item(@"^words inspect: (comments|tables)\[(\d+)\]", (m, at) => [$"block/{at($"{m[1]}[{m[2]}].block")}"]),
-            Item(@"^words read: blocks\[(\d+)\]", (m, at) => [$"block/{at($"blocks[{m[1]}].block")}"]),
-        ],
     };
 
     private static ReadItem Item([StringSyntax(StringSyntaxAttribute.Regex)] string place, Func<string[], Func<string, string?>, IEnumerable<string>> items) =>

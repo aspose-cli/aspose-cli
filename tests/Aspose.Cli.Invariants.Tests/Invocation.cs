@@ -86,13 +86,14 @@ internal sealed class Invocation
     /// <summary>
     /// The options that no declaration requires but that a command of a verb needs to run, each
     /// with the file it reads (null for a value rule of <see cref="Fill"/>): a convert without
-    /// --out names the format it writes, and a create from a source reads the first of these it
+    /// --out names the format it writes, a compare names the redline it writes, and a create from a source reads the first of these it
     /// has. Each must name an option some command has (<see cref="ImpliedRulesMatchTheCatalog"/>),
     /// so a renamed option fails rather than leaving its commands without it.
     /// </summary>
     internal static readonly (string Verb, string Option, string? File, string? Fixture)[] ImpliedByVerb =
     [
         ("convert", "--to", null, null),
+        ("compare", "--out", null, null),
         ("create", "--from-markdown", "source.md", "markdown"),
         ("create", "--from-text", "source.txt", "text"),
     ];
@@ -192,6 +193,12 @@ internal sealed class Invocation
             case "--certificate":
                 Files["certificate.pfx"] = new ScenarioFile { Fixture = "certificate.pfx" };
                 Add(option.Name, "certificate.pfx");
+                return;
+            case "--author":
+                Add(option.Name, "Invariant");
+                return;
+            case "--date-time":
+                Add(option.Name, "2026-01-01T00:00:00");
                 return;
         }
         if (option.AllowedValues.Contains("pages"))

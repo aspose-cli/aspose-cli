@@ -101,13 +101,6 @@ public static class WarningCodes
     /// </summary>
     public static readonly WarningCode OpNoEffect = new("OP_NO_EFFECT");
 
-    /// <summary>
-    /// An operation found the text it looks for in a part of the document it does not change, such
-    /// as a header or a chart title, and left that text as it was; <c>details</c> names the
-    /// operation by <c>id</c> and <c>op</c> and the part in <c>part</c>, and <c>location</c> the
-    /// place. Only <see cref="UnreplacedText"/> makes it.
-    /// </summary>
-    internal static readonly WarningCode TextNotReplaced = new("TEXT_NOT_REPLACED");
 
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<WarningCode> All { get; } =
@@ -122,7 +115,6 @@ public static class WarningCodes
         ListTruncated,
         ProtectionNotEnforced,
         OpNoEffect,
-        TextNotReplaced,
     ];
 }
 

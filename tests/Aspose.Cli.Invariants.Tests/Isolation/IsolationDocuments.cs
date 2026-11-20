@@ -312,6 +312,21 @@ internal static class IsolationDocuments
             Require(workspace.Run("slides", "edit", file, "--ops", "ops.json", "--in-place"), "insert the slides base pictures");
             return;
         }
+        if (product == "words")
+        {
+            // The engine's new document, with every picture at the end of its last paragraph, at the address its read gives.
+            Require(workspace.Run("words", "create", file), "create the words base document");
+            CliResult read = workspace.Run("words", "read", file, "--kind", "paragraph", "--output-format", "json");
+            Require(read, "read the words base document");
+            string paragraph = System.Text.Json.Nodes.JsonNode.Parse(read.StdOut)!["objects"]!.AsArray()[^1]!["at"]!.GetValue<string>();
+            string ops = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                ops = Enumerable.Range(0, count).Select(index => new { add = "image", @in = paragraph, args = new { image = $"picture{index}.png" } }).ToArray(),
+            });
+            File.WriteAllText(workspace.File("ops.json"), ops);
+            Require(workspace.Run("words", "edit", file, "--ops", "ops.json", "--in-place"), "insert the words base pictures");
+            return;
+        }
         var markdown = new StringBuilder("# Isolation sample\n\nThe base document of the isolation matrix.\n\n");
         for (int index = 0; index < count; index++)
         {

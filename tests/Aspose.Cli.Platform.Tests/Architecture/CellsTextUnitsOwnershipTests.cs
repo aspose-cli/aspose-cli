@@ -41,7 +41,7 @@ public sealed class CellsTextUnitsOwnershipTests
             .SelectMany(static file => file.Root.DescendantNodes().OfType<IdentifierNameSyntax>()
                 .Where(static name => Holders.Contains(name.Identifier.ValueText) && name.Parent switch
                 {
-                    MemberAccessExpressionSyntax access => access.Name == name && access.Expression.ToString() != "TextPart",
+                    MemberAccessExpressionSyntax access => access.Name == name,
                     MemberBindingExpressionSyntax binding => binding.Name == name,
                     _ => false,
                 })

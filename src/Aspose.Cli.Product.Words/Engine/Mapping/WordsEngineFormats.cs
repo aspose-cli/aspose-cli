@@ -1,106 +1,134 @@
+using Aspose.Cli.Sdk.IO.Output;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Words;
 using Aspose.Words.Saving;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
 /// <summary>
-/// The engine side of each public format id, in one table: the format Aspose.Words loads it as
-/// and the one it saves it in. A product test keeps it in step with <c>WordsFormats</c>, so a
-/// declared format the engine cannot read or write fails the build, not the user.
+/// Each format id's engine load and save format, and the save options an output is written with:
+/// the engine's, except that an html, html-fixed, svg or md output holds its images, fonts and
+/// styles itself, so the output is one file (the publication publishes one).
 /// </summary>
 internal static class WordsEngineFormats
 {
-    /// <summary>Every format id the engine maps, with what it maps to.</summary>
-    internal static IReadOnlyList<WordsEngineFormat> All { get; } =
+    private static readonly IReadOnlyList<(string Id, LoadFormat? Load, SaveFormat? Save)> All =
     [
-        new("doc") { Load = LoadFormat.Doc, Save = SaveFormat.Doc },
-        new("dot") { Load = LoadFormat.Dot, Save = SaveFormat.Dot },
-        new("docx") { Load = LoadFormat.Docx, Save = SaveFormat.Docx },
-        new("docm") { Load = LoadFormat.Docm, Save = SaveFormat.Docm },
-        new("dotx") { Load = LoadFormat.Dotx, Save = SaveFormat.Dotx },
-        new("dotm") { Load = LoadFormat.Dotm, Save = SaveFormat.Dotm },
-        new("flatopc") { Load = LoadFormat.FlatOpc, Save = SaveFormat.FlatOpc },
-        new("rtf") { Load = LoadFormat.Rtf, Save = SaveFormat.Rtf },
-        new("wordml") { Load = LoadFormat.WordML, Save = SaveFormat.WordML },
-        new("html") { Load = LoadFormat.Html, Save = SaveFormat.Html, Lossy = true, MayHoldFixedPages = true },
-        new("mhtml") { Load = LoadFormat.Mhtml, Save = SaveFormat.Mhtml },
-        new("odt") { Load = LoadFormat.Odt, Save = SaveFormat.Odt },
-        new("ott") { Load = LoadFormat.Ott, Save = SaveFormat.Ott },
-        new("txt") { Load = LoadFormat.Text, Save = SaveFormat.Text, Lossy = true, PlainText = true, LeavesOutHeadersFooters = true },
-        new("md") { Load = LoadFormat.Markdown, Save = SaveFormat.Markdown, Lossy = true, PlainText = true, LeavesOutHeadersFooters = true, LeavesOutDrawings = true },
-        new("pdf") { Load = LoadFormat.Pdf, Save = SaveFormat.Pdf, ReflowsOnLoad = true, EncryptionUndetected = true },
-        new("epub") { Load = LoadFormat.Epub, Save = SaveFormat.Epub, LeavesOutHeadersFooters = true },
-        new("mobi") { Load = LoadFormat.Mobi, Save = SaveFormat.Mobi, LeavesOutHeadersFooters = true },
-        new("azw3") { Load = LoadFormat.Azw3, Save = SaveFormat.Azw3, LeavesOutHeadersFooters = true },
-        new("chm") { Load = LoadFormat.Chm },
-        new("xps") { Save = SaveFormat.Xps },
-        new("openxps") { Save = SaveFormat.OpenXps },
-        new("ps") { Save = SaveFormat.Ps },
-        new("pcl") { Save = SaveFormat.Pcl },
-        new("html-fixed") { Save = SaveFormat.HtmlFixed, Lossy = true },
-        new("png") { Save = SaveFormat.Png },
-        new("jpeg") { Save = SaveFormat.Jpeg },
-        new("svg") { Save = SaveFormat.Svg },
+        ("doc", LoadFormat.Doc, SaveFormat.Doc),
+        ("dot", LoadFormat.Dot, SaveFormat.Dot),
+        ("docx", LoadFormat.Docx, SaveFormat.Docx),
+        ("docm", LoadFormat.Docm, SaveFormat.Docm),
+        ("dotx", LoadFormat.Dotx, SaveFormat.Dotx),
+        ("dotm", LoadFormat.Dotm, SaveFormat.Dotm),
+        ("flatopc", LoadFormat.FlatOpc, SaveFormat.FlatOpc),
+        ("rtf", LoadFormat.Rtf, SaveFormat.Rtf),
+        ("wordml", LoadFormat.WordML, SaveFormat.WordML),
+        ("odt", LoadFormat.Odt, SaveFormat.Odt),
+        ("ott", LoadFormat.Ott, SaveFormat.Ott),
+        ("html", LoadFormat.Html, SaveFormat.Html),
+        ("mhtml", LoadFormat.Mhtml, SaveFormat.Mhtml),
+        ("txt", LoadFormat.Text, SaveFormat.Text),
+        ("md", LoadFormat.Markdown, SaveFormat.Markdown),
+        ("pdf", LoadFormat.Pdf, SaveFormat.Pdf),
+        ("epub", LoadFormat.Epub, SaveFormat.Epub),
+        ("mobi", LoadFormat.Mobi, SaveFormat.Mobi),
+        ("azw3", LoadFormat.Azw3, SaveFormat.Azw3),
+        ("chm", LoadFormat.Chm, null),
+        ("xps", null, SaveFormat.Xps),
+        ("openxps", null, SaveFormat.OpenXps),
+        ("ps", null, SaveFormat.Ps),
+        ("pcl", null, SaveFormat.Pcl),
+        ("html-fixed", null, SaveFormat.HtmlFixed),
+        ("png", null, SaveFormat.Png),
+        ("jpeg", null, SaveFormat.Jpeg),
+        ("svg", null, SaveFormat.Svg),
     ];
 
-    /// <summary>The format id of a detected load format, or <c>unknown</c>.</summary>
-    public static string IdOf(LoadFormat format) =>
-        All.FirstOrDefault(entry => entry.Load == format)?.Id ?? "unknown";
+    /// <summary>The format id of a format the engine detected, or null for one no command reads.</summary>
+    internal static string? IdOf(LoadFormat format) =>
+        All.FirstOrDefault(entry => entry.Load == format).Id;
 
-    /// <summary>Whether a format id has an engine trait; false for an id the engine does not map.</summary>
-    public static bool Has(string formatId, Func<WordsEngineFormat, bool> trait) =>
-        All.FirstOrDefault(entry => string.Equals(entry.Id, formatId, StringComparison.Ordinal)) is { } entry && trait(entry);
+    internal static SaveFormat Save(string formatId) =>
+        All.FirstOrDefault(entry => entry.Id == formatId).Save
+            ?? throw new InvalidOperationException($"'{formatId}' has no save format.");
 
-    /// <summary>
-    /// Whether the engine lays a document out on fixed pages to save it in a format, as for
-    /// printing: such a save draws the tracked changes on the pages as markup and the comments in
-    /// balloons in a margin beside the text.
-    /// </summary>
-    public static bool LaysOutPages(string formatId) =>
-        Has(formatId, static entry => entry.Save is { } save && SaveOptions.CreateSaveOptions(save) is FixedPageSaveOptions);
+    /// <summary>The save options of <paramref name="formatId"/>: the engine's, made one file, with the password and pages given.</summary>
+    internal static SaveOptions Options(string formatId, Secret? password = null, IReadOnlyList<int>? pages = null, int? dpi = null)
+    {
+        SaveOptions options = SaveOptions.CreateSaveOptions(Save(formatId));
+        switch (options)
+        {
+            case HtmlSaveOptions html when html.SaveFormat == SaveFormat.Html:
+                html.ExportImagesAsBase64 = true;
+                html.ExportFontsAsBase64 = true;
+                html.CssStyleSheetType = CssStyleSheetType.Embedded;
+                break;
+            case HtmlFixedSaveOptions fixedHtml:
+                fixedHtml.ExportEmbeddedImages = true;
+                fixedHtml.ExportEmbeddedFonts = true;
+                fixedHtml.ExportEmbeddedCss = true;
+                fixedHtml.ExportEmbeddedSvg = true;
+                break;
+            case SvgSaveOptions svg:
+                svg.ExportEmbeddedImages = true;
+                break;
+            case MarkdownSaveOptions markdown:
+                markdown.ExportImagesAsBase64 = true;
+                break;
+        }
 
-    /// <summary>The engine format that saves a format id.</summary>
-    public static SaveFormat Save(string formatId) =>
-        All.FirstOrDefault(entry => string.Equals(entry.Id, formatId, StringComparison.Ordinal))?.Save
-            ?? throw new InvalidOperationException($"'{formatId}' has no document save format.");
+        if (pages is not null)
+        {
+            ((FixedPageSaveOptions)options).PageSet = new PageSet([.. pages.Select(static page => page - 1)]);
+        }
+
+        if (dpi is not null && options is ImageSaveOptions image)
+        {
+            image.Resolution = dpi.Value;
+        }
+
+        if (password is not null)
+        {
+            string value = password.Reveal();
+            switch (options)
+            {
+                case OoxmlSaveOptions ooxml: ooxml.Password = value; break;
+                case DocSaveOptions doc: doc.Password = value; break;
+                case OdtSaveOptions odt: odt.Password = value; break;
+                default: throw new InvalidOperationException($"An output password reached the '{formatId}' format, which carries none.");
+            }
+        }
+
+        return options;
+    }
+
+    /// <summary>Saves a document in <paramref name="formatId"/>, with the password <paramref name="protection"/> gives it, or none.</summary>
+    internal static void Save(Document document, string path, string formatId, OutputProtection protection) =>
+        document.Save(path, Options(formatId, protection.Password));
 }
 
-/// <summary>What one public format id is to the engine.</summary>
-/// <param name="Id">The public format id.</param>
-internal sealed record WordsEngineFormat(string Id)
+/// <summary>
+/// How the object table opens and saves a document: the loader's open, and a save in the format
+/// the document was read in, with the password protection decides.
+/// </summary>
+internal sealed class WordsDocuments(WordsDocumentLoader loader) : ITableDocuments<Document>
 {
-    /// <summary>The engine format that loads documents of this id; null when it is never read.</summary>
-    public LoadFormat? Load { get; init; }
+    /// <inheritdoc />
+    public DocumentTable<Document> Table => WordsTable.Definition;
 
-    /// <summary>The engine format that saves documents in this id; null when it is never written.</summary>
-    public SaveFormat? Save { get; init; }
+    /// <inheritdoc />
+    public IReadOnlyList<Sdk.Formats.FormatDescriptor> Formats => WordsFormats.Editable;
 
-    /// <summary>A save in this format cannot preserve every Word feature, which convert and edit disclose.</summary>
-    public bool Lossy { get; init; }
+    /// <inheritdoc />
+    public IOpenedDocument<Document> Open(string path, Secret? password, EngineWarningLog warnings) => loader.Open(path, password, warnings);
 
-    /// <summary>
-    /// Plain text the engine reads from any bytes it cannot place, and writes with comments and
-    /// deleted text mixed into the body.
-    /// </summary>
-    public bool PlainText { get; init; }
+    /// <inheritdoc />
+    public IOpenedDocument<Document> Reopen(string path, Secret? password, EngineWarningLog warnings) => loader.Reopen(path, password, warnings);
 
-    /// <summary>
-    /// A save in this format writes no header or footer: an e-book flows its text without pages,
-    /// and plain text and Markdown hold the body text alone. The save options leave them out,
-    /// where the SDK would write the primary ones into the text at the start and end of each
-    /// section with their page numbers frozen, and convert discloses the ones that hold content.
-    /// </summary>
-    public bool LeavesOutHeadersFooters { get; init; }
-
-    /// <summary>A save in this format would write each drawing as a picture, so it leaves them out (<see cref="WordsSavePipeline.LeaveOutDrawings"/>).</summary>
-    public bool LeavesOutDrawings { get; init; }
-
-    /// <summary>Loading rebuilds the fixed pages as flowing text and guesses the headers and footers.</summary>
-    public bool ReflowsOnLoad { get; init; }
-
-    /// <summary>An input of this id may be an html-fixed page rendition, which loads reflowed.</summary>
-    public bool MayHoldFixedPages { get; init; }
-
-    /// <summary>Format detection never reports an input of this id encrypted (WORDS-PDF-ENCRYPTION), so loading probes it.</summary>
-    public bool EncryptionUndetected { get; init; }
+    /// <inheritdoc />
+    public void Save(IOpenedDocument<Document> document, string path, string format, OutputProtection protection, EngineWarningLog warnings)
+    {
+        WordsEngineFormats.Save(document.Document, path, format, protection);
+        ((LoadedDocument)document).Resources.ThrowIfFailed();
+    }
 }

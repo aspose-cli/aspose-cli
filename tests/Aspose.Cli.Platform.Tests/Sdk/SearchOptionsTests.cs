@@ -9,27 +9,22 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 
 public sealed class SearchOptionsTests
 {
-    private static readonly SearchScopeGrammar Scopes = new("Where to look.", ["body", "all"], "body");
-
     [Fact]
-    public void Read_ReturnsTheValidatedQueryWithTheProductDefaultScope()
+    public void Read_ReturnsTheValidatedQuery()
     {
-        SearchQuery query = Read(new SearchOptions(Scopes), "--pattern", "Total", "--case-sensitive");
+        SearchQuery query = Read(new SearchOptions(), "--pattern", "Total", "--case-sensitive");
 
         Assert.Equal("Total", query.Text.Pattern);
         Assert.True(query.Text.CaseSensitive);
         Assert.Null(query.Text.Expression);
         Assert.Equal(SearchOptions.DefaultMaxHits, query.MaxHits);
-        Assert.Equal("body", query.Scope);
     }
 
     [Fact]
-    public void Parse_AcceptsOnlyTheProductScopesAndRequiresThePattern()
+    public void Parse_TakesNoScopeAndRequiresThePattern()
     {
-        Assert.NotEmpty(Parse(new SearchOptions(Scopes), "--pattern", "x", "--scope", "notes").Errors);
         Assert.NotEmpty(Parse(new SearchOptions(), "--pattern", "x", "--scope", "body").Errors);
         Assert.NotEmpty(Parse(new SearchOptions()).Errors);
-        Assert.Null(Read(new SearchOptions(), "--pattern", "x").Scope);
     }
 
     [Theory]
@@ -48,7 +43,7 @@ public sealed class SearchOptionsTests
     [Fact]
     public void Window_SkipsEarlierMatchesAndResumesAfterTheReturnedHits()
     {
-        SearchQuery query = Read(new SearchOptions(Scopes), "--pattern", "a b", "--regex", "--max-hits", "2", "--skip", "1");
+        SearchQuery query = Read(new SearchOptions(), "--pattern", "a b", "--regex", "--max-hits", "2", "--skip", "1");
         SearchHits<int> hits = query.Collect<int>();
 
         int offered = 0;

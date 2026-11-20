@@ -16,6 +16,9 @@ public sealed record WordsConvertResult() : EngineResultEnvelope("convert-result
 
     /// <summary>The 1-based pages the output holds, as <c>--pages</c> selected them; absent for every page.</summary>
     public string? Pages { get; init; }
+
+    /// <summary>The warnings Aspose.Words reported, as it reported them; omitted when there were none.</summary>
+    public IReadOnlyList<EngineWarning>? EngineWarnings { get; init; }
 }
 
 /// <summary>The file a document was converted to.</summary>

@@ -9,21 +9,15 @@ namespace Aspose.Cli.Invariants.Tests;
 // text in each kind of content the product makes (ScenarioFixtures.RichMarkers); a command that
 // writes the fixture's content to a file is judged by the markers that file still holds. Each
 // kind whose marker is gone must be named by its token (RichKind.Content in a LOSSY_CONVERSION's
-// details.content, RichKind.Part in a TEXT_NOT_REPLACED's details.part); any other warning, an
-// evaluation notice included, excuses nothing, and a kind without a token is never excused.
+// details.content); any other warning, an evaluation notice included, excuses nothing, and a kind
+// without a token is never excused.
 internal static partial class ContractRules
 {
     /// <summary>The warning that names, in <c>details.content</c>, the kinds of content an output leaves out.</summary>
     private const string LossyConversion = "LOSSY_CONVERSION";
 
-    /// <summary>The warning that names, in <c>details.part</c>, the part of the document where an operation left the text it found.</summary>
-    private const string TextNotReplaced = "TEXT_NOT_REPLACED";
-
     /// <summary>A probe of <see cref="OperationRuns.State"/> that evaluation mode stopped (<see cref="RuleRun.Unjudged"/>), as the state records it.</summary>
     private const string EvaluationStopped = "error EVALUATION_LIMIT";
-
-    /// <summary>The text <c>replace_text</c> puts in place of <see cref="ScenarioFixtures.MarkerPrefix"/>.</summary>
-    private const string Replacement = "Replaced";
 
     /// <summary>
     /// The kinds of content whose marker each product does not read from its own rich fixture,
@@ -172,77 +166,6 @@ internal static partial class ContractRules
         if (unexcused.Length > 0)
         {
             yield return $"{Sentence([.. readers], "and")} reads no {Sentence([.. unexcused.Select(static kind => kind.Name)], "or")} marker from the {target} output, which no warning can excuse";
-        }
-    }
-
-    // ----- C-R43: a replacement that leaves a match in place names where ---------------------------
-
-    /// <summary>
-    /// Every product with a rich fixture and a <c>replace_text</c> operation replaces
-    /// <see cref="ScenarioFixtures.MarkerPrefix"/>, the start of every marker, in the scope that
-    /// covers the most content (<c>all</c> where the operation has a scope): for each kind of
-    /// content whose marker the product still reads back from the output, a
-    /// <c>TEXT_NOT_REPLACED</c> of the result must name the kind's part (<see cref="RichKind.Part"/>)
-    /// in <c>details.part</c>.
-    /// </summary>
-    private static IEnumerable<InvariantCase> R43(CliCatalog catalog)
-    {
-        foreach (CliProduct product in catalog.Products.Where(static product =>
-            ScenarioFixtures.Products.Contains(product.Id) && product.Ops.Contains("replace_text")))
-        {
-            yield return Check("C-R43", $"{product.Id} replace_text", () => ReplacementLeftovers(catalog, product), shard: product.Id);
-        }
-    }
-
-    private static IEnumerable<string> ReplacementLeftovers(CliCatalog catalog, CliProduct product)
-    {
-        if (Unjudgeable(catalog, product.Id) is { } reason)
-        {
-            if (reason.Length > 0)
-            {
-                yield return reason;
-            }
-            yield break;
-        }
-        var operation = new JsonObject { ["op"] = "replace_text", ["find"] = ScenarioFixtures.MarkerPrefix, ["replace"] = Replacement };
-        JsonNode definition = JsonNode.Parse(catalog.SchemaText(product.OpsSchemaId!))!["$defs"]!["replace_text"]!;
-        if (definition["properties"]?["scope"]?["enum"] is JsonArray scopes && scopes.Any(static scope => scope?.GetValue<string>() == "all"))
-        {
-            operation["scope"] = "all";
-        }
-        using var workspace = new RuleWorkspace();
-        string output = "output." + ScenarioFixtures.PrimaryFormat(product.Id);
-        RuleRun edit = OperationRuns.Edit(workspace, product.Id, SeedRich(workspace, product.Id), output, [operation]);
-        if (edit.ExitCode != 0)
-        {
-            if (!edit.Unjudged)
-            {
-                yield return "the edit failed: " + edit.Describe();
-            }
-            else
-            {
-                Judged("not judged: evaluation mode stopped the edit");
-            }
-            yield break;
-        }
-        if (ReadText(catalog, workspace, product.Id, output) is not { } read)
-        {
-            Judged($"not judged: evaluation mode stopped {product.Id} reading {output}");
-            yield break;
-        }
-        RichKind[] left = [.. ScenarioFixtures.RichMarkers(product.Id).Where(kind => Holds(read, kind.Marker))];
-        string[] named = [.. Named(edit.Document, TextNotReplaced, "part")];
-        Judged($"judged: {product.Id} still reads {Names(left)}; {TextNotReplaced} names [{string.Join(", ", named)}]");
-        RichKind[] unnamed = [.. left.Where(kind => kind.Part is { } token && !named.Contains(token, StringComparer.Ordinal))];
-        if (unnamed.Length > 0)
-        {
-            yield return $"{product.Id} still reads the {Sentence([.. unnamed.Select(static kind => kind.Name)], "and")} marker{(unnamed.Length == 1 ? string.Empty : "s")} after the replacement, "
-                + $"and no {TextNotReplaced} names {Sentence([.. unnamed.Select(static kind => kind.Part!).Distinct(StringComparer.Ordinal)], "or")} in details.part";
-        }
-        RichKind[] unexcused = [.. left.Where(static kind => kind.Part is null)];
-        if (unexcused.Length > 0)
-        {
-            yield return $"{product.Id} still reads the {Sentence([.. unexcused.Select(static kind => kind.Name)], "and")} marker{(unexcused.Length == 1 ? string.Empty : "s")} after the replacement, which no warning can excuse";
         }
     }
 

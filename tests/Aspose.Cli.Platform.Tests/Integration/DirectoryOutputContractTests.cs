@@ -29,16 +29,30 @@ public sealed class DirectoryOutputContractTests
             """],
     ];
 
+    /// <summary>
+    /// A document with two different pictures: the two renders of a blank slide, each added at the
+    /// end of the last paragraph of the engine's new document, which read gives.
+    /// </summary>
+    private static readonly string[][] WordsWithTwoPictures =
+    [
+        .. SlidesWithTwoPictures[..3],
+        ["words", "create", "input.docx"],
+        ["words", "edit", "input.docx", "--in-place", "--ops", """
+            {"ops":[
+              {"add":"image","in":"section/0/body/paragraph/0","args":{"image":"a.png"}},
+              {"add":"image","in":"section/0/body/paragraph/0","args":{"image":"b.png"}}
+            ]}
+            """],
+    ];
+
     private static readonly Dictionary<string, (string[][] Create, string[] Publish)> Cases = new(StringComparer.Ordinal)
     {
         ["pdf split"] = ([["pdf", "create", "input.pdf", "--from-text", "content.txt"]],
             ["pdf", "split", "input.pdf", "--by", "pages", "--out-dir", "parts"]),
         ["pdf extract"] = ([["pdf", "create", "input.pdf", "--from-text", "content.txt"]],
             ["pdf", "extract", "input.pdf", "--what", "text", "--out-dir", "parts"]),
-        ["words split"] = ([["words", "create", "input.docx", "--from-text", "content.txt"]],
-            ["words", "split", "input.docx", "--by", "sections", "--out-dir", "parts"]),
-        ["words extract"] = ([["words", "create", "input.docx", "--from-text", "content.txt"]],
-            ["words", "extract", "input.docx", "--what", "text", "--out-dir", "parts"]),
+        ["words extract"] = (WordsWithTwoPictures,
+            ["words", "extract", "input.docx", "--what", "images", "--out-dir", "parts"]),
         ["slides extract"] = (SlidesWithTwoPictures,
             ["slides", "extract", "input.pptx", "--what", "media", "--out-dir", "parts"]),
     };
@@ -127,8 +141,8 @@ public sealed class DirectoryOutputContractTests
 
     private static readonly Dictionary<string, (string[][] Create, string[] Publish)> MultiFileCases = new(StringComparer.Ordinal)
     {
-        ["words split"] = ([["words", "create", "input.docx", "--from-markdown", "content.md"]],
-            ["words", "split", "input.docx", "--by", "heading1", "--out-dir", "parts"]),
+        ["words extract"] = (WordsWithTwoPictures,
+            ["words", "extract", "input.docx", "--what", "images", "--out-dir", "parts"]),
         ["slides extract"] = (SlidesWithTwoPictures,
             ["slides", "extract", "input.pptx", "--what", "media", "--out-dir", "parts"]),
     };

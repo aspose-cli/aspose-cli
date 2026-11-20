@@ -17,7 +17,7 @@ public sealed class ScenarioGapTests
     /// </summary>
     [Theory]
     [InlineData("secret-hidden | pdf edit encrypt_document", ScenarioRunner.ExitCodeCheck, "exit 3 FILE_NOT_FOUND")]
-    [InlineData("secret-hidden | words edit unprotect_document", ScenarioRunner.ErrorCheck, "FILE_NOT_FOUND")]
+    [InlineData("secret-hidden | words edit unprotect", ScenarioRunner.ErrorCheck, "FILE_NOT_FOUND")]
     public void OperationSecretCase_RefusesAFailureOtherThanThePasswords(string id, string check, string start)
     {
         Scenario scenario = InvariantCases.All[id].Scenario!;

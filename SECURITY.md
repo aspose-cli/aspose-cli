@@ -16,7 +16,7 @@ Each boundary names the tests that check it, and `SecurityClaimsTests` keeps tho
   files beneath the input directory, and each omitted or blocked resource is reported; see
   [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
   Checked by: `PdfResourceLoadingTests`, `CellsResourceTests`,
-  `SlidesResourceLoadingTests`, `WordsResourceLoadingTests`, `SvgReferencesTests`,
+  `SlidesResourceLoadingTests`, `WordsResourceTests`, `SvgReferencesTests`,
   `NetworkGateTests`, `LocalDocumentResourceLoaderTests`, `VerifiedResourceReadTests`,
   `IsolationMatrixTests`, `OutputScanTests`.
 - **Files.** File routing is content-driven. Publication is atomic, extraction and inputs are

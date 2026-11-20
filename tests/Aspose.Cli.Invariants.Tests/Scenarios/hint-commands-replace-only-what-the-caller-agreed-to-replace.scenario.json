@@ -12,49 +12,15 @@
     "cmp.encrypted.docx": { "text": "a copy of the user's" }
   },
   "steps": [
+    { "args": ["cells", "convert", "book.xlsx", "--to", "png", "--out", "out.png", "--overwrite"], "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "render", "book.xlsx", "--sheet", "Sheet1", "--out", "book.pdf", "--overwrite"], "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "nothingWritten": true } } },
+    { "args": ["slides", "convert", "deck.pptx", "--to", "tiff", "--out", "x.tiff", "--overwrite"], "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "unchanged": ["x.tiff"] } } },
+    { "args": ["slides", "convert", "deck.pptx", "--to", "tiff", "--out", "y.tiff"], "expect": { "exitCode": 2, "error": "OPTION_INVALID" } },
+    { "args": ["slides", "convert", "deck.pptx", "--to", "pdf", "--out", "y.pdf"], "expect": { "error": "OUTPUT_EXISTS", "files": { "unchanged": ["y.pdf"] } } },
     {
-      "args": ["cells", "convert", "book.xlsx", "--to", "png", "--out", "out.png", "--overwrite"],
-      "expect": {
-        "exitCode": 2,
-        "error": "OPTION_INVALID",
-        "files": { "nothingWritten": true }
-      }
-    },
-    {
-      "args": ["cells", "render", "book.xlsx", "--sheet", "Sheet1", "--out", "book.pdf", "--overwrite"],
-      "expect": {
-        "exitCode": 2,
-        "error": "OPTION_INVALID",
-        "files": { "nothingWritten": true }
-      }
-    },
-    {
-      "args": ["slides", "convert", "deck.pptx", "--to", "tiff", "--out", "x.tiff", "--overwrite"],
-      "expect": {
-        "exitCode": 2,
-        "error": "OPTION_INVALID",
-        "files": { "unchanged": ["x.tiff"] }
-      }
-    },
-    {
-      "args": ["slides", "convert", "deck.pptx", "--to", "tiff", "--out", "y.tiff"],
-      "expect": {
-        "exitCode": 2,
-        "error": "OPTION_INVALID"
-      }
-    },
-    {
-      "args": ["slides", "convert", "deck.pptx", "--to", "pdf", "--out", "y.pdf"],
-      "expect": { "error": "OUTPUT_EXISTS", "files": { "unchanged": ["y.pdf"] } }
-    },
-    {
-      "args": ["words", "compare", "doc.docx", "locked.docx", "--right-password-env", "DOC_PASSWORD", "--out", "cmp.docx"],
+      "args": ["words", "compare", "doc.docx", "locked.docx", "--right-password-env", "DOC_PASSWORD", "--out", "cmp.docx", "--author", "Scenario", "--date-time", "2026-01-01T00:00:00"],
       "env": { "DOC_PASSWORD": "Invariant-Secret-5f1c9e7a" },
-      "expect": {
-        "exitCode": 0,
-        "warnings": { "present": ["ENCRYPTION_REMOVED"] },
-        "files": { "unchanged": ["cmp.encrypted.docx"] }
-      }
+      "expect": { "exitCode": 0, "warnings": { "present": ["ENCRYPTION_REMOVED"] }, "files": { "unchanged": ["cmp.encrypted.docx"] } }
     },
     {
       "args": ["words", "convert", "cmp.docx", "--to", "docx", "--out", "cmp.encrypted.docx", "--encrypt-env", "DOC_PASSWORD"],

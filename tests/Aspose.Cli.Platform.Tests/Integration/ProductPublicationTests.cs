@@ -10,7 +10,7 @@ public sealed class ProductPublicationTests
 {
     public static TheoryData<string, string, string[], string> EditCases => new()
     {
-        { "words", "docx", ["--from-text", "source.txt"], """{"ops":[{"op":"set_text","target":{"find":"Anchor"},"text":"Edited"}]}""" },
+        { "words", "docx", [], """{"ops":[{"set":"document","props":{"builtInDocumentProperties.title":"Edited"}}]}""" },
         { "slides", "pptx", [], """{"ops":[{"set":"slide/256","props":{"hidden":true}}]}""" },
         { "pdf", "pdf", ["--from-text", "source.txt"], """{"ops":[{"op":"set_properties","title":"Edited"}]}""" },
     };
@@ -59,7 +59,7 @@ public sealed class ProductPublicationTests
     public void ReportedOutputsDescribeThePublishedFiles()
     {
         using var workspace = new TempWorkspace();
-        string document = CreateInput(workspace, "words", "docx", ["--from-text", "source.txt"]);
+        string document = CreateInput(workspace, "words", "docx", []);
         string deck = CreateInput(workspace, "slides", "pptx", []);
 
         CliResult converted = workspace.Run(["words", "convert", document, "--to", "pdf", "--out", workspace.File("converted.pdf"),
@@ -85,21 +85,6 @@ public sealed class ProductPublicationTests
         string path = file["path"]!.GetValue<string>();
         Assert.True(File.Exists(path), path);
         Assert.Equal(new FileInfo(path).Length, file["sizeBytes"]!.GetValue<long>());
-    }
-
-    [Category(TestCategory.Slow)]
-    [Fact]
-    public void WordsVerificationReadsTheCandidate()
-    {
-        using var workspace = new TempWorkspace();
-        string input = CreateInput(workspace, "words", "docx", ["--from-text", "source.txt"]);
-        CliResult edited = workspace.Run(["words", "edit", input,
-            "--ops", """{"ops":[{"op":"set_text","target":{"find":"Anchor"},"text":"Edited"}]}""",
-            "--out", workspace.File("edited.docx"), "--verify", "--output-format", "json"]);
-        edited.Succeeded();
-        JsonNode verification = JsonNode.Parse(edited.StdOut)!["verification"]!;
-        Assert.True(verification["ok"]!.GetValue<bool>());
-        Assert.True(verification["semanticChangesDetected"]!.GetValue<bool>());
     }
 
     [Fact]

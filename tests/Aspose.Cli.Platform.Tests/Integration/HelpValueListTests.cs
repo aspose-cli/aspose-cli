@@ -12,7 +12,7 @@ public sealed class HelpValueListTests : IDisposable
 
     [Theory]
     [InlineData("cells convert", "--to <to>", false)]
-    [InlineData("words search", "--scope <scope>", false)]
+    [InlineData("words read", "--kind <kind>", false)]
     [InlineData("pdf convert", "--to <to>", true)]
     public void AnOptionsValues_AreListedOnce(string command, string label, bool listed)
     {

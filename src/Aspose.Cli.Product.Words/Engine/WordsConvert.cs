@@ -2,37 +2,36 @@ using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Words.Saving;
-using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
+using Aspose.Cli.Sdk.Tables;
+using Aspose.Words;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
-/// <summary>Serves <c>words convert</c>: one document saved in another format.</summary>
+/// <summary><c>words convert</c>: Document.Save in the target format, with the engine's options for it.</summary>
 internal static class WordsConvert
 {
-    /// <summary>Converts a document using the selected save pipeline.</summary>
     internal static WordsConvertResult Run(WordsSession session, WordsConvertRequest request)
     {
         LicenseState state = session.Outputs.License;
-        using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
-        IReadOnlyList<int>? pages = request.Pages?.Resolve(loaded.Document.PageCount);
+        var log = new EngineWarningLog();
+        using LoadedDocument loaded = session.Loader.OpenAny(request.Input, request.Password, request.TextInput, log);
+        Document document = loaded.Document;
+        IReadOnlyList<int>? pages = request.Pages?.Resolve(document.PageCount);
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
-        SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, protection.Password, pages);
-        WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, request.Output.Format.Id);
-        IReadOnlyList<Warning> conversion = PrepareConversion(loaded.Document, request.Output.Format.Id, loaded.Evaluation);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, loaded.Document, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, document, temp =>
         {
-            try { loaded.Document.Save(temp, options); }
-            finally { loaded.Resources.ThrowIfFailed(); }
+            log.During = "save";
+            document.Save(temp, WordsEngineFormats.Options(request.Output.Format.Id, protection.Password, pages));
+            loaded.Resources.ThrowIfFailed();
         }, encrypted: protection.Encrypted);
-        var warnings = WrittenWarnings(loaded, request.Output.Format.Id, conversion: conversion);
         return new WordsConvertResult
         {
-            Input = InfoProjection.Source(request.Input, loaded),
+            Input = FileObjects.Input(request.Input, loaded.FormatId, loaded.Protection.Encrypted),
             Outputs = [new(FileObjects.Output(written, request.Output.Format, encrypted: protection.Encrypted))],
             Pages = request.Pages?.Text,
+            EngineWarnings = log.Warnings.Count == 0 ? null : log.Warnings,
             License = EnvelopeParts.License(state),
-            Warnings = warnings,
+            Warnings = loaded.Warnings.Count == 0 ? null : loaded.Warnings,
         };
     }
 }

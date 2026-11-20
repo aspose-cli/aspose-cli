@@ -50,13 +50,6 @@ public interface IOperationModel<in TOp>
     /// </summary>
     NamedScopes? Scopes() => null;
 
-    /// <summary>
-    /// The text the operations applied so far found in a part of the document they do not change
-    /// and left as it was, in batch order. The SDK reads it after the last operation and warns
-    /// <c>TEXT_NOT_REPLACED</c> for each that the output still holds. Empty for a product without
-    /// such an operation.
-    /// </summary>
-    IReadOnlyList<UnreplacedText> Unreplaced() => [];
 }
 
 /// <summary>
@@ -154,8 +147,7 @@ public sealed class AppliedBatch
     public IReadOnlyList<BoundedOperationOutcome> Outcomes { get; }
 
     /// <summary>
-    /// An <c>OP_NO_EFFECT</c> warning for each operation that applied but changed nothing, then a
-    /// <c>TEXT_NOT_REPLACED</c> for each text an operation left that the output still holds, each in batch order.
+    /// An <c>OP_NO_EFFECT</c> warning for each operation that applied but changed nothing, in batch order.
     /// </summary>
     public IReadOnlyList<Warning> Warnings { get; }
 

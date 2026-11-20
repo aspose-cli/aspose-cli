@@ -17,6 +17,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void MarkdownLoad_TakesAHeadingAfterAFootnoteDefinitionIntoTheNote()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         // CommonMark ends a footnote definition at the first unindented line after a blank one.
         string markdown = "# A\n\nText[^1].\n\n[^1]: Note one.\n\n# B\n\nMore.\n";
@@ -37,6 +38,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void MarkdownSave_EscapesANumberThatStartsAParagraphAsAListMarker()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         var document = new Document();
         var builder = new DocumentBuilder(document);
@@ -54,6 +56,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void RegexReplace_AnchorsOnlyAtTheStartOfTheRange()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         var document = new Document();
         var builder = new DocumentBuilder(document);
@@ -75,6 +78,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void RegexReplace_IgnoresTheMatchTimeout()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         // Catastrophic backtracking: each further 'a' doubles the work, so this text runs far
         // past the expression's 50 ms budget yet ends in seconds.
@@ -98,6 +102,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void FormatDetection_ReportsNoPdfEncrypted()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         (bool Detected, Exception? Load) locked = Probe("user-secret", password: null);
         (bool Detected, Exception? Load) restricted = Probe(string.Empty, password: "wrong-secret");
@@ -124,6 +129,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void TextSave_WritesCommentTextIntoTheBody()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         var document = new Document();
         var builder = new DocumentBuilder(document);
@@ -147,6 +153,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void TextSave_WritesDeletedTextBesideInsertedText()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         var document = new Document();
         new DocumentBuilder(document).Write("The notice period is thirty days.");
@@ -167,6 +174,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void TrackedRevisions_FailToSetTheTextOfADetachedRun()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         var document = new Document();
         new DocumentBuilder(document).Write("Clause one.");
@@ -181,6 +189,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void PageField_InsertedAfterLayoutHasNoResult()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         var document = new Document();
         var builder = new DocumentBuilder(document);
@@ -195,6 +204,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void PdfLoad_GuessesHeadersAndFootersAndTurnsTheirNumbersIntoPageFields()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
 
         // One page: the footer becomes the last body paragraph, on a page of its own.
@@ -218,6 +228,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void PdfLoad_TurnsLineEndsInChineseTextIntoSpaces()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         const string clause = "甲乙双方经平等协商自愿签订本合同共同遵守本合同所列条款";
         var document = new Document();
@@ -247,6 +258,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void Layout_BreaksEastAsianLinesAgainstTheRules()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         const string clause = "乙方向甲方供应数控加工中心 2 台，合同总价人民币 1,920,000.00 元（大写：壹佰玖拾贰万元整）。";
         string clauses = string.Concat(Enumerable.Repeat(clause, 4));
@@ -344,6 +356,7 @@ public sealed class WordsKnownIssueTests
     [Fact]
     public void TableStyle_ClearsTheSettingsATableMakesItself()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         static void Float(Table table) => table.TextWrapping = Aspose.Words.Tables.TextWrapping.Around;
         var settings = new (string Name, Action<Table> Set, Func<Table, object> Get)[]
@@ -392,29 +405,173 @@ public sealed class WordsKnownIssueTests
             kept.Length == 0 ? "every setting cleared" : $"kept: {string.Join(", ", kept)}");
     }
 
-    /// <summary>
-    /// Row.Hidden's setter throws on a row the document has only held in memory and takes the
-    /// value once the document is saved, so an SDK whose setter works on a new row fails here.
-    /// </summary>
+    /// <summary>Reading the page count lays the document out, and the save after it writes other table column widths.</summary>
     [Fact]
-    public void RowHidden_ThrowsOnARowNotYetSaved()
+    public void PageCount_ChangesTheTableGridTheDocumentSaves()
     {
+        WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
-        var document = new Document();
-        var builder = new DocumentBuilder(document);
-        Table table = builder.StartTable();
-        builder.InsertCell();
+        var builder = new DocumentBuilder();
+        builder.StartTable();
+        foreach (string text in new[] { "A short cell", "A cell with a good deal more text in it", "C" })
+        {
+            builder.InsertCell();
+            builder.Write(text);
+        }
+
         builder.EndRow();
         builder.EndTable();
+        string input = fixture.File("grid.docx");
+        builder.Document.Save(input);
 
-        Exception? failure = Record.Exception(() => table.FirstRow.Hidden = true);
-        SaveOnce(document);
-        table.FirstRow.Hidden = true;
+        var unread = new Document(input);
+        var read = new Document(input);
+        _ = read.PageCount;
 
+        static string Grid(Document document)
+        {
+            using var saved = new MemoryStream();
+            document.Save(saved, SaveFormat.Docx);
+            using var package = new System.IO.Compression.ZipArchive(saved);
+            using var reader = new StreamReader(package.GetEntry("word/document.xml")!.Open());
+            string xml = reader.ReadToEnd();
+            int start = xml.IndexOf("<w:tblGrid>", StringComparison.Ordinal);
+            return xml[start..xml.IndexOf("</w:tblGrid>", start, StringComparison.Ordinal)];
+        }
+
+        string before = Grid(unread);
+        string after = Grid(read);
+        KnownIssue.Reproduces("WORDS-LAYOUT-TABLE-GRID", before != after, $"without layout {before}; after PageCount {after}");
+    }
+
+    /// <summary>A table without rows and a row without cells are not kept by a save.</summary>
+    [Fact]
+    public void EmptyTable_IsNotKeptBySave_AndLeavesAParagraph()
+    {
+        WordsFixture.RequireLicense();
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        Body body = document.FirstSection.Body;
+        var table = new Table(document);
+        body.AppendChild(table);
+        table.AppendChild(new Row(document));
+        int paragraphs = document.GetChildNodes(NodeType.Paragraph, true).Count;
+        string path = fixture.File("empty.docx");
+
+        document.Save(path);
+
+        var saved = new Document(path);
+        int tables = saved.GetChildNodes(NodeType.Table, true).Count;
+        int after = saved.GetChildNodes(NodeType.Paragraph, true).Count;
+        KnownIssue.Reproduces("WORDS-EMPTY-TABLE-DROPPED", tables == 0 && after > paragraphs, $"tables 1 -> {tables}, paragraphs {paragraphs} -> {after}");
+    }
+
+    /// <summary>
+    /// Without a license, a save while revision tracking is started throws; after
+    /// StopTrackRevisions the same document saves. It runs only without a license: a licensed run
+    /// sets the license for the whole process.
+    /// </summary>
+    [Fact]
+    public void EvaluationSave_WhileTrackingRevisions_Throws()
+    {
+        Assert.SkipWhen(TestLicense.Path is not null, "Evaluation mode only: a licensed run sets the license for the whole process.");
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        new DocumentBuilder(document).Writeln("The notice period is thirty days.");
+        document.StartTrackRevisions("Ann", new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Unspecified));
+        document.Range.Replace("thirty", "sixty");
+        Exception? tracking = Record.Exception(() => document.Save(fixture.File("tracking.docx")));
+        document.StopTrackRevisions();
+        Exception? stopped = Record.Exception(() => document.Save(fixture.File("stopped.docx")));
+
+        KnownIssue.Reproduces("WORDS-EVALUATION-TRACKED-SAVE", tracking is ArgumentException && stopped is null,
+            $"while tracking: {tracking?.GetType().Name} {tracking?.Message}; after stop: {stopped?.GetType().Name}");
+    }
+
+    /// <summary>Two tables with nothing between them are one table once the file is opened again.</summary>
+    [Fact]
+    public void AdjacentTables_AreOneTableWhenOpenedAgain()
+    {
+        WordsFixture.RequireLicense();
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        Body body = document.FirstSection.Body;
+        body.RemoveAllChildren();
+        foreach (string text in new[] { "T1", "T2" })
+        {
+            var table = new Table(document);
+            body.AppendChild(table);
+            table.EnsureMinimum();
+            table.FirstRow.FirstCell.FirstParagraph.AppendChild(new Run(document, text));
+        }
+
+        body.AppendParagraph("After");
+        string path = fixture.File("adjacent.docx");
+        document.Save(path);
+
+        int tables = new Document(path).GetChildNodes(NodeType.Table, true).Count;
+        KnownIssue.Reproduces("WORDS-ADJACENT-TABLES", tables == 1, $"2 tables saved, {tables} opened");
+    }
+
+    /// <summary>Saving to ODT drops the results of page fields and drops formula fields.</summary>
+    [Fact]
+    public void OdtSave_DropsPageFieldResultsAndFormulaFields()
+    {
+        WordsFixture.RequireLicense();
+        using var fixture = new WordsFixture();
+        var builder = new DocumentBuilder();
+        builder.InsertField("PAGE", "99");
+        builder.InsertField("= 1 + 1", "5");
+        string path = fixture.File("fields.odt");
+
+        builder.Document.Save(path);
+
+        Aspose.Words.Fields.Field[] fields = [.. new Document(path).Range.Fields.Cast<Aspose.Words.Fields.Field>()];
+        string seen = string.Join(", ", fields.Select(static field => $"{field.Type}:{field.Result}"));
         KnownIssue.Reproduces(
-            "WORDS-ROW-HIDDEN-UNSAVED",
-            failure is NullReferenceException && table.FirstRow.Hidden,
-            failure is null ? "the setter took the value on a new row" : $"{failure.GetType().Name}; after a save the row reads hidden: {table.FirstRow.Hidden}");
+            "WORDS-ODT-FIELDS",
+            fields.All(static field => field.Type != Aspose.Words.Fields.FieldType.FieldFormula) && fields.Any(static field => field.Type == Aspose.Words.Fields.FieldType.FieldPage && field.Result.Length == 0),
+            seen);
+    }
+
+    /// <summary>A header that holds no paragraph reads as linked to the previous section's.</summary>
+    [Fact]
+    public void EmptyHeader_ReadsAsLinkedToThePrevious()
+    {
+        WordsFixture.RequireLicense();
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        var header = new HeaderFooter(document, HeaderFooterType.HeaderPrimary);
+        document.FirstSection.HeadersFooters.Add(header);
+        bool empty = header.IsLinkedToPrevious;
+        header.AppendChild(new Paragraph(document));
+
+        KnownIssue.Reproduces("WORDS-HEADER-EMPTY-LINKED", empty && !header.IsLinkedToPrevious, $"empty {empty}, with a paragraph {header.IsLinkedToPrevious}");
+    }
+
+    /// <summary>A horizontal merge is saved as one wider cell, whose merge reads None once opened again.</summary>
+    [Fact]
+    public void HorizontalMerge_IsSavedAsOneWiderCell()
+    {
+        WordsFixture.RequireLicense();
+        using var fixture = new WordsFixture();
+        var builder = new DocumentBuilder();
+        builder.StartTable();
+        builder.InsertCell();
+        builder.CellFormat.HorizontalMerge = CellMerge.First;
+        builder.Write("Merged");
+        builder.InsertCell();
+        builder.CellFormat.HorizontalMerge = CellMerge.Previous;
+        builder.EndRow();
+        builder.EndTable();
+        string path = fixture.File("merge.docx");
+        builder.Document.Save(path);
+
+        Row row = new Document(path).FirstSection.Body.Tables[0].FirstRow;
+        KnownIssue.Reproduces(
+            "WORDS-HORIZONTAL-MERGE-SPAN",
+            row.Cells.Count == 1 && row.FirstCell.CellFormat.HorizontalMerge == CellMerge.None,
+            $"{row.Cells.Count} cell(s), the first {row.FirstCell.CellFormat.HorizontalMerge}");
     }
 
     // Row.Hidden takes a value only once the document has been saved (WORDS-ROW-HIDDEN-UNSAVED).

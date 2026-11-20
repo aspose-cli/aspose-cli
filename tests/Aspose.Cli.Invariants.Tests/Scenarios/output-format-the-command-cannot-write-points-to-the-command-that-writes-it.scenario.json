@@ -27,6 +27,9 @@
     },
     "slides-ops.json": {
       "fixture": "slides.ops"
+    },
+    "doc.docx": {
+      "fixture": "words.docx"
     }
   },
   "steps": [
@@ -256,9 +259,9 @@
       "args": [
         "words",
         "edit",
-        "a.docx",
-        "--set",
-        "bookmark:A=x",
+        "doc.docx",
+        "--ops",
+        "{\"ops\":[{\"do\":\"update_fields\"}]}",
         "--out",
         "x.pdf"
       ],
@@ -271,16 +274,18 @@
             "equals": "--out"
           },
           {
-            "path": "error.message",
-            "startsWith": "--out '"
-          },
-          {
-            "path": "error.message",
-            "contains": "which aspose-cli words edit does not write. Must be one of: .doc,"
-          },
-          {
             "path": "error.details.format",
-            "exists": true
+            "equals": "docx"
+          },
+          {
+            "path": "error.details.available",
+            "equals": [
+              ".docx"
+            ]
+          },
+          {
+            "path": "error.message",
+            "contains": "Must be one of: .docx."
           }
         ],
         "files": {
@@ -294,9 +299,9 @@
       "args": [
         "words",
         "edit",
-        "a.docx",
-        "--set",
-        "bookmark:A=x",
+        "doc.docx",
+        "--ops",
+        "{\"ops\":[{\"do\":\"update_fields\"}]}",
         "--out",
         "x.md"
       ],
@@ -309,16 +314,18 @@
             "equals": "--out"
           },
           {
-            "path": "error.message",
-            "startsWith": "--out '"
-          },
-          {
-            "path": "error.message",
-            "contains": "which aspose-cli words edit does not write. Must be one of: .doc,"
-          },
-          {
             "path": "error.details.format",
-            "exists": true
+            "equals": "docx"
+          },
+          {
+            "path": "error.details.available",
+            "equals": [
+              ".docx"
+            ]
+          },
+          {
+            "path": "error.message",
+            "contains": "Must be one of: .docx."
           }
         ],
         "files": {
@@ -332,9 +339,7 @@
       "args": [
         "words",
         "create",
-        "x.pdf",
-        "--from-markdown",
-        "deck.md"
+        "x.pdf"
       ],
       "expect": {
         "exitCode": 2,
@@ -368,9 +373,7 @@
       "args": [
         "words",
         "create",
-        "x.md",
-        "--from-markdown",
-        "deck.md"
+        "x.md"
       ],
       "expect": {
         "exitCode": 2,
