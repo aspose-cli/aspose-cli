@@ -438,7 +438,7 @@ internal static class OwnershipCases
         CliProduct? product = item.Command.Product is { } id ? CliCatalog.Current.Product(id) : null;
         string? inputName = item.Output == "--out-dir"
             ? names.FirstOrDefault(name => !name.Contains('/', StringComparison.Ordinal)
-                && product?.LoadFormats.Contains(Path.GetExtension(name).TrimStart('.'), StringComparer.OrdinalIgnoreCase) == true)
+                && product?.ReadFormats.Contains(Path.GetExtension(name).TrimStart('.'), StringComparer.OrdinalIgnoreCase) == true)
             : null;
         return new Probe(null, folder, names, Path.GetFileName(target), inputName);
     }

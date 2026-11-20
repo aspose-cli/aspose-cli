@@ -48,10 +48,9 @@ public sealed class HostCatalogIsolationTests
                 })
             .Formats(
             [
-                FormatDescriptor.Input(
+                FormatDescriptor.Declare(
                     id,
-                    0,
-                    RouteOwnership.Explicit,
+                    FormatUse.Input,
                     extension),
             ])
             .Diagnostics([])

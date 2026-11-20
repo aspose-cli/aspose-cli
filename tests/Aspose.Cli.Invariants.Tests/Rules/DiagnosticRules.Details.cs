@@ -208,9 +208,9 @@ internal static partial class ContractRules
             }
 
             CliCommand convert = catalog.Command($"{id} convert");
-            string[] writable = [.. product.LoadFormats, .. product.ConvertFormats, .. product.RenderFormats];
+            string[] writable = [.. product.ReadFormats, .. product.ConvertFormats, .. product.RenderFormats];
             if (catalog.Products.Where(other => other.Id != id)
-                    .SelectMany(static other => other.LoadFormats)
+                    .SelectMany(static other => other.ReadFormats)
                     .FirstOrDefault(format => !writable.Contains(format, StringComparer.OrdinalIgnoreCase)) is { } foreign
                 && convert.Option("--to") is { } to)
             {

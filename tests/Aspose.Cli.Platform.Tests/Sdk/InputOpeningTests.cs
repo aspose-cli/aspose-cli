@@ -18,6 +18,63 @@ namespace Aspose.Cli.Sdk.Tests;
 /// </summary>
 public sealed class InputOpeningTests
 {
+    /// <summary>
+    /// The format declarations of a product that reads .bin files, whose convert also reads .md
+    /// files, and that writes .txt files.
+    /// </summary>
+    private static readonly IReadOnlyList<FormatDescriptor> Reads =
+    [
+        FormatDescriptor.Declare("bin", FormatUse.Input, ".bin"),
+        FormatDescriptor.Declare("md", FormatUse.ConvertInput, ".md"),
+        FormatDescriptor.Declare("txt", FormatUse.Convert, ".txt"),
+    ];
+
+    /// <summary>The format declarations of another product of the catalog, which reads .doc files.</summary>
+    private static readonly IReadOnlyList<FormatDescriptor> Other = [FormatDescriptor.Declare("doc", FormatUse.Input, ".doc")];
+
+    [Theory]
+    [InlineData("in.txt", false, ".bin")]
+    [InlineData("in.md", false, ".bin")]
+    [InlineData("in.doc", false, ".bin")]
+    [InlineData("in.doc", true, ".bin,.md")]
+    public void Open_AnExtensionThatNamesAFormatTheCommandDoesNotRead_IsRefusedBeforeTheFileIsRead(string name, bool convert, string reads)
+    {
+        using var temp = new TempDirectory();
+        string path = temp.File(name);
+        File.WriteAllBytes(path, new byte[4]);
+        bool opened = false;
+        Input Open()
+        {
+            opened = true;
+            return new Input(new InputProtection(false));
+        }
+
+        CliException error = Assert.Throws<CliException>(() => convert
+            ? InputOpening.OpenForConvert(Pipeline(Other), TestBudgets.Create(), Reads, path, Open)
+            : InputOpening.Open(Pipeline(Other), TestBudgets.Create(), Reads, path, Open));
+
+        Assert.Equal(ErrorCodes.FormatUnsupported, error.Code);
+        Assert.Equal(reads.Split(','), error.Details!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.False(opened);
+    }
+
+    [Theory]
+    [InlineData("in.md", true)]
+    [InlineData("in", false)]
+    [InlineData("in.unknown", false)]
+    public void Open_AnExtensionTheCommandReadsNoFormatDeclaresOrNone_IsLeftToTheEngine(string name, bool convert)
+    {
+        using var temp = new TempDirectory();
+        string path = temp.File(name);
+        File.WriteAllBytes(path, new byte[4]);
+
+        using Input input = convert
+            ? InputOpening.OpenForConvert(Pipeline(Other), TestBudgets.Create(), Reads, path, static () => new Input(new InputProtection(false)))
+            : InputOpening.Open(Pipeline(Other), TestBudgets.Create(), Reads, path, static () => new Input(new InputProtection(false)));
+
+        Assert.False(input.Disposed);
+    }
+
     [Fact]
     public void Open_AboveTheInputByteLimit_IsRefusedBeforeTheEngineRuns()
     {
@@ -30,7 +87,7 @@ public sealed class InputOpeningTests
         });
         bool opened = false;
 
-        CliException error = Assert.Throws<CliException>(() => InputOpening.Open(Pipeline(), budgets, path, () =>
+        CliException error = Assert.Throws<CliException>(() => InputOpening.Open(Pipeline(), budgets, Reads, path, () =>
         {
             opened = true;
             return new Input(new InputProtection(false));
@@ -51,7 +108,7 @@ public sealed class InputOpeningTests
         File.WriteAllBytes(path, new byte[6]);
         bool opened = false;
 
-        CliException error = Assert.Throws<CliException>(() => InputOpening.Open(Pipeline(), budgets, path, () =>
+        CliException error = Assert.Throws<CliException>(() => InputOpening.Open(Pipeline(), budgets, Reads, path, () =>
         {
             opened = true;
             return new Input(new InputProtection(false));
@@ -71,7 +128,7 @@ public sealed class InputOpeningTests
         File.WriteAllBytes(path, new byte[4]);
         OutputPipeline<object> pipeline = Pipeline();
 
-        using Input input = InputOpening.Open(pipeline, TestBudgets.Create(), path, () => new Input(new InputProtection(encrypted)));
+        using Input input = InputOpening.Open(pipeline, TestBudgets.Create(), Reads, path, () => new Input(new InputProtection(encrypted)));
         pipeline.Write(temp.File("out.txt"), new FormatDescriptor("txt", FormatUse.Convert, ".txt"), false, null, Save);
 
         Assert.False(input.Disposed);
@@ -86,7 +143,7 @@ public sealed class InputOpeningTests
         File.WriteAllBytes(path, new byte[4]);
         var input = new Input(protection: null);
 
-        Assert.Throws<InvalidOperationException>(() => InputOpening.Open(Pipeline(), TestBudgets.Create(), path, () => input));
+        Assert.Throws<InvalidOperationException>(() => InputOpening.Open(Pipeline(), TestBudgets.Create(), Reads, path, () => input));
 
         Assert.True(input.Disposed);
     }
@@ -106,8 +163,8 @@ public sealed class InputOpeningTests
 
     private static void Save(string path) => File.WriteAllText(path, "saved");
 
-    private static OutputPipeline<object> Pipeline() =>
-        new(new LicensedGate(), new NoMarks(), TestBudgets.Writer());
+    private static OutputPipeline<object> Pipeline(IReadOnlyList<FormatDescriptor>? declared = null) =>
+        new(new LicensedGate(), new NoMarks(), TestBudgets.Writer()) { DeclaredFormats = declared ?? [] };
 
     /// <summary>An opened input whose protection getter fails when it has none.</summary>
     private sealed class Input(InputProtection? protection) : IOpenedInput, IDisposable

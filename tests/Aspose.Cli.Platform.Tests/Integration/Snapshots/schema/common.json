@@ -973,22 +973,6 @@
           "detailsSchemaId": "v2/common/diagnostic-details"
         },
         {
-          "code": "FORMAT_AMBIGUOUS",
-          "owner": "common",
-          "severity": "error",
-          "exitCode": 6,
-          "category": "format",
-          "detailsSchemaId": "v2/common/diagnostic-details"
-        },
-        {
-          "code": "FORMAT_MISMATCH",
-          "owner": "common",
-          "severity": "error",
-          "exitCode": 6,
-          "category": "format",
-          "detailsSchemaId": "v2/common/diagnostic-details"
-        },
-        {
           "code": "FORMAT_UNSUPPORTED",
           "owner": "common",
           "severity": "error",
@@ -1796,7 +1780,7 @@
               }
             },
             "uses": {
-              "description": "What the product does with the format: input, convert or render.",
+              "description": "What the product does with the format: input, every command that opens a document reads it; convert-input, only convert reads it; convert, convert writes it; render, render writes it.",
               "type": "array",
               "items": {
                 "type": "string"
@@ -2484,7 +2468,7 @@
               }
             },
             "loadFormats": {
-              "description": "Format ids the product opens as an input.",
+              "description": "Format ids every command of the product that opens a document reads; the formats document names those only convert reads.",
               "type": "array",
               "items": {
                 "type": "string"

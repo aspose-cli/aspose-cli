@@ -12,7 +12,6 @@ public sealed class WordsModule : IProductModule
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = ProductBuildMetadata.DisplayOrder,
-        IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
             ResourceBudgets =
             [
                 ResourceBudget.Domain(WordsBudgetDomains.Nodes, 1_000_000, 5_000_000, "items", "post-load"),

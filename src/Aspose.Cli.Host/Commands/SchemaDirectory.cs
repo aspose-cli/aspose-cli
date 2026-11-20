@@ -162,15 +162,19 @@ internal sealed class SchemaDirectory
                     Id = format.Id,
                     Extensions = [.. format.Extensions.Select(static extension => extension.ToLowerInvariant()).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
                     Aliases = [.. format.Aliases.Order(StringComparer.Ordinal)],
-                    Uses =
-                    [
-                        .. new[] { FormatUse.Input, FormatUse.Convert, FormatUse.Render }
-                            .Where(use => format.Uses.HasFlag(use))
-                            .Select(static use => use.ToString().ToLowerInvariant()),
-                    ],
+                    Uses = [.. UseNames.Where(use => format.Uses.HasFlag(use.Use)).Select(static use => use.Name)],
                 }),
         ],
     };
+
+    /// <summary>The name the formats document gives each use, in the order it lists them.</summary>
+    private static readonly (FormatUse Use, string Name)[] UseNames =
+    [
+        (FormatUse.Input, "input"),
+        (FormatUse.ConvertInput, "convert-input"),
+        (FormatUse.Convert, "convert"),
+        (FormatUse.Render, "render"),
+    ];
 
     private static DiagnosticListResult Diagnostics(ProductCatalog catalog) => new()
     {

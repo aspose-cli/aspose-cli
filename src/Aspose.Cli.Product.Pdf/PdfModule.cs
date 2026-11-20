@@ -11,7 +11,6 @@ public sealed class PdfModule : IProductModule
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = ProductBuildMetadata.DisplayOrder,
-        IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
             ResourceBudgets =
             [
                 ResourceBudget.Domain(PdfBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),

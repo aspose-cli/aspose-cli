@@ -16,7 +16,6 @@ public sealed class ProductDefinition
     internal ProductDefinition(
         ProductManifest manifest,
         Type sessionType,
-        FileRouteDefinition files,
         IReadOnlyList<FormatDescriptor> formats,
         ProductJsonDefinition json,
         Func<IReadOnlyList<ProductOperationCommand>> operations,
@@ -29,7 +28,6 @@ public sealed class ProductDefinition
     {
         Manifest = manifest;
         SessionType = sessionType;
-        Files = files;
         Formats = formats;
         Json = json ?? throw new ArgumentNullException(nameof(json));
 
@@ -49,9 +47,6 @@ public sealed class ProductDefinition
 
     /// <summary>The engine session type this product binds.</summary>
     public Type SessionType { get; }
-
-    /// <summary>File ownership and explicit-input associations.</summary>
-    public FileRouteDefinition Files { get; }
 
     /// <summary>Canonical product format declarations.</summary>
     public IReadOnlyList<FormatDescriptor> Formats { get; }
@@ -275,11 +270,9 @@ public sealed class ProductDefinitionBuilder<TSession>
         _built = true;
         IReadOnlyList<FormatDescriptor> formats = Array.AsReadOnly(
             _formats.Select(Snapshot).ToArray());
-        FileRouteDefinition files = CreateFileRoutes(formats);
         return new ProductDefinition(
             _manifest,
             typeof(TSession),
-            files,
             formats,
             _json,
             Operations,
@@ -298,7 +291,6 @@ public sealed class ProductDefinitionBuilder<TSession>
             product.Subcommands.Add(entry.Create(context));
         }
 
-        ProductReads.Declare(product, [.. _formats.Where(static format => format.Uses.HasFlag(FormatUse.Input))]);
         return _help?.Invoke() is { } help ? product.WithExamples(help.Examples, help.Links) : product;
     }
 
@@ -307,68 +299,6 @@ public sealed class ProductDefinitionBuilder<TSession>
 
     private IReadOnlyList<Func<Tables.DocumentTable>> Tables() =>
         Array.AsReadOnly(_menu.SelectMany(static entry => entry.Tables()).ToArray());
-
-    private static FileRouteDefinition CreateFileRoutes(
-        IReadOnlyList<FormatDescriptor> formats)
-    {
-        IFileRecognizer[] recognizers = formats
-            .Select(static format => format.Recognizer)
-            .Where(static recognizer => recognizer is not null)
-            .Cast<IFileRecognizer>()
-            .ToArray();
-        if (recognizers.Skip(1).Any(recognizer =>
-                !ReferenceEquals(recognizer, recognizers[0])))
-        {
-            throw new InvalidOperationException(
-                "A product format set can declare at most one shared file recognizer.");
-        }
-
-        FormatDescriptor[] defaultFormats = formats
-            .Where(static format =>
-                format.Ownership == RouteOwnership.Default
-                && format.Uses.HasFlag(FormatUse.Input))
-            .ToArray();
-        bool hasDeclarativeRules = defaultFormats.Any(
-            static format => format.Recognition is not null);
-        if (recognizers.Length > 0 && hasDeclarativeRules)
-        {
-            throw new InvalidOperationException(
-                "A product format set cannot mix a custom file recognizer with declarative recognition rules.");
-        }
-        if (recognizers.Length == 0
-            && defaultFormats.Any(static format =>
-                format.Recognition is null))
-        {
-            string missing = string.Join(
-                ", ",
-                defaultFormats
-                    .Where(static format => format.Recognition is null)
-                    .Select(static format => format.Id));
-            throw new InvalidOperationException(
-                $"Default input formats require bounded recognition rules: {missing}.");
-        }
-
-        string[] defaultOwners = formats
-            .Where(static format =>
-                format.Ownership == RouteOwnership.Default
-                && format.Uses.HasFlag(FormatUse.Input))
-            .SelectMany(static format => format.RoutedExtensions)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        return new FileRouteDefinition
-        {
-            DefaultOwnerExtensions = defaultOwners,
-            AcceptedInputExtensions = formats
-                .Where(static format => format.Uses.HasFlag(FormatUse.Input))
-                .SelectMany(static format => format.Extensions)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray(),
-            Recognizer = recognizers.FirstOrDefault()
-                ?? (defaultOwners.Length == 0
-                    ? null
-                    : new DeclarativeFormatRecognizer(formats)),
-        };
-    }
 
     private static ProductManifest Snapshot(ProductManifest manifest) =>
         manifest with
@@ -384,7 +314,6 @@ public sealed class ProductDefinitionBuilder<TSession>
         {
             Extensions = ReadOnly(format.Extensions),
             Aliases = ReadOnly(format.Aliases),
-            Recognition = format.Recognition?.Snapshot(),
         };
 
     private static IReadOnlyList<T> ReadOnly<T>(IEnumerable<T> values)

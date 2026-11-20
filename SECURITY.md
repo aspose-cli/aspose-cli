@@ -18,10 +18,10 @@ Each boundary names the tests that check it, and `SecurityClaimsTests` keeps tho
   `SlidesResourceLoadingTests`, `WordsResourceTests`, `SvgReferencesTests`,
   `NetworkGateTests`, `LocalDocumentResourceLoaderTests`, `VerifiedResourceReadTests`,
   `IsolationMatrixTests`, `OutputScanTests`.
-- **Files.** File routing is content-driven. Publication is atomic, extraction and inputs are
+- **Files.** Publication is atomic, extraction and inputs are
   bounded by resource budgets, and the per-user install and PATH state are guarded by
   interprocess locks. No command writes over its own input unless asked to edit in place.
-  Checked by: `ProductFileRouterTests`, `AtomicOutputSetWriterTests`, `AtomicNewDirectoryWriterTests`,
+  Checked by: `AtomicOutputSetWriterTests`, `AtomicNewDirectoryWriterTests`,
   `SafeFileWriterTests`, `ResourceBudgetLedgerTests`,
   `PdfArtifactWorkflowTests.ExtractAttachments_LaterBudgetFailureRollsBackTheWholeSet`,
   `CustomerInstallerPowerShellTests.Install_WhileAnotherProcessHoldsTheDirectoryLock_ChangesNothingUntilItIsReleased`,

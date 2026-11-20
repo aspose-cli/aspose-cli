@@ -43,11 +43,15 @@ internal sealed class CellsWorkbookLoader
 
     /// <summary>Opens a user input workbook with the password its options give, if any.</summary>
     internal LoadedWorkbook Open(string path, Secret? password, EngineWarningLog warnings) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenWorkbook(path, PasswordSource.Option(password), warnings));
+        InputOpening.Open(_outputs, _resourceBudgets, CellsFormats.Definitions, path, () => OpenWorkbook(path, PasswordSource.Option(password), warnings));
+
+    /// <summary>Opens the workbook a convert reads, with the password its options give, if any.</summary>
+    internal LoadedWorkbook OpenForConvert(string path, Secret? password, EngineWarningLog warnings) =>
+        InputOpening.OpenForConvert(_outputs, _resourceBudgets, CellsFormats.Definitions, path, () => OpenWorkbook(path, PasswordSource.Option(password), warnings));
 
     /// <summary>Opens a user input, such as a template, with the password <paramref name="password"/> gives.</summary>
     internal LoadedWorkbook Open(string path, PasswordSource password, EngineWarningLog warnings) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenWorkbook(path, password, warnings));
+        InputOpening.Open(_outputs, _resourceBudgets, CellsFormats.Definitions, path, () => OpenWorkbook(path, password, warnings));
 
     /// <summary>Opens an output this invocation just saved, to read it back; its size is bounded by publication.</summary>
     internal LoadedWorkbook Reopen(string path, Secret? password, EngineWarningLog warnings) =>
@@ -55,7 +59,7 @@ internal sealed class CellsWorkbookLoader
 
     /// <summary>Opens CSV or TSV text with the engine's text options the caller stated.</summary>
     internal LoadedWorkbook OpenText(string path, string formatId, CellsTextInput text, EngineWarningLog warnings) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () =>
+        InputOpening.OpenForConvert(_outputs, _resourceBudgets, CellsFormats.Definitions, path, () =>
         {
             var options = new TxtLoadOptions(CellsEngineFormats.TextLoad(formatId))
             {
@@ -75,11 +79,6 @@ internal sealed class CellsWorkbookLoader
 
     private LoadedWorkbook OpenWorkbook(string path, PasswordSource password, EngineWarningLog warnings)
     {
-        if (CellsFormats.TextFormatOf(path) is { } text)
-        {
-            throw CliErrors.FormatUnsupported(Loading.Unreadable(path, $"its name makes it {text.Id} text, which only convert reads"));
-        }
-
         FileFormatInfo detected = Loading.Load(path, password: default, () =>
         {
             using FileStream input = InputFiles.OpenRead(path);
@@ -121,9 +120,7 @@ internal sealed class CellsWorkbookLoader
 
     /// <summary>
     /// A file whose format the engine recognizes and this command does not read, such as an ods
-    /// file or another product's document: <c>FILE_CORRUPT</c>, as every product refuses it; the
-    /// Host reports it as <c>FORMAT_UNSUPPORTED</c> where generic routing does, for a format the
-    /// CLI only writes.
+    /// file or another product's document: <c>FILE_CORRUPT</c>, as every product refuses it.
     /// </summary>
     private static CliException Unsupported(string path, string format) => Loading.Unloadable(path, format);
 

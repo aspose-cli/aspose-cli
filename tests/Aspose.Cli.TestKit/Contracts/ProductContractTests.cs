@@ -678,13 +678,6 @@ public abstract class ProductContractTests<TModule>
             definition.SessionType,
             string.Join(
                 "\n",
-                definition.Files.DefaultOwnerExtensions.Order(StringComparer.Ordinal)),
-            string.Join(
-                "\n",
-                definition.Files.AcceptedInputExtensions.Order(StringComparer.Ordinal)),
-            RecognizerFingerprint(definition.Files.Recognizer),
-            string.Join(
-                "\n",
                 definition.Json.ResultRecords
                 .Select(static record => record.Type)
                 .OrderBy(static type => type.FullName, StringComparer.Ordinal)
@@ -697,14 +690,12 @@ public abstract class ProductContractTests<TModule>
                             ":",
                             format.Id,
                             format.Uses,
-                            format.Ownership,
                             format.InputOrder,
                             format.ConvertOrder,
                             format.RenderOrder,
                             format.OutputExtension,
                             string.Join(',', format.Extensions),
-                            string.Join(',', format.Aliases),
-                            RecognizerFingerprint(format.Recognizer)))
+                            string.Join(',', format.Aliases)))
                     .Order(StringComparer.Ordinal)),
             string.Join(
                 "\n",
@@ -730,23 +721,6 @@ public abstract class ProductContractTests<TModule>
                         .Order(StringComparer.Ordinal))),
             FactoryFingerprint(definition, "CommandFactory"),
             FactoryFingerprint(definition, "BindingFactory"));
-    }
-
-    private static string? RecognizerFingerprint(IFileRecognizer? recognizer)
-    {
-        if (recognizer is null)
-        {
-            return null;
-        }
-        FileRecognizerDescriptor descriptor = recognizer.Descriptor;
-        return string.Join(
-            ":",
-            recognizer.GetType().AssemblyQualifiedName,
-            descriptor.Strategy,
-            descriptor.Version,
-            descriptor.MaxProbeBytes,
-            string.Join(',', descriptor.EvidenceTypes),
-            descriptor.CooperativeCancellation);
     }
 
     private static string? FactoryFingerprint(
@@ -846,9 +820,6 @@ public abstract class ProductContractTests<TModule>
         string DisplayName,
         int DisplayOrder,
         Type SessionType,
-        string DefaultOwnerExtensions,
-        string AcceptedInputExtensions,
-        string? FileRecognizer,
         string OutputTypes,
         string Formats,
         string Diagnostics,

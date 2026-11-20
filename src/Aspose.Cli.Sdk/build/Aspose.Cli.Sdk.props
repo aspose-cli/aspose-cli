@@ -10,7 +10,6 @@
     <CompilerVisibleProperty Include="AsposeProductSdkPackageId" />
     <CompilerVisibleProperty Include="AsposeProductSdkVersion" />
     <CompilerVisibleProperty Include="AsposeProductDisplayOrder" />
-    <CompilerVisibleProperty Include="AsposeProductDefaultCandidate" />
 
     <ProjectReference
       Include="$(AsposeCliRepositoryAnalyzerProject)"

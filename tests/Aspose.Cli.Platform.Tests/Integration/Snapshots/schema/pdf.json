@@ -51,8 +51,7 @@
       }
     ],
     "loadFormats": [
-      "pdf",
-      "html"
+      "pdf"
     ],
     "convertFormats": [
       "pdf",
@@ -1096,7 +1095,7 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
+            "convert-input",
             "convert"
           ]
         },

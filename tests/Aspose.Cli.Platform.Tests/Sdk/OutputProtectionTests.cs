@@ -17,8 +17,8 @@ public sealed class OutputProtectionTests
     private static readonly Secret Encrypt = new("new-secret");
     private static readonly Secret InputPassword = new("input-secret");
     private static readonly FormatDescriptor Protectable =
-        FormatDescriptor.Declare("locked", FormatUse.Convert, true, ".locked") with { Protectable = true };
-    private static readonly FormatDescriptor Open = FormatDescriptor.Declare("open", FormatUse.Convert, true, ".open");
+        FormatDescriptor.Declare("locked", FormatUse.Convert, ".locked") with { Protectable = true };
+    private static readonly FormatDescriptor Open = FormatDescriptor.Declare("open", FormatUse.Convert, ".open");
 
     public enum Expected
     {

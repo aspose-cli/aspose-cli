@@ -44,6 +44,13 @@ public abstract class OutputPipeline : ILicenseState
     /// <inheritdoc />
     public LicenseState License => _licenseGate.EnsureApplied();
 
+    /// <summary>
+    /// The format declarations of every product of the catalog, by which <see cref="InputOpening"/>
+    /// tells an extension that names a format from one no format declares; empty when the
+    /// invocation states none, and then only the opening product's declarations count.
+    /// </summary>
+    public IReadOnlyList<FormatDescriptor> DeclaredFormats { get; init; } = [];
+
     /// <summary>Whether the engine runs in evaluation mode.</summary>
     public bool IsEvaluation => License == LicenseState.Evaluation;
 

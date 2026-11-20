@@ -598,30 +598,25 @@ public static partial class CliErrors
             details: facts);
     }
 
-    /// <summary>Creates an extension/content ownership conflict error.</summary>
-    public static CliException FormatMismatch(
-        string path,
-        string declaredProduct,
-        IReadOnlyList<string> detectedProducts)
+    /// <summary>
+    /// An input document whose extension, or lack of one, is none of the extensions of the
+    /// formats its product reads, refused before the file is read: <c>FORMAT_UNSUPPORTED</c>.
+    /// </summary>
+    /// <param name="path">The input file.</param>
+    /// <param name="extensions">The extensions the product reads, in declaration order.</param>
+    public static CliException ExtensionNotRead(string path, IReadOnlyList<string> extensions)
     {
-        JsonArray detected = Strings(detectedProducts);
-
+        ArgumentNullException.ThrowIfNull(extensions);
         return CliException.Create(
-            ErrorCodes.FormatMismatch,
-            Mismatch(path, declaredProduct, detectedProducts),
-            details: new JsonObject
-            {
-                ["path"] = path,
-                ["declared"] = declaredProduct,
-                ["detected"] = detected,
-            });
+            ErrorCodes.FormatUnsupported,
+            $"Input '{path}' has the extension {Path.GetExtension(path)}, which names a format this command does not read; it reads {string.Join(", ", extensions)}.",
+            details: new JsonObject { ["path"] = path, ["available"] = Strings(extensions) });
     }
 
     /// <summary>
-    /// Restates a product's <c>FILE_CORRUPT</c> about a file in no format a product reads, as
-    /// generic routing reports it, as <c>FORMAT_UNSUPPORTED</c>, so every command refuses the
-    /// file with one code. The product's message and details stay: they say, in its terms, what it
-    /// could not read.
+    /// Restates a product's <c>FILE_CORRUPT</c> about a file its format declarations do not let it
+    /// read, such as a format only <c>convert</c> reads, as <c>FORMAT_UNSUPPORTED</c>. The
+    /// product's message and details stay: they say, in its terms, what it does not read.
     /// </summary>
     /// <param name="corrupt">The product's <c>FILE_CORRUPT</c>.</param>
     public static CliException FormatUnsupported(CliException corrupt)
@@ -638,129 +633,6 @@ public static partial class CliErrors
             details: corrupt.Details?.DeepClone().AsObject(),
             innerException: corrupt.InnerException,
             explanation: corrupt.Explanation);
-    }
-
-    /// <summary>
-    /// Creates the error for a file whose extension names a product but whose content no
-    /// product recognizes: a damaged file rather than a renamed one, <c>FILE_CORRUPT</c> as the
-    /// product itself reports it. <c>FORMAT_MISMATCH</c> is for content that looks like another
-    /// product's.
-    /// </summary>
-    /// <param name="path">The file.</param>
-    /// <param name="declaredProduct">The product its extension names.</param>
-    public static CliException ContentUnrecognized(string path, string declaredProduct)
-    {
-        string reason = $"its content is not a {declaredProduct} document of its {Path.GetExtension(path)} extension";
-        return CliException.Create(
-            ErrorCodes.FileCorrupt,
-            $"Input is not a readable {declaredProduct} document: {path} ({reason}).",
-            details: new JsonObject { ["path"] = path },
-            explanation: reason);
-    }
-
-    /// <summary>
-    /// Creates the error for a file whose content no product recognizes under an extension that
-    /// is no product's own, such as <c>.xml</c> or <c>.html</c>, which some products read:
-    /// <c>FILE_CORRUPT</c>, as a damaged file of theirs, since the file can be another kind of file
-    /// of that extension.
-    /// </summary>
-    /// <param name="path">The file.</param>
-    /// <param name="readers">The products that read its extension, at least one.</param>
-    public static CliException ContentUnrecognized(string path, IReadOnlyList<string> readers)
-    {
-        ArgumentNullException.ThrowIfNull(readers);
-        string extension = Path.GetExtension(path);
-        string reason = $"no product that reads {extension} files ({string.Join(", ", readers)}) recognizes its content";
-        return CliException.Create(
-            ErrorCodes.FileCorrupt,
-            $"Input is not a readable document: {path} ({reason}).",
-            details: new JsonObject { ["path"] = path },
-            explanation: reason);
-    }
-
-    /// <summary>
-    /// Creates the error for a file in a format this CLI only writes, such as the <c>.xps</c> a
-    /// convert wrote: <c>FORMAT_UNSUPPORTED</c>, as for content no product recognizes.
-    /// </summary>
-    /// <param name="path">The file.</param>
-    /// <param name="candidates">The products that take part in the operation.</param>
-    public static CliException FormatOnlyWritten(
-        string path,
-        IReadOnlyList<string> candidates)
-    {
-        string extension = Path.GetExtension(path);
-        return CliException.Create(
-            ErrorCodes.FormatUnsupported,
-            $"No product reads '{Path.GetFileName(path)}': {DistributionInfo.CommandName} writes {extension} files but reads none.",
-            details: new JsonObject
-            {
-                ["path"] = path,
-                ["declared"] = null,
-                ["detected"] = new JsonArray(),
-                ["available"] = new JsonArray(candidates.Select(static value => JsonValue.Create(value)).ToArray()),
-            });
-    }
-
-    /// <summary>
-    /// Creates a fail-closed error when the file's content does not show which product reads
-    /// it. Content that looks like a product's format is <c>FORMAT_MISMATCH</c>: the extension
-    /// names another product's format, or no format the content can be read as. Content no
-    /// product recognizes is <c>FORMAT_UNSUPPORTED</c>; under an extension a product reads, such
-    /// content is that product's damaged file
-    /// (<see cref="ContentUnrecognized(string, IReadOnlyList{string})"/>).
-    /// </summary>
-    public static CliException FormatUnrecognized(
-        string path,
-        string? declaredProduct,
-        IReadOnlyList<string> detectedProducts,
-        IReadOnlyList<string> candidates)
-    {
-        var detected = new JsonArray(
-            detectedProducts.Select(static value => JsonValue.Create(value)).ToArray());
-        var available = new JsonArray(
-            candidates.Select(static value => JsonValue.Create(value)).ToArray());
-        string file = Path.GetFileName(path);
-        // The message states what details.detected does, as the product's own mismatch does.
-        string message = declaredProduct is null || detectedProducts.Count == 0
-            ? $"The content of '{file}' does not show which product reads it."
-            : Mismatch(path, declaredProduct, detectedProducts);
-        return CliException.Create(
-            detectedProducts.Count == 0 ? ErrorCodes.FormatUnsupported : ErrorCodes.FormatMismatch,
-            message,
-            details: new JsonObject
-            {
-                ["path"] = path,
-                ["declared"] = declaredProduct,
-                ["detected"] = detected,
-                ["available"] = available,
-            });
-    }
-
-    // The one sentence of a mismatch: what the content is, then the product that expected
-    // another document, whether the command's or the extension's.
-    private static string Mismatch(string path, string declaredProduct, IReadOnlyList<string> detectedProducts) =>
-        $"By its content, '{Path.GetFileName(path)}' is {LooksLike(detectedProducts)}; it is not a {declaredProduct} document.";
-
-    private static string LooksLike(IReadOnlyList<string> products) => products.Count == 1
-        ? $"a {products[0]} document"
-        : $"a document of one of: {string.Join(", ", products)}";
-
-    /// <summary>Creates an ambiguous strong-content recognition error.</summary>
-    public static CliException FormatAmbiguous(
-        string path,
-        IReadOnlyList<string> candidates)
-    {
-        JsonArray available = Strings(candidates);
-
-        return CliException.Create(
-            ErrorCodes.FormatAmbiguous,
-            $"The content of '{Path.GetFileName(path)}' looks like a document of more than one product: "
-                + $"{string.Join(", ", candidates)}.",
-            details: new JsonObject
-            {
-                ["path"] = path,
-                ["available"] = available,
-            });
     }
 
     /// <summary>

@@ -292,13 +292,10 @@ internal sealed class DefinitionPurityWalker : OperationWalker
         {
             SdkMetadataNames.Product => member == "Define",
             SdkMetadataNames.FormatDescriptor =>
-                member is ".ctor" or "Declare" or "Input" or "Routed"
+                member is ".ctor" or "Declare"
                     || IsDataMember(symbol),
             SdkMetadataNames.FormatDescriptorExtensions =>
                 member == "IdsFor",
-            SdkMetadataNames.FileFormatRecognition =>
-                member is "Match" or "FirstOf",
-            SdkMetadataNames.FileProbePattern => true,
             SdkMetadataNames.ResourceBudget =>
                 member == "Domain",
             SdkMetadataNames.ErrorCode =>
@@ -366,7 +363,6 @@ internal sealed class DefinitionPurityWalker : OperationWalker
     private static bool IsDefinitionValue(string typeName) =>
         typeName is
             SdkMetadataNames.ProductManifest
-            or SdkMetadataNames.RouteOwnership
             or SdkMetadataNames.ProductJsonDefinition;
 
     private static bool IsDataMember(ISymbol symbol) =>

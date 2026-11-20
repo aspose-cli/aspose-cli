@@ -22,7 +22,7 @@ internal static class CellsConvert
         var log = new EngineWarningLog();
         using LoadedWorkbook loaded = request.TextInput is { } text
             ? session.Loader.OpenText(request.Input, text.Format, text, log)
-            : session.Loader.Open(request.Input, request.Password, log);
+            : session.Loader.OpenForConvert(request.Input, request.Password, log);
         Workbook workbook = loaded.Workbook;
         string format = request.Output.Format.Id;
         SaveOptions options = CellsEngineFormats.Options(format, log);

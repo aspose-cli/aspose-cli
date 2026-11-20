@@ -12,47 +12,34 @@ public static class CellsFormats
     /// <summary>Canonical immutable format declarations owned by this product.</summary>
     internal static readonly IReadOnlyList<FormatDescriptor> Definitions =
     [
-        FormatDescriptor.Declare("xlsx", FormatUse.Input | FormatUse.Convert, true, ".xlsx") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
-        FormatDescriptor.Declare("xltx", FormatUse.Input | FormatUse.Convert, true, ".xltx") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
-        FormatDescriptor.Declare("xlsm", FormatUse.Input | FormatUse.Convert, true, ".xlsm") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
-        FormatDescriptor.Declare("xltm", FormatUse.Input | FormatUse.Convert, true, ".xltm") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
-        FormatDescriptor.Declare("xlam", FormatUse.Input | FormatUse.Convert, true, ".xlam") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
-        FormatDescriptor.Declare("xlsb", FormatUse.Input | FormatUse.Convert, true, ".xlsb") with { Protectable = true, Recognition = CellsFormatRecognition.SpreadsheetPackage },
-        FormatDescriptor.Declare("xls", FormatUse.Input | FormatUse.Convert, true, ".xls") with { Protectable = true, Recognition = CellsFormatRecognition.CompoundWorkbook },
-        FormatDescriptor.Declare("xlt", FormatUse.Input | FormatUse.Convert, true, ".xlt") with { Protectable = true, Recognition = CellsFormatRecognition.CompoundWorkbook },
-        FormatDescriptor.Declare("csv", FormatUse.Input | FormatUse.Convert, true, ".csv", ".txt") with
-        {
-            UnroutedExtensions = [".txt"],
-            Recognition = FileFormatRecognition.Match(
-                FileProbePattern.All(FileProbePattern.ValidText(), FileProbePattern.TextContains(",")),
-                "bounded delimited-text grammar",
-                70),
-        },
-        FormatDescriptor.Declare("tsv", FormatUse.Input | FormatUse.Convert, true, ".tsv", ".txt") with
-        {
-            UnroutedExtensions = [".txt"],
-            Recognition = FileFormatRecognition.Match(
-                FileProbePattern.All(FileProbePattern.ValidText(), FileProbePattern.TextContains("\t")),
-                "bounded tab-delimited grammar",
-                70),
-        },
+        FormatDescriptor.Declare("xlsx", FormatUse.Input | FormatUse.Convert, ".xlsx") with { Protectable = true },
+        FormatDescriptor.Declare("xltx", FormatUse.Input | FormatUse.Convert, ".xltx") with { Protectable = true },
+        FormatDescriptor.Declare("xlsm", FormatUse.Input | FormatUse.Convert, ".xlsm") with { Protectable = true },
+        FormatDescriptor.Declare("xltm", FormatUse.Input | FormatUse.Convert, ".xltm") with { Protectable = true },
+        FormatDescriptor.Declare("xlam", FormatUse.Input | FormatUse.Convert, ".xlam") with { Protectable = true },
+        FormatDescriptor.Declare("xlsb", FormatUse.Input | FormatUse.Convert, ".xlsb") with { Protectable = true },
+        FormatDescriptor.Declare("xls", FormatUse.Input | FormatUse.Convert, ".xls") with { Protectable = true },
+        FormatDescriptor.Declare("xlt", FormatUse.Input | FormatUse.Convert, ".xlt") with { Protectable = true },
+        FormatDescriptor.Declare("csv", FormatUse.ConvertInput | FormatUse.Convert, ".csv", ".txt"),
+        FormatDescriptor.Declare("tsv", FormatUse.ConvertInput | FormatUse.Convert, ".tsv", ".txt"),
         // Written only: reading an OpenDocument spreadsheet, the engine fetches what its SVG
         // pictures name while it loads, and HTML or MHTML, the images the page names; no engine
         // option or callback stops either (known issue CELLS-SVG-EGRESS).
-        FormatDescriptor.Declare("ods", FormatUse.Convert, false, ".ods") with { Protectable = true },
-        FormatDescriptor.Declare("html", FormatUse.Convert, false, ".html", ".htm"),
-        FormatDescriptor.Declare("mhtml", FormatUse.Convert, false, ".mhtml"),
-        FormatDescriptor.Declare("pdf", FormatUse.Convert, false, ".pdf"),
-        FormatDescriptor.Declare("xps", FormatUse.Convert, false, ".xps"),
-        FormatDescriptor.Declare("json", FormatUse.Convert, false, ".json"),
-        FormatDescriptor.Declare("md", FormatUse.Convert, false, ".md", ".markdown"),
-        FormatDescriptor.Declare("png", FormatUse.Render, false, ".png") with { Raster = true },
-        FormatDescriptor.Declare("jpeg", FormatUse.Render, false, ".jpg", ".jpeg") with { Raster = true },
-        FormatDescriptor.Declare("svg", FormatUse.Render, false, ".svg"),
+        FormatDescriptor.Declare("ods", FormatUse.Convert, ".ods") with { Protectable = true },
+        FormatDescriptor.Declare("html", FormatUse.Convert, ".html", ".htm"),
+        FormatDescriptor.Declare("mhtml", FormatUse.Convert, ".mhtml"),
+        FormatDescriptor.Declare("pdf", FormatUse.Convert, ".pdf"),
+        FormatDescriptor.Declare("xps", FormatUse.Convert, ".xps"),
+        FormatDescriptor.Declare("json", FormatUse.Convert, ".json"),
+        FormatDescriptor.Declare("md", FormatUse.Convert, ".md", ".markdown"),
+        FormatDescriptor.Declare("png", FormatUse.Render, ".png") with { Raster = true },
+        FormatDescriptor.Declare("jpeg", FormatUse.Render, ".jpg", ".jpeg") with { Raster = true },
+        FormatDescriptor.Declare("svg", FormatUse.Render, ".svg"),
     ];
 
-    /// <summary>The delimited text formats, which only convert reads and writes.</summary>
-    internal static IReadOnlyList<string> Delimited { get; } = ["csv", "tsv"];
+    /// <summary>The delimited text formats: those only convert reads, which it also writes.</summary>
+    internal static IReadOnlyList<string> Delimited { get; } =
+        [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.ConvertInput)).Select(static format => format.Id)];
 
     /// <summary>The separator a delimited text format has itself, by format id: a tsv input is tab-separated.</summary>
     internal static IReadOnlyDictionary<string, char> FixedSeparators { get; } = new Dictionary<string, char>(StringComparer.Ordinal) { ["tsv"] = '	' };
@@ -76,5 +63,5 @@ public static class CellsFormats
     /// each back in its own format.
     /// </summary>
     internal static IReadOnlyList<FormatDescriptor> Editable { get; } =
-        [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input | FormatUse.Convert) && !Delimited.Contains(format.Id))];
+        [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input | FormatUse.Convert))];
 }

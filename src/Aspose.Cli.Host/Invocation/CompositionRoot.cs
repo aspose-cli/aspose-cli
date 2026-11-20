@@ -39,6 +39,7 @@ internal static class CompositionRoot
             ResourceBudgets = effectiveBudgets,
             Paths = new PathResolver(workDir),
             ProductActivation = CreateActivation(
+                catalog,
                 globals,
                 workDir,
                 effectiveBudgets,
@@ -63,6 +64,7 @@ internal static class CompositionRoot
     }
 
     private static ProductActivationContext CreateActivation(
+        ProductCatalog catalog,
         GlobalValues globals,
         string workDirectory,
         ResourceBudgetLedger resourceBudgets,
@@ -80,6 +82,7 @@ internal static class CompositionRoot
             EnvironmentVariable = environmentVariable,
             SafeFileWriter = writer,
             ResourceBudgets = resourceBudgets,
+            Formats = [.. catalog.Products.SelectMany(static product => product.Formats)],
         };
     }
 

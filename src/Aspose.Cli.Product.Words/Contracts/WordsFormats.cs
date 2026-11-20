@@ -12,77 +12,47 @@ public static class WordsFormats
     /// OpenDocument and text formats: <see cref="FormatDescriptor.ConvertOrder"/> ranks those
     /// groups, each in declaration order.
     /// </summary>
-    private static readonly IReadOnlyList<string> EditableIds = ["doc", "dot", "docx", "docm", "dotx", "dotm", "flatopc", "rtf", "wordml", "odt", "ott"];
-
     internal static readonly IReadOnlyList<FormatDescriptor> Definitions =
     [
-        FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, true, ".doc") with { Protectable = true, Recognition = WordsFormatRecognition.CompoundDocument },
-        FormatDescriptor.Declare("dot", FormatUse.Input | FormatUse.Convert, true, ".dot") with { Protectable = true, Recognition = WordsFormatRecognition.CompoundDocument },
-        FormatDescriptor.Declare("docx", FormatUse.Input | FormatUse.Convert, true, ".docx") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },
-        FormatDescriptor.Declare("docm", FormatUse.Input | FormatUse.Convert, true, ".docm") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },
-        FormatDescriptor.Declare("dotx", FormatUse.Input | FormatUse.Convert, true, ".dotx") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },
-        FormatDescriptor.Declare("dotm", FormatUse.Input | FormatUse.Convert, true, ".dotm") with { Protectable = true, Recognition = WordsFormatRecognition.OpenXmlDocument },
+        FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, ".doc") with { Protectable = true },
+        FormatDescriptor.Declare("dot", FormatUse.Input | FormatUse.Convert, ".dot") with { Protectable = true },
+        FormatDescriptor.Declare("docx", FormatUse.Input | FormatUse.Convert, ".docx") with { Protectable = true },
+        FormatDescriptor.Declare("docm", FormatUse.Input | FormatUse.Convert, ".docm") with { Protectable = true },
+        FormatDescriptor.Declare("dotx", FormatUse.Input | FormatUse.Convert, ".dotx") with { Protectable = true },
+        FormatDescriptor.Declare("dotm", FormatUse.Input | FormatUse.Convert, ".dotm") with { Protectable = true },
         // Flat OPC is plain XML: the engine encrypts it only by writing an encrypted package, which
         // is no longer the .xml document the caller named, so it carries no password.
-        FormatDescriptor.Declare("flatopc", FormatUse.Input | FormatUse.Convert, true, ".xml") with
-        {
-            SharedExtensions = [".xml"],
-            Recognition = FileFormatRecognition.Match(
-                FileProbePattern.All(
-                    FileProbePattern.TextStartsIgnoringBomAndWhitespace("<"),
-                    FileProbePattern.TextContains("schemas.microsoft.com/office/2006/xmlPackage"),
-                    FileProbePattern.Any(
-                        FileProbePattern.TextContains("progid=\"Word.Document\""),
-                        FileProbePattern.TextContains("pkg:name=\"/word/"))),
-                "flat OPC word-processing package"),
-        },
-        FormatDescriptor.Declare("rtf", FormatUse.Input | FormatUse.Convert, true, ".rtf") with
-        {
-            Recognition = FileFormatRecognition.Match(FileProbePattern.TextStartsIgnoringBomAndWhitespace(@"{\rtf"), "RTF header"),
-        },
+        FormatDescriptor.Declare("flatopc", FormatUse.Input | FormatUse.Convert, ".xml"),
+        FormatDescriptor.Declare("rtf", FormatUse.Input | FormatUse.Convert, ".rtf"),
         // Word 2003 XML.
-        FormatDescriptor.Declare("wordml", FormatUse.Input | FormatUse.Convert, true, ".xml") with
-        {
-            SharedExtensions = [".xml"],
-            Recognition = FileFormatRecognition.Match(
-                FileProbePattern.All(
-                    FileProbePattern.TextStartsIgnoringBomAndWhitespace("<"),
-                    FileProbePattern.TextContains("schemas.microsoft.com/office/word/2003/wordml")),
-                "Word 2003 XML namespace"),
-        },
-        FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, false, ".html", ".htm") with { ConvertOrder = 1 },
-        FormatDescriptor.Declare("mhtml", FormatUse.Input | FormatUse.Convert, false, ".mhtml") with { ConvertOrder = 2 },
-        FormatDescriptor.Declare("odt", FormatUse.Input | FormatUse.Convert, true, ".odt") with { Protectable = true, ConvertOrder = 3, Recognition = WordsFormatRecognition.OpenDocumentText },
-        FormatDescriptor.Declare("ott", FormatUse.Input | FormatUse.Convert, true, ".ott") with { Protectable = true, ConvertOrder = 3, Recognition = WordsFormatRecognition.OpenDocumentText },
-        FormatDescriptor.Declare("txt", FormatUse.Input | FormatUse.Convert, true, ".txt") with { ConvertOrder = 3, Recognition = WordsFormatRecognition.PlainText },
-        FormatDescriptor.Declare("md", FormatUse.Input | FormatUse.Convert, true, ".md", ".markdown") with { ConvertOrder = 3, Recognition = WordsFormatRecognition.PlainText },
-        FormatDescriptor.Declare("pdf", FormatUse.Input | FormatUse.Convert, false, ".pdf"),
-        FormatDescriptor.Declare("epub", FormatUse.Input | FormatUse.Convert, true, ".epub") with
-        {
-            ConvertOrder = 2,
-            Recognition = FileFormatRecognition.Match(
-                FileProbePattern.ZipContainsAny("application/epub+zip", "META-INF/container.xml"),
-                "EPUB container marker"),
-        },
-        FormatDescriptor.Declare("mobi", FormatUse.Input | FormatUse.Convert, true, ".mobi") with { ConvertOrder = 2, Recognition = WordsFormatRecognition.Mobipocket },
-        FormatDescriptor.Declare("azw3", FormatUse.Input | FormatUse.Convert, true, ".azw3") with { ConvertOrder = 2, Recognition = WordsFormatRecognition.Mobipocket },
-        FormatDescriptor.Declare("chm", FormatUse.Input, true, ".chm") with
-        {
-            Recognition = FileFormatRecognition.Match(FileProbePattern.AsciiBytesAt(0, "ITSF"), "CHM signature"),
-        },
-        FormatDescriptor.Declare("xps", FormatUse.Convert, false, ".xps"),
-        FormatDescriptor.Declare("openxps", FormatUse.Convert, false, ".oxps"),
-        FormatDescriptor.Declare("ps", FormatUse.Convert, false, ".ps"),
-        FormatDescriptor.Declare("pcl", FormatUse.Convert, false, ".pcl"),
-        FormatDescriptor.Declare("html-fixed", FormatUse.Convert, false, ".html", ".htm") with { ConvertOrder = 1 },
-        FormatDescriptor.Declare("png", FormatUse.Render, false, ".png") with { Raster = true },
-        FormatDescriptor.Declare("jpeg", FormatUse.Render, false, ".jpg", ".jpeg") with { Raster = true },
-        FormatDescriptor.Declare("svg", FormatUse.Render, false, ".svg"),
+        FormatDescriptor.Declare("wordml", FormatUse.Input | FormatUse.Convert, ".xml"),
+        FormatDescriptor.Declare("html", FormatUse.ConvertInput | FormatUse.Convert, ".html", ".htm") with { ConvertOrder = 1 },
+        FormatDescriptor.Declare("mhtml", FormatUse.ConvertInput | FormatUse.Convert, ".mhtml") with { ConvertOrder = 2 },
+        FormatDescriptor.Declare("odt", FormatUse.Input | FormatUse.Convert, ".odt") with { Protectable = true, ConvertOrder = 3 },
+        FormatDescriptor.Declare("ott", FormatUse.Input | FormatUse.Convert, ".ott") with { Protectable = true, ConvertOrder = 3 },
+        FormatDescriptor.Declare("txt", FormatUse.ConvertInput | FormatUse.Convert, ".txt") with { ConvertOrder = 3 },
+        FormatDescriptor.Declare("md", FormatUse.ConvertInput | FormatUse.Convert, ".md", ".markdown") with { ConvertOrder = 3 },
+        FormatDescriptor.Declare("pdf", FormatUse.ConvertInput | FormatUse.Convert, ".pdf"),
+        FormatDescriptor.Declare("epub", FormatUse.ConvertInput | FormatUse.Convert, ".epub") with { ConvertOrder = 2 },
+        FormatDescriptor.Declare("mobi", FormatUse.ConvertInput | FormatUse.Convert, ".mobi") with { ConvertOrder = 2 },
+        FormatDescriptor.Declare("azw3", FormatUse.ConvertInput | FormatUse.Convert, ".azw3") with { ConvertOrder = 2 },
+        FormatDescriptor.Declare("chm", FormatUse.ConvertInput, ".chm"),
+        FormatDescriptor.Declare("xps", FormatUse.Convert, ".xps"),
+        FormatDescriptor.Declare("openxps", FormatUse.Convert, ".oxps"),
+        FormatDescriptor.Declare("ps", FormatUse.Convert, ".ps"),
+        FormatDescriptor.Declare("pcl", FormatUse.Convert, ".pcl"),
+        FormatDescriptor.Declare("html-fixed", FormatUse.Convert, ".html", ".htm") with { ConvertOrder = 1 },
+        FormatDescriptor.Declare("png", FormatUse.Render, ".png") with { Raster = true },
+        FormatDescriptor.Declare("jpeg", FormatUse.Render, ".jpg", ".jpeg") with { Raster = true },
+        FormatDescriptor.Declare("svg", FormatUse.Render, ".svg"),
     ];
 
-    /// <summary>The formats edit writes, and read, search, edit and render open: the engine reads and saves the whole document in each.</summary>
+    /// <summary>
+    /// The formats edit writes, and read, search, edit and render open, which every command that
+    /// opens a document reads: the engine reads and saves the whole document in each.
+    /// </summary>
     internal static IReadOnlyList<FormatDescriptor> Editable { get; } =
-        [.. Definitions.Where(static format => EditableIds.Contains(format.Id, StringComparer.Ordinal))];
+        [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input))];
 
     /// <summary>The formats convert writes, in the order its help lists them.</summary>
     internal static IReadOnlyList<FormatDescriptor> Writable { get; } =
@@ -92,7 +62,7 @@ public static class WordsFormats
     internal static IReadOnlyList<string> FixedPageFormats { get; } = ["pdf", "xps", "openxps", "ps", "pcl", "html-fixed"];
 
     /// <summary>Whether edit writes <paramref name="id"/>.</summary>
-    internal static bool IsEditable(string id) => EditableIds.Contains(id, StringComparer.Ordinal);
+    internal static bool IsEditable(string id) => Editable.Any(format => format.Id == id);
 
     /// <summary>Whether <paramref name="id"/> is plain text or Markdown, which convert reads with the options the caller stated.</summary>
     internal static bool IsText(string id) => IsPlainText(id) || IsMarkdown(id);

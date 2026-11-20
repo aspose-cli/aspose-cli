@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Input;
@@ -39,10 +38,14 @@ internal sealed class PdfDocumentLoader
         });
 
     public LoadedPdf Open(string path, PasswordSource password) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password));
+        InputOpening.Open(_outputs, _resourceBudgets, PdfFormats.Definitions, path, () => OpenCore(path, password));
 
     /// <summary>Opens a user input with the password from the command's <c>--password-env</c>, if any.</summary>
     public LoadedPdf Open(string path, Secret? password) => Open(path, PasswordSource.Option(password));
+
+    /// <summary>Opens the document a convert reads, with the password from its <c>--password-env</c>, if any.</summary>
+    internal LoadedPdf OpenForConvert(string path, Secret? password) =>
+        InputOpening.OpenForConvert(_outputs, _resourceBudgets, PdfFormats.Definitions, path, () => OpenCore(path, PasswordSource.Option(password)));
 
     // Generated candidates are bounded by publication, not a second user-input admission.
     internal LoadedPdf OpenPublishedCandidate(string path, Secret? password) =>
@@ -53,7 +56,7 @@ internal sealed class PdfDocumentLoader
     /// the engine's default page size and margins.
     /// </summary>
     internal LoadedPdf OpenHtml(string path, HtmlImportResources resources) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () =>
+        InputOpening.OpenForConvert(_outputs, _resourceBudgets, PdfFormats.Definitions, path, () =>
         {
             FileStream? stream = null;
             try
@@ -85,18 +88,6 @@ internal sealed class PdfDocumentLoader
 
     private LoadedPdf OpenCore(string path, PasswordSource password)
     {
-        if (PdfFormats.IsHtmlInput(path))
-        {
-            throw CliErrors.FormatUnsupported(Loading.Unreadable(path, "it is html, which only convert reads"));
-        }
-
-        if (PdfFormats.IsMarkdownInput(path))
-        {
-            throw CliErrors.FormatUnsupported(Loading.Unreadable(path, "it is Markdown, which no PDF command reads: the engine's Markdown import has no hook for the resources a file names; Words reads Markdown"));
-        }
-
-        EnsurePdfHeader(path);
-
         FileStream? stream = null;
         try
         {
@@ -149,19 +140,6 @@ internal sealed class PdfDocumentLoader
         finally
         {
             stream?.Dispose();
-        }
-    }
-
-    private static void EnsurePdfHeader(string path)
-    {
-        bool found = Loading.Load(path, password: default, () =>
-        {
-            using FileStream stream = InputFiles.OpenRead(path);
-            return ContainerSignatures.HasPdfHeader(ContainerSignatures.ReadPrefix(stream));
-        });
-        if (!found)
-        {
-            throw Loading.Unreadable(path, $"the PDF header was not found in the first {ContainerSignatures.PdfHeaderWindow} bytes");
         }
     }
 }

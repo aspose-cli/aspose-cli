@@ -12,7 +12,6 @@ public sealed class CellsModule : IProductModule
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = ProductBuildMetadata.DisplayOrder,
-        IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
             ResourceBudgets =
             [
                 ResourceBudget.Domain(CellsBudgetDomains.Sheets, 1_000, 10_000, "items", "post-load"),

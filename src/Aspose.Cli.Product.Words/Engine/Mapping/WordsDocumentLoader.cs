@@ -38,15 +38,15 @@ internal sealed class WordsDocumentLoader
 
     /// <summary>Opens a user input in a format edit writes, with the password its options give.</summary>
     internal LoadedDocument Open(string path, Secret? password, EngineWarningLog warnings) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, PasswordSource.Option(password), warnings, editable: true, text: null));
+        InputOpening.Open(_outputs, _resourceBudgets, WordsFormats.Definitions, path, () => OpenCore(path, PasswordSource.Option(password), warnings, editable: true, text: null));
 
     /// <summary>Opens a user input such as a template, with the password <paramref name="password"/> gives.</summary>
     internal LoadedDocument Open(string path, PasswordSource password, EngineWarningLog warnings) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, warnings, editable: true, text: null));
+        InputOpening.Open(_outputs, _resourceBudgets, WordsFormats.Definitions, path, () => OpenCore(path, password, warnings, editable: true, text: null));
 
     /// <summary>Opens a user input in any format the engine reads; a text format with <paramref name="text"/>.</summary>
     internal LoadedDocument OpenAny(string path, Secret? password, WordsTextInput? text, EngineWarningLog warnings) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, PasswordSource.Option(password), warnings, editable: false, text));
+        InputOpening.OpenForConvert(_outputs, _resourceBudgets, WordsFormats.Definitions, path, () => OpenCore(path, PasswordSource.Option(password), warnings, editable: false, text));
 
     /// <summary>Opens an output this invocation just saved, to read it back; its size is bounded by publication.</summary>
     internal LoadedDocument Reopen(string path, Secret? password, EngineWarningLog warnings) =>

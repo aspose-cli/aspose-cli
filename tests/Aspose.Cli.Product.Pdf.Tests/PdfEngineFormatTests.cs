@@ -16,7 +16,7 @@ public sealed class PdfEngineFormatTests
         foreach (FormatDescriptor format in PdfFormats.Definitions)
         {
             PdfEngineFormat? engine = PdfEngineFormats.All.SingleOrDefault(entry => entry.Id == format.Id);
-            if (format.Uses.HasFlag(FormatUse.Input) && engine?.Read != true)
+            if ((format.Uses & (FormatUse.Input | FormatUse.ConvertInput)) != 0 && engine?.Read != true)
             {
                 missing.Add($"{format.Id}: not read by the engine");
             }

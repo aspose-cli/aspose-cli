@@ -54,8 +54,8 @@ public sealed class CellsResourceTests : IDisposable
 
     [Theory]
     [InlineData("ods", "FORMAT_UNSUPPORTED")]
-    [InlineData("html", "FILE_CORRUPT")]
-    [InlineData("mhtml", "FILE_CORRUPT")]
+    [InlineData("html", "FORMAT_UNSUPPORTED")]
+    [InlineData("mhtml", "FORMAT_UNSUPPORTED")]
     public void Read_OfAFormatCellsOnlyWrites_IsRefused(string format, string code)
     {
         CliResult written = _workspace.Run("cells", "create", "book.xlsx");

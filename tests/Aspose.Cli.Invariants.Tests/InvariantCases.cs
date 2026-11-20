@@ -303,13 +303,13 @@ internal static class InvariantCases
         int[] refusals = [.. ExitCodesOf(catalog, "usage", "format")];
         ScenarioExpectation Refused() => new() { ExitCode = refusals, Files = new ScenarioFiles { NothingWritten = true } };
         string own = ScenarioFixtures.PrimaryFormat(product.Id);
-        string[] writable = [.. product.LoadFormats, .. product.ConvertFormats, .. product.RenderFormats, "jpg"];
+        string[] writable = [.. product.ReadFormats, .. product.ConvertFormats, .. product.RenderFormats, "jpg"];
         // One foreign extension per other product: the first format it loads that this product
         // neither reads nor writes.
         string[] foreign =
         [
             .. catalog.Products.Where(other => other.Id != product.Id)
-                .Select(other => other.LoadFormats.FirstOrDefault(format => !writable.Contains(format)))
+                .Select(other => other.ReadFormats.FirstOrDefault(format => !writable.Contains(format)))
                 .OfType<string>(),
         ];
         if (foreign.Length == 0)
@@ -458,7 +458,7 @@ internal static class InvariantCases
             yield break;
         }
         string[] backTo = [.. new[] { own, "pdf" }.Where(product.ConvertFormats.Contains).Distinct()];
-        foreach (string source in product.LoadFormats.Where(format => format != own && product.ConvertFormats.Contains(format)))
+        foreach (string source in product.ReadFormats.Where(format => format != own && product.ConvertFormats.Contains(format)))
         {
             foreach (string target in backTo)
             {
@@ -490,9 +490,25 @@ internal static class InvariantCases
         ["pdf pdfa-3b"] = ["--convert-error-action", "Delete"],
     };
 
+    /// <summary>
+    /// The name of an input file in the format <paramref name="format"/>: the extension the format
+    /// id spells when the product declares it, else the format's first declared extension, as
+    /// <c>.xml</c> for wordml.
+    /// </summary>
+    private static string InputName(string product, string format)
+    {
+        string[] extensions =
+        [
+            .. CliCatalog.Current.FormatNodes(product)
+                .Single(node => node["id"]!.GetValue<string>() == format)["extensions"]!.AsArray()
+                .Select(static extension => extension!.GetValue<string>()),
+        ];
+        return "input" + (extensions.Contains("." + format, StringComparer.Ordinal) ? "." + format : extensions[0]);
+    }
+
     private static InvariantCase Conversion(string product, string verb, string source, string target, string shard, bool slow)
     {
-        string input = "input." + source;
+        string input = InputName(product, source);
         var invocation = new Invocation([product, verb, input, "--to", target, .. TextInputOptions.GetValueOrDefault($"{product} {source}", []), .. TargetOptions.GetValueOrDefault($"{product} {target}", [])]);
         invocation.Files[input] = new ScenarioFile { Fixture = $"{product}.{source}" };
         if (verb == "convert" && TextInputOptions.TryGetValue($"{product} {target}", out string[]? text))

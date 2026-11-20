@@ -140,7 +140,11 @@ public sealed record FormatInfo
     /// <summary>Other names the format id accepts.</summary>
     public required IReadOnlyList<string> Aliases { get; init; }
 
-    /// <summary>What the product does with the format: <c>input</c>, <c>convert</c> or <c>render</c>.</summary>
+    /// <summary>
+    /// What the product does with the format: <c>input</c>, every command that opens a document
+    /// reads it; <c>convert-input</c>, only <c>convert</c> reads it; <c>convert</c>, <c>convert</c>
+    /// writes it; <c>render</c>, <c>render</c> writes it.
+    /// </summary>
     public required IReadOnlyList<string> Uses { get; init; }
 }
 

@@ -14,9 +14,6 @@ public sealed record ProductManifest
     /// <summary>The position of the product where products are listed.</summary>
     public int DisplayOrder { get; init; }
 
-    /// <summary>Whether this product is the preferred generic default when compiled.</summary>
-    public bool IsDefaultCandidate { get; init; }
-
     /// <summary>The engine compiled into the product.</summary>
     public required ProductEngine Engine { get; init; }
 

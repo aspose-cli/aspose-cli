@@ -41,7 +41,7 @@ public sealed class ResourceBudgetOptionTests
                 ],
                 Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine { Sdk = "Aspose.Test", SdkVersion = "1.0.0" },
             })
-            .Formats([FormatDescriptor.Input("alpha", 0, RouteOwnership.Explicit, ".alpha")])
+            .Formats([FormatDescriptor.Declare("alpha", FormatUse.Input, ".alpha")])
             .Diagnostics([])
             .Json(new ProductJsonDefinition("alpha", SdkJsonContext.Default))
             .WithCommand<ITestSession, TestResult>("read", new Option<int>("--max-items"))

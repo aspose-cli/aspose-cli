@@ -238,7 +238,7 @@ public sealed partial class DecisionOwnershipTests
     [InlineData("pdf")]
     [InlineData("xps")]
     public void D2_Cells_DeclaresNoInputItCannotRead(string format) =>
-        Assert.DoesNotContain(format, CliCatalog.Current.Product("cells").LoadFormats);
+        Assert.DoesNotContain(format, CliCatalog.Current.Product("cells").ReadFormats);
 
     /// <summary>
     /// A product compares no value with one of its declared format ids: what a format does is a

@@ -1,50 +1,25 @@
 namespace Aspose.Cli.Sdk.Extensibility;
 
 using System.Collections.Frozen;
-using System.Collections.ObjectModel;
-using Aspose.Cli.Sdk.Formats;
 
 /// <summary>Validated, immutable catalog of build-time product definitions.</summary>
 public sealed class ProductCatalog
 {
     private readonly IReadOnlyDictionary<string, ProductDefinition> _byId;
-    private readonly IReadOnlyDictionary<string, ProductDefinition> _defaultOwners;
-    private readonly IReadOnlyDictionary<string, string> _resolvedOwners;
-    private readonly IReadOnlyList<string> _defaultOwnerExtensions;
-    private readonly ProductDefinition? _defaultProduct;
 
     internal ProductCatalog(
         IReadOnlyList<ProductDefinition> products,
-        IReadOnlyDictionary<string, string> resolvedOwners,
         ProductResourceCatalog resources)
     {
         Products = Array.AsReadOnly(products.ToArray());
         _byId = Products.ToFrozenDictionary(
             static product => product.Manifest.Id,
             StringComparer.OrdinalIgnoreCase);
-        var orderedOwners = new SortedDictionary<string, string>(
-            StringComparer.OrdinalIgnoreCase);
-        foreach ((string extension, string productId) in resolvedOwners)
-        {
-            orderedOwners.Add(extension, productId);
-        }
-        _resolvedOwners = new ReadOnlyDictionary<string, string>(
-            orderedOwners);
-        _defaultOwners = _resolvedOwners
-            .ToFrozenDictionary(
-                static item => item.Key,
-                item => _byId[item.Value],
-                StringComparer.OrdinalIgnoreCase);
-        _defaultOwnerExtensions = Array.AsReadOnly(
-            _defaultOwners.Keys.Order(StringComparer.Ordinal).ToArray());
-
         Resources = resources ?? throw new ArgumentNullException(nameof(resources));
         Diagnostics = DiagnosticCatalog.Build(Products, Resources);
         JsonDefinitions = Array.AsReadOnly(Products
             .Select(static product => product.Json)
             .ToArray());
-        _defaultProduct = Products.SingleOrDefault(
-            static product => product.Manifest.IsDefaultCandidate);
     }
 
     /// <summary>Definitions in deterministic display order.</summary>
@@ -112,69 +87,6 @@ public sealed class ProductCatalog
         }
     }
 
-    /// <summary>Finds the unique generic-routing owner for an extension.</summary>
-    public bool TryGetDefaultOwner(
-        string extension,
-        out ProductDefinition? product)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(extension);
-        return _defaultOwners.TryGetValue(
-            NormalizeExtension(extension),
-            out product);
-    }
-
-    /// <summary>
-    /// Finds the final owner for an extension when that product declares the
-    /// requested generic operation.
-    /// </summary>
-    public bool TryGetDefaultOwner(
-        string extension,
-        string operation,
-        out ProductDefinition? product)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
-        if (!TryGetDefaultOwner(extension, out product))
-        {
-            return false;
-        }
-        if (product!.Formats.Count == 0)
-        {
-            bool standardOperation =
-                StandardFileRouteOperations.Contains(operation);
-            if (!standardOperation)
-            {
-                product = null;
-            }
-            return standardOperation;
-        }
-
-        string normalized = NormalizeExtension(extension);
-        bool eligible = product.Formats.Any(format =>
-            format.Uses.HasFlag(FormatUse.Input)
-            && format.Ownership == RouteOwnership.Default
-            && format.Extensions.Any(candidate =>
-                string.Equals(
-                    NormalizeExtension(candidate),
-                    normalized,
-                    StringComparison.Ordinal))
-            && StandardFileRouteOperations.Contains(operation));
-        if (!eligible)
-        {
-            product = null;
-        }
-        return eligible;
-    }
-
-    /// <summary>
-    /// Explicitly declared default product, or null when this distribution has
-    /// no implicit default. Catalog ordering is never used as a fallback.
-    /// </summary>
-    public ProductDefinition? DefaultProduct => _defaultProduct;
-
-    /// <summary>All extensions with a unique generic-routing owner.</summary>
-    public IReadOnlyList<string> DefaultOwnerExtensions =>
-        _defaultOwnerExtensions;
-
     internal static string NormalizeExtension(string extension)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(extension);
@@ -199,7 +111,6 @@ public sealed class ProductCatalog
         var validator = new ProductDefinitionValidator(registrations);
         var products = new List<ProductDefinition>();
         var productIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var owners = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var resources = new Dictionary<string, ProductPackageResources>(
             StringComparer.OrdinalIgnoreCase);
         foreach (IProductModule module in modules)
@@ -211,18 +122,6 @@ public sealed class ProductCatalog
                 throw new InvalidOperationException(
                     $"Product id '{productId}' is registered more than once.");
             }
-            foreach (string extension in product.Files.DefaultOwnerExtensions)
-            {
-                string normalized = NormalizeExtension(extension);
-                if (!owners.TryAdd(normalized, productId))
-                {
-                    throw new InvalidOperationException(
-                        $"Extension '{normalized}' has multiple default owners: "
-                        + $"'{owners[normalized]}' and '{productId}'. "
-                        + "Make all but one declaration explicit-only.");
-                }
-            }
-
             ProductPackageResources package = ProductPackageResources.Discover(
                 module.GetType().Assembly,
                 productId);
@@ -235,19 +134,8 @@ public sealed class ProductCatalog
             .OrderBy(static product => product.Manifest.DisplayOrder)
             .ThenBy(static product => product.Manifest.Id, StringComparer.Ordinal)
             .ToArray();
-        string[] defaults = ordered
-            .Where(static product => product.Manifest.IsDefaultCandidate)
-            .Select(static product => product.Manifest.Id)
-            .ToArray();
-        if (defaults.Length > 1)
-        {
-            throw new InvalidOperationException(
-                "A distribution can declare at most one default product. "
-                + $"Candidates: {string.Join(", ", defaults)}.");
-        }
         return new ProductCatalog(
             ordered,
-            owners,
             ProductResourceCatalog.Build(
                 ordered.Select(product => (
                     resources[product.Manifest.Id],

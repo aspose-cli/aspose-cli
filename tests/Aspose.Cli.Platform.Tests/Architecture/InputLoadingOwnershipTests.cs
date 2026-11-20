@@ -7,9 +7,10 @@ namespace Aspose.Cli.Architecture.Tests;
 
 /// <summary>
 /// Decision D8, input loading: the SDK owns load results and their error translation. It decides
-/// between a required and an invalid password, turns I/O failures into locked, not-found or
-/// access errors, and recognizes the container signatures (OLE compound file, PDF header) once. A
-/// product supplies only the engine call and a classifier of its engine's exceptions. These rules
+/// between a required and an invalid password and turns I/O failures into locked, not-found or
+/// access errors; no source checks a container signature (OLE compound file, PDF header, ZIP), so
+/// what a file holds is the engine's to say. A product supplies only the engine call and a
+/// classifier of its engine's exceptions. These rules
 /// read source syntax only, so they hold whatever the SDK names its loading types.
 /// </summary>
 public sealed class InputLoadingOwnershipTests
@@ -97,21 +98,21 @@ public sealed class InputLoadingOwnershipTests
     }
 
     [Fact]
-    public void D8_TheOleSignature_IsCheckedOnlyInTheSdk() =>
-        AssertOneSdkOwner("The OLE compound file signature (D0 CF 11 E0 A1 B1 1A E1)", OleSignature, [0xE11AB1A1E011CFD0]);
+    public void D8_TheOleSignature_IsCheckedNowhere() =>
+        AssertNoOwner("The OLE compound file signature (D0 CF 11 E0 A1 B1 1A E1)", OleSignature, [0xE11AB1A1E011CFD0]);
 
     [Fact]
-    public void D8_ThePdfHeader_IsCheckedOnlyInTheSdk() =>
-        AssertOneSdkOwner("The PDF header (%PDF)", PdfHeader, [0x46445025]);
+    public void D8_ThePdfHeader_IsCheckedNowhere() =>
+        AssertNoOwner("The PDF header (%PDF)", PdfHeader, [0x46445025]);
 
     [Fact]
-    public void D8_TheZipSignature_IsCheckedOnlyInTheSdk() =>
-        AssertOneSdkOwner("The ZIP local file header signature (PK 03 04)", ZipSignature, [0x04034B50]);
+    public void D8_TheZipSignature_IsCheckedNowhere() =>
+        AssertNoOwner("The ZIP local file header signature (PK 03 04)", ZipSignature, [0x04034B50]);
 
     // -- Support ------------------------------------------------------------------------------
 
     /// <summary>The files that spell a signature: as bytes, as text or as an integer read of its first bytes.</summary>
-    private static void AssertOneSdkOwner(string what, byte[] signature, ulong[] integers)
+    private static void AssertNoOwner(string what, byte[] signature, ulong[] integers)
     {
         string text = new([.. signature.Select(static value => (char)value)]);
         // The first four bytes identify the signature; a check need not spell all of them.
@@ -126,8 +127,8 @@ public sealed class InputLoadingOwnershipTests
                 .Select(static file => (file.IsUnder(OwnershipSourceFiles.SdkRoot) ? "SDK " : "    ") + file.Relative),
         ];
 
-        Assert.True(owners.Length == 1 && owners[0].StartsWith("SDK ", StringComparison.Ordinal),
-            $"{what} is checked once, in the SDK; it is checked in:" + Environment.NewLine + string.Join(Environment.NewLine, owners));
+        Assert.True(owners.Length == 0,
+            $"{what} is checked nowhere: the engine reads what a file holds; it is checked in:" + Environment.NewLine + string.Join(Environment.NewLine, owners));
     }
 
     private static bool SpellsText(SyntaxToken token, string text) =>

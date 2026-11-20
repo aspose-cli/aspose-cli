@@ -1,0 +1,19 @@
+{
+  "name": "a product command refuses, before reading it, a file whose extension names a format the command does not read (an xps, an html, csv text for read) as FORMAT_UNSUPPORTED; a file whose extension no format declares, or that has none, goes to the engine: a workbook without an extension opens, and text under an unknown extension is FILE_CORRUPT, as is a damaged file of a format it reads",
+  "files": {
+    "t.foo": { "text": "hi" },
+    "book": { "fixture": "cells.xlsx" },
+    "sales.xps": { "fixture": "cells.xps" },
+    "damaged.xlsx": { "text": "hi" },
+    "t.html": { "base64": "AQJnYXJiYWdl/w==" },
+    "data.csv": { "text": "a,b\n1,2\n" }
+  },
+  "steps": [
+    { "args": ["cells", "read", "t.foo"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "read", "book"], "expect": { "exitCode": 0 } },
+    { "args": ["cells", "read", "sales.xps"], "expect": { "exitCode": 6, "error": "FORMAT_UNSUPPORTED", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "read", "damaged.xlsx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "read", "t.html"], "expect": { "exitCode": 6, "error": "FORMAT_UNSUPPORTED", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "read", "data.csv"], "expect": { "exitCode": 6, "error": "FORMAT_UNSUPPORTED", "files": { "nothingWritten": true } } }
+  ]
+}

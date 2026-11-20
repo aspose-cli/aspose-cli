@@ -54,7 +54,7 @@ public sealed record CatalogProduct
     /// <summary>The product's commands, each one's words after the product id, in ordinal order.</summary>
     public required IReadOnlyList<CatalogCommand> Commands { get; init; }
 
-    /// <summary>Format ids the product opens as an input.</summary>
+    /// <summary>Format ids every command of the product that opens a document reads; the formats document names those only convert reads.</summary>
     public required IReadOnlyList<string> LoadFormats { get; init; }
 
     /// <summary>Format ids <c>convert --to</c> writes.</summary>

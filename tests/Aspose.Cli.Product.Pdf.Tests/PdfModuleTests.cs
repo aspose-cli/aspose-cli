@@ -1,5 +1,4 @@
 using Aspose.Cli.TestKit;
-using Xunit;
 
 namespace Aspose.Cli.Product.Pdf.Tests;
 
@@ -9,12 +8,4 @@ public sealed class PdfModuleTests
 {
     /// <summary>PDF reads no product-owned input document: its edit document is the object table's.</summary>
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } = [];
-
-    [Fact]
-    public Task EveryDefaultInputFormatHasPositiveRoutingEvidence() =>
-        ProductRoutingContract.AssertPositiveRoutesAsync<PdfModule>(
-            new Dictionary<string, byte[]>(StringComparer.Ordinal)
-            {
-                ["pdf"] = ProductRoutingContract.Utf8("%PDF-1.7\n"),
-            });
 }
