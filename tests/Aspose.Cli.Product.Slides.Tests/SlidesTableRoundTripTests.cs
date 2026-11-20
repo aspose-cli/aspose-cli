@@ -135,7 +135,8 @@ public sealed class SlidesTableRoundTripTests
     /// around it, leave the saved package as the engine alone saves it for the same change. A deck
     /// with a chart and no animation is given a title once by the engine alone (open, set
     /// DocumentProperties.Title, save) and once by slides edit; the packages hold the same parts
-    /// with the same bytes, none excepted.
+    /// with the same bytes, but for the time of the save in the core properties, which the engine
+    /// writes as the moment of each save (<see cref="SavedPackage"/>).
     /// </summary>
     [Fact]
     public void Edit_SavesThePackageTheEngineAloneSavesForTheSameChange()
@@ -159,26 +160,8 @@ public sealed class SlidesTableRoundTripTests
 
         SlidesEdit.Run(fixture.Session, Request(input, fixture.File("cli.pptx"), """{"ops":[{"set":"presentation","props":{"title":"Same"}}]}"""));
 
-        Dictionary<string, byte[]> alone = PackageParts(engine);
-        Dictionary<string, byte[]> edited = PackageParts(fixture.File("cli.pptx"));
-        Assert.Equal(alone.Keys.Order(StringComparer.Ordinal), edited.Keys.Order(StringComparer.Ordinal));
-        string[] differ = [.. alone.Keys.Where(name => !alone[name].AsSpan().SequenceEqual(edited[name])).Order(StringComparer.Ordinal)];
+        string[] differ = SavedPackage.Differences(engine, fixture.File("cli.pptx"));
         Assert.True(differ.Length == 0, "Parts that differ: " + string.Join(", ", differ));
-    }
-
-    private static Dictionary<string, byte[]> PackageParts(string package)
-    {
-        using ZipArchive archive = ZipFile.OpenRead(package);
-        var parts = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (ZipArchiveEntry entry in archive.Entries)
-        {
-            using Stream stream = entry.Open();
-            using var buffer = new MemoryStream();
-            stream.CopyTo(buffer);
-            parts[entry.FullName] = buffer.ToArray();
-        }
-
-        return parts;
     }
 
     /// <summary>
