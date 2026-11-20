@@ -1,31 +1,27 @@
 # Editing with operation batches
 
 Every product edits through `aspose-cli <product> edit <file> --ops <ops>`.
-The ops document is a JSON object with an `ops` array; each entry names its
-`op` and that operation's fields. Put every related change in one document.
+The ops document is a JSON object with an `ops` array; each entry is one
+`set`, `add`, `delete`, `move` or `do` on the product's object table. Put
+every related change in one document.
 
-## Discovering operations and fields
+## Discovering the table
 
-The generated schema is the only field reference. Ask it instead of guessing:
+The generated schema is the only reference. Ask it instead of guessing:
 
 ```powershell
-aspose-cli capabilities pdf edit --output-format json
-aspose-cli schema v2/pdf/ops --operation set_properties
-aspose-cli schema v2/pdf/ops
+aspose-cli schema v2/pdf/ops --operation directory
+aspose-cli schema v2/pdf/ops --operation field
+aspose-cli schema v2/pdf/ops --operation do.stamp_text
 ```
 
-- `capabilities <product> edit` names the operations, the batch limit and the
-  schema command.
-- `schema v2/<product>/ops --operation <op>` prints one operation's fields,
-  types, defaults, allowed values and descriptions.
-- The whole schema's `description` says how the product resolves addresses
-  across a batch (against the original document or as the earlier operations
-  left it) and what each field's `x-readBack` value means.
-- A field's `x-readBack` names the read result property that reports what
-  the field writes; read a changed field back there before you report it.
-
-The product's `aspose-cli docs <product>/editing` groups the operations by task
-and gives recipes and ordering rules the schema cannot state.
+- `--operation directory` lists the kinds with their address forms, the rows
+  a `set` writes and the rows that are read only, each add with its
+  parameters and each action with its parameters, in one short document.
+- `--operation <kind>`, `add.<kind>` or `do.<action>` prints one entry in
+  full: each row's or parameter's type and the engine member it names.
+- A row names one engine member: setting it sets that member only, and what
+  else the engine changes with it is the engine's doing.
 
 ## The batch document
 
@@ -34,72 +30,37 @@ A PDF batch, for example:
 ```json
 {
   "ops": [
-    { "id": "title", "op": "set_properties", "title": "Quarterly report" },
-    { "op": "add_page_numbers" }
+    { "set": "document", "props": { "info.title": "Quarterly report" } },
+    { "do": "stamp_text", "args": { "page": "page/1", "value": "1" } }
   ]
 }
 ```
 
-- Operations apply in order. The bare array of operations is accepted as the
-  document with only its `ops`.
-- `id` is optional; results echo it, and `op-0001` style ids are assigned when
-  omitted. Give ids to the operations you will look up in the result.
+- Operations apply in order, each on what the ones before it left.
 - Write the document to a file and pass its path. `--ops` also takes `-` for
   stdin or the JSON itself, but how a shell passes inline JSON or piped text
   varies (`aspose-cli docs troubleshooting`, Windows PowerShell), and only one
   option of a command reads stdin.
 
-## Atomic batches and dry run
+## Atomic batches
 
-- **Atomic.** If any operation fails, nothing is written. The error
-  names the failing operation in `details.id` and `details.op`, and its
-  message says why; a misspelled field, operation or value lists the valid
-  ones in `details.available`.
-  When several entries fail the same check, `details.errors` lists each of
-  them. Fix those entries and run the whole batch again.
+- If any operation fails, nothing is written. The error names the failing
+  operation by its position in `details.index` and its address in
+  `details.at`, and its message says why; a misspelled kind, row or value
+  lists the valid ones in `details.available`. Fix the entry and run the whole
+  batch again.
 - A file an operation reads, such as an image, that is missing or locked fails
-  that operation, with `FILE_NOT_FOUND` or `FILE_LOCKED` and its
-  `details.id`, like any failed operation, and nothing is written.
-- **`--dry-run`.** Checks the input, the output and the batch, applies the
-  batch in memory and writes nothing. The result has `dryRun: true`, the
-  `checked` list and the `applied[]` outcomes, with operation warnings such as
-  `OP_NO_EFFECT`. Warnings about a written output, such as `EVALUATION_MODE` or
-  `ENCRYPTION_REMOVED`, come only from the real run, so a clean dry run does
-  not mean the real run is free of them.
+  that operation, with `FILE_NOT_FOUND` or `FILE_LOCKED`, like any failed
+  operation, and nothing is written.
 
 ## Reading the outcome
 
-Each operation has one `applied[]` entry with its `id`, `op`, `status`,
-`itemsAffected` and `targets` (`aspose-cli schema v2/common/operation-outcome`).
-The CLI reads the objects each operation can change before and after it, so
-both fields state what actually changed:
-
-- `itemsAffected` is the number of objects the operation changed. It is 0
-  exactly when the operation changed nothing, and then the operation warns
-  `OP_NO_EFFECT` with its `details.id`, `details.op` and `details.reason`:
-  a replacement that matched no text, say, or a value written again over the
-  same value. Act on that warning.
-- `targets` lists the addresses of the objects the operation changed, where
-  the output holds them, or where the input held an object the batch
-  removed; an operation that changed nothing lists none. Past 100 addresses
-  it lists one coarser address per unit instead: a range such as
-  `page/1-150`, or `<unit>/all` for objects named rather than numbered, such
-  as cells or styles.
-
-The outcome says what changed, not that it is what you meant: read the
-changed parts back before you report them (`aspose-cli docs verification`).
-
-A product Skill says when its edits reopen the output before publishing it;
-where a product offers `--verify`, it adds a semantic check described in the
-product Skill. Any `verification.issues` entry makes `verification.ok` false
-and the command exit 8; each issue has a stable `code` and, when known, a
-`location`. A warning with `affectsCompleteness: true` about content the edit
-lost is an issue too, with the warning's code, message and location; the
-product Skill names those that are only reported, such as a link the output
-keeps. `verification.checkedOps` lists the operations the check read back,
-and `verification.uncheckedOps` every other operation of the batch with the
-`reason`; it is absent when all were read back. `ok: true` says nothing about
-an operation in `uncheckedOps`: confirm it with a read of the output.
+The result has one entry per operation, read from the saved file after it was
+opened again: its `at` and what the object's rows are `now`; an action gives
+the engine's `returned` value and the `at` it names. `counts` lists the
+inventory counts that changed. The outcome says what the file holds, not that
+it is what you meant: check it against what you asked for before you report
+it.
 
 ## Output and in-place
 
@@ -112,10 +73,10 @@ an operation in `uncheckedOps`: confirm it with a read of the output.
 
 ## Secrets and encryption
 
-Operation fields whose names end in `Env` (such as `passwordEnv`) hold the
-name of an environment variable, never the secret. A missing or empty
-variable fails only the operation that names it. Command options follow the
-same rule: prefer the `-env` and `-stdin` forms, such as `--password-env`,
+Parameters whose names end in `Env` (such as `passwordEnv`) hold the name of
+an environment variable, never the secret. A missing or empty variable fails
+only the operation that names it. Command options follow the same rule:
+prefer the `-env` and `-stdin` forms, such as `--password-env`,
 `--encrypt-env` and `--password-stdin`; the plain forms are visible in the
 process list. A `-stdin` form reads the password as the first line of stdin,
 as UTF-8 text whatever the console's code page, and refuses other bytes with
@@ -135,9 +96,6 @@ outputs can be encrypted.
 ## When a target is not found
 
 A not-found error (a `*_NOT_FOUND` code) states what exists, so you can
-correct the request without another inspection: `details.requested` echoes
-what you asked for and `details.available` lists the existing names;
+correct the request without another read: `details.requested` echoes what you
+asked for and `details.available` lists the existing names;
 `aspose-cli schema v2/common/not-found-details` describes every field.
-Operation errors add `details.id` and `details.op`. A name that several targets share is refused
-with `OPS_INVALID` instead of picking one; address the target by its stable id
-or number.

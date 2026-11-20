@@ -27,17 +27,16 @@ project by default or for the user with `--user`.
 
 ## What you can rely on
 
-- **Atomic edits.** `edit` applies one batch of operations: the result is staged, validated and
-  published, or nothing changes. `--in-place` replaces the input, and `--dry-run` writes nothing.
-  No other command writes over one of its inputs.
-- **Verification.** `edit --verify` reads the staged output back and reports semantic evidence
-  before publication.
+- **Atomic edits.** `edit` applies one batch of operations: the result is staged and published,
+  or nothing changes. `--in-place` replaces the input. No other command writes over one of its
+  inputs.
+- **Read-back.** An edit reports each operation as it reads it from the saved file, opened again.
 - **A stable contract.** A command writes one JSON result to stdout or one JSON error to stderr,
   with a stable code and exit code; [Compatibility](#compatibility) says what stays stable.
 - **Bounded work.** Inputs, rendering and extraction are held to the budgets that `capabilities`
   lists.
-- **No network access.** A document never causes a network request unless you opt in, and each
-  omitted resource is reported ([SECURITY.md](SECURITY.md#boundaries)).
+- **No network access.** A document never causes a network request, and each omitted resource
+  is reported ([SECURITY.md](SECURITY.md#boundaries)).
 - **Your fonts.** Commands whose output depends on fonts accept `--font-dir` to add local font
   directories to the system fonts.
 

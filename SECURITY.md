@@ -9,10 +9,9 @@ reproduction. Do not attach customer documents, passwords, tokens or license con
 
 Each boundary names the tests that check it, and `SecurityClaimsTests` keeps those names current.
 
-- **Network.** Documents never cause network requests unless the caller opts in for trusted
-  input. Every command passes one network gate before it runs, in every process that runs it,
-  which blocks the http, https, ftp and file requests of the document engines; an opt-in opens
-  http and https for that command alone. External resources are read only from ordinary local
+- **Network.** Documents never cause network requests. Every command passes one network gate
+  before it runs, in every process that runs it, which blocks the http, https, ftp and file
+  requests of the document engines. External resources are read only from ordinary local
   files beneath the input directory, and each omitted or blocked resource is reported; see
   [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
   Checked by: `PdfResourceLoadingTests`, `CellsResourceTests`,
@@ -28,13 +27,14 @@ Each boundary names the tests that check it, and `SecurityClaimsTests` keeps tho
   `CustomerInstallerPowerShellTests.Install_WhileAnotherProcessHoldsTheDirectoryLock_ChangesNothingUntilItIsReleased`,
   `OutputIsInputContractTests`, `PublicationOwnershipTests`, `OwnershipMatrixTests`.
 - **Secrets.** License contents and passwords never enter logs or results, and an installed
-  license file is readable only by the current user. SDK evaluation effects are always disclosed.
+  license file is readable only by the current user. A run without a license says so in its
+  result's license mode.
   Checked by: `HostSecretTests`,
   `DecisionOwnershipTests.D5_SecretType_RedactsItsTextAndJson`,
   `LicenseManagementTests.LicenseContents_NeverEnterResultsOrDiagnostics`,
   `LicenseInstallerTests.InstalledLicense_InASharedFolder_IsReadableOnlyByTheCurrentUser`,
   `LicenseManagementTests.InstalledLicense_InASharedConfigurationDirectory_IsReadableOnlyByTheCurrentUser`,
-  `EvaluationMarkDisclosureTests`, `EvaluationOwnershipTests`.
+  `LicenseModeTests`, `EvaluationOwnershipTests`.
 
 ## Releases
 
