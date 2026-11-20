@@ -7,39 +7,29 @@ internal static class ExtractCommand
 {
     public static CommandDefinition<WordsExtractRequest, WordsExtractResult> Create()
     {
-        var what = new Option<string>("--what") { Required = true, Description = "What to extract; tables writes one CSV file per body table." }.WithInput(InputKind.None);
-        what.AcceptOnlyFromAmong([.. WordsExtractTargets.Names]);
-        var bom = new BomOption("each table's CSV", onlyWith: "--what tables");
+        var what = new Option<string>("--what") { Required = true, Description = "What to extract: images, the bytes of each image the document stores." }.WithInput(InputKind.None);
+        what.AcceptOnlyFromAmong([.. WordsExtractKinds.All]);
         return new(
             "extract",
-            "Extract bounded document assets.",
+            "Write the bytes of each image the document stores, ImageData.ImageBytes, one file per image in document order; a linked image stores none.",
             new CommandTraits
             {
                 Input = WordsInputs.Document,
-                Output = OutputTarget.Directory("Safe extraction directory."),
+                Output = OutputTarget.Directory("The directory the images go to."),
             },
-            [what, .. bom.Options],
-            (parse, standard) =>
+            [what],
+            (parse, standard) => new WordsExtractRequest
             {
-                // The usage check runs before the input is resolved or read.
-                string kind = parse.GetRequiredValue(what);
-                bool byteOrderMark = bom.Read(parse, kind == WordsExtractTargets.Tables ? null : $"--what {kind} writes no CSV tables");
-
-                return new WordsExtractRequest
-                {
-                    Input = standard.Input,
-                    What = kind,
-                    Output = standard.DirectoryOutput,
-                    ByteOrderMark = byteOrderMark,
-                    Password = standard.InputPassword,
-                };
+                Input = standard.Input,
+                What = parse.GetRequiredValue(what),
+                Output = standard.DirectoryOutput,
+                Password = standard.InputPassword,
             })
         {
             Examples =
             [
                 "words extract report.docx --what images --out-dir images",
-                "words extract report.docx --what text --out-dir text",
-                "words extract report.docx --what tables --bom --out-dir tables",
+                "words extract locked.docx --what images --password-env DOC_PASSWORD --out-dir images",
             ],
             Links =
             [

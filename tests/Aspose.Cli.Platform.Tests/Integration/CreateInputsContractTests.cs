@@ -28,7 +28,6 @@ public sealed class CreateInputsContractTests : IDisposable
     [InlineData("cells create book.xlsx")]
     [InlineData("slides create deck.pptx")]
     [InlineData("words create doc.docx")]
-    [InlineData("words create doc.docx --title Notes")]
     public void CreateFromNoFile_ReportsEmptyInputs(string commandLine)
     {
         JsonArray inputs = Inputs(commandLine);
@@ -38,9 +37,7 @@ public sealed class CreateInputsContractTests : IDisposable
 
     [Theory]
     [InlineData("slides create deck.pptx --template brand.pptx", "--template:brand.pptx:pptx")]
-    [InlineData("words create doc.docx --template brand.docx --from-markdown outline.md", "--template:brand.docx:docx", "--from-markdown:outline.md:md")]
-    [InlineData("words create doc.docx --from-text notes.txt --template brand.docx", "--from-text:notes.txt:txt", "--template:brand.docx:docx")]
-    [InlineData("words create doc.docx --from-markdown outline.md", "--from-markdown:outline.md:md")]
+    [InlineData("words create doc.docx --template brand.docx", "--template:brand.docx:docx")]
     [InlineData("pdf create doc.pdf --from-images b.png --from-images a.png", "--from-images:b.png:png", "--from-images:a.png:png")]
     [InlineData("pdf create doc.pdf --from-markdown outline.md", "--from-markdown:outline.md:md")]
     [InlineData("pdf create doc.pdf --from-text notes.txt", "--from-text:notes.txt:txt")]

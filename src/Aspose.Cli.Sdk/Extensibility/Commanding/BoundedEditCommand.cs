@@ -10,20 +10,6 @@ using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
-/// <summary>
-/// A product's one-line shorthand for common operations (<c>--set</c>). Each directive
-/// compiles to exactly one operation, appended after the <c>--ops</c> document.
-/// </summary>
-/// <param name="Description">Help text naming the directive grammar with an example.</param>
-/// <param name="Parse">Compiles one directive or rejects it with <c>OPTION_INVALID</c>.</param>
-/// <param name="CreateBatch">Creates the product document for directive-only batches.</param>
-public sealed record SetDirectiveGrammar<TOp, TBatch>(
-    string Description,
-    Func<string, TOp> Parse,
-    Func<IReadOnlyList<TOp>, TBatch> CreateBatch)
-    where TOp : BoundedOperation
-    where TBatch : BoundedOperationEnvelope<TOp>;
-
 /// <summary>What a product supplies to the shared bounded-edit command skeleton.</summary>
 /// <remarks>The operation vocabulary is the one <typeparamref name="TOp"/> declares.</remarks>
 public sealed record BoundedEditDefinition<TOp, TBatch>
@@ -38,9 +24,6 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
     /// <c>--out</c> is named, chooses among them.
     /// </summary>
     public required IReadOnlyList<FormatDescriptor> Writes { get; init; }
-
-    /// <summary>The <c>--set</c> shorthand, or null when the product has none.</summary>
-    public SetDirectiveGrammar<TOp, TBatch>? SetDirectives { get; init; }
 
     /// <summary>
     /// Help for <c>--verify</c>: what the product's verification reads back, to which the command
@@ -76,11 +59,11 @@ public sealed record BoundedEditInvocation<TBatch>(
 
 /// <summary>
 /// The one command skeleton of every bounded, atomic product edit. It owns the operation
-/// document (<c>--ops</c>) and its composition with <c>--set</c> directives and the
+/// document (<c>--ops</c>) and the
 /// execution semantics (<c>--dry-run</c>, <c>--verify</c>), so every product accepts and rejects the same combinations. Its
 /// command, defined through <see cref="EditDefinition"/>, publishes the edited document as a
 /// mutation output (<c>--out</c>, <c>--overwrite</c>, <c>--in-place</c>).
-/// <c>--ops</c> is optional only together with <c>--set</c>: an edit needs one of them.
+/// An edit without <c>--ops</c> is a usage error.
 /// </summary>
 public sealed class BoundedEditCommand<TOp, TBatch>
     where TOp : BoundedOperation, IOperationVocabulary<TOp>
@@ -94,7 +77,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
 
     private readonly BoundedEditDefinition<TOp, TBatch> _definition;
     private readonly Option<string?> _ops;
-    private readonly Option<string[]>? _set;
     private readonly Option<bool>? _verify;
     private readonly IReadOnlyList<Option> _options;
 
@@ -114,15 +96,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 + $"with ./ . At most {BoundedOperation.MaximumPerBatch} operations. "
                 + $"Vocabulary: {DistributionInfo.CommandName} schema {schema}.",
         }.WithInput(InputKind.JsonSource);
-        if (definition.SetDirectives is { } grammar)
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(grammar.Description);
-            _set = new Option<string[]>(StandardOptionNames.Set)
-            {
-                Description = grammar.Description,
-            }.WithInput(InputKind.None);
-        }
-
         if (definition.VerifyDescription is { } verify)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(verify);
@@ -132,7 +105,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         _options =
         [
             _ops,
-            .. _set is null ? [] : new Option[] { _set },
             .. _verify is null ? [] : new Option[] { _verify },
         ];
     }
@@ -176,12 +148,9 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     internal BoundedEditInvocation<TBatch> Read(ParseResult parse, StandardInvocation standard, bool encrypts)
     {
         string? source = parse.GetValue(_ops);
-        string[] directives = _set is null ? [] : parse.GetValue(_set) ?? [];
-        if (source is null && directives.Length == 0)
+        if (source is null)
         {
-            throw CliErrors.Usage([_set is null
-                ? $"Give {OpsOption} (an ops JSON document)."
-                : $"Give {OpsOption} (an ops JSON document), {StandardOptionNames.Set}, or both."]);
+            throw CliErrors.Usage([$"Give {OpsOption} (an ops JSON document)."]);
         }
 
         bool verify = IsVerifyRequested(parse);
@@ -195,10 +164,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
 
         ResolvedOutput output = standard.Output;
         PathResolver paths = standard.Paths;
-        TOp[] compiled = _definition.SetDirectives is { } grammar
-            ? directives.Select(grammar.Parse).ToArray()
-            : [];
-        TBatch batch = Compose(source is null ? null : ParseDocument(source, paths, standard.Inputs), compiled);
+        TBatch batch = ParseDocument(source, paths, standard.Inputs);
         // Every [InputPath] member resolves against the invocation directory; the edit never
         // publishes over a file an operation reads. A file that does not exist fails the
         // operation that reads it, which the runner numbers.
@@ -245,21 +211,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         }
 
         return secrets;
-    }
-
-    private TBatch Compose(TBatch? document, TOp[] compiled)
-    {
-        if (document is null)
-        {
-            return TOp.Catalog.Prepare(_definition.SetDirectives!.CreateBatch(compiled));
-        }
-
-        return compiled.Length == 0
-            ? document
-            : TOp.Catalog.Prepare((TBatch)((BoundedOperationEnvelope<TOp>)document with
-            {
-                Ops = [.. document.Ops, .. compiled],
-            }));
     }
 
     private TBatch ParseDocument(string source, PathResolver paths, InputSource inputs)

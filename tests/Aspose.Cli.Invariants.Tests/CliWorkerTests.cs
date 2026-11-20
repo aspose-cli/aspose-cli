@@ -424,7 +424,7 @@ public sealed class CliWorkerTests
             Assert.Equal(0, worker.Run(directory.Path, ["--version"], environment, TimeSpan.FromSeconds(120)).ExitCode);
             foreach (string missing in new[] { "missing.docx", "absent.docx" })
             {
-                Assert.NotEqual(0, worker.Run(directory.Path, ["words", "inspect", missing, "--output-format", "json"], environment, TimeSpan.FromSeconds(120)).ExitCode);
+                Assert.NotEqual(0, worker.Run(directory.Path, ["words", "read", missing, "--output-format", "json"], environment, TimeSpan.FromSeconds(120)).ExitCode);
             }
         }
 

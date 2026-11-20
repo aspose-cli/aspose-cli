@@ -2,20 +2,15 @@ using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Words.Contracts;
 
-/// <summary>Options for creating one document.</summary>
+/// <summary>One <c>words create</c>: the engine's new document, or a template saved as a new one.</summary>
 public sealed record WordsCreateRequest
 {
-    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    /// <summary>Where the document goes, in its format.</summary>
     public required ResolvedOutput Output { get; init; }
-    /// <summary>The Markdown the body is made from (<c>--from-markdown</c>), or null.</summary>
-    public SourceFile? Markdown { get; init; }
 
-    /// <summary>The UTF-8 text the body is made from, one paragraph per line (<c>--from-text</c>), or null.</summary>
-    public SourceFile? Text { get; init; }
-
-    /// <summary>The document whose styles, page setup, headers and footers are used (<c>--template</c>), or null.</summary>
+    /// <summary>The template, or null for the engine's new document.</summary>
     public SourceFile? Template { get; init; }
 
-    public string? Title { get; init; }
+    /// <summary>The password the output opens with, or null.</summary>
     public Secret? EncryptPassword { get; init; }
 }

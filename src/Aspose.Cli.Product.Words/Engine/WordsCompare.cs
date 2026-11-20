@@ -1,90 +1,73 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Cli.Sdk.Text;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Words;
 using Aspose.Words.Comparing;
-using Aspose.Words.Saving;
-using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
-/// <summary>Serves <c>words compare</c>: a semantic comparison and an optional redline.</summary>
+/// <summary><c>words compare</c>: Document.Compare of a copy of the original with the changed document, saved as the redline.</summary>
 internal static class WordsCompare
 {
-    // The revision samples a comparison returns; the revision counts always cover every revision.
-    private const int SampleLimit = 50;
-
-    /// <summary>Compares two documents and optionally writes a reviewed copy.</summary>
     internal static WordsCompareResult Run(WordsSession session, WordsCompareRequest request)
     {
-        string leftPath = request.Left;
-        string rightPath = request.Right;
         LicenseState state = session.Outputs.License;
-        using LoadedDocument leftLoaded = session.Loader.Open(leftPath, request.LeftPassword);
-        using LoadedDocument rightLoaded = session.Loader.Open(rightPath, request.RightPassword);
-        if (leftLoaded.Document.Revisions.Count > 0 || rightLoaded.Document.Revisions.Count > 0)
+        var log = new EngineWarningLog();
+        using LoadedDocument left = session.Loader.Open(request.Left, request.LeftPassword, log);
+        using LoadedDocument right = session.Loader.Open(request.Right, request.RightPassword, log);
+        Document compared = left.Document.Clone();
+        var options = new CompareOptions();
+        if (request.Granularity is { } granularity)
         {
-            throw new CliException(
-                WordsDiagnostics.RevisionsUnresolved,
-                "Words comparison requires both source documents to have no existing revisions.");
+            options.Granularity = Enum.GetNames<Granularity>().Contains(granularity, StringComparer.Ordinal)
+                ? Enum.Parse<Granularity>(granularity)
+                : throw CliErrors.OptionInvalid("--granularity", $"'{granularity}' is no member of Granularity; it is one of: {string.Join(", ", Enum.GetNames<Granularity>())}");
         }
 
-        Document compared = leftLoaded.Document.Clone();
-        compared.Compare(rightLoaded.Document, request.Author ?? "Aspose CLI", DateTime.UtcNow, new CompareOptions
+        foreach (string ignored in request.Ignore)
         {
-            IgnoreFormatting = request.IgnoreFormatting,
-            Granularity = request.Granularity == "char" ? Granularity.CharLevel : Granularity.WordLevel,
-        });
-        Revision[] revisions = compared.Revisions.Cast<Revision>().ToArray();
-        IReadOnlyDictionary<Node, int> fieldCode = WordsText.FieldCodeNodes(compared);
-        OutputInfo? output = null;
-        string? format = null;
-        IReadOnlyList<Warning>? conversion = null;
-        if (request.Output is { } redline)
-        {
-            FormatDescriptor written = redline.Keeping(leftLoaded.FormatId);
-            format = written.Id;
-            // The redline is a copy of the original, so it keeps the original's password where its format can.
-            OutputProtection protection = OutputProtection.For(written, encrypt: null, leftLoaded.Protection, request.LeftPassword);
-            SaveOptions options = WordsSavePipeline.Options(format, protection.Password);
-            WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
-            conversion = PrepareConversion(compared, format, leftLoaded.Evaluation, redline: true);
-            PublishedFile file = session.Outputs.Write(redline.Path, written, redline.Overwrite, compared, temp => compared.Save(temp, options),
-                encrypted: protection.Encrypted);
-            output = FileObjects.Output(file, written, encrypted: protection.Encrypted);
+            WordsCompareOptions.Set(options, ignored);
         }
 
+        compared.Compare(right.Document, request.Author, request.DateTime, options);
+        OutputProtection protection = OutputProtection.For(request.Output.Format, encrypt: null, left.Protection, request.LeftPassword);
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, compared, temp =>
+        {
+            log.During = "save";
+            compared.Save(temp, WordsEngineFormats.Options(request.Output.Format.Id, protection.Password));
+            left.Resources.ThrowIfFailed();
+        }, encrypted: protection.Encrypted);
         return new WordsCompareResult
         {
-            Left = InfoProjection.Source(leftPath, leftLoaded),
-            Right = InfoProjection.Source(rightPath, rightLoaded),
-            Identical = revisions.Length == 0,
-            Revisions = new WordsRevisionCounts
-            {
-                InsertionCount = revisions.Count(static r => r.RevisionType == RevisionType.Insertion),
-                DeletionCount = revisions.Count(static r => r.RevisionType == RevisionType.Deletion),
-                FormatChangeCount = revisions.Count(static r => r.RevisionType == RevisionType.FormatChange),
-                MoveCount = revisions.Count(static r => r.RevisionType == RevisionType.Moving),
-            },
-            Samples = revisions.Take(SampleLimit).Select(revision => new WordsRevisionSample
-            {
-                Kind = InfoProjection.RevisionKindName(revision.RevisionType),
-                Text = InfoProjection.NodeText(revision, fieldCode) is { } text && WordsText.Clean(text) is { Length: > 0 } clean
-                    ? TextSearch.Truncate(clean, 300)
-                    : null,
-            }).ToArray(),
-            Output = output,
+            Left = FileObjects.Input(request.Left, left.FormatId, left.Protection.Encrypted),
+            Right = FileObjects.Input(request.Right, right.FormatId, right.Protection.Encrypted),
+            Output = FileObjects.Output(written, request.Output.Format, encrypted: protection.Encrypted),
+            RevisionCount = compared.Revisions.Count,
+            EngineWarnings = log.Warnings.Count == 0 ? null : log.Warnings,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(
-                CompareWarnings(leftLoaded, rightLoaded),
-                format is null ? null : [.. conversion!, .. SaveWarnings(leftLoaded, format)],
-                revisions.Length > SampleLimit
-                    ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length)]
-                    : null),
+            Warnings = EnvelopeParts.CombineWarnings(left.Warnings, right.Warnings),
         };
     }
+}
+
+/// <summary>The CompareOptions members compare sets to true, by the option that names each.</summary>
+internal static class WordsCompareOptions
+{
+    private static IReadOnlyList<(string Option, Action<CompareOptions> Set)> All { get; } =
+    [
+        ("--ignore-formatting", static o => o.IgnoreFormatting = true),
+        ("--ignore-case-changes", static o => o.IgnoreCaseChanges = true),
+        ("--ignore-comments", static o => o.IgnoreComments = true),
+        ("--ignore-tables", static o => o.IgnoreTables = true),
+        ("--ignore-fields", static o => o.IgnoreFields = true),
+        ("--ignore-footnotes", static o => o.IgnoreFootnotes = true),
+        ("--ignore-textboxes", static o => o.IgnoreTextboxes = true),
+        ("--ignore-headers-and-footers", static o => o.IgnoreHeadersAndFooters = true),
+    ];
+
+    internal static void Set(CompareOptions options, string option) =>
+        All.First(entry => entry.Option == option).Set(options);
 }

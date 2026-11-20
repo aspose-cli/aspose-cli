@@ -475,6 +475,8 @@ internal static class InvariantCases
     {
         ["cells csv"] = ["--separator", ",", "--encoding", "utf-8", "--convert-numbers", "false", "--convert-dates", "false"],
         ["cells tsv"] = ["--encoding", "utf-8", "--convert-numbers", "false", "--convert-dates", "false"],
+        ["words txt"] = ["--encoding", "utf-8", "--auto-numbering-detection", "false", "--detect-numbering-with-whitespaces", "false", "--detect-hyperlinks", "false", "--leading-spaces", "Preserve"],
+        ["words md"] = ["--encoding", "utf-8"],
     };
 
     private static InvariantCase Conversion(string product, string verb, string source, string target, string shard, bool slow)
@@ -586,11 +588,11 @@ internal static class InvariantCases
     /// </summary>
     private static IEnumerable<InvariantCase> OperationSecretCases(CliCatalog catalog, CliProduct product)
     {
-        if (product.OpsSchemaId is null)
+        if (OpsSchema(catalog, product) is not { } schema)
         {
             yield break;
         }
-        JsonNode definitions = JsonNode.Parse(catalog.SchemaText(product.OpsSchemaId))!["$defs"]!;
+        JsonNode definitions = JsonNode.Parse(catalog.SchemaText(schema))!["$defs"]!;
         string extension = ScenarioFixtures.PrimaryFormat(product.Id);
         string input = "input." + extension;
         // The fixture is not protected and the variable holds the fixture password: an operation
@@ -598,53 +600,98 @@ internal static class InvariantCases
         // password as the wrong one; nothing else.
         int refused = catalog.Diagnostics[PasswordInvalid].ExitCode!.Value;
         HashSet<string> removals = RemovalVerbs(catalog);
-        foreach (string op in product.Ops)
+        foreach ((string name, JsonObject operation) in SecretOperations(definitions, product))
         {
-            if (definitions[op]?["properties"] is not JsonObject properties)
-            {
-                continue;
-            }
-            string[] secrets = [.. properties.Select(static property => property.Key).Where(static key => key.EndsWith("Env", StringComparison.Ordinal))];
-            var operation = new JsonObject { ["op"] = op };
-            foreach (string secret in secrets)
-            {
-                operation[secret] = SecretVariable;
-            }
-            string[] others =
-            [
-                .. (definitions[op]!["required"] as JsonArray ?? []).Select(static name => name!.GetValue<string>())
-                    .Where(name => name != "op" && !secrets.Contains(name)),
-            ];
-            foreach (string name in others)
-            {
-                if (properties[name]?["enum"] is JsonArray { Count: > 0 } values)
-                {
-                    operation[name] = values[0]!.DeepClone();
-                }
-            }
-            if (secrets.Length == 0 || others.Any(name => !operation.ContainsKey(name)))
-            {
-                continue;
-            }
             var invocation = new Invocation([product.Id, "edit", input, "--ops", "ops.json", "--out", "output." + extension]);
             invocation.Files[input] = new ScenarioFile { Fixture = $"{product.Id}.{extension}" };
             invocation.Files["ops.json"] = new ScenarioFile { Text = new JsonObject { ["ops"] = new JsonArray(operation) }.ToJsonString() };
             invocation.Env[SecretVariable] = ScenarioFixtures.Password;
-            yield return Case(SecretHidden, $"{product.Id} edit {op}", product.Id, slow: false, invocation,
-                removals.Contains(op.Split('_')[0])
+            yield return Case(SecretHidden, $"{product.Id} edit {name}", product.Id, slow: false, invocation,
+                removals.Contains(name.Split('_')[0])
                     ? new ScenarioExpectation { ExitCode = [0, refused], RefusedOnlyWith = [PasswordInvalid], Hidden = [ScenarioFixtures.Password] }
                     : new ScenarioExpectation { ExitCode = [0], Hidden = [ScenarioFixtures.Password] });
         }
     }
 
     /// <summary>
+    /// Each operation of a product with a secret field, by name, written with every secret field
+    /// naming <see cref="SecretVariable"/> and every other required field the first value of its
+    /// enum: an <c>op</c> operation by its fields, and an action of an object table
+    /// (<c>do.&lt;action&gt;</c>) by its <c>args</c>. One that needs another required value is left out.
+    /// </summary>
+    private static IEnumerable<(string Name, JsonObject Operation)> SecretOperations(JsonNode definitions, CliProduct product)
+    {
+        foreach (string op in product.Ops)
+        {
+            if (definitions[op]?["properties"] is JsonObject properties
+                && Fields(properties, definitions[op]!["required"], "op") is { } fields)
+            {
+                fields["op"] = op;
+                yield return (op, fields);
+            }
+        }
+        foreach ((string key, JsonNode? definition) in definitions.AsObject())
+        {
+            if (key.StartsWith(ActionPrefix, StringComparison.Ordinal)
+                && definition?["properties"]?["args"] is { } args
+                && args["properties"] is JsonObject properties
+                && Fields(properties, args["required"], null) is { } fields)
+            {
+                string action = key[ActionPrefix.Length..];
+                yield return (action, new JsonObject { ["do"] = action, ["args"] = fields });
+            }
+        }
+    }
+
+    /// <summary>The schema of a product's operation document: its <c>op</c> vocabulary's, or its object table's; null for neither.</summary>
+    private static string? OpsSchema(CliCatalog catalog, CliProduct product) =>
+        product.OpsSchemaId ?? (PublishedSchema.IsObjectTableProduct(catalog, product.Id) ? $"v2/{product.Id}/ops" : null);
+
+    /// <summary>The schema definition prefix of an object table's actions.</summary>
+    private const string ActionPrefix = "do.";
+
+    /// <summary>The secret fields and the enum values of the other required fields, or null without a secret or with another required value.</summary>
+    private static JsonObject? Fields(JsonObject properties, JsonNode? required, string? skip)
+    {
+        string[] secrets = [.. properties.Select(static property => property.Key).Where(static key => key.EndsWith("Env", StringComparison.Ordinal))];
+        if (secrets.Length == 0)
+        {
+            return null;
+        }
+        var fields = new JsonObject();
+        foreach (string secret in secrets)
+        {
+            fields[secret] = SecretVariable;
+        }
+        foreach (string name in (required as JsonArray ?? []).Select(static name => name!.GetValue<string>()).Where(name => name != skip && !secrets.Contains(name)))
+        {
+            if (properties[name]?["enum"] is not JsonArray { Count: > 0 } values)
+            {
+                return null;
+            }
+            fields[name] = values[0]!.DeepClone();
+        }
+        return fields;
+    }
+
+    /// <summary>
     /// The operation verbs that undo another verb of the catalog, so they remove what it sets:
     /// <c>un&lt;verb&gt;</c> beside <c>&lt;verb&gt;</c>, such as <c>unprotect</c>, and
-    /// <c>de&lt;x&gt;</c> beside <c>en&lt;x&gt;</c>, such as <c>decrypt</c>.
+    /// <c>de&lt;x&gt;</c> beside <c>en&lt;x&gt;</c>, such as <c>decrypt</c>; the actions of an object
+    /// table count as operations.
     /// </summary>
     internal static HashSet<string> RemovalVerbs(CliCatalog catalog)
     {
-        HashSet<string> verbs = [.. catalog.Products.SelectMany(static product => product.Ops).Select(static op => op.Split('_')[0])];
+        HashSet<string> verbs =
+        [
+            .. catalog.Products.SelectMany(product => product.Ops.Concat(OpsSchema(catalog, product) is { } schema
+                    ? JsonNode.Parse(catalog.SchemaText(schema))!["$defs"]!.AsObject()
+                        .Select(static definition => definition.Key)
+                        .Where(static key => key.StartsWith(ActionPrefix, StringComparison.Ordinal))
+                        .Select(static key => key[ActionPrefix.Length..])
+                    : []))
+                .Select(static op => op.Split('_')[0]),
+        ];
         return
         [
             .. verbs.Where(verb => (verb.StartsWith("un", StringComparison.Ordinal) && verbs.Contains(verb[2..]))

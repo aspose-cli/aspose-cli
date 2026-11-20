@@ -20,7 +20,7 @@ public sealed class WordsFontDirectoryTests
         FontDirectoryContract.VerifyPdfOutput(
             workspace, "convert", output => ["words", "convert", "fixture.docx", "--to", "pdf", "--out", output]);
         FontDirectoryContract.VerifyPdfOutput(
-            workspace, "compare", output => ["words", "compare", "fixture.docx", "changed.docx", "--out", output]);
+            workspace, "compare", output => ["words", "compare", "fixture.docx", "changed.docx", "--author", "Reviewer", "--date-time", "2026-03-01T09:00:00", "--out", output]);
     }
 
     [Category(TestCategory.Slow)]

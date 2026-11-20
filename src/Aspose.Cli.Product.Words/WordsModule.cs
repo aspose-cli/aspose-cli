@@ -15,8 +15,7 @@ public sealed class WordsModule : IProductModule
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
             ResourceBudgets =
             [
-                ResourceBudgetCapabilities.Domain(WordsBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),
-                ResourceBudgetCapabilities.Domain(WordsBudgetDomains.Nodes, 1_000_000, 5_000_000, "items", "projection"),
+                ResourceBudgetCapabilities.Domain(WordsBudgetDomains.Nodes, 1_000_000, 5_000_000, "items", "post-load"),
             ],
             Engine = new ProductEngineCapabilities
             {
@@ -27,34 +26,35 @@ public sealed class WordsModule : IProductModule
             AvailableEngines = ["aspose"],
     };
 
+    /// <summary>Loads the Words object table, which names engine types: the commands call it only when they run.</summary>
+    internal static Aspose.Cli.Sdk.Tables.DocumentTable Table() => Engine.Mapping.WordsTable.Definition;
+
+    /// <summary>Returns the pure, immutable Words product definition.</summary>
     public ProductDefinition Define() =>
         Aspose.Cli.Sdk.Extensibility.Product.Define<WordsSession>(Manifest)
             .Formats(WordsFormats.Definitions)
             .Diagnostics(WordsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
             .DetectFormat(WordsDocumentLoader.DetectFormatId)
-            .Describe("Word-processing document automation with layout fidelity.", Help)
-            .Command(InspectCommand.Create, WordsInspect.Run)
+            .Describe("Read, edit, convert and render documents through the Aspose.Words object model.", Help)
             .Command(ReadCommand.Create, WordsRead.Run)
             .Command(SearchCommand.Create, WordsSearch.Run)
-            .Command(ConvertCommand.Create, WordsConvert.Run)
-            .Command(RenderCommand.Create, WordsRender.Run)
             .Command(CreateCommand.Create, WordsCreate.Run)
             .Command(EditCommand.Create, WordsEdit.Run)
+            .Command(ConvertCommand.Create, WordsConvert.Run)
+            .Command(RenderCommand.Create, WordsRender.Run)
             .Command(CompareCommand.Create, WordsCompare.Run)
-            .Command(SplitCommand.Create, WordsSplit.Run)
             .Command(ExtractCommand.Create, WordsExtract.Run)
             .Activator(WordsActivation.Activate)
             .Build();
 
     private static CommandHelp Help() => new(
         [
-            "words inspect contract.docx --detail outline --detail sections",
-            "words read contract.docx --blocks 1-30 --content full",
+            "words read contract.docx",
+            "words read contract.docx --at section/0/body/range",
+            "words edit contract.docx --ops ops.json --out revised.docx",
         ],
         [
-            CommandHelpLink.Docs(Manifest, "editing", "the document block model and edit operations"),
-            CommandHelpLink.Docs(Manifest, "verification", "read-back, semantic and visual verification"),
-            CommandHelpLink.Schema<WordsOp>("the operation JSON schema"),
+            new("aspose-cli schema v2/words/ops --operation directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

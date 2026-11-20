@@ -297,7 +297,13 @@ public sealed class PdfAssemblyWarningTests
     {
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("report.md"), "# Report\n\nRevenue grew in October.\n");
-        Run("words", "create", "report.docx", "--from-markdown", "report.md").Succeeded();
+        Run("words", "convert", "report.md", "--to", "docx", "--encoding", "utf-8", "--out", "report.docx").Succeeded();
+        // The page number in the report's primary footer: a PAGE field.
+        Run("words", "edit", "report.docx", "--in-place", "--ops", """
+            {"ops":[{"add":"headerFooter","in":"section/0","args":{"headerFooterType":"FooterPrimary"}},
+            {"add":"paragraph","in":"section/0/headerFooter/FooterPrimary"},
+            {"add":"field","in":"section/0/headerFooter/FooterPrimary/paragraph/0","args":{"fieldCode":"PAGE"}}]}
+            """).Succeeded();
         Run("words", "convert", "report.docx", "--to", "pdf", "--out", "report.pdf").Succeeded();
         const string Revenue = """{"set":"sheet/Sheet1/range/A1:B1","props":{"value":[["Revenue",700000]]}}""";
         Sheet("numbered", $$$"""{"ops":[{"set":"sheet/Sheet1/pageSetup","props":{"footer.center":"&P"}},{{{Revenue}}}]}""");

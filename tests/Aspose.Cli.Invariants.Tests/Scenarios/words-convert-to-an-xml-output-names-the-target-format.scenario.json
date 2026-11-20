@@ -59,7 +59,7 @@
       "expect": { "exitCode": 0, "files": { "present": ["converted.xml"] } }
     },
     {
-      "args": ["words", "inspect", "converted.xml"],
+      "args": ["words", "read", "converted.xml"],
       "expect": { "exitCode": 0, "json": [{ "path": "input.format", "equals": "flatopc" }] }
     }
   ]

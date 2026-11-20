@@ -1,30 +1,31 @@
 namespace Aspose.Cli.Product.Words.Contracts;
 
-/// <summary>Result of <c>words extract</c>: the files written for the images, comments, text or tables extracted.</summary>
+/// <summary>Result of <c>words extract</c>: one file per image the document stores, in document order.</summary>
 public sealed record WordsExtractResult() : EngineResultEnvelope("extract-result")
 {
-    /// <summary>The document extracted from.</summary>
+    /// <summary>The document.</summary>
     public required InputInfo Input { get; init; }
 
-    /// <summary>What was extracted, as <c>--what</c> named it.</summary>
-    [AllowedValues(typeof(WordsExtractTargets))]
+    /// <summary>What was extracted.</summary>
+    [AllowedValues(typeof(WordsExtractKinds))]
     public required string What { get; init; }
 
-    /// <summary>Each file written into the output directory, in document order.</summary>
+    /// <summary>The image files, in the order of the document's shapes.</summary>
     public required IReadOnlyList<WordsExtractedOutput> Outputs { get; init; }
+
+    /// <summary>The warnings Aspose.Words reported, as it reported them; omitted when there were none.</summary>
+    public IReadOnlyList<EngineWarning>? EngineWarnings { get; init; }
 }
 
-/// <summary>One extracted file and the block it comes from when it holds one image or table.</summary>
+/// <summary>One image file, named with the extension of its type, or none for a type the engine does not know.</summary>
 public sealed record WordsExtractedOutput : OutputItem
 {
-    /// <summary>Describes the extracted <paramref name="file"/>.</summary>
-    /// <param name="file">The published file, as <c>FileObjects.Companion</c> describes it.</param>
+    /// <summary>Wraps a written file.</summary>
     public WordsExtractedOutput(OutputInfo file)
         : base(file)
     {
     }
 
-    /// <summary>The 1-based block the image or table comes from; absent for the comments or text of the whole document.</summary>
-    [Minimum(1)]
-    public int? Block { get; init; }
+    /// <summary>The image's ImageData.ImageType, a member name of the engine's ImageType, such as Png or Unknown.</summary>
+    public required string ImageType { get; init; }
 }

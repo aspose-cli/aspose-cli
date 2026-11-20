@@ -50,19 +50,6 @@ internal static partial class ContractRules
         ["pdf encrypt_document"] = new(RoundTripPart.SameValue, "Encrypting again re-keys the file under passwords no read reports, so the read state written back still changes the output and counts 1."),
         ["pdf insert_page"] = new(Both, Adds),
         ["pdf set_page_labels ranges.startPage"] = new(RoundTripPart.OneChange, "The fixture has one page, so a range cannot start on another."),
-        ["words add_comment"] = new(RoundTripPart.SameValue, AddsAgain),
-        ["words define_style basedOn"] = new(RoundTripPart.OneChange, "Names another style, which must exist."),
-        ["words define_style font"] = new(RoundTripPart.OneChange, LatinFont),
-        ["words format_text font"] = new(RoundTripPart.OneChange, LatinFont),
-        ["words insert_break"] = new(Both, Adds),
-        ["words insert_field"] = new(Both, Adds),
-        ["words insert_hyperlink"] = new(Both, Adds),
-        ["words insert_image"] = new(Both, Adds),
-        ["words insert_paragraphs"] = new(Both, Adds),
-        ["words insert_section"] = new(Both, Adds),
-        ["words insert_table"] = new(Both, Adds),
-        ["words insert_toc"] = new(Both, Adds),
-        ["words set_default_font font"] = new(RoundTripPart.OneChange, LatinFont),
     };
 
     /// <summary>
@@ -73,8 +60,6 @@ internal static partial class ContractRules
     /// </summary>
     internal static IReadOnlyDictionary<string, (Regex Place, string Reason)> DerivedReads { get; } = new Dictionary<string, (Regex, string)>(StringComparer.Ordinal)
     {
-        ["words set_default_font"] = (new Regex(@"^words read: blocks\[\d+\]\.runs\[\d+\]\.(font|latinFont|eastAsianFont|fontSize)$", RegexOptions.CultureInvariant),
-            "It changes the paragraph and character styles; a block's runs read the font their style gives them, which is derived from the styles, so the styles alone are its items."),
     };
 
     private const RoundTripPart Both = RoundTripPart.SameValue | RoundTripPart.OneChange;
@@ -84,8 +69,6 @@ internal static partial class ContractRules
     private const string Unique = "Adds an object under a name the document holds once: written again, it is refused.";
 
     private const string AddsAgain = "Adds an object each time: written again with the values read, it adds another; with one value changed, the new object alone differs, as it should.";
-
-    private const string LatinFont = "The sample also writes latinFont, which takes precedence over font for Latin text, so font alone changes nothing.";
     // rule-exemptions: end
 
     // ----- C-R39: the state a read reports round-trips through the operation that writes it -----

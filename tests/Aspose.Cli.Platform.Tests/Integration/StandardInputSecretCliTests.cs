@@ -32,7 +32,7 @@ public sealed class StandardInputSecretCliTests
         ScenarioLicense.Project(workspace.Path);
         File.WriteAllText(workspace.File("text.txt"), "Hello\n");
         string[] source = product == "pdf" ? ["--from-text", "text.txt"] : [];
-        string read = product is "slides" or "cells" ? "read" : "inspect";
+        string read = product is "slides" or "cells" or "words" ? "read" : "inspect";
 
         Succeeds(Piped(workspace, Utf8.GetBytes(Password + "\n"), [product, "create", file, .. source, "--encrypt-stdin", "--output-format", "json"]));
         Succeeds(workspace.RunWithEnv(PasswordVariable, product, read, file, "--password-env", "PW", "--output-format", "json"));

@@ -11,7 +11,7 @@
       "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "nothingWritten": true } }
     },
     {
-      "args": ["words", "inspect", "flat.xml"],
+      "args": ["words", "read", "flat.xml"],
       "expect": { "exitCode": 0, "json": [{ "path": "input.format", "equals": "flatopc" }] }
     }
   ]

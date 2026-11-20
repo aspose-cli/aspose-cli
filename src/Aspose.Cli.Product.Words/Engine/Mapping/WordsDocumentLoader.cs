@@ -1,180 +1,56 @@
-using System.Text;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Words;
 using Aspose.Words.Loading;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
+/// <summary>
+/// Opens documents as Aspose.Words loads them, under the invocation's budgets, with the engine's
+/// warnings passed to the invocation's log and every external resource the engine asks for
+/// through its <see cref="IResourceLoadingCallback"/> supplied only from beneath the input's
+/// folder (SECURITY.md). The callback stays with the document, so saving, rendering and updating
+/// fields ask it too. read, search, edit and render open the formats edit writes; convert opens
+/// every format the engine reads, a text format with the options the caller stated.
+/// </summary>
 internal sealed class WordsDocumentLoader
 {
     /// <summary>
-    /// How a word-processing input that does not load is reported: Aspose.Words raises
-    /// <see cref="IncorrectPasswordException"/> for a missing or wrong password,
-    /// <see cref="FileCorruptedException"/> for damaged bytes, the parser's
-    /// <see cref="System.Xml.XmlException"/> for damaged WordML or Flat OPC XML and
-    /// <see cref="UnsupportedFileFormatException"/> for a format it cannot load.
+    /// How a document input that does not load is reported: Aspose.Words raises
+    /// <see cref="IncorrectPasswordException"/> for a missing or wrong password, a PDF's included;
+    /// any other exception it raises while it opens a file is the file's.
     /// </summary>
-    internal static readonly InputLoading Loading = new(
-        "supported word-processing document",
-        Classify);
-
-    // A damaged PDF is named as a PDF, not as a word-processing document.
-    private static readonly InputLoading PdfLoading = new(
-        "PDF document",
-        Classify);
+    internal static readonly InputLoading Loading = new("supported word-processing document", Classify);
 
     private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly OutputPipeline<Document> _outputs;
+    private readonly OutputPipeline _outputs;
 
-    /// <summary>
-    /// Creates a loader. Loaded documents know whether evaluation mode altered them, and the
-    /// write pipeline learns of each input the command read, which discloses one evaluation mode
-    /// cut short, and whether it is encrypted.
-    /// </summary>
-    internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline<Document> outputs)
+    internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline outputs)
     {
         _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
         _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
     }
 
-    /// <summary>
-    /// Opens the built-in A4 design that new documents use without a template. It is a
-    /// product resource, so it loads under the deny-all resource policy.
-    /// </summary>
-    internal static Document OpenDefaultTemplate()
-    {
-        using Stream stream = typeof(WordsDocumentLoader).Assembly.GetManifestResourceStream(DefaultTemplateResource)
-            ?? throw new InvalidOperationException($"The built-in resource {DefaultTemplateResource} is missing.");
-        return new Document(stream, new LoadOptions { ResourceLoadingCallback = DenyAllResources.Instance });
-    }
+    /// <summary>Opens a user input in a format edit writes, with the password its options give.</summary>
+    internal LoadedDocument Open(string path, Secret? password, EngineWarningLog warnings) =>
+        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, PasswordSource.Option(password), warnings, editable: true, text: null));
 
-    // The built-in design draws East Asian text in Microsoft YaHei and declares Chinese as its East
-    // Asian language, without which the engine ignores the East Asian line-breaking rules
-    // (WORDS-CJK-LINE-BREAK).
-    private const string DefaultTemplateResource = "Templates/default-a4.docx";
+    /// <summary>Opens a user input such as a template, with the password <paramref name="password"/> gives.</summary>
+    internal LoadedDocument Open(string path, PasswordSource password, EngineWarningLog warnings) =>
+        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, warnings, editable: true, text: null));
 
-    /// <summary>
-    /// Opens an admitted input. <paramref name="warnings"/> receives what the SDK reports while
-    /// it loads the document; font substitutions arrive only when the document is laid out.
-    /// </summary>
-    public LoadedDocument Open(string path, PasswordSource password, IWarningCallback? warnings = null)
-    {
-        LoadedDocument loaded = InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, warnings));
-        _outputs.ReadInput(loaded.Document);
-        return loaded;
-    }
+    /// <summary>Opens a user input in any format the engine reads; a text format with <paramref name="text"/>.</summary>
+    internal LoadedDocument OpenAny(string path, Secret? password, WordsTextInput? text, EngineWarningLog warnings) =>
+        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, PasswordSource.Option(password), warnings, editable: false, text));
 
-    /// <summary>Opens an admitted input with the password from the command's <c>--password-env</c>, if any.</summary>
-    public LoadedDocument Open(string path, Secret? password, IWarningCallback? warnings = null) =>
-        Open(path, PasswordSource.Option(password), warnings);
-
-    // Generated candidates are bounded by publication, not a second user-input admission.
-    internal LoadedDocument OpenPublishedCandidate(string path, Secret? password) =>
-        InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password), warnings: null));
-
-    private LoadedDocument OpenCore(string path, PasswordSource password, IWarningCallback? warnings)
-    {
-        InputLoading loading = For(path);
-        using FileStream input = loading.Load(path, password, () => InputFiles.OpenRead(path));
-        return OpenCore(input, path, password, loading, warnings);
-    }
-
-    private LoadedDocument OpenCore(FileStream input, string path, PasswordSource password, InputLoading loading, IWarningCallback? warnings)
-    {
-        FileFormatInfo detected = loading.Load(path, password, () =>
-        {
-            FileFormatInfo format = FileFormatUtil.DetectFileFormat(input);
-            input.Position = 0;
-            return format;
-        });
-
-        string id = WordsEngineFormats.IdOf(detected.LoadFormat);
-        if (id == "unknown" || IsTextFallbackForNonTextPath(id, path))
-        {
-            throw loading.Unreadable(
-                path,
-                id == "unknown"
-                    ? "the SDK could not identify a supported document format"
-                    : "the bytes were detected as plain text but the file name claims a document container");
-        }
-
-        if (!WordsFormats.IsLoad(id))
-        {
-            throw loading.Unloadable(path, id);
-        }
-
-        if (detected.IsEncrypted && password.Password is null)
-        {
-            throw InputLoading.PasswordRefused(path, password);
-        }
-
-        bool fixedPages = WordsEngineFormats.Has(id, static format => format.MayHoldFixedPages) && IsFixedPageHtml(input);
-        InputProtection protection = WordsEngineFormats.Has(id, static format => format.EncryptionUndetected)
-            ? loading.Load(path, password, () => ProbePdfProtection(input, password))
-            : new InputProtection(detected.IsEncrypted);
-        var resources = new LocalDocumentResourceLoader(path, _resourceBudgets);
-        try
-        {
-            Document document = Load(options => new Document(input, options),
-                detected.LoadFormat, resources, path, password, loading, warnings);
-            // A stream carries no name; FILENAME fields name the file, as a path load does.
-            document.FieldOptions.FileName = path;
-            return new LoadedDocument(document, detected, id, resources,
-                _outputs.IsEvaluation)
-            {
-                FixedPageHtml = fixedPages,
-                Protection = protection,
-            };
-        }
-        catch
-        {
-            resources.Dispose();
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// How a PDF is protected, as the load that follows opens it. Format detection reports no PDF
-    /// encrypted (WORDS-PDF-ENCRYPTION), so its first page is loaded first: a PDF that refuses a
-    /// password no one chose is encrypted, and one that also refuses no password needs one to
-    /// open; one with only an owner password opens without one, so one opened without a password
-    /// has none, and one that needs a password but has none is refused by the load that follows.
-    /// </summary>
-    private static InputProtection ProbePdfProtection(Stream input, PasswordSource password)
-    {
-        if (OpensWith(input, Guid.NewGuid().ToString("N")))
-        {
-            return new InputProtection(Encrypted: false);
-        }
-
-        return new InputProtection(Encrypted: true, OpenPassword: password.Password is not null && !OpensWith(input, password: null));
-    }
-
-    /// <summary>Whether the first page of a PDF loads with <paramref name="password"/>, under the deny-all resource policy.</summary>
-    private static bool OpensWith(Stream input, string? password)
-    {
-        input.Position = 0;
-        try
-        {
-            new Document(input, new PdfLoadOptions
-            {
-                Password = password,
-                PageCount = 1,
-                ResourceLoadingCallback = DenyAllResources.Instance,
-            }).Cleanup();
-            return true;
-        }
-        catch (IncorrectPasswordException)
-        {
-            return false;
-        }
-        finally { input.Position = 0; }
-    }
+    /// <summary>Opens an output this invocation just saved, to read it back; its size is bounded by publication.</summary>
+    internal LoadedDocument Reopen(string path, Secret? password, EngineWarningLog warnings) =>
+        InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password), warnings, editable: true, text: null));
 
     /// <summary>
     /// The format id <paramref name="path"/>'s content has, detected without loading it; null when
@@ -185,8 +61,7 @@ internal sealed class WordsDocumentLoader
         try
         {
             using FileStream input = InputFiles.OpenRead(path);
-            string id = WordsEngineFormats.IdOf(FileFormatUtil.DetectFileFormat(input).LoadFormat);
-            return id == "unknown" ? null : id;
+            return WordsEngineFormats.IdOf(FileFormatUtil.DetectFileFormat(input).LoadFormat);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -194,168 +69,112 @@ internal sealed class WordsDocumentLoader
         }
     }
 
-    /// <summary>
-    /// Imports inline Markdown using the owning document's resource boundary and lifetime. Its
-    /// blocks only ever join another document, so the banner evaluation mode adds as it loads the
-    /// Markdown is removed (<see cref="OutputPipeline{TDocument}.Neutralize"/>).
-    /// </summary>
-    internal Document OpenMarkdown(string markdown, LoadedDocument owner)
+    private LoadedDocument OpenCore(string path, PasswordSource password, EngineWarningLog warnings, bool editable, WordsTextInput? text)
     {
-        ArgumentNullException.ThrowIfNull(markdown);
-        ArgumentNullException.ThrowIfNull(owner);
-        _resourceBudgets.Consume(ResourceBudgetKinds.MemoryBufferBytes,
-            Encoding.UTF8.GetByteCount(markdown), "bytes", "markdown-buffer");
-        using var input = new MemoryStream(Encoding.UTF8.GetBytes(markdown), writable: false);
-        // WORDS-MD-FOOTNOTE-HEADING: inline and file Markdown load as written; the Words Skill
-        // tells authors to put footnote definitions at the end.
-        Document document = Load(options => new Document(input, options),
-            LoadFormat.Markdown, owner.Resources, "inline Markdown", password: default, Loading, warnings: null, onDisk: false);
-        owner.Retain(document);
-        _outputs.ReadInput(document);
-        _outputs.Neutralize(document);
-        return document;
-    }
+        using FileStream input = Loading.Load(path, password, () => InputFiles.OpenRead(path));
+        FileFormatInfo detected = Loading.Load(path, password, () =>
+        {
+            FileFormatInfo format = FileFormatUtil.DetectFileFormat(input);
+            input.Position = 0;
+            return format;
+        });
 
-    /// <summary>The invocation's resource budgets, for operations that allocate beyond the document.</summary>
-    internal ResourceBudgetLedger ResourceBudgets => _resourceBudgets;
+        string? id = WordsEngineFormats.IdOf(detected.LoadFormat);
+        if (id is null)
+        {
+            throw Loading.Unreadable(path, "the engine identifies no format of its content it reads");
+        }
 
-    internal void EnsureWithinBudgets(Document document, LocalDocumentResourceLoader resources)
-    {
-        resources.ThrowIfFailed();
-        // The node count is cheap; the page count lays out the whole document, so it goes last.
-        _resourceBudgets.EnsureWithin(
-            WordsBudgetDomains.Nodes, document.GetChildNodes(NodeType.Any, true).Count,
-            "items", "projection");
-        _resourceBudgets.EnsureWithin(
-            WordsBudgetDomains.Pages, document.PageCount, "items", "post-load");
-        resources.ThrowIfFailed();
-    }
+        // Text the engine detects in a file whose name says another format is not that format.
+        bool namedText = WordsFormats.Definitions.NamedBy(path).Any(candidate => candidate.Id == id);
+        if (editable && !WordsFormats.IsEditable(id) && (namedText || !WordsFormats.IsText(id)))
+        {
+            throw CliErrors.FormatUnsupported(Loading.Unreadable(path, $"its content is {id}, which only convert reads"));
+        }
 
-    /// <summary>
-    /// Rejects an operation before it allocates <paramref name="additional"/> nodes that would take
-    /// the document past its node budget.
-    /// </summary>
-    internal void EnsureNodeCapacity(Document document, long additional) =>
-        _resourceBudgets.EnsureWithin(
-            WordsBudgetDomains.Nodes,
-            checked(document.GetChildNodes(NodeType.Any, true).Count + additional),
-            "items",
-            "pre-allocation");
+        if (WordsFormats.IsText(id) && text is null)
+        {
+            throw Loading.Unreadable(path, $"the engine reads its content as {id} text, which convert reads only from a .{id} file with the options for it stated");
+        }
 
-    private Document Load(Func<LoadOptions, Document> open, LoadFormat format,
-        LocalDocumentResourceLoader resources, string path, PasswordSource password, InputLoading loading, IWarningCallback? warnings,
-        bool onDisk = true)
-    {
-        Document? document = null;
+        if (detected.IsEncrypted && password.Password is null)
+        {
+            throw InputLoading.PasswordRefused(path, password);
+        }
+
+        var resources = new LocalDocumentResourceLoader(path, _resourceBudgets);
+        bool loaded = false;
         try
         {
-            document = open(new LoadOptions
-            {
-                Password = password.Password?.Reveal(),
-                LoadFormat = format,
-                BaseUri = resources.BaseUri,
-                ResourceLoadingCallback = new BlockingResourceCallback(resources, checksImages: format == LoadFormat.Markdown),
-                PreserveIncludePictureField = true,
-                WarningCallback = warnings,
-            });
-            EnsureWithinBudgets(document, resources);
-            return document;
+            LoadOptions options = WordsFormats.IsText(id) ? TextOptions(path, id, text!) : new LoadOptions();
+            options.LoadFormat = detected.LoadFormat;
+            options.Password = password.Password?.Reveal();
+            // A stream carries no name: relative links resolve against the file's folder, as a path load does.
+            options.BaseUri = resources.BaseUri;
+            options.ResourceLoadingCallback = new LocalResources(resources, checksImages: WordsFormats.IsMarkdown(id));
+            options.WarningCallback = new WordsWarnings(warnings);
+            var document = new Document(input, options);
+            // FILENAME fields name the file, as a path load does.
+            document.FieldOptions.FileName = path;
+            document.WarningCallback = options.WarningCallback;
+            resources.ThrowIfFailed();
+            _resourceBudgets.EnsureWithin(WordsBudgetDomains.Nodes, document.GetChildNodes(NodeType.Any, true).Count, "items", "post-load");
+            loaded = true;
+            return new LoadedDocument(document, id, resources, new InputProtection(detected.IsEncrypted));
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {
-            try
-            {
-                resources.ThrowIfFailed();
-                if (exception is CliException or OperationCanceledException)
-                {
-                    throw;
-                }
-                throw onDisk ? loading.Failure(exception, path, password) : loading.InMemoryFailure(exception, path);
-            }
-            finally { document?.Cleanup(); }
+            resources.ThrowIfFailed();
+            throw Loading.Failure(exception, path, password);
         }
+        finally
+        {
+            if (!loaded)
+            {
+                resources.Dispose();
+            }
+        }
+    }
+
+    /// <summary>The engine's load options of a txt or md input, with the values the caller stated.</summary>
+    private static LoadOptions TextOptions(string path, string formatId, WordsTextInput text)
+    {
+        if (WordsFormats.IsMarkdown(formatId))
+        {
+            return new MarkdownLoadOptions { Encoding = text.Encoding };
+        }
+
+        if (text.AutoNumberingDetection is not { } numbering || text.DetectNumberingWithWhitespaces is not { } whitespaces
+            || text.DetectHyperlinks is not { } hyperlinks || text.LeadingSpaces is not { } leading)
+        {
+            throw Loading.Unreadable(path, "the engine reads its content as txt text, which convert reads only from a .txt file with the options for it stated");
+        }
+
+        return new TxtLoadOptions
+        {
+            Encoding = text.Encoding,
+            AutoNumberingDetection = numbering,
+            DetectNumberingWithWhitespaces = whitespaces,
+            DetectHyperlinks = hyperlinks,
+            LeadingSpacesOptions = Enum.TryParse(leading, ignoreCase: false, out TxtLeadingSpacesOptions parsed) && Enum.IsDefined(parsed)
+                && Enum.GetNames<TxtLeadingSpacesOptions>().Contains(leading, StringComparer.Ordinal)
+                ? parsed
+                : throw CliErrors.OptionInvalid("--leading-spaces", $"'{leading}' is no member of TxtLeadingSpacesOptions; it is one of: {string.Join(", ", Enum.GetNames<TxtLeadingSpacesOptions>())}"),
+        };
     }
 
     private static LoadFailureKind Classify(Exception exception) => exception switch
     {
         IncorrectPasswordException => LoadFailureKind.Password,
-        FileCorruptedException or System.Xml.XmlException or UnsupportedFileFormatException => LoadFailureKind.Corrupt,
-        _ => LoadFailureKind.Other,
+        _ => LoadFailureKind.Corrupt,
     };
 
-    /// <summary>The translation for an input: a file that starts as a PDF is named as one.</summary>
-    private static InputLoading For(string path) => StartsAsPdf(path) ? PdfLoading : Loading;
-
-    /// <summary>
-    /// Whether bytes detected as plain text or Markdown come under a name no extension of that
-    /// format declares, as a damaged document container's do.
-    /// </summary>
-    private static bool IsTextFallbackForNonTextPath(string formatId, string path) =>
-        WordsEngineFormats.Has(formatId, static format => format.PlainText)
-        && new[] { WordsFormats.Definitions.Named(FormatUse.Input, formatId)! }.NamedBy(path).Count == 0;
-
-    // The page container html-fixed output gives each page; the SDK has no reader for it.
-    private const string FixedPageMarker = "class=\"awdiv awpage\"";
-
-    /// <summary>
-    /// Whether an HTML input is an html-fixed page rendition, which the SDK detects and loads as
-    /// flowing HTML. The text is scanned in chunks, since embedded fonts can make it large, and
-    /// the stream is left at its start.
-    /// </summary>
-    private static bool IsFixedPageHtml(Stream input)
+    /// <summary>Supplies the resources beneath the document's folder through its loader, and no other.</summary>
+    private sealed class LocalResources(LocalDocumentResourceLoader resources, bool checksImages) : IResourceLoadingCallback
     {
-        try
-        {
-            using var reader = new StreamReader(input, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 81920, leaveOpen: true);
-            char[] buffer = new char[81920 + FixedPageMarker.Length];
-            int kept = 0;
-            int read;
-            while ((read = reader.Read(buffer, kept, buffer.Length - kept)) > 0)
-            {
-                int length = kept + read;
-                if (buffer.AsSpan(0, length).IndexOf(FixedPageMarker, StringComparison.Ordinal) >= 0)
-                {
-                    return true;
-                }
-
-                kept = Math.Min(FixedPageMarker.Length - 1, length);
-                buffer.AsSpan(length - kept, kept).CopyTo(buffer);
-            }
-
-            return false;
-        }
-        finally { input.Position = 0; }
-    }
-
-    /// <summary>Whether a file begins with the PDF header; false when it cannot be read.</summary>
-    private static bool StartsAsPdf(string path) =>
-        ContainerSignatures.StartsWithPdfHeader(ContainerSignatures.ReadPrefix(path, ContainerSignatures.PdfHeader.Length));
-
-    private sealed class DenyAllResources : IResourceLoadingCallback
-    {
-        internal static readonly DenyAllResources Instance = new();
-
-        public ResourceLoadingAction ResourceLoading(ResourceLoadingArgs args) => ResourceLoadingAction.Skip;
-    }
-
-    /// <summary>
-    /// Supplies local resources through the document's loader. The images a Markdown file names
-    /// must be intact images, which the loader checks.
-    /// </summary>
-    private sealed class BlockingResourceCallback : IResourceLoadingCallback
-    {
-        private readonly LocalDocumentResourceLoader _resources;
-        private readonly bool _checksImages;
-
-        public BlockingResourceCallback(LocalDocumentResourceLoader resources, bool checksImages)
-        {
-            _resources = resources;
-            _checksImages = checksImages;
-        }
-
         public ResourceLoadingAction ResourceLoading(ResourceLoadingArgs args)
         {
-            if (_resources.TryRead(args.Uri, out byte[] data, image: _checksImages && args.ResourceType == ResourceType.Image, written: args.OriginalUri))
+            if (resources.TryRead(args.Uri, out byte[] data, image: checksImages && args.ResourceType == ResourceType.Image, written: args.OriginalUri))
             {
                 args.SetData(data);
                 return ResourceLoadingAction.UserProvided;
@@ -366,42 +185,21 @@ internal sealed class WordsDocumentLoader
     }
 }
 
-internal sealed record LoadedDocument(
-    Document Document,
-    FileFormatInfo Format,
-    string FormatId,
-    LocalDocumentResourceLoader Resources,
-    bool Evaluation) : IOpenedInput, IDisposable
+/// <summary>Passes each warning the engine reports to the invocation's log, as it reported it.</summary>
+internal sealed class WordsWarnings(EngineWarningLog log) : IWarningCallback
+{
+    public void Warning(WarningInfo info)
+    {
+        ArgumentNullException.ThrowIfNull(info);
+        log.Add(info.WarningType.ToString(), info.Description);
+    }
+}
+
+/// <summary>A document Aspose.Words opened, with the resource policy it loads its resources under.</summary>
+internal sealed record LoadedDocument(Document Document, string FormatId, LocalDocumentResourceLoader Resources, InputProtection Protection) : IOpenedDocument<Document>
 {
     /// <inheritdoc />
-    public required InputProtection Protection { get; init; }
+    public IReadOnlyList<Warning> Warnings => Resources.Warning is { } omitted ? [omitted] : [];
 
-    private readonly List<Document> _imports = [];
-
-    /// <summary>Whether the input is an html-fixed page rendition loaded as flowing HTML.</summary>
-    public bool FixedPageHtml { get; init; }
-
-    internal void Retain(Document document) => _imports.Add(document);
-
-    public IReadOnlyList<OmittedResource> OmittedResources
-    {
-        get
-        {
-            Resources.ThrowIfFailed();
-            return Resources.Omitted;
-        }
-    }
-
-    /// <summary>The number of resources the load left out, each reference once.</summary>
-    public int RemoteResourcesBlocked => OmittedResources.Count;
-
-    public void Dispose()
-    {
-        try
-        {
-            Document.Cleanup();
-            foreach (Document document in _imports) { document.Cleanup(); }
-        }
-        finally { Resources.Dispose(); }
-    }
+    public void Dispose() => Resources.Dispose();
 }

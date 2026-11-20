@@ -1,51 +1,56 @@
 ## aspose-cli words --help
 Description:
-  Word-processing document automation with layout fidelity.
+  Read, edit, convert and render documents through the Aspose.Words object model.
 
 Usage:
   aspose-cli words [command]
 
 Commands:
-  inspect <file>          Show document structure, safety state and metadata.
-  read <file>             Read a bounded, stable window of document blocks.
-  search <file>           Search bounded document scopes with regex timeout protection.
-  convert <file>          Convert a document using the detected input format.
+  read <file>             Read a document's objects, each with every row of the object table, and its inventory.
+  search <file>           Search the text of a document's paragraphs, as Paragraph.GetText() gives it; each hit names the paragraph's address.
+  create <file>           Create a document: the engine's new document, or a copy of a template saved in the output's format.
+  edit <file>             Apply a batch of set, add, delete, move and do operations to a document; nothing is written when one fails.
+  convert <file>          Convert a document to another format with the engine's options for it. An html, html-fixed or md output is one file: it holds its images, fonts and styles itself.
   render <file>           Render one or more document pages.
-  create <file>           Create a document from at most one content source, optionally inside a template; without either it is blank.
-  edit <file>             Apply one validated, atomic Words operation batch.
-  compare <left> <right>  Semantically compare two documents and optionally save a redline.
-  split <file>            Split a document into safe, deterministically named DOCX files.
-  extract <file>          Extract bounded document assets.
+  compare <left> <right>  Compare a changed document with the original, Document.Compare, and write the redline: a copy of the original whose revisions are the differences.
+  extract <file>          Write the bytes of each image the document stores, ImageData.ImageBytes, one file per image in document order; a linked image stores none.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words inspect contract.docx --detail outline --detail sections
-  aspose-cli words read contract.docx --blocks 1-30 --content full
+  aspose-cli words read contract.docx
+  aspose-cli words read contract.docx --at section/0/body/range
+  aspose-cli words edit contract.docx --ops ops.json --out revised.docx
 
 Learn more:
-  aspose-cli docs words/editing       the document block model and edit operations
-  aspose-cli docs words/verification  read-back, semantic and visual verification
-  aspose-cli schema v2/words/ops      the operation JSON schema
+  aspose-cli schema v2/words/ops --operation directory  the object table: kinds, addresses, rows, adds and actions
 
 
 ## aspose-cli words compare --help
 Description:
-  Semantically compare two documents and optionally save a redline.
+  Compare a changed document with the original, Document.Compare, and write the redline: a copy of the original whose revisions are the differences.
 
 Usage:
-  aspose-cli words compare <left> <right> [options]
+  aspose-cli words compare <left> <right> --author <author> --date-time <date-time> [options]
 
 Arguments:
   <left>   Original document.
   <right>  Changed document.
 
 Options:
-  --ignore-formatting                        Ignore formatting-only changes.
-  --granularity <char|word>                  Unit a change is marked in; use the character unit for Chinese or Japanese text. [default: word]
-  --author <author>                          Author of the redline's revisions. Default: Aspose CLI.
-  -o, --out <out>                            Optional redline output; its extension selects the format, such as .docx or .pdf.
+  --author <author> (REQUIRED)               The author of the redline's revisions, Document.Compare's author.
+  --date-time <date-time> (REQUIRED)         The date and time of the redline's revisions, Document.Compare's dateTime, written yyyy-MM-ddTHH:mm:ss.
+  --granularity <granularity>                CompareOptions.Granularity, a member name of the engine's Granularity, such as WordLevel or CharLevel. Default: the engine's.
+  --ignore-formatting                        Set CompareOptions.IgnoreFormatting to true.
+  --ignore-case-changes                      Set CompareOptions.IgnoreCaseChanges to true.
+  --ignore-comments                          Set CompareOptions.IgnoreComments to true.
+  --ignore-tables                            Set CompareOptions.IgnoreTables to true.
+  --ignore-fields                            Set CompareOptions.IgnoreFields to true.
+  --ignore-footnotes                         Set CompareOptions.IgnoreFootnotes to true.
+  --ignore-textboxes                         Set CompareOptions.IgnoreTextboxes to true.
+  --ignore-headers-and-footers               Set CompareOptions.IgnoreHeadersAndFooters to true.
+  -o, --out <out>                            The redline's path; its extension selects the format, such as .docx or .pdf.
   --overwrite                                Replace the output file if it already exists.
   --dry-run                                  Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --left-password <left-password>            Password for the original document. Discouraged: visible in the process list; prefer --left-password-env.
@@ -60,16 +65,16 @@ Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words compare original.docx changed.docx --output-format json
-  aspose-cli words compare original.docx changed.docx --out redline.docx --author "Legal Review"
+  aspose-cli words compare original.docx changed.docx --author "Legal Review" --date-time 2026-03-01T09:00:00 --out redline.docx
+  aspose-cli words compare original.docx changed.docx --author Review --date-time 2026-03-01T09:00:00 --ignore-formatting --granularity CharLevel --out redline.pdf
 
 Learn more:
-  aspose-cli docs words/revisions  tracked changes and redlines
+  aspose-cli docs words/overview  what each Words command is for
 
 
 ## aspose-cli words convert --help
 Description:
-  Convert a document using the detected input format.
+  Convert a document to another format with the engine's options for it. An html, html-fixed or md output is one file: it holds its images, fonts and styles itself.
 
 Usage:
   aspose-cli words convert <file> [options]
@@ -78,18 +83,23 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --to <to>                      Target document format. Default: the --out extension's format. flatopc, wordml write .xml; openxps writes .oxps; html-fixed writes .html or .htm. Values: azw3, doc, docm, docx, dot, dotm, dotx, epub, flatopc, html, html-fixed, md, mhtml, mobi, odt, openxps, ott, pcl, pdf, ps, rtf, txt, wordml, xps.
-  --pages <pages>                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --to pdf, xps, openxps, ps, pcl or html-fixed.
-  -o, --out <out>                Output path; defaults to a sibling using the target extension.
-  --overwrite                    Replace the output file if it already exists.
-  --dry-run                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --password <password>          Password for the document. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>  Name of an environment variable holding the password for the document.
-  --password-stdin               Read the password for the document from the first line of stdin.
-  --encrypt <encrypt>            Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>    Name of an environment variable holding the password for the output document.
-  --encrypt-stdin                Read the password for the output document from the first line of stdin.
-  --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
+  --to <to>                            Target document format. Default: the --out extension's format. flatopc, wordml write .xml; openxps writes .oxps; html-fixed writes .html or .htm. Values: azw3, doc, docm, docx, dot, dotm, dotx, epub, flatopc, html, html-fixed, md, mhtml, mobi, odt, openxps, ott, pcl, pdf, ps, rtf, txt, wordml, xps.
+  --pages <pages>                      Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --to pdf, xps, openxps, ps, pcl or html-fixed.
+  --encoding <encoding>                The text encoding of a txt or md input, such as utf-8, gb18030 or windows-1252 (LoadOptions.Encoding). Required for such an input.
+  --auto-numbering-detection           true or false: TxtLoadOptions.AutoNumberingDetection of a txt input. Required for such an input.
+  --detect-numbering-with-whitespaces  true or false: TxtLoadOptions.DetectNumberingWithWhitespaces of a txt input. Required for such an input.
+  --detect-hyperlinks                  true or false: TxtLoadOptions.DetectHyperlinks of a txt input. Required for such an input.
+  --leading-spaces <leading-spaces>    TxtLoadOptions.LeadingSpacesOptions of a txt input, a member name of the engine's TxtLeadingSpacesOptions, such as ConvertToIndent, Preserve or Trim. Required for such an input.
+  -o, --out <out>                      Output path; defaults to a sibling using the target extension.
+  --overwrite                          Replace the output file if it already exists.
+  --dry-run                            Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --password <password>                Password for the document. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>        Name of an environment variable holding the password for the document.
+  --password-stdin                     Read the password for the document from the first line of stdin.
+  --encrypt <encrypt>                  Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>          Name of an environment variable holding the password for the output document.
+  --encrypt-stdin                      Read the password for the output document from the first line of stdin.
+  --font-dir <font-dir>                Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
@@ -97,7 +107,8 @@ Global options:
 Examples:
   aspose-cli words convert contract.docx --to pdf
   aspose-cli words convert contract.docx --to pdf --pages 1-3 --out excerpt.pdf
-  aspose-cli words convert contract.docx --to pdf --font-dir fonts
+  aspose-cli words convert notes.md --to docx --encoding utf-8
+  aspose-cli words convert notes.txt --to docx --encoding utf-8 --auto-numbering-detection false --detect-numbering-with-whitespaces false --detect-hyperlinks false --leading-spaces Preserve
 
 Learn more:
   aspose-cli docs words/overview  what each Words command is for
@@ -105,59 +116,48 @@ Learn more:
 
 ## aspose-cli words create --help
 Description:
-  Create a document from at most one content source, optionally inside a template; without either it is blank.
+  Create a document: the engine's new document, or a copy of a template saved in the output's format.
 
 Usage:
   aspose-cli words create <file> [options]
 
 Arguments:
-  <file>  Document path to create.
+  <file>  Path of the document to create, e.g. report.docx.
 
 Options:
-  --from-markdown <from-markdown>  Create from a Markdown file.
-  --from-text <from-text>          Create from a UTF-8 text file.
-  --template <template>            Document whose styles, page setup, headers and footers the new document uses; its body is replaced by --from-markdown or --from-text content.
-  --title <title>                  Set the built-in title property.
-  --overwrite                      Replace the output file if it already exists.
-  --dry-run                        Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --encrypt <encrypt>              Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>      Name of an environment variable holding the password for the output document.
-  --encrypt-stdin                  Read the password for the output document from the first line of stdin.
-  --font-dir <font-dir>            Local font directory searched in addition to the system fonts; repeat for more.
+  --template <template>        A document to save as the new one. Default: the engine's new document, new Document().
+  --overwrite                  Replace the output file if it already exists.
+  --dry-run                    Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --encrypt <encrypt>          Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>  Name of an environment variable holding the password for the output document.
+  --encrypt-stdin              Read the password for the output document from the first line of stdin.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words create report.docx --from-markdown report.md --template brand.docx --title "Quarterly report"
-  aspose-cli words create letter.docx --template letter.dotx
   aspose-cli words create notes.docx
+  aspose-cli words create letter.docx --template letter.dotx
 
 Learn more:
-  aspose-cli docs words/report-from-markdown  a report from Markdown and a template
-  aspose-cli docs words/document-standards    professional document construction
+  aspose-cli docs words/overview  what each Words command is for
 
 
 ## aspose-cli words edit --help
 Description:
-  Apply one validated, atomic Words operation batch.
+  Apply a batch of set, add, delete, move and do operations to a document; nothing is written when one fails.
 
 Usage:
-  aspose-cli words edit <file> [options]
+  aspose-cli words edit <file> --ops <ops> [options]
 
 Arguments:
-  <file>  Document to edit.
+  <file>  Document to open.
 
 Options:
-  --ops <ops>                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/words/ops.
-  --set <set>                    Replace a bookmark's text as bookmark:NAME=TEXT; repeatable, applied after the --ops document. Example: --set "bookmark:ClientName=Contoso Ltd.".
-  --verify                       Compare the staged document after save and reopen to report semantic verification. A warning with affectsCompleteness about content the edit lost is also an issue; uncheckedOps lists each operation not read back.
-  --track-changes                Track this batch as revisions; only content insertions and deletions are tracked.
-  --author <author>              Revision author; required with --track-changes.
+  --ops <ops> (REQUIRED)         The operation document, {"ops": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/words/ops --operation directory; one of them in full: aspose-cli schema v2/words/ops --operation <name>.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.
-  --dry-run                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
   --password <password>          Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the document.
   --password-stdin               Read the password for the document from the first line of stdin.
@@ -170,17 +170,18 @@ Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words edit contract.docx --in-place --verify --set "bookmark:Client=Contoso"
-  aspose-cli words edit contract.docx --in-place --ops ops.json --verify
+  aspose-cli words edit contract.docx --ops ops.json --out revised.docx
+  aspose-cli words edit contract.docx --in-place --ops ops.json
 
 Learn more:
-  aspose-cli docs words/editing   addressing and operation recipes
-  aspose-cli schema v2/words/ops  the exact edit-batch contract
+  aspose-cli schema v2/words/ops --operation directory  the kinds and their rows, the adds and the actions an operation names
+  aspose-cli schema v2/words/ops --operation <name>     one kind, add or action in full
+  aspose-cli docs words/overview                        addresses, the five operation shapes and the read-back
 
 
 ## aspose-cli words extract --help
 Description:
-  Extract bounded document assets.
+  Write the bytes of each image the document stores, ImageData.ImageBytes, one file per image in document order; a linked image stores none.
 
 Usage:
   aspose-cli words extract <file> --what <what> --out-dir <out-dir> [options]
@@ -189,59 +190,28 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --what <comments|images|tables|text> (REQUIRED)  What to extract; tables writes one CSV file per body table.
-  --bom                                            Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one.
-  --out-dir <out-dir> (REQUIRED)                   Safe extraction directory.
-  --overwrite                                      Replace the output file if it already exists.
-  --dry-run                                        Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --password <password>                            Password for the document. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                    Name of an environment variable holding the password for the document.
-  --password-stdin                                 Read the password for the document from the first line of stdin.
+  --what <images> (REQUIRED)      What to extract: images, the bytes of each image the document stores.
+  --out-dir <out-dir> (REQUIRED)  The directory the images go to.
+  --overwrite                     Replace the output file if it already exists.
+  --dry-run                       Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --password <password>           Password for the document. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>   Name of an environment variable holding the password for the document.
+  --password-stdin                Read the password for the document from the first line of stdin.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli words extract report.docx --what images --out-dir images
-  aspose-cli words extract report.docx --what text --out-dir text
-  aspose-cli words extract report.docx --what tables --bom --out-dir tables
+  aspose-cli words extract locked.docx --what images --password-env DOC_PASSWORD --out-dir images
 
 Learn more:
   aspose-cli docs words/overview  what each Words command is for
-
-
-## aspose-cli words inspect --help
-Description:
-  Show document structure, safety state and metadata.
-
-Usage:
-  aspose-cli words inspect <file> [options]
-
-Arguments:
-  <file>  Document to open.
-
-Options:
-  --detail <detail>              Extra sections to include; repeat for more. outline: headings; sections: page setup, headers and footers; properties: title, author, subject and keywords. Values: bookmarks, comments, fields, fonts, images, outline, properties, revisions, sections, styles, tables.
-  --password <password>          Password for the document. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>  Name of an environment variable holding the password for the document.
-  --password-stdin               Read the password for the document from the first line of stdin.
-  --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
-
-Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli words inspect contract.docx --output-format json
-  aspose-cli words inspect contract.docx --detail outline --detail sections --detail fields --detail bookmarks
-
-Learn more:
-  aspose-cli docs words/overview  what each Words command is for
-  aspose-cli docs reading         reading every product within bounded windows
 
 
 ## aspose-cli words read --help
 Description:
-  Read a bounded, stable window of document blocks.
+  Read a document's objects, each with every row of the object table, and its inventory.
 
 Usage:
   aspose-cli words read <file> [options]
@@ -250,11 +220,10 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --blocks <blocks>              Blocks to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every block.
-  --section <section>            Read one 1-based section; with --blocks, only its blocks in that range.
-  --content <full|outline|text>  How much of each block to return: its text, only the headings, or the text with its runs and paragraph format. [default: text]
-  --max-chars <max-chars>        Maximum characters returned, counting the text of the returned blocks, including repeated text and run projections. Range: 1-10000000. [default: 20000]
-  --max-blocks <max-blocks>      Maximum projected blocks. Range: 1-100000. [default: 200]
+  --at <at>                      The address of the object to read with everything below it, as read gives it in at. Default: the whole document.
+  --from <from>                  The address of the object the window starts at; a truncated read's window.next gives it.
+  --kind <kind>                  List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind. Objects of the kinds paragraph, run, field, shape, row, cell, bookmark, style, listLevel, revision are listed only when --kind names them; window.notListedUnlessNamed names those a read left out.
+  --max-objects <max-objects>    The most objects one window lists. Range: 1-10000. [default: 200]
   --password <password>          Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the document.
   --password-stdin               Read the password for the document from the first line of stdin.
@@ -263,12 +232,14 @@ Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words read contract.docx --blocks 1-30 --content full --output-format json
-  aspose-cli words read contract.docx --section 2 --content outline
+  aspose-cli words read contract.docx
+  aspose-cli words read contract.docx --kind paragraph --max-objects 40
+  aspose-cli words read contract.docx --at section/0/body/range
+  aspose-cli words read contract.docx --at section/0/body/table/0 --kind cell --kind paragraph --kind run
 
 Learn more:
-  aspose-cli docs words/editing  the document block model and edit operations
-  aspose-cli docs reading        reading every product within bounded windows
+  aspose-cli schema v2/words/ops --operation directory  the kinds an address and --kind name, with their rows
+  aspose-cli docs words/overview                        addresses, windows and the inventory
 
 
 ## aspose-cli words render --help
@@ -306,7 +277,7 @@ Learn more:
 
 ## aspose-cli words search --help
 Description:
-  Search bounded document scopes with regex timeout protection.
+  Search the text of a document's paragraphs, as Paragraph.GetText() gives it; each hit names the paragraph's address.
 
 Usage:
   aspose-cli words search <file> --pattern <pattern> [options]
@@ -318,7 +289,6 @@ Options:
   --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
   --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
   --case-sensitive                Match letter case exactly.
-  --scope <scope>                 Search scope: body (the main text, without the comments and footnotes it anchors), headers-footers, footnotes (with endnotes), comments or all. [default: body]
   --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
   --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
   --password <password>           Password for the document. Discouraged: visible in the process list; prefer --password-env.
@@ -329,45 +299,8 @@ Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words search contract.docx --pattern TODO --scope all
-  aspose-cli words search contract.docx --pattern "Section\s+\d+" --regex --max-hits 20
-
-Learn more:
-  aspose-cli docs words/overview  what each Words command is for
-  aspose-cli docs reading         reading every product within bounded windows
-
-
-## aspose-cli words split --help
-Description:
-  Split a document into safe, deterministically named DOCX files.
-
-Usage:
-  aspose-cli words split <file> --by <by> --out-dir <out-dir> [options]
-
-Arguments:
-  <file>  Document to open.
-
-Options:
-  --by <heading1|pages|sections> (REQUIRED)  How to divide the document: one part per Heading 1, after a leading part for any blocks before the first; one part per page or per --every N of them; one part per section.
-  --every <every>                            Pages per part with --by pages. Default: 1.
-  --pages <pages>                            Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --by pages.
-  --out-dir <out-dir> (REQUIRED)             Directory that receives the parts, named <stem>.<n>.docx.
-  --overwrite                                Replace the output file if it already exists.
-  --dry-run                                  Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --password <password>                      Password for the document. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>              Name of an environment variable holding the password for the document.
-  --password-stdin                           Read the password for the document from the first line of stdin.
-  --encrypt <encrypt>                        Password for every part. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>                Name of an environment variable holding the password for every part.
-  --encrypt-stdin                            Read the password for every part from the first line of stdin.
-  --font-dir <font-dir>                      Local font directory searched in addition to the system fonts; repeat for more.
-
-Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli words split report.docx --by heading1 --out-dir chapters
-  aspose-cli words split report.docx --by pages --pages 1-3,8 --out-dir excerpts
+  aspose-cli words search contract.docx --pattern Contoso
+  aspose-cli words search contract.docx --pattern "20[0-9]{2}" --regex
 
 Learn more:
   aspose-cli docs words/overview  what each Words command is for

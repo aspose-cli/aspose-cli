@@ -51,7 +51,7 @@ public static class ScenarioFixtures
         ["cells"] = """{"ops":[{"set":"sheet/Sheet1/cell/D1","props":{"value":"edited"}}]}""",
         ["pdf"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
         ["slides"] = """{"ops":[{"set":"presentation","props":{"title":"Edited"}}]}""",
-        ["words"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
+        ["words"] = """{"ops":[{"set":"document","props":{"builtInDocumentProperties.title":"Edited"}}]}""",
     };
 
     private static readonly string Markdown =
@@ -64,21 +64,21 @@ public static class ScenarioFixtures
 
     /// <summary>
     /// Every kind of content a rich fixture can hold a marker in, with the tokens by which a
-    /// warning names it: the one table from which the fixtures take their markers and C-R42 and
-    /// C-R43 the warnings they expect. Each marker is five letters, the most Aspose.Slides
+    /// warning names it: the one table from which the fixtures take their markers and C-R42 the
+    /// warnings it expects. Each marker is five letters, the most Aspose.Slides
     /// evaluation mode reads of a text without truncating it, and the whole text of the
     /// paragraph, shape, note or title that holds it.
     /// </summary>
     public static IReadOnlyList<RichKind> Kinds { get; } =
     [
-        new("body", MarkerPrefix + "Bd", Content: null, Part: null),
-        new("header", MarkerPrefix + "Hd", Content: "headers-footers", Part: "header-footer"),
-        new("footer", MarkerPrefix + "Ft", Content: "headers-footers", Part: "header-footer"),
-        new("comment", MarkerPrefix + "Cm", Content: "comments", Part: "comment"),
-        new("speaker notes", MarkerPrefix + "Nt", Content: "speaker-notes", Part: null),
-        new("chart title", MarkerPrefix + "Ct", Content: "charts", Part: "chart-title"),
-        new("shape text", MarkerPrefix + "Sh", Content: "shapes", Part: "text-box"),
-        new("form field value", MarkerPrefix + "Fv", Content: "form-values", Part: null),
+        new("body", MarkerPrefix + "Bd", Content: null),
+        new("header", MarkerPrefix + "Hd", Content: "headers-footers"),
+        new("footer", MarkerPrefix + "Ft", Content: "headers-footers"),
+        new("comment", MarkerPrefix + "Cm", Content: "comments"),
+        new("speaker notes", MarkerPrefix + "Nt", Content: "speaker-notes"),
+        new("chart title", MarkerPrefix + "Ct", Content: "charts"),
+        new("shape text", MarkerPrefix + "Sh", Content: "shapes"),
+        new("form field value", MarkerPrefix + "Fv", Content: "form-values"),
     ];
 
     private static readonly Dictionary<string, RichKind> KindNamed = Kinds.ToDictionary(static kind => kind.Name, StringComparer.Ordinal);
@@ -173,7 +173,7 @@ public static class ScenarioFixtures
                 Require(workspace.Run("slides", "edit", file, "--ops", "ops.json", "--in-place", "--output-format", "json"));
                 break;
             case "words":
-                Require(workspace.Run("words", "create", file, "--from-markdown", "source.md", "--output-format", "json"));
+                Require(workspace.Run("words", "convert", "source.md", "--to", format, "--encoding", "utf-8", "--out", file, "--output-format", "json"));
                 break;
         }
         return File.ReadAllBytes(workspace.File(file));
@@ -318,12 +318,28 @@ public static class ScenarioFixtures
                 operations = $$$"""[{"set":"{{{chart}}}/title","props":{"text":"{{{Marker("chart title")}}}"}}]""";
                 break;
             case "words":
+                // The first-page header and footer, which no evaluation mode writes itself; the
+                // comment on the paragraph search finds; a table of one cell and a list, so every
+                // kind of the table has an object to hold its children.
                 File.WriteAllText(workspace.File("rich.md"), $"# Rich seed\n\n{Marker("body")}\n\nSecond paragraph.\n");
-                Require(workspace.Run("words", "create", file, "--from-markdown", "rich.md", "--output-format", "json"));
-                operations = $$"""
-                    [{"op":"set_header","paragraphs":[{"text":"{{Marker("header")}}"}]},
-                    {"op":"set_footer","paragraphs":[{"text":"{{Marker("footer")}}"}]},
-                    {"op":"add_comment","target":{"block":2},"author":"Invariant","text":"{{Marker("comment")}}"}]
+                Require(workspace.Run("words", "convert", "rich.md", "--to", "docx", "--encoding", "utf-8", "--out", file, "--output-format", "json"));
+                string anchor = Require(workspace.Run("words", "search", file, "--pattern", "Second paragraph", "--output-format", "json"))["hits"]![0]!["at"]!.GetValue<string>();
+                operations = $$$"""
+                    [{"set":"section/0","props":{"pageSetup.differentFirstPageHeaderFooter":true}},
+                    {"add":"headerFooter","in":"section/0","args":{"headerFooterType":"HeaderFirst"}},
+                    {"add":"paragraph","in":"section/0/headerFooter/HeaderFirst"},
+                    {"add":"run","in":"section/0/headerFooter/HeaderFirst/paragraph/0","args":{"text":"{{{Marker("header")}}}"}},
+                    {"add":"headerFooter","in":"section/0","args":{"headerFooterType":"FooterFirst"}},
+                    {"add":"paragraph","in":"section/0/headerFooter/FooterFirst"},
+                    {"add":"run","in":"section/0/headerFooter/FooterFirst/paragraph/0","args":{"text":"{{{Marker("footer")}}}"}},
+                    {"add":"comment","args":{"paragraph":"{{{anchor}}}","author":"Invariant","initial":"I","dateTime":"2026-01-01T00:00:00"}},
+                    {"add":"paragraph","in":"comment/0"},
+                    {"add":"run","in":"comment/0/paragraph/0","args":{"text":"{{{Marker("comment")}}}"}},
+                    {"add":"table","in":"section/0/body"},
+                    {"add":"row","in":"section/0/body/table/0"},
+                    {"add":"cell","in":"section/0/body/table/0/row/0"},
+                    {"add":"paragraph","in":"section/0/body/table/0/row/0/cell/0"},
+                    {"add":"list","args":{"listTemplate":"NumberDefault"}}]
                     """;
                 break;
             default:
@@ -386,13 +402,10 @@ public static class ScenarioFixtures
 /// <summary>
 /// A kind of content a rich fixture holds a marker in (<see cref="ScenarioFixtures.Kinds"/>), and
 /// how a warning names it: <paramref name="Content"/> is the <c>details.content</c> token of a
-/// <c>LOSSY_CONVERSION</c> that names it left out of an output (C-R42), <paramref name="Part"/>
-/// the <c>details.part</c> token of a <c>TEXT_NOT_REPLACED</c> that names it left in place by
-/// <c>replace_text</c> (C-R43). A null token is a stated absence, not a gap: no warning names
-/// that kind, so losing it, or leaving it in place, is never excused.
+/// <c>LOSSY_CONVERSION</c> that names it left out of an output (C-R42). A null token is a stated
+/// absence, not a gap: no warning names that kind, so losing it is never excused.
 /// </summary>
 /// <param name="Name">The kind, as violations name it, such as <c>speaker notes</c>.</param>
 /// <param name="Marker">The marker text, which starts with <see cref="ScenarioFixtures.MarkerPrefix"/>.</param>
 /// <param name="Content">The <c>details.content</c> token that names the kind lost, or null.</param>
-/// <param name="Part">The <c>details.part</c> token that names the kind left in place, or null.</param>
-public sealed record RichKind(string Name, string Marker, string? Content, string? Part);
+public sealed record RichKind(string Name, string Marker, string? Content);

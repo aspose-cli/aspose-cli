@@ -56,11 +56,11 @@ public sealed class InputAdmissionTests
     [Theory]
     [InlineData("pdf", "pdf", "--from-text")]
     [InlineData("slides", "pptx", "--template")]
-    [InlineData("words", "docx", "--from-text")]
+    [InlineData("words", "docx", "--template")]
     public void Create_AdmitsSourceOptionsBeforeTheOutput(string product, string extension, string sourceOption)
     {
         using var workspace = new TempWorkspace();
-        string source = workspace.File(product == "slides" ? "source.pptx" : "source.txt");
+        string source = workspace.File(product switch { "slides" => "source.pptx", "words" => "source.docx", _ => "source.txt" });
         File.WriteAllText(source, new string('x', 128));
         string output = workspace.File("untouched." + extension);
 

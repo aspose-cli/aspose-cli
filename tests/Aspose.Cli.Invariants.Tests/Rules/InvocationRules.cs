@@ -23,7 +23,6 @@ internal static partial class ContractRules
         ["--pages"] = "1-x",
         ["--slides"] = "1-x",
         ["--sheets"] = "1-x",
-        ["--blocks"] = "1-x",
         ["--range"] = "A1:!!",
     };
 
@@ -430,16 +429,16 @@ internal static partial class ContractRules
             yield return InvariantCases.Case("C-R24", $"{validate} of a PDF that is not PDF/A", "pdf", slow: false, Invocation.For(validate),
                 new ScenarioExpectation { ExitCode = [8], Json = [new JsonAssertion { Path = "valid", Value = false }] });
         }
-        if (catalog.Commands.FirstOrDefault(static command => command.Words == "words create") is { } create)
+        if (catalog.Commands.FirstOrDefault(static command => command.Words == "words convert") is { } convert)
         {
-            // Markdown that takes words create about fifteen seconds to pour in; Ctrl+C comes
-            // after three, while the command works.
-            Invocation invocation = Invocation.For(create);
+            // Markdown that takes words convert several seconds to load; Ctrl+C comes after
+            // three, while the command works.
+            var invocation = new Invocation(["words", "convert", "source.md", "--to", "docx", "--encoding", "utf-8", "--out", "created.docx"]);
             invocation.Files["source.md"] = new ScenarioFile
             {
                 Text = string.Concat(Enumerable.Range(1, 30_000).Select(static index => $"Paragraph {index} of the interrupted document.\n\n")),
             };
-            yield return Runs("C-R24", $"{create} interrupted by Ctrl+C", "words", slow: true, invocation, session =>
+            yield return Runs("C-R24", $"{convert} interrupted by Ctrl+C", "words", slow: true, invocation, session =>
             {
                 (int exitCode, string[] left) = session.Interrupt(TimeSpan.FromSeconds(3));
                 var problems = new List<string>();

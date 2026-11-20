@@ -6,9 +6,9 @@
     "wordml.docx": { "text": "<?xml version=\"1.0\"?><?mso-application progid=\"Word.Document\"?><w:wordDocument xmlns:w=\"http://schemas.microsoft.com/office/word/2003/wordml\"><w:body><w:p>" }
   },
   "steps": [
-    { "args": ["words", "inspect", "wordml.xml"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
-    { "args": ["words", "inspect", "flat.xml"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
-    { "args": ["words", "inspect", "wordml.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["words", "read", "wordml.xml"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["words", "read", "flat.xml"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["words", "read", "wordml.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
     { "args": ["words", "convert", "wordml.xml", "--to", "docx", "--out", "out.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } }
   ]
 }

@@ -2368,6 +2368,6 @@ public sealed class PdfMutateTests
     {
         Input = input,
         Query = new Aspose.Cli.Sdk.Text.SearchQuery(
-            Aspose.Cli.Sdk.Text.TextSearch.Create(pattern, regex, caseSensitive: false), maxHits, Scope: null),
+            Aspose.Cli.Sdk.Text.TextSearch.Create(pattern, regex, caseSensitive: false), maxHits),
     };
 }

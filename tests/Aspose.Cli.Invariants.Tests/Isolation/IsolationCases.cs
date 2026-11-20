@@ -105,8 +105,14 @@ internal static class IsolationCases
             }
             var commands = new List<(CliCommand Command, string? Source, bool ProductOption)>();
             bool reads = product.LoadFormats.Contains(format, StringComparer.Ordinal);
+            // A format only convert opens (ConvertOnlyInputs) is opened by convert alone.
+            bool convertOnly = ConvertOnlyInputs.Options(product.Id, "sample." + IsolationDocuments.Extension(format)) is not null;
             foreach (CliCommand command in catalog.Commands.Where(static command => command.Arguments.Any(static argument => argument.Required && argument.InputKind == "file")))
             {
+                if (convertOnly && command.Verb != "convert")
+                {
+                    continue;
+                }
                 if (command.Product == product.Id && reads)
                 {
                     commands.Add((command, null, false));
@@ -128,7 +134,7 @@ internal static class IsolationCases
                     }
                 }
             }
-            foreach (CliCommand command in catalog.Commands.Where(command => command.Product == product.Id && command.Verb == "create"))
+            foreach (CliCommand command in catalog.Commands.Where(command => command.Product == product.Id && command.Verb == "create" && !convertOnly))
             {
                 foreach (CliOption option in command.Options.Where(static option => option.InputKind == "file"))
                 {
@@ -276,6 +282,10 @@ internal static class IsolationCases
         if (item.ProductOption)
         {
             invocation.Add("--product", item.Product);
+        }
+        if (item.Command.Verb == "convert" && ConvertOnlyInputs.Options(item.Product, input) is { } options)
+        {
+            invocation.Add(options);
         }
         return invocation;
     }

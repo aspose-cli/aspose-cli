@@ -19,7 +19,7 @@ Commands:
   cells                             Read, edit, convert and render workbooks through the Aspose.Cells object model.
   pdf                               PDF automation with page, security and fixed-layout semantics.
   slides                            Read, edit, convert and render presentations through the Aspose.Slides object model.
-  words                             Word-processing document automation with layout fidelity.
+  words                             Read, edit, convert and render documents through the Aspose.Words object model.
   license                           Inspect and manage the Aspose license used by the CLI.
   capabilities <product> <command>  Describe everything this build supports (products, verbs, formats), as data.
   skill                             List or install Agent Skills bundled with this binary.

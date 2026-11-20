@@ -1,25 +1,15 @@
 {
-  "name": "words compare refuses an input that already holds tracked changes and writes no redline, so a redline never mixes earlier revisions with its own",
+  "name": "words compare of an input that already holds tracked changes is the engine's refusal and writes no redline",
   "files": {
     "source.md": { "text": "The notice period is thirty days.\n" },
-    "change.json": { "text": "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"thirty\",\"replace\":\"sixty\"}]}" }
+    "change.json": { "text": "{\"ops\":[{\"do\":\"start_track_revisions\",\"args\":{\"author\":\"Ann\",\"dateTime\":\"2026-01-01T00:00:00\"}},{\"do\":\"replace\",\"args\":{\"pattern\":\"thirty\",\"replacement\":\"sixty\"}},{\"do\":\"stop_track_revisions\"}]}" }
   },
   "steps": [
+    { "args": ["words", "convert", "source.md", "--to", "docx", "--encoding", "utf-8", "--out", "plain.docx"], "expect": { "exitCode": 0 } },
+    { "args": ["words", "edit", "plain.docx", "--ops", "change.json", "--out", "revised.docx"], "expect": { "exitCode": 0, "json": [{ "path": "counts.revisions", "equals": [0, 2] }] } },
     {
-      "args": ["words", "create", "plain.docx", "--from-markdown", "source.md"],
-      "expect": { "exitCode": 0 }
-    },
-    {
-      "args": ["words", "edit", "plain.docx", "--ops", "change.json", "--track-changes", "--author", "Ann", "--out", "revised.docx"],
-      "expect": { "exitCode": 0 }
-    },
-    {
-      "args": ["words", "compare", "plain.docx", "revised.docx", "--out", "redline.md"],
-      "expect": { "error": "REVISIONS_UNRESOLVED", "files": { "absent": ["redline.md"] } }
-    },
-    {
-      "args": ["words", "compare", "revised.docx", "plain.docx", "--out", "redline.pdf"],
-      "expect": { "error": "REVISIONS_UNRESOLVED", "files": { "absent": ["redline.pdf"] } }
+      "args": ["words", "compare", "plain.docx", "revised.docx", "--author", "Reviewer", "--date-time", "2026-03-01T09:00:00", "--out", "redline.md"],
+      "expect": { "error": "FEATURE_UNSUPPORTED", "json": [{ "path": "error.message", "contains": "Compared documents must not have revisions" }], "files": { "absent": ["redline.md"] } }
     }
   ]
 }

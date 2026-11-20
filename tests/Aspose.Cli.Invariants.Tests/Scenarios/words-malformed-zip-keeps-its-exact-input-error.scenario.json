@@ -6,7 +6,7 @@
   },
   "steps": [
     {
-      "args": ["words", "inspect", "malformed.docx"],
+      "args": ["words", "read", "malformed.docx"],
       "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } }
     },
     {

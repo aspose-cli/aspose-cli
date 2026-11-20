@@ -55,7 +55,6 @@ public static class ErrorDetailKeys
         ("option", "The option the error is about, such as --pages."),
         ("originalError", "The error that stopped a publication: its code and details."),
         ("originalPath", "Where the original that a publication moved aside is now, when the publication could not move it back."),
-        ("part", "The kind of part of a document that holds text an operation found and left as it was, one of these tokens."),
         ("path", "The absolute path of the file the error is about."),
         ("phase", "The stage of processing that failed."),
         ("problems", "The problems the engine reported."),
@@ -90,14 +89,12 @@ public static class ErrorDetailKeys
     /// <summary>
     /// The closed set of tokens of each key whose value is one of them, or a list of them
     /// (<see cref="TokenLists"/>), each with its meaning, which the schema publishes:
-    /// <c>content</c> takes the <see cref="ContentKind"/> tokens and <c>part</c> the
-    /// <see cref="TextPart"/> tokens.
+    /// <c>content</c> takes the <see cref="ContentKind"/> tokens.
     /// </summary>
     public static FrozenDictionary<string, IReadOnlyList<(string Token, string Description)>> Tokens { get; } =
         new Dictionary<string, IReadOnlyList<(string Token, string Description)>>(StringComparer.Ordinal)
         {
             ["content"] = [.. ContentKind.All.Select(static kind => (kind.Token, kind.Description))],
-            ["part"] = [.. TextPart.All.Select(static part => (part.Token, part.Description))],
         }.ToFrozenDictionary(StringComparer.Ordinal);
 
     /// <summary>The keys of <see cref="Tokens"/> whose value is a list of tokens rather than one.</summary>

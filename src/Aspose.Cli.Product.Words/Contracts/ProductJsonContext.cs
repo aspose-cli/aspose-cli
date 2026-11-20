@@ -5,7 +5,6 @@ namespace Aspose.Cli.Generated;
 
 /// <summary>Source-generated serialization metadata for Words contracts.</summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true)]
-[JsonSerializable(typeof(Product.Words.Contracts.WordsInspectResult))]
 [JsonSerializable(typeof(Product.Words.Contracts.WordsReadResult))]
 [JsonSerializable(typeof(Product.Words.Contracts.WordsConvertResult))]
 [JsonSerializable(typeof(Product.Words.Contracts.WordsRenderResult))]
@@ -13,9 +12,7 @@ namespace Aspose.Cli.Generated;
 [JsonSerializable(typeof(Product.Words.Contracts.WordsEditResult))]
 [JsonSerializable(typeof(Product.Words.Contracts.WordsCompareResult))]
 [JsonSerializable(typeof(Product.Words.Contracts.WordsSearchResult))]
-[JsonSerializable(typeof(Product.Words.Contracts.WordsSplitResult))]
 [JsonSerializable(typeof(Product.Words.Contracts.WordsExtractResult))]
-[JsonSerializable(typeof(Product.Words.Contracts.WordsOpsBatch))]
 internal sealed partial class ProductJsonContext : JsonSerializerContext
 {
     internal static ProductJsonDefinition Definition => DefinitionHolder.Value;

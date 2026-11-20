@@ -29,7 +29,7 @@ public sealed class TextOutputEncodingTests : IDisposable
     public void Conversions_WriteUtf8WithoutAByteOrderMark()
     {
         File.WriteAllText(_workspace.File("source.md"), $"# {Title}\n\n{Title}\n", new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        Assert.Equal(0, _workspace.Run("words", "create", "document.docx", "--from-markdown", "source.md").ExitCode);
+        Assert.Equal(0, _workspace.Run("words", "convert", "source.md", "--to", "docx", "--encoding", "utf-8", "--out", "document.docx").ExitCode);
         Assert.Equal(0, _workspace.Run("slides", "create", "deck.pptx").ExitCode);
         string slide = _workspace.Run("slides", "read", "deck.pptx", "--kind", "slide", "--output-format", "json").Json()["objects"]![0]!["at"]!.GetValue<string>();
         var box = new JsonObject

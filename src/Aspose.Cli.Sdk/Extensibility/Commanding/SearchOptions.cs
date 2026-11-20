@@ -5,21 +5,10 @@ using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
-/// <summary>The product-owned parts of a document's search scope option.</summary>
-/// <param name="Description">Help text naming what each scope covers.</param>
-/// <param name="Values">Accepted scope values.</param>
-/// <param name="Default">The scope used when the option is omitted.</param>
-/// <param name="Option">The option name, <c>--scope</c> unless the product names it <c>--content</c>.</param>
-public sealed record SearchScopeGrammar(
-    string Description,
-    IReadOnlyList<string> Values,
-    string Default,
-    string Option = SearchOptions.ScopeOption);
-
 /// <summary>
 /// The one <c>search</c> grammar: <c>--pattern</c>, <c>--regex</c>,
-/// <c>--case-sensitive</c>, <c>--max-hits</c>, <c>--skip</c> and an optional product-supplied
-/// <c>--scope</c>. Every product validates the pattern, the hit budget and paging the same way.
+/// <c>--case-sensitive</c>, <c>--max-hits</c> and <c>--skip</c>. Every product validates the
+/// pattern, the hit budget and paging the same way.
 /// </summary>
 public sealed class SearchOptions
 {
@@ -33,7 +22,6 @@ public sealed class SearchOptions
     public const string PatternOption = "--pattern";
     internal const string RegexOption = "--regex";
     internal const string CaseSensitiveOption = "--case-sensitive";
-    internal const string ScopeOption = "--scope";
     internal const string MaxHitsOption = "--max-hits";
     internal const string SkipOption = "--skip";
 
@@ -42,10 +30,9 @@ public sealed class SearchOptions
     private readonly Option<bool> _caseSensitive;
     private readonly Option<int> _maxHits;
     private readonly Option<int> _skip;
-    private readonly Option<string>? _scope;
 
-    /// <summary>Creates the search options, with a scope only when the product has one.</summary>
-    public SearchOptions(SearchScopeGrammar? scope = null)
+    /// <summary>Creates the search options.</summary>
+    public SearchOptions()
     {
         _pattern = new Option<string>(PatternOption)
         {
@@ -70,28 +57,7 @@ public sealed class SearchOptions
             Description = "Matches to pass over before the returned hits; a truncated search's window.next sets it.",
             DefaultValueFactory = _ => 0,
         };
-        if (scope is not null)
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(scope.Description);
-            if (!scope.Values.Contains(scope.Default, StringComparer.Ordinal))
-            {
-                throw new ArgumentException("The default scope must be one of the accepted values.", nameof(scope));
-            }
-
-            _scope = new Option<string>(scope.Option)
-            {
-                Description = scope.Description,
-                DefaultValueFactory = _ => scope.Default,
-            }.WithInput(InputKind.None);
-            _scope.AcceptOnlyFromAmong([.. scope.Values]);
-            if (scope.Option != ScopeOption)
-            {
-            }
-        }
-
-        Options = _scope is null
-            ? [_pattern, _regex, _caseSensitive, _maxHits, _skip]
-            : [_pattern, _regex, _caseSensitive, _scope, _maxHits, _skip];
+        Options = [_pattern, _regex, _caseSensitive, _maxHits, _skip];
     }
 
     /// <summary>
@@ -123,10 +89,6 @@ public sealed class SearchOptions
                 parse.GetValue(_regex),
                 parse.GetValue(_caseSensitive)),
             maxHits,
-            _scope is null ? null : parse.GetRequiredValue(_scope),
-            skip)
-        {
-            ScopeOption = _scope?.Name,
-        };
+            skip);
     }
 }

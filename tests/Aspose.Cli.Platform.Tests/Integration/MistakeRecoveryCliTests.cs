@@ -179,14 +179,14 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [InlineData("slides create noext", "noext")]
     [InlineData("slides create dotonly.", "dotonly")]
     [InlineData("words edit a.docx --ops words.json --out noext", "noext")]
-    [InlineData("words create noext --from-markdown deck.md", "noext")]
+    [InlineData("words create noext", "noext")]
     public void OutputWithoutExtension_IsAnInvalidOption(string commandLine, string output)
     {
-        // A Slides edit checks its output against the format of the input it opened.
+        // A Slides or Words edit checks its output against the format of the input it opened.
         _workspace.Run("slides", "create", "a.pptx").Succeeded();
-        File.WriteAllText(_workspace.File("a.docx"), "not a document");
+        _workspace.Run("words", "create", "a.docx").Succeeded();
         File.WriteAllText(_workspace.File("slides.json"), """{"ops":[{"set":"slide/256","props":{"hidden":true}}]}""");
-        File.WriteAllText(_workspace.File("words.json"), """{"ops":[{"op":"set_properties","title":"x"}]}""");
+        File.WriteAllText(_workspace.File("words.json"), """{"ops":[{"set":"document","props":{"builtInDocumentProperties.title":"x"}}]}""");
         File.WriteAllText(_workspace.File("deck.md"), "# Title");
 
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);

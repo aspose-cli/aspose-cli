@@ -32,7 +32,6 @@ public sealed class DryRunOutputsCliTests : IDisposable
     [InlineData("pdf split a.pdf --by pages --pages 1-4 --every 2 --out-dir parts", "parts/a.2.pdf", false)]
     [InlineData("pdf split a.pdf --by pages --every 2 --out-dir parts", "parts/a.1.pdf", true)]
     [InlineData("pdf convert a.pdf --to docx --out c.docx", "c.docx", false)]
-    [InlineData("words split a.docx --by pages --pages 1-2 --out-dir parts", "parts/a.2.docx", false)]
     public void DryRun_RefusesAFileTheRunWouldReplace(string commandLine, string existing, bool dependsOnDocument)
     {
         string path = _workspace.File(existing);
@@ -56,7 +55,6 @@ public sealed class DryRunOutputsCliTests : IDisposable
     [InlineData("pdf render a.pdf --out r.png --pages 9-10", "r.1.png", new[] { "r.09.png", "r.10.png" })]
     [InlineData("pdf split a.pdf --by pages --groups 1-2 --groups 3-4 --out-dir parts", "parts/a.3.pdf", new[] { "parts/a.1.pdf", "parts/a.2.pdf" })]
     [InlineData("pdf split a.pdf --by pages --pages 2,5 --out-dir parts", "parts/a.1.pdf", new[] { "parts/a.2.pdf", "parts/a.5.pdf" })]
-    [InlineData("words split a.docx --by pages --pages 2,5 --out-dir parts", "parts/a.1.docx", new[] { "parts/a.2.docx", "parts/a.5.docx" })]
     public void DryRun_ListsTheNumberedPartsASelectionNames(string commandLine, string unrelated, string[] parts)
     {
         string path = _workspace.File(unrelated);

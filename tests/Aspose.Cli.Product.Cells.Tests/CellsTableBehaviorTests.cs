@@ -266,7 +266,7 @@ public sealed class CellsTableBehaviorTests
         CliException search = Assert.Throws<CliException>(() => CellsSearch.Run(fixture.Session, new CellsSearchRequest
         {
             Input = input,
-            Query = new SearchQuery(TextSearch.Create("a", regex: false, caseSensitive: true), 10, Scope: null),
+            Query = new SearchQuery(TextSearch.Create("a", regex: false, caseSensitive: true), 10),
         }));
         CliException edit = Assert.Throws<CliException>(() => Edit(fixture, input, fixture.File("out.xlsx"), """{"ops":[{"do":"calculate"}]}"""));
 

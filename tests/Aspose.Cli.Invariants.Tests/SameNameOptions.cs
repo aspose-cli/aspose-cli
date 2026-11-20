@@ -42,7 +42,7 @@ internal static class SameNameOptions
 {
     /// <summary>The names whose allowed values, and so defaults, C-R07 lets differ from product to product.</summary>
     public static IReadOnlySet<string> ProductValues { get; } =
-        new HashSet<string>(["--to", "--detail", "--what", "--content", "--scope", "--by"], StringComparer.Ordinal);
+        new HashSet<string>(["--to", "--what", "--scope"], StringComparer.Ordinal);
 
     // rule-exemptions: begin
     /// <summary>
@@ -53,27 +53,23 @@ internal static class SameNameOptions
     /// </summary>
     public static IReadOnlyList<SameNameExemption> Exemptions { get; } =
     [
-        new("--by", OptionAspect.AllowedValues,
-            "C-R07: each split divides at its own product's boundaries, a subset of pages, bookmarks, sections and heading1."),
-        new("--content", OptionAspect.AllowedValues,
-            "C-R07: what each unit a read carries is the product's own: a pdf read gives a page's text in reading order "
-            + "or with its spacing kept, a words read each block as an outline, its text or its full formatting."),
-        new("--detail", OptionAspect.AllowedValues,
-            "C-R07: each product's inspect lists its own sections."),
         new("--to", OptionAspect.AllowedValues,
             "C-R07: each convert, extract and render lists its own product's formats (C-R36 checks the lists)."),
         new("--what", OptionAspect.AllowedValues,
             "C-R07: each product extracts its own part kinds. Kept on purpose: slides media covers audio and video, "
-            + "so it stays wider than the images of pdf and words."),
+            + "so it stays wider than the images of pdf."),
         new("--out", OptionAspect.Required,
             "C-R07: merge has no single input to name a default output after, so its --out is required.",
             "pdf merge"),
         new("--ops", OptionAspect.Required,
-            "C-R07: Slides edit has no other source of operations, such as the --set of the words edit, so its --ops is required.",
+            "C-R07: Slides edit has no other source of operations, so its --ops is required.",
             "slides edit"),
         new("--ops", OptionAspect.Required,
-            "C-R07: Cells edit has no other source of operations, such as the --set of the words edit, so its --ops is required.",
+            "C-R07: Cells edit has no other source of operations, so its --ops is required.",
             "cells edit"),
+        new("--ops", OptionAspect.Required,
+            "C-R07: Words edit has no other source of operations, so its --ops is required.",
+            "words edit"),
     ];
     // rule-exemptions: end
 

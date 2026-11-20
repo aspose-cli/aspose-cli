@@ -9,6 +9,9 @@ public sealed record WordsCreateResult() : EngineResultEnvelope("create-result")
     [JsonPropertyOrder(-49)]
     public required OutputInfo Output { get; init; }
 
-    /// <summary>The files the document was created from, the template and the Markdown or text, in command-line order; empty for a blank document.</summary>
+    /// <summary>The template the document was saved from; empty for the engine's new document.</summary>
     public required IReadOnlyList<SourceInput> Inputs { get; init; }
+
+    /// <summary>The warnings Aspose.Words reported, as it reported them; omitted when there were none.</summary>
+    public IReadOnlyList<EngineWarning>? EngineWarnings { get; init; }
 }

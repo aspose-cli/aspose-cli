@@ -1,6 +1,7 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO.Budgets;
+using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
 
@@ -25,4 +26,15 @@ internal static class WordsActivation
     /// <summary>Applies a license snapshot to Aspose.Words.</summary>
     internal static void ApplyLicense(Stream stream) =>
         new Aspose.Words.License().SetLicense(stream);
+}
+
+/// <summary>
+/// Aspose.Words evaluation mode: a run without a license says so in its result's license mode;
+/// what the engine writes into a document it opens in evaluation mode is read as it is.
+/// </summary>
+internal sealed class WordsEvaluationProfile : IEvaluationProfile<Document>
+{
+    public string Engine => "Aspose.Words";
+
+    public EvaluationMarks Inspect(Document document) => EvaluationMarks.None;
 }

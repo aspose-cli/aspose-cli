@@ -40,13 +40,11 @@ public sealed class FontDirectoryOptionsTests
         ["slides create"] = true, // saving shrinks auto-fit text with the fonts' metrics
         ["slides edit"] = true,
         ["slides extract"] = false,
-        ["words inspect"] = true, // the page count lays out the document
         ["words read"] = false,
         ["words search"] = false,
-        ["words create"] = true, // fixed-page outputs are laid out
-        ["words edit"] = true, // field and TOC updates lay out the document
+        ["words create"] = false,
+        ["words edit"] = true, // update_page_layout and field updates lay out the document
         ["words compare"] = true, // the redline can be a fixed-page output
-        ["words split"] = true, // --by pages lays out the document
         ["words extract"] = false,
     };
 

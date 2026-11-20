@@ -5,12 +5,12 @@ using Xunit;
 namespace Aspose.Cli.IntegrationTests;
 
 /// <summary>
-/// A file an operation reads that does not exist fails that operation, numbered as the runner
-/// numbers every failure.
+/// An image an operation reads that does not exist, or is no image, fails the edit before the
+/// document is opened, naming the file, and nothing is written.
 /// </summary>
 public sealed class OperationInputFileTests : IDisposable
 {
-    private const string Ops = """{"ops":[{"op":"set_properties","title":"T"},{"op":"insert_image","at":{"block":1},"position":"after","path":"missing.png"}]}""";
+    private const string Ops = """{"ops":[{"set":"document","props":{"builtInDocumentProperties.title":"T"}},{"add":"image","in":"section/0/body/paragraph/0","args":{"image":"missing.png"}}]}""";
 
     private readonly TempWorkspace _workspace = new();
 
@@ -24,14 +24,13 @@ public sealed class OperationInputFileTests : IDisposable
     public void Dispose() => _workspace.Dispose();
 
     [Fact]
-    public void AMissingImage_FailsItsOperationByNumber()
+    public void AMissingImage_IsFileNotFoundNamingIt()
     {
         CliResult result = _workspace.Run("words", "edit", "a.docx", "--ops", "ops.json", "--out", "b.docx", "--output-format", "json");
 
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("FILE_NOT_FOUND", error["code"]!.GetValue<string>());
-        Assert.Equal("op-0002", error["details"]!["id"]!.GetValue<string>());
-        Assert.Equal("insert_image", error["details"]!["op"]!.GetValue<string>());
+        Assert.Equal(_workspace.File("missing.png"), error["details"]!["path"]!.GetValue<string>());
         Assert.False(File.Exists(_workspace.File("b.docx")));
     }
 
@@ -44,8 +43,8 @@ public sealed class OperationInputFileTests : IDisposable
         CliResult result = _workspace.Run("words", "edit", "a.docx", "--ops", "ops.json", "--out", "b.docx", "--output-format", "json");
 
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal("op-0002", error["details"]!["id"]!.GetValue<string>());
+        Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
         Assert.Equal(_workspace.File("missing.png"), error["details"]!["path"]!.GetValue<string>());
+        Assert.False(File.Exists(_workspace.File("b.docx")));
     }
 }

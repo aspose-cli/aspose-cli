@@ -174,7 +174,7 @@ public static class EditDefinition
 {
     /// <summary>
     /// Defines an edit command on the shared bounded-edit skeleton (<see cref="BoundedEditCommand{TOp, TBatch}"/>):
-    /// <c>--ops</c> and the product's <c>--set</c> shorthand, <c>--dry-run</c>,
+    /// <c>--ops</c>, <c>--dry-run</c>,
     /// <c>--verify</c> and the mutation output. <c>bind</c> receives the composed,
     /// path-normalized batch with its resolved secrets.
     /// </summary>

@@ -1,23 +1,23 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Results;
-using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
-/// <summary>Serves <c>words read</c>: a bounded structural projection of a document.</summary>
+/// <summary><c>words read</c>: the object table's read of a document.</summary>
 internal static class WordsRead
 {
-    /// <summary>Reads a bounded structural projection of a document.</summary>
     internal static WordsReadResult Run(WordsSession session, WordsReadRequest request)
     {
-        LicenseState state = session.Outputs.License;
-        using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
-        WordsReadResult read = ReadProjection.Project(loaded, request.Input, request);
-        return read with
+        TableReadOutcome outcome = TableRead.Run(session.Outputs, new WordsDocuments(session.Loader), request);
+        return new WordsReadResult
         {
-            License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(InputWarnings(loaded), read.Warnings),
+            Input = outcome.Input,
+            Objects = outcome.Objects,
+            Inventory = outcome.Inventory,
+            EngineWarnings = outcome.EngineWarnings,
+            Window = outcome.Window,
+            License = outcome.License,
+            Warnings = outcome.Warnings,
         };
     }
 }
