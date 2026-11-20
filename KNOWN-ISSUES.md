@@ -773,8 +773,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   the fonts it does not, so the next save by Aspose.Words or Word embeds every other font the
   document uses in full: a one-page document in a standard PDF font grows from about 7 KB to
   about 3 MB. `DocSaveOptions` has no setting for these flags.
-- **CLI behavior:** a Words command that saves such a document warns `FONTS_EMBEDDED` that the
-  save embeds the missing fonts.
+- **CLI behavior:** none: a Words command saves such a document as the engine does, with the
+  fonts embedded in full.
 - **Workaround:** deliver the docx as `pdf convert` wrote it, or write it with
   `aspose-cli words convert <pdf> --to docx`, which asks for no embedded fonts.
 
@@ -1163,41 +1163,84 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   layout, title and description and style options, each row's heading, row-break and hidden
   setting and each cell's vertical alignment, which the document stores apart from the style it
   names.
-- **CLI behavior:** `set_table_style` reads these settings, changes the style away and back to
-  read what the old style alone gives, and writes back those the table set itself over the new
-  style. A setting the table set to the very value the old style gives cannot be told from the
-  style's and takes the new style's. Writing a row's hidden setting back also hides the text of
-  its runs and paragraph marks, so each of those that changed is set back to what it was.
+- **CLI behavior:** a set of a table's `styleName` sets `Table.StyleName`, and the report reads
+  the table as the engine left it.
+- **Workaround:** set the table's own rows, such as `alignment`, `rowFormat.headingFormat` and
+  `cellFormat.verticalAlignment`, again after the style, in the same batch.
 
-### WORDS-ROW-HIDDEN-UNSAVED
+### WORDS-LAYOUT-TABLE-GRID
 
-- **Defect:** setting `Row.Hidden` on a row the document has held only in memory, one
-  `DocumentBuilder` or `new Row` made or a clone of one, throws `NullReferenceException` until the
-  document is saved once.
-- **CLI behavior:** no operation hides or shows a row; `set_table_style` writes a row's hidden
-  setting back only on a row that held one, which a row made in memory never does.
+- **Defect:** reading `Document.PageCount` lays the document out, and the layout rewrites the
+  column widths of each table's grid (`w:tblGrid`), which the next save writes: a document read
+  for its page count and saved differs from one only saved.
+- **CLI behavior:** read, search and edit lay nothing out: the page count is the `pageCount` row
+  of `layout`, which only `--at layout` reads, and an edit reads its operations' rows from the
+  saved file after it is opened again. `update_page_layout` lays the document out when asked.
+
+### WORDS-EMPTY-TABLE-DROPPED
+
+- **Defect:** a save does not keep a table without rows, or a row without cells; a table that
+  ended its story leaves an empty paragraph there.
+- **CLI behavior:** `add table`, `add row` and `add cell` create empty nodes, as the engine's
+  constructors do; the report of a table left empty reads `exists: false`, and `counts` shows the
+  paragraph the save added.
+
+### WORDS-EVALUATION-TRACKED-SAVE
+
+- **Defect:** without a license, `Document.Save` throws `ArgumentException` "Cannot insert a node
+  of this type at this location" when `StartTrackRevisions` is in effect and the document holds
+  revisions; after `StopTrackRevisions`, or with a license, the same document saves.
+- **CLI behavior:** an edit whose batch leaves `start_track_revisions` in effect fails at save in
+  evaluation mode with `ENGINE_ERROR`, and nothing is written.
+- **Workaround:** end the batch with `stop_track_revisions`; the revisions stay in the document.
+
+### WORDS-ADJACENT-TABLES
+
+- **Defect:** two tables with nothing between them are saved as two and opened as one.
+- **CLI behavior:** an add puts a table where `before` names; the report reads the saved file,
+  where the two are one table.
+- **Workaround:** add a paragraph between the tables.
+
+### WORDS-ODT-FIELDS
+
+- **Defect:** saving to ODT or OTT drops the results of `PAGE` and `NUMPAGES` fields and drops
+  formula (`=`) fields.
+- **CLI behavior:** `words convert` and `words edit` of an ODT or OTT save as the engine saves.
+
+### WORDS-HEADER-EMPTY-LINKED
+
+- **Defect:** `HeaderFooter.IsLinkedToPrevious` reads true for a header or footer that holds no
+  paragraph, though the section has one of its own of that type.
+- **CLI behavior:** the `isLinkedToPrevious` row reads the member: an `add headerFooter` whose
+  report is read before a paragraph is added in the same batch says true.
+
+### WORDS-HORIZONTAL-MERGE-SPAN
+
+- **Defect:** a horizontal merge (`CellFormat.HorizontalMerge` `First` and `Previous`) is saved
+  as one cell spanning the merged ones: once opened again the row has one cell fewer, whose
+  `HorizontalMerge` is `None`.
+- **CLI behavior:** the report reads the saved file: the merged cells read as one.
 
 ### WORDS-TEXT-COMMENTS
 
 - **Defect:** saving to plain text or Markdown writes each comment's text into the body, as a
   paragraph beside the one that anchors the comment, where it reads as document text.
   `TxtSaveOptions` and `MarkdownSaveOptions` have no option to leave comments out.
-- **CLI behavior:** `words convert` to `txt` or `md` warns `LOSSY_CONVERSION` with the number of
-  comments written into the body; `words edit` writes neither format.
-- **Workaround:** delete the comments with `delete_comments` in a `words edit` that writes a Word
-  format such as docx, then convert that file to the text format.
+- **CLI behavior:** `words convert` to `txt` or `md` saves as the engine saves; `words edit`
+  writes neither format.
+- **Workaround:** delete the comments (`delete` of each `comment/<index>`) in a `words edit` that
+  writes a Word format such as docx, then convert that file to the text format.
 
 ### WORDS-TEXT-DELETIONS
 
 - **Defect:** saving a document with tracked changes to plain text or Markdown writes deleted and
   moved-from text beside the text that replaces it, so the output reads as neither the original
   nor the revised document.
-- **CLI behavior:** `words convert` to `txt` or `md` warns `LOSSY_CONVERSION` when the document
-  has tracked deletions or moves; `words edit` writes neither format.
-- **Workaround:** accept or reject the revisions, as the reviewer decides, with
-  `accept_revisions` or `reject_revisions` in a `words edit` that writes a Word format such as
-  docx, then convert that file to the text format; with `delete_comments` in the same edit when
-  the document has comments too.
+- **CLI behavior:** `words convert` to `txt` or `md` saves as the engine saves; `words edit`
+  writes neither format.
+- **Workaround:** accept or reject the revisions, as the reviewer decides, with the revision
+  actions in a `words edit` that writes a Word format such as docx, then convert that file to the
+  text format.
 
 ### WORDS-PAGE-FIELD-LAYOUT
 
@@ -1205,8 +1248,10 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   `DocumentBuilder.InsertField` inserts after the document was laid out, for example by reading
   `Document.PageCount`, gets an empty result, and `Field.Update` leaves it empty until
   `Document.UpdatePageLayout` rebuilds the layout.
-- **CLI behavior:** none visible; `insert_field` rebuilds the layout and updates such a field
-  when it has no result.
+- **CLI behavior:** an edit lays nothing out unless `update_page_layout` asks; `add field` calls
+  `Paragraph.AppendField`.
+- **Workaround:** after adding a page field to a document an earlier operation laid out, run
+  `update_page_layout`, then `update_field` or `update_fields`.
 
 ### WORDS-PDF-HEADER-FOOTER
 
@@ -1218,13 +1263,9 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   "Version 1  Page 1" turns into two page fields and reads "Version 2" on the second page.
   `PdfLoadOptions` has only `PageIndex`, `PageCount` and `SkipPdfImages`, so no option keeps
   headers and footers as text.
-- **CLI behavior:** `words convert`, `words split` and `words edit` of a PDF input warn
-  `LOSSY_CONVERSION` that headers and footers may become body text or page-number fields and
-  that the layout may add pages.
-- **Workaround:** read the headers, footers and fields with
-  `words inspect --detail sections --detail fields`, then restore them with `set_header`,
-  `set_footer` or `set_page_numbers` and remove body paragraphs that held them with
-  `delete_blocks`.
+- **CLI behavior:** `words convert` of a PDF input loads it as the engine does.
+- **Workaround:** read the converted document's headers, footers and fields, then correct them
+  with an edit.
 
 ### WORDS-PDF-CJK-LINE-END
 
@@ -1233,20 +1274,18 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   paragraphs, such as a heading and the clause after it, into one paragraph. A space is right
   between Latin words, not inside East Asian text, which has none. `PdfLoadOptions` has no
   option for either.
-- **CLI behavior:** `words convert`, `words split` and `words edit` of a PDF input whose text
-  holds East Asian characters warn `LOSSY_CONVERSION` about the spaces and merged paragraphs.
-- **Workaround:** read the blocks before editing; find a phrase with a regex that allows a space
-  where a line may have ended, such as `甲 ?乙双方`, and remove a space only where it was read.
+- **CLI behavior:** `words convert` of a PDF input loads it as the engine does.
+- **Workaround:** search with a regex that allows a space where a line may have ended, such as
+  `甲 ?乙双方`, and remove a space only where it was read.
 
 ### WORDS-PDF-ENCRYPTION
 
 - **Defect:** `FileFormatUtil.DetectFileFormat` reports `IsEncrypted` false for every PDF,
   including one that needs a password to open and one with only an owner password, although
   loading the first refuses no password and loading either refuses a wrong one.
-- **CLI behavior:** none visible: Words loads the first page of a PDF input again with a password
-  no one chose and, when that is refused, without one, and reports the input encrypted from what
-  those loads refuse. A DOCX copy of a PDF that needs a password to open keeps that password,
-  and one of a PDF with only an owner password warns `ENCRYPTION_REMOVED`.
+- **CLI behavior:** a PDF input's `encrypted` in the result is what detection reports, false. A
+  PDF that needs a password fails to load without `--password-env` with the engine's refusal,
+  reported as a password error.
 
 ### WORDS-CJK-LINE-BREAK
 
@@ -1261,38 +1300,34 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   "人民币 1,920,000.00 元（大写：…）" ends its line after the number although the rest would fit
   in part.
 - **CLI behavior:** the CLI pins its process culture to en-US, which does not avoid the first
-  case on a Windows set to Chinese: there `words convert --to pdf` breaks such text as it did
-  under a Chinese process culture. The built-in design declares Chinese as its East Asian
-  language, so documents created without `--template` follow the rules. Other documents keep
-  their own language and compatibility settings, which no operation changes; the Words Skill
-  tells reviewers to disclose such lines.
+  case on a Windows set to Chinese. `words create` writes the engine's new document, which
+  declares English; documents keep their own language and compatibility settings.
 
 ### WORDS-TRACKED-DETACHED-TEXT
 
 - **Defect:** while `Document.StartTrackRevisions` is on, setting `Run.Text` on a run that is not
   in the document tree, such as a copy from `Node.Clone`, throws `NullReferenceException`.
-- **CLI behavior:** none visible; `insert_paragraphs`, `set_text` and `replace_text` set the text
-  of the run they copy, from the paragraph before the insertion point or from the replaced text,
-  with tracking paused, and the run's insertion is then tracked as usual.
+- **CLI behavior:** none visible: every set addresses a node of the document, and `clone`
+  inserts its copy before any operation can set it.
 
 ### WORDS-REGEX-TIMEOUT
 
 - **Defect:** `Range.Replace(Regex, string, FindReplaceOptions)` ignores the expression's
   `MatchTimeout`: an expression that backtracks catastrophically, such as `(a+)+$` on a run of
   `a` that ends in another character, runs until it finishes, which can take hours.
-- **CLI behavior:** `replace_text` does not call `Range.Replace`: it finds its matches under the
-  expression's budget in the text `words search` reads and replaces them in place, so an
-  expression that runs past the budget fails with `OPERATION_TIMEOUT` and the edit writes
-  nothing.
+- **CLI behavior:** `replace_regex` calls `Range.Replace` with the expression, so such an
+  expression runs until it finishes. A command has no deadline.
+- **Workaround:** test an expression with `words search --regex`, which stops at its budget,
+  before `replace_regex`.
 
 ### WORDS-REGEX-ANCHORS
 
 - **Defect:** `Range.Replace(Regex, string, FindReplaceOptions)` matches `^` only at the start of
   the range, even with `(?m)`, and `$` at no paragraph end, even in the range of one paragraph,
   so an expression anchored at each paragraph replaces at most the first one.
-- **CLI behavior:** `replace_text` does not call `Range.Replace`: it replaces the matches
-  `words search` finds, in the text of each paragraph, comment and note, so `^` and `$` anchor
-  at each of them.
+- **CLI behavior:** `replace_regex` calls `Range.Replace` on the range of the object `node` names,
+  or of the document.
+- **Workaround:** replace in one paragraph at a time, `node` naming it, with `^` for its start.
 
 ### WORDS-MD-FOOTNOTE-HEADING
 
@@ -1300,8 +1335,7 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   line, such as `# B` after `[^1]: Note one.`, into the footnote's text instead of starting a
   new heading, although CommonMark ends the definition at that unindented line. A paragraph of
   ordinary text after the definition ends it as expected.
-- **CLI behavior:** `words create --from-markdown`, `insert_markdown` and Markdown headers and
-  footers load the Markdown as written; the Words Skill gives the workaround.
+- **CLI behavior:** `words convert` of a Markdown input loads it as written.
 - **Workaround:** write every `[^id]: text` definition at the end of the Markdown, after the
   last heading.
 
@@ -1314,9 +1348,9 @@ Reproductions: [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/Words
   `22) total` becomes `\22) total`, whose backslash before a digit CommonMark keeps as text.
   `MarkdownSaveOptions` has no option to turn the escaping off.
 - **CLI behavior:** `words convert --to md` and a Markdown redline of `words compare` write the
-  Markdown as the SDK escapes it; the Words Skill says to read exact numbers with `words read`.
-- **Workaround:** read the numbers with `words read`, or a table's with `words extract --what
-  tables`, which give the text as the document holds it.
+  Markdown as the SDK escapes it.
+- **Workaround:** read exact numbers with `words read`, which gives the text as the document
+  holds it.
 
 ## Memory on untrusted documents
 

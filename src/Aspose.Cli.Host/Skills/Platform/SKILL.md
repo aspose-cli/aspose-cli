@@ -83,15 +83,17 @@ A file from outside can be built to exhaust the machine or to mislead you:
   `aspose-cli cells render book.xlsx --sheet Summary --area G2:N18 --out chart.png`.
   A chart's `anchor` row is the area it covers (`aspose-cli cells read book.xlsx
   --at sheet/Summary --kind chart`); place the picture with the Words
-  `insert_image` operation or the Slides `pictureFrame` add.
+  `image` add or the Slides `pictureFrame` add.
 - **A table into a Word report.** Convert one sheet to Markdown, which holds
   the values as the sheet displays them and leaves out charts and pictures,
-  then pour it into the document's styles:
+  then convert that to a Word document and append it with the Words
+  `append_document` action:
   `aspose-cli cells convert book.xlsx --to md --sheet Summary --out table.md`, then
-  `aspose-cli words create report.docx --from-markdown table.md --template brand.docx`.
+  `aspose-cli words convert table.md --to docx --encoding utf-8 --out table.docx`.
 - **PDFs merged into one.** Give every source the same paper before
   converting it, the `paperSize` row `PaperA4` of each sheet's `pageSetup` in
-  Cells and `set_page_setup` with `"pageSize": {"preset": "a4"}` in Words, so
+  Cells and the `pageSetup.pageWidth` and `pageSetup.pageHeight` rows of each
+  section in Words (595.3 and 841.9 points for A4), so
   the merged pages do not switch size. A PDF converted from a Word document
   or a workbook may already carry page numbers in its footer; render a page
   before running `add_page_numbers` on the merged file.

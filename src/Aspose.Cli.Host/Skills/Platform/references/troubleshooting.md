@@ -38,12 +38,8 @@ with a `code`, `message` and, when there are any, `details`. A warning with
 
 A `LOSSY_CONVERSION` that names what the output leaves out lists the kinds of
 content in `details.content`; one without it names no kind, such as one that
-says the format may not keep every feature. A `TEXT_NOT_REPLACED` says that an
-operation found its text in a part of the document it does not change and left
-that text as it was, and that the output still holds it there; a later
-operation of the batch that changed or removed it leaves no warning.
-`details.part` names the kind of part and `location` the place. `aspose-cli schema
-v2/common/error-payload` gives the meaning of every value of both.
+says the format may not keep every feature. `aspose-cli schema
+v2/common/error-payload` gives the meaning of every value.
 
 ## Exit codes
 
