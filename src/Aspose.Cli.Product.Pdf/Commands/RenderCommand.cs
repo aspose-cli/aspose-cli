@@ -43,7 +43,7 @@ internal static class RenderCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "render-result", "the fields of the render result"),
             ],
         };
     }

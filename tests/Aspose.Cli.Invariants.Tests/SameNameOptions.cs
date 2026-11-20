@@ -113,10 +113,9 @@ internal static class SameNameOptions
     public static Dictionary<string, List<DeclaredOption>> Declared(CliCatalog catalog)
     {
         var byName = new Dictionary<string, List<DeclaredOption>>(StringComparer.Ordinal);
-        foreach (JsonNode? command in catalog.Document["commands"]!.AsArray())
+        foreach (JsonNode command in catalog.CommandNodes)
         {
-            string path = command!["path"]!.GetValue<string>();
-            string words = path.Contains(' ', StringComparison.Ordinal) ? path[(path.IndexOf(' ', StringComparison.Ordinal) + 1)..] : string.Empty;
+            string words = command["words"]!.GetValue<string>();
             foreach (JsonNode? option in command["options"]!.AsArray())
             {
                 string name = option!["name"]!.GetValue<string>();

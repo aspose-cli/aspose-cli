@@ -46,7 +46,6 @@ public sealed class VerificationIssueTests
     {
         var warning = new Warning(new WarningCode("TEST_WARNING"), "A bounded warning.")
         {
-            Docs = "test/verification",
             Location = "page:2",
             AffectsCompleteness = true,
         };

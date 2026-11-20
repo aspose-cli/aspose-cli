@@ -32,7 +32,7 @@ internal static class CreateCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "what each Cells command is for"),
+                CommandHelpLink.Schema(CellsModule.Manifest, "create-result", "the fields of the create result"),
             ],
         };
     }

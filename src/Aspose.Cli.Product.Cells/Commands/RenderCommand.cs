@@ -67,7 +67,7 @@ internal static class RenderCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "what each Cells command is for"),
+                CommandHelpLink.Schema(CellsModule.Manifest, "render-result", "the fields of the render result"),
             ],
         };
     }

@@ -1,18 +1,58 @@
 {
   "product": {
     "id": "pdf",
-    "verbs": [
-      "read",
-      "search",
-      "convert",
-      "render",
-      "create",
-      "merge",
-      "split",
-      "extract",
-      "edit",
-      "validate",
-      "sign"
+    "description": "Read, edit, convert and render PDF documents through the Aspose.PDF object model.",
+    "engine": "Aspose.PDF.Drawing",
+    "engineVersion": "<build>",
+    "commands": [
+      {
+        "name": "convert",
+        "description": "Convert a PDF, or an HTML page the engine imports, to another format with the engine's call for it. An html output is one file: it holds its images, fonts and styles itself."
+      },
+      {
+        "name": "create",
+        "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format."
+      },
+      {
+        "name": "edit",
+        "description": "Apply a batch of set, add, delete and do operations to a PDF; nothing is written when one fails."
+      },
+      {
+        "name": "extract",
+        "description": "Extract a PDF's images, attachments, tables or form data into a directory with the engine's calls for them; the page text is read with 'aspose-cli pdf read --kind text'."
+      },
+      {
+        "name": "merge",
+        "description": "Merge PDF inputs in order with the engine's PdfFileEditor.Concatenate."
+      },
+      {
+        "name": "read",
+        "description": "Read a PDF's objects, each with every row of the object table, and its inventory."
+      },
+      {
+        "name": "render",
+        "description": "Render one or more PDF pages."
+      },
+      {
+        "name": "search",
+        "description": "Search the text of a PDF's pages with the engine's TextFragmentAbsorber; each hit names the page's text and gives the engine's rectangle of the match."
+      },
+      {
+        "name": "sign",
+        "description": "Sign a PDF with a PKCS#7 signature through PdfFileSignature.Sign, and read the new signature back from the saved file."
+      },
+      {
+        "name": "split",
+        "description": "Split a PDF by page ranges, each part a new document with Pages.Add of its pages; every part is written or none."
+      },
+      {
+        "name": "validate",
+        "description": "Validate a PDF against a PDF/A profile with Document.Validate; the result holds its return value and its log."
+      }
+    ],
+    "loadFormats": [
+      "pdf",
+      "html"
     ],
     "convertFormats": [
       "pdf",
@@ -33,2317 +73,199 @@
       "png",
       "jpeg",
       "svg"
-    ],
-    "operations": [],
-    "loadFormats": [
-      "pdf",
-      "html"
-    ],
-    "engine": {
-      "id": "aspose",
-      "sdk": "Aspose.PDF.Drawing",
-      "sdkVersion": "<build>"
-    },
-    "availableEngines": [
-      "aspose"
-    ],
-    "formats": [
-      {
-        "id": "docx",
-        "extensions": [
-          ".docx"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "words",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "epub",
-        "extensions": [
-          ".epub"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "words",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "html",
-        "extensions": [
-          ".htm",
-          ".html"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": true
-      },
-      {
-        "id": "jpeg",
-        "extensions": [
-          ".jpeg",
-          ".jpg"
-        ],
-        "aliases": [],
-        "uses": [
-          "render"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "md",
-        "extensions": [
-          ".markdown",
-          ".md"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "words",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "pdf",
-        "extensions": [
-          ".pdf"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "pdf",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "pdfa-1b",
-        "extensions": [
-          ".pdf"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "pdf",
-        "genericAvailable": true,
-        "explicitAvailable": false,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "pdfa-2b",
-        "extensions": [
-          ".pdf"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "pdf",
-        "genericAvailable": true,
-        "explicitAvailable": false,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "pdfa-3b",
-        "extensions": [
-          ".pdf"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "pdf",
-        "genericAvailable": true,
-        "explicitAvailable": false,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "png",
-        "extensions": [
-          ".png"
-        ],
-        "aliases": [],
-        "uses": [
-          "render"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "pptx",
-        "extensions": [
-          ".pptx"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "slides",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "svg",
-        "extensions": [
-          ".svg"
-        ],
-        "aliases": [],
-        "uses": [
-          "render"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "tiff",
-        "extensions": [
-          ".tif",
-          ".tiff"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "txt",
-        "extensions": [
-          ".txt"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "words",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "xlsx",
-        "extensions": [
-          ".xlsx"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "cells",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "xps",
-        "extensions": [
-          ".xps"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      }
-    ],
-    "commands": [
-      {
-        "path": "pdf",
-        "name": "pdf",
-        "aliases": [],
-        "description": "Read, edit, convert and render PDF documents through the Aspose.PDF object model.",
-        "options": [],
-        "arguments": []
-      },
-      {
-        "path": "pdf convert",
-        "name": "convert",
-        "aliases": [],
-        "description": "Convert a PDF, or an HTML page the engine imports, to another format with the engine's call for it. An html output is one file: it holds its images, fonts and styles itself.",
-        "options": [
-          {
-            "name": "--convert-error-action",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "What Document.Convert does with what the PDF/A profile does not allow, a member name of the engine's ConvertErrorAction, such as Delete or None. Required for a pdfa output."
-          },
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Output path; defaults to a sibling using the target extension."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--pages",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --to html or tiff."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PDF from the first line of stdin."
-          },
-          {
-            "name": "--to",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "docx",
-              "epub",
-              "html",
-              "md",
-              "pdf",
-              "pdfa-1b",
-              "pdfa-2b",
-              "pdfa-3b",
-              "pptx",
-              "tiff",
-              "txt",
-              "xlsx",
-              "xps"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Target format. Default: the --out extension's format, except pdfa-1b, pdfa-2b, pdfa-3b, which only --to chooses. pdfa-1b, pdfa-2b, pdfa-3b write .pdf."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      },
-      {
-        "path": "pdf create",
-        "name": "create",
-        "aliases": [],
-        "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format.",
-        "options": [
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--encrypt",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env."
-          },
-          {
-            "name": "--encrypt-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the output PDF."
-          },
-          {
-            "name": "--encrypt-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the output PDF from the first line of stdin."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--template",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "file",
-            "description": "A document to save as the new one. Default: the engine's new document, new Document()."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Path of the document to create, e.g. report.pdf."
-          }
-        ]
-      },
-      {
-        "path": "pdf edit",
-        "name": "edit",
-        "aliases": [],
-        "description": "Apply a batch of set, add, delete and do operations to a PDF; nothing is written when one fails.",
-        "options": [
-          {
-            "name": "--encrypt",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env."
-          },
-          {
-            "name": "--encrypt-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the output PDF."
-          },
-          {
-            "name": "--encrypt-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the output PDF from the first line of stdin."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--in-place",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Modify the input file itself atomically."
-          },
-          {
-            "name": "--ops",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "json-source",
-            "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/pdf/ops --operation directory; one of them in full: aspose-cli schema v2/pdf/ops --operation <name>."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Output path. Default: the input path with '.out' inserted before the extension."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PDF from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      },
-      {
-        "path": "pdf extract",
-        "name": "extract",
-        "aliases": [],
-        "description": "Extract a PDF's images, attachments, tables or form data into a directory with the engine's calls for them; the page text is read with 'aspose-cli pdf read --kind text'.",
-        "options": [
-          {
-            "name": "--bom",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one."
-          },
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--form-format",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "fdf",
-              "json",
-              "xfdf"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Form data format; required with --what forms, and only with it."
-          },
-          {
-            "name": "--out-dir",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Safe extraction directory."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--pages",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --what images or tables."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PDF from the first line of stdin."
-          },
-          {
-            "name": "--what",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "attachments",
-              "forms",
-              "images",
-              "tables"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "What to extract; forms writes the form data to one file."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      },
-      {
-        "path": "pdf merge",
-        "name": "merge",
-        "aliases": [],
-        "description": "Merge PDF inputs in order with the engine's PdfFileEditor.Concatenate.",
-        "options": [
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--encrypt",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env."
-          },
-          {
-            "name": "--encrypt-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the output PDF."
-          },
-          {
-            "name": "--encrypt-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the output PDF from the first line of stdin."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Merged PDF output path."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for all input PDFs. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for all input PDFs."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for all input PDFs from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "files",
-            "type": "string[]",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 100000,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Two or more PDF inputs in merge order."
-          }
-        ]
-      },
-      {
-        "path": "pdf read",
-        "name": "read",
-        "aliases": [],
-        "description": "Read a PDF's objects, each with every row of the object table, and its inventory.",
-        "options": [
-          {
-            "name": "--at",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The address of the object to read with everything below it, as read gives it in at. Default: the whole document."
-          },
-          {
-            "name": "--from",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The address of the object the window starts at; a truncated read's window.next gives it."
-          },
-          {
-            "name": "--kind",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 100000,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind. Objects of the kinds page, text, annotation, font, layer, bookmark, field are listed only when --kind names them; window.notListedUnlessNamed names those a read left out."
-          },
-          {
-            "name": "--max-objects",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "200",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The most objects one window lists. Range: 1-10000."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PDF from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      },
-      {
-        "path": "pdf render",
-        "name": "render",
-        "aliases": [],
-        "description": "Render one or more PDF pages.",
-        "options": [
-          {
-            "name": "--dpi",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "192",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
-          },
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Output path. Default: the input path with the image extension. Several pages write <stem>.<page>.<ext> beside it."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--pages",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page; at most 20 per run."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PDF from the first line of stdin."
-          },
-          {
-            "name": "--to",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "jpeg",
-              "png",
-              "svg"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Image format. Default: the --out extension's format, else png."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      },
-      {
-        "path": "pdf search",
-        "name": "search",
-        "aliases": [],
-        "description": "Search the text of a PDF's pages with the engine's TextFragmentAbsorber; each hit names the page's text and gives the engine's rectangle of the match.",
-        "options": [
-          {
-            "name": "--case-sensitive",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Match letter case exactly."
-          },
-          {
-            "name": "--max-hits",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "100",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Maximum returned hits. Range: 1-10000."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PDF from the first line of stdin."
-          },
-          {
-            "name": "--pattern",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Text to find, or a regular expression with --regex."
-          },
-          {
-            "name": "--regex",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
-          },
-          {
-            "name": "--skip",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "0",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      },
-      {
-        "path": "pdf sign",
-        "name": "sign",
-        "aliases": [],
-        "description": "Sign a PDF with a PKCS#7 signature through PdfFileSignature.Sign, and read the new signature back from the saved file.",
-        "options": [
-          {
-            "name": "--certificate",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "file",
-            "description": "PKCS#12 certificate path (.pfx or .p12)."
-          },
-          {
-            "name": "--certificate-password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PKCS#12 certificate."
-          },
-          {
-            "name": "--certificate-password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PKCS#12 certificate from the first line of stdin."
-          },
-          {
-            "name": "--contact",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "PKCS7.ContactInfo."
-          },
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--font",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "SignatureCustomAppearance.FontFamilyName of a visible signature; not given, the engine's default appearance."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--location",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "PKCS7.Location."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Signed PDF path. Default: <input>.signed.pdf."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--page",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The page parameter of PdfFileSignature.Sign, from 1."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the input PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the input PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the input PDF from the first line of stdin."
-          },
-          {
-            "name": "--reason",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "PKCS7.Reason."
-          },
-          {
-            "name": "--rect",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The rectangle of a visible signature, the engine's System.Drawing.Rectangle the call takes: x,y,width,height in whole points, x and y the lower-left corner in the page's user space. Required with --visible."
-          },
-          {
-            "name": "--visible",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The visible parameter of PdfFileSignature.Sign: the signature has an appearance on the page. Takes --rect."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      },
-      {
-        "path": "pdf split",
-        "name": "split",
-        "aliases": [],
-        "description": "Split a PDF by page ranges, each part a new document with Pages.Add of its pages; every part is written or none.",
-        "options": [
-          {
-            "name": "--by",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "pages"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "How to divide the document: one part per page, per --every N of them or per --groups group."
-          },
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--encrypt",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for every output PDF. Discouraged: visible in the process list; prefer --encrypt-env."
-          },
-          {
-            "name": "--encrypt-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for every output PDF."
-          },
-          {
-            "name": "--encrypt-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for every output PDF from the first line of stdin."
-          },
-          {
-            "name": "--every",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Pages per part with --by pages. Default: 1."
-          },
-          {
-            "name": "--groups",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 100000,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "A page group with --by pages, one part each; repeat for more, such as --groups 1-3 --groups 4-6."
-          },
-          {
-            "name": "--out-dir",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Directory that receives the parts, named <stem>.<n>.pdf."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--pages",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --by pages."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PDF from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      },
-      {
-        "path": "pdf validate",
-        "name": "validate",
-        "aliases": [],
-        "description": "Validate a PDF against a PDF/A profile with Document.Validate; the result holds its return value and its log.",
-        "options": [
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PDF from the first line of stdin."
-          },
-          {
-            "name": "--profile",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "pdfa-1b",
-              "pdfa-2b",
-              "pdfa-3b"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "PDF/A profile to validate against."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      }
-    ],
-    "resourceBudgets": [
-      {
-        "kind": "pdf.pages",
-        "default": 10000,
-        "maximum": 100000,
-        "unit": "items",
-        "enforcementStage": "post-load"
-      },
-      {
-        "kind": "pdf.objects",
-        "default": 1000000,
-        "maximum": 5000000,
-        "unit": "items",
-        "enforcementStage": "post-load"
-      }
     ]
   },
-  "routes": [
-    {
-      "extension": ".pdf",
-      "product": "pdf",
-      "operations": [
-        "open"
+  "documents": {
+    "v2/pdf/convert-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf convert",
+      "description": "Convert a PDF, or an HTML page the engine imports, to another format with the engine's call for it. An html output is one file: it holds its images, fonts and styles itself.",
+      "options": [
+        {
+          "name": "--convert-error-action",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "What Document.Convert does with what the PDF/A profile does not allow, a member name of the engine's ConvertErrorAction, such as Delete or None. Required for a pdfa output."
+        },
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Output path; defaults to a sibling using the target extension."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--pages",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --to html or tiff."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the PDF."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the PDF from the first line of stdin."
+        },
+        {
+          "name": "--to",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "docx",
+            "epub",
+            "html",
+            "md",
+            "pdf",
+            "pdfa-1b",
+            "pdfa-2b",
+            "pdfa-3b",
+            "pptx",
+            "tiff",
+            "txt",
+            "xlsx",
+            "xps"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Target format. Default: the --out extension's format, except pdfa-1b, pdfa-2b, pdfa-3b, which only --to chooses. pdfa-1b, pdfa-2b, pdfa-3b write .pdf."
+        }
       ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    }
-  ],
-  "diagnostics": [],
-  "schemas": {
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "PDF document to open."
+        }
+      ]
+    },
     "v2/pdf/convert-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/convert-result.schema.json",
@@ -2433,6 +355,124 @@
         }
       }
     },
+    "v2/pdf/create-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf create",
+      "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format.",
+      "options": [
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the output PDF."
+        },
+        {
+          "name": "--encrypt-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the output PDF from the first line of stdin."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--template",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "file",
+          "description": "A document to save as the new one. Default: the engine's new document, new Document()."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Path of the document to create, e.g. report.pdf."
+        }
+      ]
+    },
     "v2/pdf/create-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/create-result.schema.json",
@@ -2477,6 +517,200 @@
           }
         }
       }
+    },
+    "v2/pdf/edit-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf edit",
+      "description": "Apply a batch of set, add, delete and do operations to a PDF; nothing is written when one fails.",
+      "options": [
+        {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the output PDF."
+        },
+        {
+          "name": "--encrypt-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the output PDF from the first line of stdin."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--in-place",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Modify the input file itself atomically."
+        },
+        {
+          "name": "--ops",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "json-source",
+          "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/pdf/ops/directory; one of them in full: aspose-cli schema v2/pdf/ops/<name>."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Output path. Default: the input path with '.out' inserted before the extension."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the PDF."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the PDF from the first line of stdin."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "PDF document to open."
+        }
+      ]
     },
     "v2/pdf/edit-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2545,6 +779,193 @@
           }
         }
       }
+    },
+    "v2/pdf/extract-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf extract",
+      "description": "Extract a PDF's images, attachments, tables or form data into a directory with the engine's calls for them; the page text is read with 'aspose-cli pdf read --kind text'.",
+      "options": [
+        {
+          "name": "--bom",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one."
+        },
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--form-format",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "fdf",
+            "json",
+            "xfdf"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Form data format; required with --what forms, and only with it."
+        },
+        {
+          "name": "--out-dir",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Safe extraction directory."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--pages",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --what images or tables."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the PDF."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the PDF from the first line of stdin."
+        },
+        {
+          "name": "--what",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "attachments",
+            "forms",
+            "images",
+            "tables"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "What to extract; forms writes the form data to one file."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "PDF document to open."
+        }
+      ]
     },
     "v2/pdf/extract-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2641,6 +1062,344 @@
           }
         }
       }
+    },
+    "v2/pdf/formats": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/format-list.schema.json",
+      "schemaVersion": 2,
+      "product": "pdf",
+      "formats": [
+        {
+          "id": "docx",
+          "extensions": [
+            ".docx"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "epub",
+          "extensions": [
+            ".epub"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "html",
+          "extensions": [
+            ".htm",
+            ".html"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "jpeg",
+          "extensions": [
+            ".jpeg",
+            ".jpg"
+          ],
+          "aliases": [],
+          "uses": [
+            "render"
+          ]
+        },
+        {
+          "id": "md",
+          "extensions": [
+            ".markdown",
+            ".md"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "pdf",
+          "extensions": [
+            ".pdf"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "pdfa-1b",
+          "extensions": [
+            ".pdf"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "pdfa-2b",
+          "extensions": [
+            ".pdf"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "pdfa-3b",
+          "extensions": [
+            ".pdf"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "png",
+          "extensions": [
+            ".png"
+          ],
+          "aliases": [],
+          "uses": [
+            "render"
+          ]
+        },
+        {
+          "id": "pptx",
+          "extensions": [
+            ".pptx"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "svg",
+          "extensions": [
+            ".svg"
+          ],
+          "aliases": [],
+          "uses": [
+            "render"
+          ]
+        },
+        {
+          "id": "tiff",
+          "extensions": [
+            ".tif",
+            ".tiff"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "txt",
+          "extensions": [
+            ".txt"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "xlsx",
+          "extensions": [
+            ".xlsx"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "xps",
+          "extensions": [
+            ".xps"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        }
+      ]
+    },
+    "v2/pdf/merge-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf merge",
+      "description": "Merge PDF inputs in order with the engine's PdfFileEditor.Concatenate.",
+      "options": [
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the output PDF."
+        },
+        {
+          "name": "--encrypt-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the output PDF from the first line of stdin."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Merged PDF output path."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for all input PDFs. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for all input PDFs."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for all input PDFs from the first line of stdin."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "files",
+          "type": "string[]",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 100000,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Two or more PDF inputs in merge order."
+        }
+      ]
     },
     "v2/pdf/merge-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4536,6 +3295,131 @@
         }
       }
     },
+    "v2/pdf/read-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf read",
+      "description": "Read a PDF's objects, each with every row of the object table, and its inventory.",
+      "options": [
+        {
+          "name": "--at",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The address of the object to read with everything below it, as read gives it in at. Default: the whole document."
+        },
+        {
+          "name": "--from",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The address of the object the window starts at; a truncated read's window.next gives it."
+        },
+        {
+          "name": "--kind",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 100000,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind. Objects of the kinds page, text, annotation, font, layer, bookmark, field are listed only when --kind names them; window.notListedUnlessNamed names those a read left out."
+        },
+        {
+          "name": "--max-objects",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "200",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The most objects one window lists. Range: 1-10000."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the PDF."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the PDF from the first line of stdin."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "PDF document to open."
+        }
+      ]
+    },
     "v2/pdf/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/read-result.schema.json",
@@ -4597,6 +3481,187 @@
           }
         }
       }
+    },
+    "v2/pdf/render-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf render",
+      "description": "Render one or more PDF pages.",
+      "options": [
+        {
+          "name": "--dpi",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "192",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
+        },
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Output path. Default: the input path with the image extension. Several pages write <stem>.<page>.<ext> beside it."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--pages",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page; at most 20 per run."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the PDF."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the PDF from the first line of stdin."
+        },
+        {
+          "name": "--to",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "jpeg",
+            "png",
+            "svg"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Image format. Default: the --out extension's format, else png."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "PDF document to open."
+        }
+      ]
     },
     "v2/pdf/render-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4685,6 +3750,154 @@
         }
       }
     },
+    "v2/pdf/search-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf search",
+      "description": "Search the text of a PDF's pages with the engine's TextFragmentAbsorber; each hit names the page's text and gives the engine's rectangle of the match.",
+      "options": [
+        {
+          "name": "--case-sensitive",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Match letter case exactly."
+        },
+        {
+          "name": "--max-hits",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "100",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Maximum returned hits. Range: 1-10000."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the PDF."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the PDF from the first line of stdin."
+        },
+        {
+          "name": "--pattern",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Text to find, or a regular expression with --regex."
+        },
+        {
+          "name": "--regex",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
+        },
+        {
+          "name": "--skip",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "PDF document to open."
+        }
+      ]
+    },
     "v2/pdf/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/search-result.schema.json",
@@ -4741,6 +3954,288 @@
           }
         }
       }
+    },
+    "v2/pdf/sign-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf sign",
+      "description": "Sign a PDF with a PKCS#7 signature through PdfFileSignature.Sign, and read the new signature back from the saved file.",
+      "options": [
+        {
+          "name": "--certificate",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "file",
+          "description": "PKCS#12 certificate path (.pfx or .p12)."
+        },
+        {
+          "name": "--certificate-password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the PKCS#12 certificate."
+        },
+        {
+          "name": "--certificate-password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the PKCS#12 certificate from the first line of stdin."
+        },
+        {
+          "name": "--contact",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "PKCS7.ContactInfo."
+        },
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--font",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "SignatureCustomAppearance.FontFamilyName of a visible signature; not given, the engine's default appearance."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--location",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "PKCS7.Location."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Signed PDF path. Default: <input>.signed.pdf."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--page",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The page parameter of PdfFileSignature.Sign, from 1."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the input PDF. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the input PDF."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the input PDF from the first line of stdin."
+        },
+        {
+          "name": "--reason",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "PKCS7.Reason."
+        },
+        {
+          "name": "--rect",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The rectangle of a visible signature, the engine's System.Drawing.Rectangle the call takes: x,y,width,height in whole points, x and y the lower-left corner in the page's user space. Required with --visible."
+        },
+        {
+          "name": "--visible",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The visible parameter of PdfFileSignature.Sign: the signature has an appearance on the page. Takes --rect."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "PDF document to open."
+        }
+      ]
     },
     "v2/pdf/sign-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4812,6 +4307,227 @@
           }
         }
       }
+    },
+    "v2/pdf/split-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf split",
+      "description": "Split a PDF by page ranges, each part a new document with Pages.Add of its pages; every part is written or none.",
+      "options": [
+        {
+          "name": "--by",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "pages"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "How to divide the document: one part per page, per --every N of them or per --groups group."
+        },
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for every output PDF. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for every output PDF."
+        },
+        {
+          "name": "--encrypt-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for every output PDF from the first line of stdin."
+        },
+        {
+          "name": "--every",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Pages per part with --by pages. Default: 1."
+        },
+        {
+          "name": "--groups",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 100000,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "A page group with --by pages, one part each; repeat for more, such as --groups 1-3 --groups 4-6."
+        },
+        {
+          "name": "--out-dir",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Directory that receives the parts, named <stem>.<n>.pdf."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--pages",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --by pages."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the PDF."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the PDF from the first line of stdin."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "PDF document to open."
+        }
+      ]
     },
     "v2/pdf/split-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -4894,6 +4610,92 @@
           }
         }
       }
+    },
+    "v2/pdf/validate-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli pdf validate",
+      "description": "Validate a PDF against a PDF/A profile with Document.Validate; the result holds its return value and its log.",
+      "options": [
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the PDF."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the PDF from the first line of stdin."
+        },
+        {
+          "name": "--profile",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "pdfa-1b",
+            "pdfa-2b",
+            "pdfa-3b"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "PDF/A profile to validate against."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "PDF document to open."
+        }
+      ]
     },
     "v2/pdf/validate-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",

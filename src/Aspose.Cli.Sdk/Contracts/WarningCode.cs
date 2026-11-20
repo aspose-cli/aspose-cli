@@ -7,7 +7,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// <summary>
 /// A declared warning code. A <see cref="Warning"/> takes its code only as one of these, and each
 /// is declared once, as a static member of a diagnostics class whose <c>All</c> list hands it to the
-/// diagnostic catalog, so <c>capabilities</c> lists every code the CLI can emit. On the wire it
+/// diagnostic catalog, so the diagnostics document of <c>schema</c> lists every code the CLI can emit. On the wire it
 /// is the plain code string.
 /// </summary>
 [JsonConverter(typeof(WarningCodeJsonConverter))]

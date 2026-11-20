@@ -49,7 +49,7 @@ public sealed record DiagnosticDescriptor
     public ExitCode? ExitCode { get; init; }
 
     /// <summary>
-    /// Category exposed by the capability catalog: an error's follows from its exit code, a
+    /// Category the diagnostics document of <c>schema</c> states: an error's follows from its exit code, a
     /// warning's is <see cref="WarningCategory"/> or <see cref="VerificationCategory"/>.
     /// </summary>
     public required string Category { get; init; }

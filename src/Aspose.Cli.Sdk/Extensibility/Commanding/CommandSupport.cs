@@ -157,8 +157,7 @@ public static class JsonInputSource
         return CliException.Create(
             missing.Code,
             missing.Message,
-            details: missing.Details,
-            docs: missing.Docs);
+            details: missing.Details);
     }
 
     /// <summary>Classifies JSON input using the same rules as the actual reader.</summary>

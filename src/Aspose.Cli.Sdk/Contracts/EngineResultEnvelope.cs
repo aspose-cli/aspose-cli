@@ -5,7 +5,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// <summary>
 /// Base of a result whose command runs a product engine, which states the license mode when the
 /// engine ran without a license. A result whose command never runs an engine, such as
-/// <c>capabilities</c>, derives from <see cref="ResultEnvelope"/> and carries no license.
+/// <c>schema</c>, derives from <see cref="ResultEnvelope"/> and carries no license.
 /// </summary>
 public abstract record EngineResultEnvelope : ResultEnvelope
 {

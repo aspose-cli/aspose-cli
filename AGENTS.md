@@ -90,7 +90,7 @@ Do not extend or repair these parts, except for a wrong result. 2.0 keeps no com
   `aspose-cli-platform` Skill. A decision has one owner; the architecture tests refuse a second.
 - Extend at compile time through the catalog and explicit registration: no runtime plugin
   loading, reflection scanning, dependency-injection container or command source generator.
-- Schemas, help and capabilities are generated from one source; nothing hand-writes a copy.
+- Schemas, help and the schema catalog are generated from one source; nothing hand-writes a copy.
 - Source, project references, build imports, tests and publishing tools stay inside this
   project. Never reference a parent workspace or another CLI project.
 - Do not adopt raw XML or XPath write layers, a whole-document export replayed as a batch,

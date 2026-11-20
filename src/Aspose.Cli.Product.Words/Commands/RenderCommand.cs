@@ -41,7 +41,7 @@ internal static class RenderCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(WordsModule.Manifest, "verification", "read-back, semantic and visual verification"),
+                CommandHelpLink.Schema(WordsModule.Manifest, "render-result", "the fields of the render result"),
             ],
         };
     }

@@ -20,12 +20,12 @@ errors) are in the Platform Skill. A deck exported to PDF is a PDF: use the PDF 
 
 ## The object table
 
-`aspose-cli schema v2/slides/ops --operation directory` lists the vocabulary in one short JSON
+`aspose-cli schema v2/slides/ops/directory` lists the vocabulary in one short JSON
 document: each kind with its address forms, the rows a set writes (`rows`) and the rows that are
 read only (`readOnlyRows`), and whether it can be deleted and moved; each add with the kinds it adds
 to and its parameters; each action with its parameters. One entry in full, with each row's type and
-the engine member it names: `aspose-cli schema v2/slides/ops --operation shape`,
-`--operation add.slide`, `--operation do.replace_text`. A row names one engine member; setting it sets that member only, and whatever else the engine
+the engine member it names: `aspose-cli schema v2/slides/ops/shape`,
+`ops/add.slide`, `ops/do.replace_text`. A row names one engine member; setting it sets that member only, and whatever else the engine
 changes with it is the engine's doing. Colors are `#RRGGBB`, lengths are points, enumeration values
 are the engine's member names (`Solid`, `Title`, `ClusteredColumn`); a number the engine has not
 set (NaN) reads as `null`.
@@ -92,7 +92,7 @@ aspose-cli slides edit deck.pptx --ops ops.json --out deck.edited.pptx
 - A position in `at` is read after the whole batch: when a later operation inserts or deletes
   before it, `now` is whatever object is at that position then.
 - Every argument of an add or an action is the engine call's parameter of that name; the ones not
-  given are not passed. `--operation add.<name>` lists them.
+  given are not passed. `ops/add.<name>` lists them.
 
 Tasks, as the table does them:
 

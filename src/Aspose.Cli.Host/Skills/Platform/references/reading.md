@@ -26,7 +26,7 @@ read lists only when `--kind` names it is listed in
 defaults.
 
 A row a read returns is the name an edit sets it by: a value read under a
-name is written back by a `set` of the same name (`aspose-cli docs editing`).
+name is written back by a `set` of the same name (`references/editing.md`).
 
 ## Windows
 
@@ -81,9 +81,9 @@ option, or render png at that size.
 
 ## Limits
 
-`--max-input-bytes` bounds the input size for every command; `capabilities`
-lists every resource budget with its default and maximum under
-`resourceBudgets`. Exceeding a budget fails with a stable code instead of
-returning a partial answer (`aspose-cli docs troubleshooting`).
+`--max-input-bytes` bounds the input size for every command;
+`aspose-cli schema v2/common/budgets` lists every resource budget with its
+default and maximum. Exceeding a budget fails with a stable code instead of
+returning a partial answer (`references/troubleshooting.md`).
 
 Encrypted inputs take `--password-env <VAR>` or `--password-stdin`.

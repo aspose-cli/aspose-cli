@@ -636,7 +636,6 @@ public static partial class CliErrors
             ErrorCodes.FormatUnsupported,
             corrupt.Message,
             details: corrupt.Details?.DeepClone().AsObject(),
-            docs: corrupt.Docs,
             innerException: corrupt.InnerException,
             explanation: corrupt.Explanation);
     }
@@ -869,14 +868,12 @@ public static partial class CliErrors
     public static CliException LicenseFileNotFound(string path, string source) => CliException.Create(
         ErrorCodes.LicenseFileNotFound,
         $"License file configured via {source} does not exist: {path}",
-        details: LicenseFileDetails(path, source),
-        docs: "licensing");
+        details: LicenseFileDetails(path, source));
 
     public static CliException LicensePathIsDirectory(string path, string source) => CliException.Create(
         ErrorCodes.LicenseFileNotFound,
         $"License path configured via {source} is a directory, not a license file: {path}",
-        details: LicenseFileDetails(path, source),
-        docs: "licensing");
+        details: LicenseFileDetails(path, source));
 
     private static JsonObject LicenseFileDetails(string path, string source)
     {
@@ -889,7 +886,6 @@ public static partial class CliErrors
         ErrorCodes.LicenseInvalid,
         $"The license configured via {source} was rejected: {reason}",
         details: new JsonObject { ["source"] = source },
-        docs: "licensing",
         innerException: inner,
         explanation: reason);
 
@@ -905,8 +901,7 @@ public static partial class CliErrors
         JsonObject? details = null) => CliException.Create(
         ErrorCodes.EvaluationLimit,
         message,
-        details: details,
-        docs: "licensing");
+        details: details);
 
     /// <summary>
     /// The error for an evaluation limit the engine raised, which the SDK write pipeline alone
@@ -927,7 +922,6 @@ public static partial class CliErrors
         ErrorCodes.EvaluationLimit,
         $"{engine} evaluation mode {allows}, and this command needs more, so it stopped and wrote nothing.",
         details: new JsonObject { ["limit"] = limit, ["unit"] = unit },
-        docs: "licensing",
         innerException: engineError);
 
     /// <summary>

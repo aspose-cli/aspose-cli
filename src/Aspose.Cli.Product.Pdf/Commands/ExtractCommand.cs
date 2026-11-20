@@ -83,7 +83,7 @@ internal static class ExtractCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "extract-result", "the fields of the extract result"),
             ],
         };
     }

@@ -1,15 +1,64 @@
 {
   "product": {
     "id": "words",
-    "verbs": [
-      "read",
-      "search",
-      "create",
-      "edit",
-      "convert",
-      "render",
-      "compare",
-      "extract"
+    "description": "Read, edit, convert and render documents through the Aspose.Words object model.",
+    "engine": "Aspose.Words",
+    "engineVersion": "<build>",
+    "commands": [
+      {
+        "name": "compare",
+        "description": "Compare a changed document with the original, Document.Compare, and write the redline: a copy of the original whose revisions are the differences."
+      },
+      {
+        "name": "convert",
+        "description": "Convert a document to another format with the engine's options for it. An html, html-fixed or md output is one file: it holds its images, fonts and styles itself."
+      },
+      {
+        "name": "create",
+        "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format."
+      },
+      {
+        "name": "edit",
+        "description": "Apply a batch of set, add, delete, move and do operations to a document; nothing is written when one fails."
+      },
+      {
+        "name": "extract",
+        "description": "Write the bytes of each image the document stores, ImageData.ImageBytes, one file per image in document order; a linked image stores none."
+      },
+      {
+        "name": "read",
+        "description": "Read a document's objects, each with every row of the object table, and its inventory."
+      },
+      {
+        "name": "render",
+        "description": "Render one or more document pages."
+      },
+      {
+        "name": "search",
+        "description": "Search the text of a document's paragraphs, as Paragraph.GetText() gives it; each hit names the paragraph's address."
+      }
+    ],
+    "loadFormats": [
+      "doc",
+      "dot",
+      "docx",
+      "docm",
+      "dotx",
+      "dotm",
+      "flatopc",
+      "rtf",
+      "wordml",
+      "html",
+      "mhtml",
+      "odt",
+      "ott",
+      "txt",
+      "md",
+      "pdf",
+      "epub",
+      "mobi",
+      "azw3",
+      "chm"
     ],
     "convertFormats": [
       "doc",
@@ -41,2417 +90,387 @@
       "png",
       "jpeg",
       "svg"
-    ],
-    "operations": [],
-    "loadFormats": [
-      "doc",
-      "dot",
-      "docx",
-      "docm",
-      "dotx",
-      "dotm",
-      "flatopc",
-      "rtf",
-      "wordml",
-      "html",
-      "mhtml",
-      "odt",
-      "ott",
-      "txt",
-      "md",
-      "pdf",
-      "epub",
-      "mobi",
-      "azw3",
-      "chm"
-    ],
-    "engine": {
-      "id": "aspose",
-      "sdk": "Aspose.Words",
-      "sdkVersion": "<build>"
-    },
-    "availableEngines": [
-      "aspose"
-    ],
-    "formats": [
-      {
-        "id": "azw3",
-        "extensions": [
-          ".azw3"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "chm",
-        "extensions": [
-          ".chm"
-        ],
-        "aliases": [],
-        "uses": [
-          "input"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "doc",
-        "extensions": [
-          ".doc"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "docm",
-        "extensions": [
-          ".docm"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "docx",
-        "extensions": [
-          ".docx"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "dot",
-        "extensions": [
-          ".dot"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "dotm",
-        "extensions": [
-          ".dotm"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "dotx",
-        "extensions": [
-          ".dotx"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "epub",
-        "extensions": [
-          ".epub"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "flatopc",
-        "extensions": [
-          ".xml"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "html",
-        "extensions": [
-          ".htm",
-          ".html"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": true
-      },
-      {
-        "id": "html-fixed",
-        "extensions": [
-          ".htm",
-          ".html"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "jpeg",
-        "extensions": [
-          ".jpeg",
-          ".jpg"
-        ],
-        "aliases": [],
-        "uses": [
-          "render"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "md",
-        "extensions": [
-          ".markdown",
-          ".md"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "mhtml",
-        "extensions": [
-          ".mhtml"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": true
-      },
-      {
-        "id": "mobi",
-        "extensions": [
-          ".mobi"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "odt",
-        "extensions": [
-          ".odt"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "openxps",
-        "extensions": [
-          ".oxps"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "ott",
-        "extensions": [
-          ".ott"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "pcl",
-        "extensions": [
-          ".pcl"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "pdf",
-        "extensions": [
-          ".pdf"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "explicit",
-        "finalOwner": "pdf",
-        "genericAvailable": false,
-        "explicitAvailable": true
-      },
-      {
-        "id": "png",
-        "extensions": [
-          ".png"
-        ],
-        "aliases": [],
-        "uses": [
-          "render"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "ps",
-        "extensions": [
-          ".ps"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "rtf",
-        "extensions": [
-          ".rtf"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "svg",
-        "extensions": [
-          ".svg"
-        ],
-        "aliases": [],
-        "uses": [
-          "render"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "txt",
-        "extensions": [
-          ".txt"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "wordml",
-        "extensions": [
-          ".xml"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "words",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "xps",
-        "extensions": [
-          ".xps"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      }
-    ],
-    "commands": [
-      {
-        "path": "words",
-        "name": "words",
-        "aliases": [],
-        "description": "Read, edit, convert and render documents through the Aspose.Words object model.",
-        "options": [],
-        "arguments": []
-      },
-      {
-        "path": "words compare",
-        "name": "compare",
-        "aliases": [],
-        "description": "Compare a changed document with the original, Document.Compare, and write the redline: a copy of the original whose revisions are the differences.",
-        "options": [
-          {
-            "name": "--author",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The author of the redline's revisions, Document.Compare's author."
-          },
-          {
-            "name": "--date-time",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The date and time of the redline's revisions, Document.Compare's dateTime, written yyyy-MM-ddTHH:mm:ss."
-          },
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--granularity",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "CompareOptions.Granularity, a member name of the engine's Granularity, such as WordLevel or CharLevel. Default: the engine's."
-          },
-          {
-            "name": "--ignore-case-changes",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Set CompareOptions.IgnoreCaseChanges to true."
-          },
-          {
-            "name": "--ignore-comments",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Set CompareOptions.IgnoreComments to true."
-          },
-          {
-            "name": "--ignore-fields",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Set CompareOptions.IgnoreFields to true."
-          },
-          {
-            "name": "--ignore-footnotes",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Set CompareOptions.IgnoreFootnotes to true."
-          },
-          {
-            "name": "--ignore-formatting",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Set CompareOptions.IgnoreFormatting to true."
-          },
-          {
-            "name": "--ignore-headers-and-footers",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Set CompareOptions.IgnoreHeadersAndFooters to true."
-          },
-          {
-            "name": "--ignore-tables",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Set CompareOptions.IgnoreTables to true."
-          },
-          {
-            "name": "--ignore-textboxes",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Set CompareOptions.IgnoreTextboxes to true."
-          },
-          {
-            "name": "--left-password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the original document. Discouraged: visible in the process list; prefer --left-password-env."
-          },
-          {
-            "name": "--left-password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the original document."
-          },
-          {
-            "name": "--left-password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the original document from the first line of stdin."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The redline's path; its extension selects the format, such as .docx or .pdf."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--right-password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the changed document. Discouraged: visible in the process list; prefer --right-password-env."
-          },
-          {
-            "name": "--right-password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the changed document."
-          },
-          {
-            "name": "--right-password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the changed document from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "left",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Original document."
-          },
-          {
-            "name": "right",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Changed document."
-          }
-        ]
-      },
-      {
-        "path": "words convert",
-        "name": "convert",
-        "aliases": [],
-        "description": "Convert a document to another format with the engine's options for it. An html, html-fixed or md output is one file: it holds its images, fonts and styles itself.",
-        "options": [
-          {
-            "name": "--auto-numbering-detection",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "true or false: TxtLoadOptions.AutoNumberingDetection of a txt input. Required for such an input."
-          },
-          {
-            "name": "--detect-hyperlinks",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "true or false: TxtLoadOptions.DetectHyperlinks of a txt input. Required for such an input."
-          },
-          {
-            "name": "--detect-numbering-with-whitespaces",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "true or false: TxtLoadOptions.DetectNumberingWithWhitespaces of a txt input. Required for such an input."
-          },
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--encoding",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The text encoding of a txt or md input, such as utf-8, gb18030 or windows-1252 (LoadOptions.Encoding). Required for such an input."
-          },
-          {
-            "name": "--encrypt",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env."
-          },
-          {
-            "name": "--encrypt-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the output document."
-          },
-          {
-            "name": "--encrypt-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the output document from the first line of stdin."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--leading-spaces",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "TxtLoadOptions.LeadingSpacesOptions of a txt input, a member name of the engine's TxtLeadingSpacesOptions, such as ConvertToIndent, Preserve or Trim. Required for such an input."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Output path; defaults to a sibling using the target extension."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--pages",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --to pdf, xps, openxps, ps, pcl or html-fixed."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the document."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the document from the first line of stdin."
-          },
-          {
-            "name": "--to",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "azw3",
-              "doc",
-              "docm",
-              "docx",
-              "dot",
-              "dotm",
-              "dotx",
-              "epub",
-              "flatopc",
-              "html",
-              "html-fixed",
-              "md",
-              "mhtml",
-              "mobi",
-              "odt",
-              "openxps",
-              "ott",
-              "pcl",
-              "pdf",
-              "ps",
-              "rtf",
-              "txt",
-              "wordml",
-              "xps"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Target document format. Default: the --out extension's format. flatopc, wordml write .xml; openxps writes .oxps; html-fixed writes .html or .htm."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Document to open."
-          }
-        ]
-      },
-      {
-        "path": "words create",
-        "name": "create",
-        "aliases": [],
-        "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format.",
-        "options": [
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--encrypt",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env."
-          },
-          {
-            "name": "--encrypt-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the output document."
-          },
-          {
-            "name": "--encrypt-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the output document from the first line of stdin."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--template",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "file",
-            "description": "A document to save as the new one. Default: the engine's new document, new Document()."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Path of the document to create, e.g. report.docx."
-          }
-        ]
-      },
-      {
-        "path": "words edit",
-        "name": "edit",
-        "aliases": [],
-        "description": "Apply a batch of set, add, delete, move and do operations to a document; nothing is written when one fails.",
-        "options": [
-          {
-            "name": "--encrypt",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env."
-          },
-          {
-            "name": "--encrypt-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the output document."
-          },
-          {
-            "name": "--encrypt-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the output document from the first line of stdin."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--in-place",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Modify the input file itself atomically."
-          },
-          {
-            "name": "--ops",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "json-source",
-            "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/words/ops --operation directory; one of them in full: aspose-cli schema v2/words/ops --operation <name>."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Output path. Default: the input path with '.out' inserted before the extension."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the document."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the document from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Document to open."
-          }
-        ]
-      },
-      {
-        "path": "words extract",
-        "name": "extract",
-        "aliases": [],
-        "description": "Write the bytes of each image the document stores, ImageData.ImageBytes, one file per image in document order; a linked image stores none.",
-        "options": [
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--out-dir",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The directory the images go to."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the document."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the document from the first line of stdin."
-          },
-          {
-            "name": "--what",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "images"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "What to extract: images, the bytes of each image the document stores."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Document to open."
-          }
-        ]
-      },
-      {
-        "path": "words read",
-        "name": "read",
-        "aliases": [],
-        "description": "Read a document's objects, each with every row of the object table, and its inventory.",
-        "options": [
-          {
-            "name": "--at",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The address of the object to read with everything below it, as read gives it in at. Default: the whole document."
-          },
-          {
-            "name": "--from",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The address of the object the window starts at; a truncated read's window.next gives it."
-          },
-          {
-            "name": "--kind",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 100000,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind. Objects of the kinds paragraph, run, field, shape, row, cell, bookmark, style, listLevel, revision are listed only when --kind names them; window.notListedUnlessNamed names those a read left out."
-          },
-          {
-            "name": "--max-objects",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "200",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The most objects one window lists. Range: 1-10000."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the document."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the document from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Document to open."
-          }
-        ]
-      },
-      {
-        "path": "words render",
-        "name": "render",
-        "aliases": [],
-        "description": "Render one or more document pages.",
-        "options": [
-          {
-            "name": "--dpi",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "192",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
-          },
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Output path. Default: the input path with the image extension. Several pages write <stem>.<page>.<ext> beside it."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--pages",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page; at most 20 per run."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the document."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the document from the first line of stdin."
-          },
-          {
-            "name": "--to",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "jpeg",
-              "png",
-              "svg"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Image format. Default: the --out extension's format, else png."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Document to open."
-          }
-        ]
-      },
-      {
-        "path": "words search",
-        "name": "search",
-        "aliases": [],
-        "description": "Search the text of a document's paragraphs, as Paragraph.GetText() gives it; each hit names the paragraph's address.",
-        "options": [
-          {
-            "name": "--case-sensitive",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Match letter case exactly."
-          },
-          {
-            "name": "--max-hits",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "100",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Maximum returned hits. Range: 1-10000."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the document."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the document from the first line of stdin."
-          },
-          {
-            "name": "--pattern",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Text to find, or a regular expression with --regex."
-          },
-          {
-            "name": "--regex",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
-          },
-          {
-            "name": "--skip",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "0",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Document to open."
-          }
-        ]
-      }
-    ],
-    "resourceBudgets": [
-      {
-        "kind": "words.nodes",
-        "default": 1000000,
-        "maximum": 5000000,
-        "unit": "items",
-        "enforcementStage": "post-load"
-      }
     ]
   },
-  "routes": [
-    {
-      "extension": ".azw3",
-      "product": "words",
-      "operations": [
-        "open"
+  "documents": {
+    "v2/words/compare-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli words compare",
+      "description": "Compare a changed document with the original, Document.Compare, and write the redline: a copy of the original whose revisions are the differences.",
+      "options": [
+        {
+          "name": "--author",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The author of the redline's revisions, Document.Compare's author."
+        },
+        {
+          "name": "--date-time",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The date and time of the redline's revisions, Document.Compare's dateTime, written yyyy-MM-ddTHH:mm:ss."
+        },
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--granularity",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "CompareOptions.Granularity, a member name of the engine's Granularity, such as WordLevel or CharLevel. Default: the engine's."
+        },
+        {
+          "name": "--ignore-case-changes",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Set CompareOptions.IgnoreCaseChanges to true."
+        },
+        {
+          "name": "--ignore-comments",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Set CompareOptions.IgnoreComments to true."
+        },
+        {
+          "name": "--ignore-fields",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Set CompareOptions.IgnoreFields to true."
+        },
+        {
+          "name": "--ignore-footnotes",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Set CompareOptions.IgnoreFootnotes to true."
+        },
+        {
+          "name": "--ignore-formatting",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Set CompareOptions.IgnoreFormatting to true."
+        },
+        {
+          "name": "--ignore-headers-and-footers",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Set CompareOptions.IgnoreHeadersAndFooters to true."
+        },
+        {
+          "name": "--ignore-tables",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Set CompareOptions.IgnoreTables to true."
+        },
+        {
+          "name": "--ignore-textboxes",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Set CompareOptions.IgnoreTextboxes to true."
+        },
+        {
+          "name": "--left-password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the original document. Discouraged: visible in the process list; prefer --left-password-env."
+        },
+        {
+          "name": "--left-password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the original document."
+        },
+        {
+          "name": "--left-password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the original document from the first line of stdin."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The redline's path; its extension selects the format, such as .docx or .pdf."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--right-password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the changed document. Discouraged: visible in the process list; prefer --right-password-env."
+        },
+        {
+          "name": "--right-password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the changed document."
+        },
+        {
+          "name": "--right-password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the changed document from the first line of stdin."
+        }
       ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
+      "arguments": [
+        {
+          "name": "left",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Original document."
+        },
+        {
+          "name": "right",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Changed document."
+        }
+      ]
     },
-    {
-      "extension": ".chm",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".doc",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".docm",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".docx",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".dot",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".dotm",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".dotx",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".epub",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".markdown",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".md",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".mobi",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".odt",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".ott",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".rtf",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".txt",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".xml",
-      "product": "words",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    }
-  ],
-  "diagnostics": [],
-  "schemas": {
     "v2/words/compare-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/words/compare-result.schema.json",
@@ -2511,6 +530,317 @@
           }
         }
       }
+    },
+    "v2/words/convert-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli words convert",
+      "description": "Convert a document to another format with the engine's options for it. An html, html-fixed or md output is one file: it holds its images, fonts and styles itself.",
+      "options": [
+        {
+          "name": "--auto-numbering-detection",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "true or false: TxtLoadOptions.AutoNumberingDetection of a txt input. Required for such an input."
+        },
+        {
+          "name": "--detect-hyperlinks",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "true or false: TxtLoadOptions.DetectHyperlinks of a txt input. Required for such an input."
+        },
+        {
+          "name": "--detect-numbering-with-whitespaces",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "true or false: TxtLoadOptions.DetectNumberingWithWhitespaces of a txt input. Required for such an input."
+        },
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--encoding",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The text encoding of a txt or md input, such as utf-8, gb18030 or windows-1252 (LoadOptions.Encoding). Required for such an input."
+        },
+        {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the output document."
+        },
+        {
+          "name": "--encrypt-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the output document from the first line of stdin."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--leading-spaces",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "TxtLoadOptions.LeadingSpacesOptions of a txt input, a member name of the engine's TxtLeadingSpacesOptions, such as ConvertToIndent, Preserve or Trim. Required for such an input."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Output path; defaults to a sibling using the target extension."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--pages",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --to pdf, xps, openxps, ps, pcl or html-fixed."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the document."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the document from the first line of stdin."
+        },
+        {
+          "name": "--to",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "azw3",
+            "doc",
+            "docm",
+            "docx",
+            "dot",
+            "dotm",
+            "dotx",
+            "epub",
+            "flatopc",
+            "html",
+            "html-fixed",
+            "md",
+            "mhtml",
+            "mobi",
+            "odt",
+            "openxps",
+            "ott",
+            "pcl",
+            "pdf",
+            "ps",
+            "rtf",
+            "txt",
+            "wordml",
+            "xps"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Target document format. Default: the --out extension's format. flatopc, wordml write .xml; openxps writes .oxps; html-fixed writes .html or .htm."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Document to open."
+        }
+      ]
     },
     "v2/words/convert-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2600,6 +930,124 @@
         }
       }
     },
+    "v2/words/create-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli words create",
+      "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format.",
+      "options": [
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the output document."
+        },
+        {
+          "name": "--encrypt-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the output document from the first line of stdin."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--template",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "file",
+          "description": "A document to save as the new one. Default: the engine's new document, new Document()."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Path of the document to create, e.g. report.docx."
+        }
+      ]
+    },
     "v2/words/create-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/words/create-result.schema.json",
@@ -2651,6 +1099,200 @@
           }
         }
       }
+    },
+    "v2/words/edit-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli words edit",
+      "description": "Apply a batch of set, add, delete, move and do operations to a document; nothing is written when one fails.",
+      "options": [
+        {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the output document."
+        },
+        {
+          "name": "--encrypt-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the output document from the first line of stdin."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--in-place",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Modify the input file itself atomically."
+        },
+        {
+          "name": "--ops",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "json-source",
+          "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/words/ops/directory; one of them in full: aspose-cli schema v2/words/ops/<name>."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Output path. Default: the input path with '.out' inserted before the extension."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the document."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the document from the first line of stdin."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Document to open."
+        }
+      ]
     },
     "v2/words/edit-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2719,6 +1361,140 @@
           }
         }
       }
+    },
+    "v2/words/extract-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli words extract",
+      "description": "Write the bytes of each image the document stores, ImageData.ImageBytes, one file per image in document order; a linked image stores none.",
+      "options": [
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--out-dir",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The directory the images go to."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the document."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the document from the first line of stdin."
+        },
+        {
+          "name": "--what",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "images"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "What to extract: images, the bytes of each image the document stores."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Document to open."
+        }
+      ]
     },
     "v2/words/extract-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2815,6 +1591,316 @@
           }
         }
       }
+    },
+    "v2/words/formats": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/format-list.schema.json",
+      "schemaVersion": 2,
+      "product": "words",
+      "formats": [
+        {
+          "id": "azw3",
+          "extensions": [
+            ".azw3"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "chm",
+          "extensions": [
+            ".chm"
+          ],
+          "aliases": [],
+          "uses": [
+            "input"
+          ]
+        },
+        {
+          "id": "doc",
+          "extensions": [
+            ".doc"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "docm",
+          "extensions": [
+            ".docm"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "docx",
+          "extensions": [
+            ".docx"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "dot",
+          "extensions": [
+            ".dot"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "dotm",
+          "extensions": [
+            ".dotm"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "dotx",
+          "extensions": [
+            ".dotx"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "epub",
+          "extensions": [
+            ".epub"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "flatopc",
+          "extensions": [
+            ".xml"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "html",
+          "extensions": [
+            ".htm",
+            ".html"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "html-fixed",
+          "extensions": [
+            ".htm",
+            ".html"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "jpeg",
+          "extensions": [
+            ".jpeg",
+            ".jpg"
+          ],
+          "aliases": [],
+          "uses": [
+            "render"
+          ]
+        },
+        {
+          "id": "md",
+          "extensions": [
+            ".markdown",
+            ".md"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "mhtml",
+          "extensions": [
+            ".mhtml"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "mobi",
+          "extensions": [
+            ".mobi"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "odt",
+          "extensions": [
+            ".odt"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "openxps",
+          "extensions": [
+            ".oxps"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "ott",
+          "extensions": [
+            ".ott"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "pcl",
+          "extensions": [
+            ".pcl"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "pdf",
+          "extensions": [
+            ".pdf"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "png",
+          "extensions": [
+            ".png"
+          ],
+          "aliases": [],
+          "uses": [
+            "render"
+          ]
+        },
+        {
+          "id": "ps",
+          "extensions": [
+            ".ps"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "rtf",
+          "extensions": [
+            ".rtf"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "svg",
+          "extensions": [
+            ".svg"
+          ],
+          "aliases": [],
+          "uses": [
+            "render"
+          ]
+        },
+        {
+          "id": "txt",
+          "extensions": [
+            ".txt"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "wordml",
+          "extensions": [
+            ".xml"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "xps",
+          "extensions": [
+            ".xps"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        }
+      ]
     },
     "v2/words/ops": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -6581,6 +5667,131 @@
         }
       }
     },
+    "v2/words/read-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli words read",
+      "description": "Read a document's objects, each with every row of the object table, and its inventory.",
+      "options": [
+        {
+          "name": "--at",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The address of the object to read with everything below it, as read gives it in at. Default: the whole document."
+        },
+        {
+          "name": "--from",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The address of the object the window starts at; a truncated read's window.next gives it."
+        },
+        {
+          "name": "--kind",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 100000,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind. Objects of the kinds paragraph, run, field, shape, row, cell, bookmark, style, listLevel, revision are listed only when --kind names them; window.notListedUnlessNamed names those a read left out."
+        },
+        {
+          "name": "--max-objects",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "200",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The most objects one window lists. Range: 1-10000."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the document."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the document from the first line of stdin."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Document to open."
+        }
+      ]
+    },
     "v2/words/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json",
@@ -6642,6 +5853,187 @@
           }
         }
       }
+    },
+    "v2/words/render-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli words render",
+      "description": "Render one or more document pages.",
+      "options": [
+        {
+          "name": "--dpi",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "192",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
+        },
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Output path. Default: the input path with the image extension. Several pages write <stem>.<page>.<ext> beside it."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--pages",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page; at most 20 per run."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the document."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the document from the first line of stdin."
+        },
+        {
+          "name": "--to",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "jpeg",
+            "png",
+            "svg"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Image format. Default: the --out extension's format, else png."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Document to open."
+        }
+      ]
     },
     "v2/words/render-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -6738,6 +6130,154 @@
           }
         }
       }
+    },
+    "v2/words/search-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli words search",
+      "description": "Search the text of a document's paragraphs, as Paragraph.GetText() gives it; each hit names the paragraph's address.",
+      "options": [
+        {
+          "name": "--case-sensitive",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Match letter case exactly."
+        },
+        {
+          "name": "--max-hits",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "100",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Maximum returned hits. Range: 1-10000."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the document."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the document from the first line of stdin."
+        },
+        {
+          "name": "--pattern",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Text to find, or a regular expression with --regex."
+        },
+        {
+          "name": "--regex",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
+        },
+        {
+          "name": "--skip",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Document to open."
+        }
+      ]
     },
     "v2/words/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",

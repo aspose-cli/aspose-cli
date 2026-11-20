@@ -31,7 +31,7 @@ internal static class CreateCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
+                CommandHelpLink.Schema(WordsModule.Manifest, "create-result", "the fields of the create result"),
             ],
         };
     }

@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
-    <!-- The contract generator describes the host's results, which the host publishes under v2/common. -->
+    <!-- The contract generator describes the host's results, which the host publishes under common. -->
     <ProjectReference Include="..\Aspose.Cli.Sdk.Analyzers\Aspose.Cli.Sdk.Analyzers.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"

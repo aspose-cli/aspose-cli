@@ -5,53 +5,135 @@ namespace Aspose.Cli.TestKit.Scenarios;
 
 /// <summary>
 /// The machine-readable contract of the CLI under test: its commands, options, products and
-/// diagnostics, read once per test process from the live <c>capabilities --output-format json</c>,
-/// never from a hand-written list.
+/// diagnostics, read once per test process from the live <c>schema</c> catalog and the documents it
+/// lists, never from a hand-written list.
 /// </summary>
 public sealed class CliCatalog
 {
-    private static readonly Lazy<CliCatalog> Live = new(static () => new CliCatalog(ScenarioHost.Capabilities()));
+    private const string CommandSuffix = "-command";
+    private static readonly Lazy<CliCatalog> Live = new(static () => new CliCatalog());
     private readonly ConcurrentDictionary<string, Lazy<string>> _schemas = new(StringComparer.Ordinal);
+    private readonly IReadOnlyDictionary<string, JsonArray> _formats;
+    private readonly HashSet<string> _documents = new(StringComparer.Ordinal);
+    private readonly Lazy<IReadOnlyList<string>> _parts;
 
-    private CliCatalog(JsonNode document)
+    private CliCatalog()
     {
-        Document = document;
-        string[] productIds = [.. document["products"]!.AsArray().Select(static product => product!["id"]!.GetValue<string>())];
-        var paths = document["commands"]!.AsArray()
-            .Select(static command => command!["path"]!.GetValue<string>())
-            .ToArray();
-        Commands = [.. document["commands"]!.AsArray().Select(command => ReadCommand(command!, paths, productIds))];
-        Products = [.. document["products"]!.AsArray().Select(static product => ReadProduct(product!))];
-        Diagnostics = document["diagnostics"]!.AsArray().ToDictionary(
-            static diagnostic => diagnostic!["code"]!.GetValue<string>(),
+        _parts = new Lazy<IReadOnlyList<string>>(ReadParts);
+        Catalog = JsonNode.Parse(SchemaText(string.Empty))!;
+        string version = Ids.First()[..Ids.First().IndexOf('/', StringComparison.Ordinal)];
+        string Id(string owner, string name) => $"{version}/{owner}/{name}";
+
+        // Every document read below is a run of the CLI: read them four at a time first.
+        string[] read =
+        [
+            .. Ids.Where(static id => id.EndsWith(CommandSuffix, StringComparison.Ordinal)
+                || id.EndsWith("/formats", StringComparison.Ordinal) || id.EndsWith("/common/diagnostics", StringComparison.Ordinal)),
+        ];
+        Parallel.ForEach(read, new ParallelOptions { MaxDegreeOfParallelism = 4 }, id => SchemaText(id));
+
+        // Each command with a document, and a node of its own for a command that only groups others.
+        var nodes = new List<JsonNode>();
+        foreach (JsonNode product in Catalog["products"]!.AsArray().Select(static product => product!))
+        {
+            string id = product["id"]!.GetValue<string>();
+            nodes.Add(new JsonObject
+            {
+                ["words"] = id,
+                ["description"] = product["description"]!.GetValue<string>(),
+                ["options"] = new JsonArray(),
+                ["arguments"] = new JsonArray(),
+            });
+            foreach (JsonNode command in product["commands"]!.AsArray().Select(static command => command!))
+            {
+                string name = command["name"]!.GetValue<string>();
+                nodes.Add(Document(Id(id, name.Replace(' ', '-') + CommandSuffix), $"{id} {name}"));
+            }
+        }
+
+        foreach (JsonNode command in Catalog["commands"]!.AsArray().Select(static command => command!))
+        {
+            string name = command["name"]!.GetValue<string>();
+            string id = Id("common", name.Replace(' ', '-') + CommandSuffix);
+            nodes.Add(Ids.Contains(id)
+                ? Document(id, name)
+                : new JsonObject
+                {
+                    ["words"] = name,
+                    ["description"] = command["description"]!.GetValue<string>(),
+                    ["options"] = new JsonArray(),
+                    ["arguments"] = new JsonArray(),
+                });
+        }
+
+        nodes.Add(Document(Id("common", "aspose-cli" + CommandSuffix), string.Empty));
+        CommandNodes = [.. nodes.OrderBy(static node => node["words"]!.GetValue<string>(), StringComparer.Ordinal)];
+        string[] words = [.. CommandNodes.Select(static node => node["words"]!.GetValue<string>())];
+        string[] productIds = [.. Catalog["products"]!.AsArray().Select(static product => product!["id"]!.GetValue<string>())];
+        Commands = [.. CommandNodes.Select(node => ReadCommand(node, words, productIds))];
+        Products = [.. Catalog["products"]!.AsArray().Select(static product => ReadProduct(product!))];
+        _formats = productIds.ToDictionary(
+            static id => id,
+            id => JsonNode.Parse(SchemaText(Id(id, "formats")))!["formats"]!.AsArray(),
+            StringComparer.Ordinal);
+        _documents.UnionWith(productIds.Select(id => Id(id, "formats")));
+        _documents.UnionWith([Id("common", "diagnostics"), Id("common", "budgets")]);
+        DiagnosticNodes = [.. JsonNode.Parse(SchemaText(Id("common", "diagnostics")))!["diagnostics"]!.AsArray().Select(static node => node!)];
+        Diagnostics = DiagnosticNodes.ToDictionary(
+            static diagnostic => diagnostic["code"]!.GetValue<string>(),
             static diagnostic => new CliDiagnostic(
-                diagnostic!["exitCode"]?.GetValue<int>(),
+                diagnostic["exitCode"]?.GetValue<int>(),
                 diagnostic["detailsSchemaId"]?.GetValue<string>(),
                 diagnostic["severity"]?.GetValue<string>()),
             StringComparer.Ordinal);
-        Routes = document["routing"]!["routes"]!.AsArray().ToDictionary(
-            static route => route!["extension"]!.GetValue<string>(),
-            static route => route!["product"]!.GetValue<string>(),
-            StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>The catalog of the CLI this test run executes.</summary>
     public static CliCatalog Current => Live.Value;
 
-    /// <summary>The raw capabilities document.</summary>
-    public JsonNode Document { get; }
+    /// <summary>The raw <c>schema</c> catalog.</summary>
+    public JsonNode Catalog { get; }
 
-    /// <summary>Every command, hidden ones included, in the order capabilities lists them.</summary>
+    /// <summary>Every document id the catalog lists.</summary>
+    public IReadOnlyList<string> Ids => [.. Catalog["ids"]!.AsArray().Select(static id => id!.GetValue<string>())];
+
+    /// <summary>
+    /// The ids of the parts of every object table: <c>&lt;ops&gt;/&lt;name&gt;</c> for each name its directory
+    /// lists, the directory itself among them.
+    /// </summary>
+    public IReadOnlyList<string> PartIds => _parts.Value;
+
+    /// <summary>
+    /// The ids of the JSON Schemas, in the catalog's order: every id but those of the documents of
+    /// commands, formats, diagnostics and budgets, and of the parts of an object table's schema.
+    /// </summary>
+    public IReadOnlyList<string> SchemaIds
+    {
+        get
+        {
+            HashSet<string> ids = [.. Ids];
+            return [.. Ids.Where(id => !_documents.Contains(id) && !IsPart(id, ids))];
+        }
+    }
+
+    /// <summary>
+    /// The document of each command of <see cref="Commands"/>, at the same position, with the
+    /// command's path words after the executable name in <c>words</c>; a command that only groups
+    /// others has a node of its own with no options or arguments.
+    /// </summary>
+    public IReadOnlyList<JsonNode> CommandNodes { get; }
+
+    /// <summary>Every command, in ordinal order of their words, the executable's first.</summary>
     public IReadOnlyList<CliCommand> Commands { get; }
 
     /// <summary>The products in their display order.</summary>
     public IReadOnlyList<CliProduct> Products { get; }
 
+    /// <summary>The diagnostics document's entries, in its order.</summary>
+    public IReadOnlyList<JsonNode> DiagnosticNodes { get; }
+
     /// <summary>The diagnostics catalog by code.</summary>
     public IReadOnlyDictionary<string, CliDiagnostic> Diagnostics { get; }
-
-    /// <summary>The product that content routing assigns to each extension, such as <c>.pdf</c>.</summary>
-    public IReadOnlyDictionary<string, string> Routes { get; }
 
     /// <summary>The command with the given path words, such as <c>cells convert</c>.</summary>
     public CliCommand Command(string words) =>
@@ -60,41 +142,72 @@ public sealed class CliCatalog
     /// <summary>The product with the given id.</summary>
     public CliProduct Product(string id) => Products.Single(product => product.Id == id);
 
-    /// <summary>The raw text of a schema the CLI prints with <c>aspose-cli schema &lt;id&gt;</c>.</summary>
+    /// <summary>The entries of a product's formats document.</summary>
+    public IReadOnlyList<JsonNode> FormatNodes(string product) => [.. _formats[product].Select(static node => node!)];
+
+    /// <summary>The raw text of a document the CLI prints with <c>aspose-cli schema &lt;id&gt;</c>; the catalog for an empty id.</summary>
     public string SchemaText(string id) =>
         _schemas.GetOrAdd(id, key => new Lazy<string>(() => ScenarioHost.Schema(key))).Value;
 
     /// <summary>
-    /// The product whose <c>inspect</c>, or <c>read</c> where it has no inspect, reopens a file: the product routing assigns to its
-    /// extension, else <paramref name="preferred"/>, the product that wrote it, when it loads the
-    /// extension; null otherwise. Another product that merely declares an unrouted extension is
-    /// never asked, so its refusal is not reported against the product that wrote the file.
+    /// The product whose <c>read</c> reopens a file: <paramref name="preferred"/>, the product that
+    /// wrote it, when it loads the extension; otherwise the one product that loads it; null when
+    /// none or several do.
     /// </summary>
     public string? ReaderOf(string path, string? preferred = null)
     {
-        string extension = Path.GetExtension(path);
-        string format = extension.TrimStart('.').ToLowerInvariant();
+        string format = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
         bool Loads(string id) => Product(id).LoadFormats.Contains(format, StringComparer.OrdinalIgnoreCase);
-        if (Routes.TryGetValue(extension, out string? routed) && Loads(routed))
+        if (preferred is not null && Loads(preferred))
         {
-            return routed;
+            return preferred;
         }
-        return preferred is not null && Loads(preferred) ? preferred : null;
+
+        string[] readers = [.. Products.Select(static product => product.Id).Where(Loads)];
+        return readers.Length == 1 ? readers[0] : null;
     }
 
-    private static CliCommand ReadCommand(JsonNode command, string[] paths, string[] productIds)
+    private IReadOnlyList<string> ReadParts() =>
+    [
+        .. Ids.Where(static id => id.EndsWith("/ops/directory", StringComparison.Ordinal)).SelectMany(directory =>
+        {
+            string ops = directory[..directory.LastIndexOf('/')];
+            JsonNode listed = JsonNode.Parse(SchemaText(directory))!;
+            return new[] { "directory" }
+                .Concat(listed["kinds"]!.AsObject().Select(static kind => kind.Key))
+                .Concat(listed["adds"]!.AsObject().Select(static add => "add." + add.Key))
+                .Concat(listed["actions"]!.AsObject().Select(static action => "do." + action.Key))
+                .Select(name => $"{ops}/{name}");
+        }),
+    ];
+
+    /// <summary>Whether the id names one part of an object table's schema, such as <c>v3/pdf/ops/page</c>.</summary>
+    private static bool IsPart(string id, HashSet<string> ids)
     {
-        string path = command["path"]!.GetValue<string>();
-        string words = path.Contains(' ', StringComparison.Ordinal) ? path[(path.IndexOf(' ', StringComparison.Ordinal) + 1)..] : string.Empty;
-        string prefix = path + " ";
+        int slash = id.LastIndexOf('/');
+        return slash > 0 && id[..slash].EndsWith("/ops", StringComparison.Ordinal) && ids.Contains(id[..slash]);
+    }
+
+    private JsonNode Document(string id, string words)
+    {
+        _documents.Add(id);
+        JsonNode document = JsonNode.Parse(SchemaText(id))!;
+        document["words"] = words;
+        return document;
+    }
+
+    private static CliCommand ReadCommand(JsonNode command, string[] words, string[] productIds)
+    {
+        string own = command["words"]!.GetValue<string>();
+        string prefix = own.Length == 0 ? string.Empty : own + " ";
         string[] subcommands =
         [
-            .. paths.Where(other => other.StartsWith(prefix, StringComparison.Ordinal) && !other[prefix.Length..].Contains(' ', StringComparison.Ordinal))
+            .. words.Where(other => other.Length > prefix.Length && other.StartsWith(prefix, StringComparison.Ordinal) && !other[prefix.Length..].Contains(' ', StringComparison.Ordinal))
                 .Select(other => other[prefix.Length..]),
         ];
-        string? first = words.Split(' ')[0];
+        string? first = own.Split(' ')[0];
         return new CliCommand(
-            words,
+            own,
             productIds.Contains(first) ? first : null,
             [.. command["options"]!.AsArray().Select(static option => ReadOption(option!))],
             [.. (command["arguments"]?.AsArray() ?? []).Select(static argument => ReadArgument(argument!))],
@@ -105,7 +218,7 @@ public sealed class CliCatalog
         option["name"]!.GetValue<string>(),
         option["type"]!.GetValue<string>(),
         option["required"]!.GetValue<bool>(),
-        option["hidden"]!.GetValue<bool>(),
+        false,
         option["secret"]!.GetValue<bool>(),
         option["valueSource"]!.GetValue<string>(),
         Strings(option["allowedValues"]),
@@ -119,23 +232,19 @@ public sealed class CliCatalog
         argument["maximumArity"]!.GetValue<int>(),
         argument["required"]!.GetValue<bool>());
 
-    private static CliProduct ReadProduct(JsonNode product)
-    {
-        JsonNode? operations = product["operations"]?.AsArray().FirstOrDefault();
-        return new CliProduct(
-            product["id"]!.GetValue<string>(),
-            Strings(product["loadFormats"]),
-            Strings(product["convertFormats"]),
-            Strings(product["renderFormats"]),
-            operations?["inputSchema"]?.GetValue<string>(),
-            Strings(operations?["ops"]));
-    }
+    private static CliProduct ReadProduct(JsonNode product) => new(
+        product["id"]!.GetValue<string>(),
+        Strings(product["loadFormats"]),
+        Strings(product["convertFormats"]),
+        Strings(product["renderFormats"]),
+        null,
+        []);
 
     private static string[] Strings(JsonNode? array) =>
         array is null ? [] : [.. array.AsArray().Select(static item => item!.GetValue<string>())];
 }
 
-/// <summary>One command of the catalog; capabilities lists no hidden command.</summary>
+/// <summary>One command of the catalog.</summary>
 /// <param name="Words">The path after the executable name, such as <c>cells read</c>; empty for the root.</param>
 /// <param name="Product">The product that owns the command, or null for a platform command.</param>
 /// <param name="Options">The command's own options; the root lists the recursive global ones.</param>

@@ -23,12 +23,11 @@ text, Markdown, PDF, EPUB, MOBI, AZW3 and CHM are read only by `convert`. The sh
 
 ## The object table
 
-`aspose-cli schema v2/words/ops --operation directory` lists the vocabulary in one short JSON
+`aspose-cli schema v2/words/ops/directory` lists the vocabulary in one short JSON
 document: each kind with its address forms, the rows a set writes (`rows`) and the rows that are
 read only (`readOnlyRows`), and whether it can be deleted; each add with the kinds it adds to and
 its parameters; each action with its parameters. One entry in full, with each row's type and the
-engine member it names: `--operation paragraph`, `--operation add.paragraph`, `--operation
-do.replace`. A row names one engine member; setting it sets that member only, and whatever else the
+engine member it names: `ops/paragraph`, `ops/add.paragraph`, `ops/do.replace`. A row names one engine member; setting it sets that member only, and whatever else the
 engine changes with it is the engine's doing. Colors are `#RRGGBB`, lengths are points,
 enumeration values are the engine's member names (`Center`, `Landscape`, `FooterPrimary`).
 

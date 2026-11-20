@@ -26,15 +26,15 @@ public static class ResourceBudgetDefaults
     public const long RasterPixels = 256L << 20;
 
     /// <summary>Public global limits in stable resource-name order.</summary>
-    public static IReadOnlyList<ResourceBudgetCapabilities> Global { get; } =
+    public static IReadOnlyList<ResourceBudget> Global { get; } =
     [
-        ResourceBudgetCapabilities.Domain(
+        ResourceBudget.Domain(
             ResourceBudgetKinds.DecodedTextCharacters,
             DefaultDecodedTextCharacters,
             MaximumDecodedTextCharacters,
             "characters",
             "decode"),
-        ResourceBudgetCapabilities.Domain(
+        ResourceBudget.Domain(
             ResourceBudgetKinds.InputBytes,
             DefaultInputBytes,
             MaximumInputBytes,
@@ -42,31 +42,31 @@ public static class ResourceBudgetDefaults
             "pre-runtime-and-stream",
             GlobalOptionNames.MaxInputBytes,
             InputSizeGuard.BudgetVariable),
-        ResourceBudgetCapabilities.Domain(
+        ResourceBudget.Domain(
             ResourceBudgetKinds.MemoryBufferBytes,
             DefaultMemoryBufferBytes,
             MaximumMemoryBufferBytes,
             "bytes",
             "buffer-allocation"),
-        ResourceBudgetCapabilities.Domain(
+        ResourceBudget.Domain(
             ResourceBudgetKinds.OutputBytes,
             DefaultOutputBytes,
             MaximumOutputBytes,
             "bytes",
             "output-stream"),
-        ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.OutputSetEntries,
+        ResourceBudget.Domain(ResourceBudgetKinds.OutputSetEntries,
             PublicationLimits.MaximumEntries, PublicationLimits.MaximumEntries, "items", "output-set-admission"),
-        ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.OutputSetDirectories,
+        ResourceBudget.Domain(ResourceBudgetKinds.OutputSetDirectories,
             PublicationLimits.MaximumDirectories, PublicationLimits.MaximumDirectories, "items", "output-directory-admission"),
-        ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.RasterPixels,
+        ResourceBudget.Domain(ResourceBudgetKinds.RasterPixels,
             RasterPixels, RasterPixels, "pixels", "pre-render"),
-        ResourceBudgetCapabilities.Domain(
+        ResourceBudget.Domain(
             ResourceBudgetKinds.SecretCharacters,
             DefaultSecretCharacters,
             MaximumSecretCharacters,
             "characters",
             "secret-read"),
-        ResourceBudgetCapabilities.Domain(
+        ResourceBudget.Domain(
             ResourceBudgetKinds.StandardInputBytes,
             DefaultStandardInputBytes,
             MaximumStandardInputBytes,
@@ -295,7 +295,7 @@ public sealed class ResourceBudgetLedger
 
         foreach ((string kind, long value) in overrides)
         {
-            ResourceBudgetCapabilities? descriptor =
+            ResourceBudget? descriptor =
                 ResourceBudgetDefaults.Global.SingleOrDefault(item =>
                     string.Equals(item.Kind, kind, StringComparison.Ordinal));
             if (value <= 0

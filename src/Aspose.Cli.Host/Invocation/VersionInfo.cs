@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace Aspose.Cli.Host.Invocation;
 
-/// <summary>Version of the running CLI, as reported in capabilities output.</summary>
+/// <summary>Version of the running CLI, as <c>--version</c> and the schema catalog report it.</summary>
 internal static class VersionInfo
 {
     private static readonly Assembly Distribution = DistributionAssembly();

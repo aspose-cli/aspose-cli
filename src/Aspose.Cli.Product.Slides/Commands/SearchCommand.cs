@@ -18,6 +18,6 @@ internal static class SearchCommand
             ],
             links:
             [
-                CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "what each Slides command is for"),
+                CommandHelpLink.Schema(SlidesModule.Manifest, "search-result", "the fields of the search result"),
             ]);
 }

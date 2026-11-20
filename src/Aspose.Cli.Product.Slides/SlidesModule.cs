@@ -15,16 +15,14 @@ public sealed class SlidesModule : IProductModule
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
             ResourceBudgets =
             [
-                ResourceBudgetCapabilities.Domain(SlidesBudgetDomains.Slides, 10_000, 50_000, "items", "post-load"),
-                ResourceBudgetCapabilities.Domain(SlidesBudgetDomains.Shapes, 1_000_000, 5_000_000, "items", "projection"),
+                ResourceBudget.Domain(SlidesBudgetDomains.Slides, 10_000, 50_000, "items", "post-load"),
+                ResourceBudget.Domain(SlidesBudgetDomains.Shapes, 1_000_000, 5_000_000, "items", "projection"),
             ],
-            Engine = new ProductEngineCapabilities
+            Engine = new ProductEngine
             {
-                Id = "aspose",
                 Sdk = ProductBuildMetadata.EngineName,
                 SdkVersion = ProductBuildMetadata.SdkVersion,
             },
-            AvailableEngines = ["aspose"],
     };
 
     /// <summary>Loads the Slides object table, which names engine types: the commands call it only when they run.</summary>
@@ -57,6 +55,6 @@ public sealed class SlidesModule : IProductModule
             "slides edit deck.pptx --ops ops.json --out revised.pptx",
         ],
         [
-            new("aspose-cli schema v2/slides/ops --operation directory", "the object table: kinds, addresses, rows, adds and actions"),
+            new("aspose-cli schema v2/slides/ops/directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

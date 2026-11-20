@@ -1,11 +1,9 @@
-using System.Text.Json.Nodes;
-
 namespace Aspose.Cli.TestKit.Scenarios;
 
 /// <summary>
-/// The process-wide workspace that reads the CLI's own contract (capabilities and schemas) for
-/// the scenario runner. It runs in evaluation mode and is removed when the test process exits.
-/// Test discovery reads the capabilities, so a run without a CLI fails here with one message.
+/// The process-wide workspace that reads the CLI's own contract (the schema catalog and its
+/// documents) for the scenario runner. It runs in evaluation mode and is removed when the test
+/// process exits. Test discovery reads the catalog, so a run without a CLI fails here with one message.
 /// </summary>
 internal static class ScenarioHost
 {
@@ -16,14 +14,6 @@ internal static class ScenarioHost
         AppDomain.CurrentDomain.ProcessExit += (_, _) => workspace.Dispose();
         return workspace;
     });
-
-    public static JsonNode Capabilities()
-    {
-        CliResult result = Workspace.Value.Run("capabilities", "--output-format", "json");
-        return result.ExitCode == 0
-            ? JsonNode.Parse(result.StdOut)!
-            : throw new InvalidOperationException($"The CLI capabilities could not be read: {result.StdErr}");
-    }
 
     private static void RequireExecutable()
     {
@@ -41,9 +31,10 @@ internal static class ScenarioHost
         }
     }
 
+    /// <summary>What <c>aspose-cli schema &lt;id&gt;</c> prints; the catalog for an empty id.</summary>
     public static string Schema(string id)
     {
-        CliResult result = Workspace.Value.Run("schema", id);
+        CliResult result = id.Length == 0 ? Workspace.Value.Run("schema") : Workspace.Value.Run("schema", id);
         return result.ExitCode == 0
             ? result.StdOut
             : throw new InvalidOperationException($"The CLI schema '{id}' could not be read: {result.StdErr}");

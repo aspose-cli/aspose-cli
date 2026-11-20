@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
@@ -44,20 +45,11 @@ public sealed partial class SkillNameTests : IDisposable
     [Fact]
     public void JsonBlocks_ValidateAgainstTheSchemaTheyShow()
     {
-        JsonNode capabilities = Capabilities();
-        Dictionary<string, string> opsSchemas = capabilities["products"]!.AsArray()
-            .SelectMany(static product => (product!["operations"]?.AsArray() ?? [])
-                .Select(operation => (Product: product["id"]!.GetValue<string>(), Schema: operation!["inputSchema"]!.GetValue<string>())))
-            .ToDictionary(static pair => pair.Product, static pair => pair.Schema, StringComparer.Ordinal);
-        // A product on the object table lists no operation vocabulary; its edit reads v2/<product>/ops.
-        foreach (JsonNode? product in capabilities["products"]!.AsArray())
-        {
-            string id = product!["id"]!.GetValue<string>();
-            if (!opsSchemas.ContainsKey(id) && PublishedSchemas.Ids.Contains($"v2/{id}/ops"))
-            {
-                opsSchemas[id] = $"v2/{id}/ops";
-            }
-        }
+        // A product's edit reads its object table's schema, <version>/<product>/ops.
+        Dictionary<string, string> opsSchemas = CliCatalog.Current.Products
+            .Select(static product => (product.Id, Schema: Aspose.Cli.Sdk.Contracts.ResultEnvelope.CatalogId(product.Id, "ops")))
+            .Where(static pair => PublishedSchemas.Ids.Contains(pair.Schema))
+            .ToDictionary(static pair => pair.Id, static pair => pair.Schema, StringComparer.Ordinal);
 
         var members = new ResultMembers();
         var kinds = new HashSet<string>(StringComparer.Ordinal);
@@ -227,13 +219,6 @@ public sealed partial class SkillNameTests : IDisposable
             }
             return $"'{name}' is valid against no member of that name ({string.Join(", ", candidates.Select(static member => member.Id).Distinct(StringComparer.Ordinal))})";
         }
-    }
-
-    private JsonNode Capabilities()
-    {
-        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        return JsonNode.Parse(result.StdOut)!;
     }
 
     /// <summary>Every Markdown file of every Skill in the sources.</summary>

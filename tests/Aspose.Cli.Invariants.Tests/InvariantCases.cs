@@ -46,7 +46,7 @@ internal static class InvariantCases
     /// <summary>The shard of the contract rules that the catalog, help and schemas alone answer.</summary>
     public const string Contract = "contract";
 
-    /// <summary>The warning that discloses evaluation output (<c>aspose-cli docs licensing</c>).</summary>
+    /// <summary>The warning that discloses evaluation output.</summary>
     private const string EvaluationWarning = "EVALUATION_MODE";
 
     /// <summary>The shard of the slow part of every product's format matrix.</summary>
@@ -804,7 +804,7 @@ internal static class InvariantCases
     private static int[] Completed(CliCommand command) => command.Verb == "validate" ? [0, 8] : [0];
 
     internal static IEnumerable<int> ExitCodesOf(CliCatalog catalog, params string[] categories) =>
-        catalog.Document["diagnostics"]!.AsArray()
+        catalog.DiagnosticNodes
             .Where(diagnostic => categories.Contains(diagnostic!["category"]!.GetValue<string>()))
             .Select(static diagnostic => diagnostic!["exitCode"]?.GetValue<int>())
             .OfType<int>()

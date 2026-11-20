@@ -180,7 +180,7 @@ internal static class CommandHelpRenderer
     /// sets the column for every row. For the duration of one help rendering, an option whose
     /// values exceed <see cref="MaximumLabelValuesLength"/> is labeled by its name and lists the
     /// values in its description, unless the description names each already, or points to
-    /// <c>capabilities</c> when they are too many. Capabilities read the unchanged option. Each change adds its undo to
+    /// the command's document of <c>schema</c> when they are too many, which reads the unchanged option. Each change adds its undo to
     /// <paramref name="restore"/> as it is made, so a failure part way is undone too.
     /// </summary>
     private static void MoveLongValueListsToDescriptions(CommandResult commandResult, List<Action> restore)
@@ -199,7 +199,7 @@ internal static class CommandHelpRenderer
             string listed = string.Join(", ", values);
             string summary = listed.Length <= MaximumListedValuesLength
                 ? $"Values: {listed}."
-                : $"Accepts {values.Count} values, listed in aspose-cli capabilities.";
+                : $"Accepts {values.Count} values, listed in the command's document of aspose-cli schema.";
             option.HelpName = option.Name.TrimStart('-');
             // A description that already names every value, such as one that explains each, is not repeated.
             option.Description = string.IsNullOrEmpty(description) ? summary

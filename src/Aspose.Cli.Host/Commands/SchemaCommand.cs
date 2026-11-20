@@ -1,98 +1,44 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Host.Commands;
 
 /// <summary>
-/// Lists schema ids as a normal result envelope. An explicit schema id,
-/// including <c>--operation</c>, remains a raw JSON Schema document; this is
-/// the same deliberate raw-document contract used by <c>docs</c>.
+/// <c>aspose-cli schema [id]</c>: without an id the catalog of products, commands and document ids;
+/// with one the document it names. A JSON Schema, or a part of an object table's schema, is
+/// printed raw; any other document is a result envelope.
 /// </summary>
 internal static class SchemaCommand
 {
     public static Command Create(
         CommandExecutor executor,
-        HostSchemaCatalog schemas,
+        Lazy<SchemaDirectory> directory,
         GlobalOptions globals)
     {
+        ArgumentNullException.ThrowIfNull(directory);
         var idArgument = new Argument<string?>("id")
         {
-            Description = "Schema id to print; omit it to return the available ids.",
+            Description = "Id of the document to print: one the catalog lists, or a part of an object table's schema that its directory names; omit it for the catalog.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.None);
-        var operation = new Option<string?>("--operation")
-        {
-            Description = "Narrow an ops schema to one exact operation id.",
-        }.WithInput(InputKind.None);
-
         var schema = new Command(
             "schema",
-            "List schema ids as an envelope, or print one raw JSON Schema document when an id is supplied.");
+            "Print the catalog of products, commands and document ids, or the document an id names.");
         schema.Arguments.Add(idArgument);
-        schema.Options.Add(operation);
-
         schema.SetAction(parseResult =>
         {
             string? id = parseResult.GetValue(idArgument);
-            string? operationId = parseResult.GetValue(operation);
-            IReadOnlyList<string> available = schemas.Ids;
             if (string.IsNullOrEmpty(id))
             {
-                return executor.Run(
-                    parseResult,
-                    globals,
-                    _ => operationId is not null
-                        ? throw CliErrors.OptionInvalid(
-                            "--operation",
-                            "requires a schema id")
-                        : new SchemaListResult
-                    {
-                        Schemas = available,
-                    });
+                return executor.RunLightweight(parseResult, globals, (_, _) => directory.Value.Catalog);
             }
 
-            return executor.RunRaw(
-                parseResult,
-                globals,
-                () => ReadRaw(schemas, id, operationId, available),
-                json: true);
+            return directory.Value.TryGetDocument(id, out ResultEnvelope? document)
+                ? executor.RunLightweight(parseResult, globals, (_, _) => document!)
+                : executor.RunRaw(parseResult, globals, () => directory.Value.ReadSchema(id), json: true);
         });
 
         return schema;
     }
-
-    private static string ReadRaw(
-        HostSchemaCatalog schemas,
-        string id,
-        string? operationId,
-        IReadOnlyList<string> available)
-    {
-        if (operationId is not null)
-        {
-            if (!schemas.TryRead(id, out _))
-            {
-                throw UnknownId(id, available);
-            }
-
-            IReadOnlyList<string> operations = schemas.GetOperations(id);
-            return schemas.TryReadOperation(id, operationId, out string? selected)
-                ? selected
-                : throw CliErrors.OptionInvalid(
-                    "--operation",
-                    operations.Count == 0
-                        ? $"schema '{id}' has no indexed operations"
-                        : $"unknown operation '{operationId}' for schema '{id}'",
-                    Mistake.Of(operationId, operations));
-        }
-
-        return schemas.TryRead(id, out string? document)
-            ? document
-            : throw UnknownId(id, available);
-    }
-
-    private static CliException UnknownId(string id, IReadOnlyList<string> available) => CliErrors.OptionInvalid(
-        "schema id",
-        $"unknown schema id '{id}'",
-        Mistake.Of(id, available));
 }

@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Architecture.Tests;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
@@ -83,19 +84,14 @@ public sealed class EngineAssemblyLoadingTests : IDisposable
     }
 
     [Fact]
-    public void CatalogCommandTreeHelpAndCapabilities_LoadNoEngine()
+    public void CatalogCommandTreeHelpAndSchema_LoadNoEngine()
     {
         var offenders = new List<string>();
-        (CliResult capabilities, _) = Probe(offenders, "capabilities", "--output-format", "json");
-        Assert.True(capabilities.ExitCode == 0, capabilities.StdErr);
-        JsonNode document = JsonNode.Parse(capabilities.StdOut)!;
+        (CliResult catalog, _) = Probe(offenders, "schema", "--output-format", "json");
+        Assert.True(catalog.ExitCode == 0, catalog.StdErr);
+        JsonNode document = JsonNode.Parse(catalog.StdOut)!;
 
-        string[][] paths = document["commands"]!.AsArray()
-            .Select(static command => command!["path"]!.GetValue<string>()
-                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .Skip(1)
-                .ToArray())
-            .ToArray();
+        string[][] paths = [.. CliCatalog.Current.Commands.Select(static command => command.Tokens)];
         Assert.Contains(paths, static path => path.Length == 0);
         Assert.Contains(paths, static path => path.Length >= 2);
         foreach (string[] path in paths)
@@ -108,10 +104,16 @@ public sealed class EngineAssemblyLoadingTests : IDisposable
             .Select(static product => product!["id"]!.GetValue<string>())
             .ToArray();
         Assert.NotEmpty(products);
-        Probe(offenders, "capabilities", "--summary", "--output-format", "json");
-        foreach (string product in products)
+        string[] documents =
+        [
+            .. document["ids"]!.AsArray().Select(static id => id!.GetValue<string>())
+                .Where(id => products.Any(product => id.EndsWith($"/{product}/formats", StringComparison.Ordinal))
+                    || id.EndsWith("/common/diagnostics", StringComparison.Ordinal) || id.EndsWith("/common/budgets", StringComparison.Ordinal)),
+        ];
+        Assert.Equal(products.Length + 2, documents.Length);
+        foreach (string id in documents)
         {
-            (CliResult described, _) = Probe(offenders, "capabilities", product, "--output-format", "json");
+            (CliResult described, _) = Probe(offenders, "schema", id);
             Assert.True(described.ExitCode == 0, described.StdErr);
         }
         Probe(offenders, "--version", "--output-format", "json");
@@ -119,7 +121,7 @@ public sealed class EngineAssemblyLoadingTests : IDisposable
         Assert.True(
             offenders.Count == 0,
             "These commands loaded a document engine while only building the catalog, the command tree, "
-            + "help or capabilities:"
+            + "help or schema:"
             + Environment.NewLine
             + string.Join(Environment.NewLine, offenders));
     }

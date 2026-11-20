@@ -30,6 +30,6 @@ internal static class EditCommand
             ],
             links:
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "addresses, the operation shapes and the read-back"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "edit-result", "the fields of the edit result"),
             ]);
 }

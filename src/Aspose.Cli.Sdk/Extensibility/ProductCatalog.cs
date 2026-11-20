@@ -2,7 +2,6 @@ namespace Aspose.Cli.Sdk.Extensibility;
 
 using System.Collections.Frozen;
 using System.Collections.ObjectModel;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Formats;
 
 /// <summary>Validated, immutable catalog of build-time product definitions.</summary>
@@ -10,8 +9,6 @@ public sealed class ProductCatalog
 {
     private readonly IReadOnlyDictionary<string, ProductDefinition> _byId;
     private readonly IReadOnlyDictionary<string, ProductDefinition> _defaultOwners;
-    private readonly IReadOnlyDictionary<ProductDefinition, ProductCapabilities>
-        _derivedCapabilities;
     private readonly IReadOnlyDictionary<string, string> _resolvedOwners;
     private readonly IReadOnlyList<string> _defaultOwnerExtensions;
     private readonly ProductDefinition? _defaultProduct;
@@ -41,12 +38,6 @@ public sealed class ProductCatalog
         _defaultOwnerExtensions = Array.AsReadOnly(
             _defaultOwners.Keys.Order(StringComparer.Ordinal).ToArray());
 
-        _derivedCapabilities = ProductCapabilityDeriver.Derive(
-                Products,
-                _resolvedOwners)
-            .ToFrozenDictionary(
-                static item => item.Key,
-                static item => item.Value);
         Resources = resources ?? throw new ArgumentNullException(nameof(resources));
         Diagnostics = DiagnosticCatalog.Build(Products, Resources);
         JsonDefinitions = Array.AsReadOnly(Products
@@ -101,14 +92,6 @@ public sealed class ProductCatalog
         TryGet(productId, out ProductDefinition? product)
             ? product!
             : throw new KeyNotFoundException($"Product '{productId}' is not registered.");
-
-    /// <summary>Returns the public surface derived from the product definition.</summary>
-    public Aspose.Cli.Sdk.Contracts.ProductCapabilities GetCapabilities(
-        ProductDefinition product)
-    {
-        ArgumentNullException.ThrowIfNull(product);
-        return _derivedCapabilities[product];
-    }
 
     /// <summary>Activates one product and caches its binding in the invocation context.</summary>
     public ProductBinding Activate(
@@ -187,62 +170,6 @@ public sealed class ProductCatalog
     /// no implicit default. Catalog ordering is never used as a fallback.
     /// </summary>
     public ProductDefinition? DefaultProduct => _defaultProduct;
-
-    /// <summary>Builds deterministic public routing metadata without probing files.</summary>
-    public RoutingCapabilities GetRoutingCapabilities(
-        FileProbeOptions? options = null)
-    {
-        FileProbeOptions effective = options ?? new FileProbeOptions();
-        ResolvedRouteCapabilities[] routes = _defaultOwners
-            .OrderBy(static item => item.Key, StringComparer.Ordinal)
-            .Select(item =>
-            {
-                ProductDefinition product = item.Value;
-                string[] operations = product.Formats.Count == 0
-                    ? [.. StandardFileRouteOperations.All]
-                    : product.Formats
-                        .Where(format =>
-                            format.Uses.HasFlag(FormatUse.Input)
-                            && format.Ownership == RouteOwnership.Default
-                            && format.Extensions.Any(extension =>
-                                string.Equals(
-                                    NormalizeExtension(extension),
-                                    item.Key,
-                                    StringComparison.Ordinal)))
-                        .SelectMany(static _ => StandardFileRouteOperations.All)
-                        .Distinct(StringComparer.Ordinal)
-                        .Order(StringComparer.Ordinal)
-                        .ToArray();
-                FileRecognizerDescriptor descriptor =
-                    product.Files.Recognizer?.Descriptor
-                    ?? FileRecognizerDescriptor.Custom;
-                return new ResolvedRouteCapabilities
-                {
-                    Extension = item.Key,
-                    Product = product.Manifest.Id,
-                    Operations = operations,
-                    RequiresContentProbe = true,
-                    RecognizerStrategy = descriptor.Strategy,
-                    MaxProbeBytes = Math.Min(
-                        effective.MaxPrefixBytes,
-                        descriptor.MaxProbeBytes),
-                };
-            })
-            .ToArray();
-        return new RoutingCapabilities
-        {
-            DefaultProduct = DefaultProduct?.Manifest.Id,
-            DefaultProductSource = DefaultProduct is null
-                ? null
-                : "product-manifest",
-            TotalProbeMilliseconds =
-                (int)Math.Ceiling(effective.RecognizerTimeout.TotalMilliseconds),
-            TotalProbeBytes = effective.MaxPrefixBytes,
-            MaxConcurrency = effective.MaxConcurrency,
-            IndeterminatePolicy = "fail-closed-explicit-product-required",
-            Routes = routes,
-        };
-    }
 
     /// <summary>All extensions with a unique generic-routing owner.</summary>
     public IReadOnlyList<string> DefaultOwnerExtensions =>

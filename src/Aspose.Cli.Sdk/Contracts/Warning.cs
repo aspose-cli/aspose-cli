@@ -28,10 +28,6 @@ public sealed record Warning
     [MinLength(1)]
     public string Message { get; init; }
 
-    /// <summary>Topic name for <c>aspose-cli docs &lt;topic&gt;</c> with background details.</summary>
-    [MinLength(1)]
-    public string? Docs { get; init; }
-
     /// <summary>
     /// The affected item's address in the targets syntax <c>&lt;unit&gt;/&lt;address&gt;</c>, such as
     /// <c>page/3</c>, <c>slide/2/shape/4</c> or <c>cell/Sheet1!A1</c>, with names escaped as targets escape

@@ -81,7 +81,7 @@ internal static class SignCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "sign-result", "the fields of the sign result"),
             ],
         };
     }

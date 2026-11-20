@@ -37,7 +37,6 @@ C-R05 | pdf
 C-R05 | slides
 C-R05 | words
 C-R06 | aspose-cli
-C-R06 | capabilities
 C-R06 | cells convert
 C-R06 | cells create
 C-R06 | cells edit
@@ -59,7 +58,6 @@ C-R06 | pdf search
 C-R06 | pdf sign
 C-R06 | pdf split
 C-R06 | pdf validate
-C-R06 | schema
 C-R06 | skill install
 C-R06 | slides convert
 C-R06 | slides create
@@ -77,7 +75,6 @@ C-R06 | words read
 C-R06 | words render
 C-R06 | words search
 C-R08 | aspose-cli
-C-R08 | capabilities
 C-R08 | cells convert
 C-R08 | cells create
 C-R08 | cells edit
@@ -99,7 +96,6 @@ C-R08 | pdf search
 C-R08 | pdf sign
 C-R08 | pdf split
 C-R08 | pdf validate
-C-R08 | schema
 C-R08 | skill install
 C-R08 | slides convert
 C-R08 | slides create
@@ -140,7 +136,6 @@ C-R09 | --overwrite
 C-R09 | --password-stdin
 C-R09 | --regex
 C-R09 | --right-password-stdin
-C-R09 | --summary
 C-R09 | --user
 C-R09 | --verbose
 C-R09 | --visible
@@ -342,14 +337,16 @@ C-R17 | v2/cells/edit-result
 C-R17 | v2/cells/read-result
 C-R17 | v2/cells/render-result
 C-R17 | v2/cells/search-result
-C-R17 | v2/common/capabilities
-C-R17 | v2/common/capabilities-summary
+C-R17 | v2/common/budget-list
+C-R17 | v2/common/command
 C-R17 | v2/common/diagnostic-details
+C-R17 | v2/common/diagnostic-list
 C-R17 | v2/common/dry-run-result
 C-R17 | v2/common/engine-warning
 C-R17 | v2/common/error
 C-R17 | v2/common/error-payload
 C-R17 | v2/common/font-list
+C-R17 | v2/common/format-list
 C-R17 | v2/common/input
 C-R17 | v2/common/license
 C-R17 | v2/common/license-status
@@ -357,8 +354,9 @@ C-R17 | v2/common/not-found-details
 C-R17 | v2/common/operation-outcome
 C-R17 | v2/common/output
 C-R17 | v2/common/page-size
+C-R17 | v2/common/resource-budget
 C-R17 | v2/common/result-window
-C-R17 | v2/common/schema-list
+C-R17 | v2/common/schema-catalog
 C-R17 | v2/common/skill-install
 C-R17 | v2/common/skill-list
 C-R17 | v2/common/source-input
@@ -405,14 +403,16 @@ C-R18 | v2/cells/edit-result
 C-R18 | v2/cells/read-result
 C-R18 | v2/cells/render-result
 C-R18 | v2/cells/search-result
-C-R18 | v2/common/capabilities
-C-R18 | v2/common/capabilities-summary
+C-R18 | v2/common/budget-list
+C-R18 | v2/common/command
 C-R18 | v2/common/diagnostic-details
+C-R18 | v2/common/diagnostic-list
 C-R18 | v2/common/dry-run-result
 C-R18 | v2/common/engine-warning
 C-R18 | v2/common/error
 C-R18 | v2/common/error-payload
 C-R18 | v2/common/font-list
+C-R18 | v2/common/format-list
 C-R18 | v2/common/input
 C-R18 | v2/common/license
 C-R18 | v2/common/license-status
@@ -420,8 +420,9 @@ C-R18 | v2/common/not-found-details
 C-R18 | v2/common/operation-outcome
 C-R18 | v2/common/output
 C-R18 | v2/common/page-size
+C-R18 | v2/common/resource-budget
 C-R18 | v2/common/result-window
-C-R18 | v2/common/schema-list
+C-R18 | v2/common/schema-catalog
 C-R18 | v2/common/skill-install
 C-R18 | v2/common/skill-list
 C-R18 | v2/common/source-input
@@ -643,15 +644,18 @@ C-R20 | v2/cells/render-result variants
 C-R20 | v2/cells/search-result fixednames
 C-R20 | v2/cells/search-result spelling
 C-R20 | v2/cells/search-result variants
-C-R20 | v2/common/capabilities fixednames
-C-R20 | v2/common/capabilities spelling
-C-R20 | v2/common/capabilities variants
-C-R20 | v2/common/capabilities-summary fixednames
-C-R20 | v2/common/capabilities-summary spelling
-C-R20 | v2/common/capabilities-summary variants
+C-R20 | v2/common/budget-list fixednames
+C-R20 | v2/common/budget-list spelling
+C-R20 | v2/common/budget-list variants
+C-R20 | v2/common/command fixednames
+C-R20 | v2/common/command spelling
+C-R20 | v2/common/command variants
 C-R20 | v2/common/diagnostic-details fixednames
 C-R20 | v2/common/diagnostic-details spelling
 C-R20 | v2/common/diagnostic-details variants
+C-R20 | v2/common/diagnostic-list fixednames
+C-R20 | v2/common/diagnostic-list spelling
+C-R20 | v2/common/diagnostic-list variants
 C-R20 | v2/common/dry-run-result fixednames
 C-R20 | v2/common/dry-run-result spelling
 C-R20 | v2/common/dry-run-result variants
@@ -667,6 +671,9 @@ C-R20 | v2/common/error-payload variants
 C-R20 | v2/common/font-list fixednames
 C-R20 | v2/common/font-list spelling
 C-R20 | v2/common/font-list variants
+C-R20 | v2/common/format-list fixednames
+C-R20 | v2/common/format-list spelling
+C-R20 | v2/common/format-list variants
 C-R20 | v2/common/input fixednames
 C-R20 | v2/common/input spelling
 C-R20 | v2/common/input variants
@@ -688,12 +695,15 @@ C-R20 | v2/common/output variants
 C-R20 | v2/common/page-size fixednames
 C-R20 | v2/common/page-size spelling
 C-R20 | v2/common/page-size variants
+C-R20 | v2/common/resource-budget fixednames
+C-R20 | v2/common/resource-budget spelling
+C-R20 | v2/common/resource-budget variants
 C-R20 | v2/common/result-window fixednames
 C-R20 | v2/common/result-window spelling
 C-R20 | v2/common/result-window variants
-C-R20 | v2/common/schema-list fixednames
-C-R20 | v2/common/schema-list spelling
-C-R20 | v2/common/schema-list variants
+C-R20 | v2/common/schema-catalog fixednames
+C-R20 | v2/common/schema-catalog spelling
+C-R20 | v2/common/schema-catalog variants
 C-R20 | v2/common/skill-install fixednames
 C-R20 | v2/common/skill-install spelling
 C-R20 | v2/common/skill-install variants
@@ -1156,7 +1166,6 @@ C-R25 | pdf unknown option error details
 C-R25 | pdf unknown output extension error details
 C-R25 | pdf unwritable output error details
 C-R25 | platform unknown command error details
-C-R25 | platform unknown docs topic error details
 C-R25 | platform unknown schema id error details
 C-R25 | slides corrupt input error details
 C-R25 | slides input over budget error details
@@ -1180,15 +1189,14 @@ C-R25 | words unknown created extension error details
 C-R25 | words unknown option error details
 C-R25 | words unknown output extension error details
 C-R25 | words unwritable output error details
-C-R26 | capabilities product cells as cellss
 C-R26 | cells command convert as cnovert
 C-R26 | cells convert --out extension .csv as .csvv
 C-R26 | cells convert --to csv as csvv
 C-R26 | command cells as cellss
-C-R26 | docs topic editing as eidting
 C-R26 | pdf command convert as cnovert
 C-R26 | pdf convert --out extension .docx as .docxx
 C-R26 | pdf convert --to docx as docxx
+C-R26 | schema part directory as driectory
 C-R26 | slides command convert as cnovert
 C-R26 | slides convert --out extension .gif as .giff
 C-R26 | slides convert --to gif as giff
@@ -1224,12 +1232,14 @@ C-R31 | v2/cells/render-result fields
 C-R31 | v2/cells/render-result outputs
 C-R31 | v2/cells/search-result fields
 C-R31 | v2/cells/search-result outputs
-C-R31 | v2/common/capabilities fields
-C-R31 | v2/common/capabilities outputs
-C-R31 | v2/common/capabilities-summary fields
-C-R31 | v2/common/capabilities-summary outputs
+C-R31 | v2/common/budget-list fields
+C-R31 | v2/common/budget-list outputs
+C-R31 | v2/common/command fields
+C-R31 | v2/common/command outputs
 C-R31 | v2/common/diagnostic-details fields
 C-R31 | v2/common/diagnostic-details outputs
+C-R31 | v2/common/diagnostic-list fields
+C-R31 | v2/common/diagnostic-list outputs
 C-R31 | v2/common/dry-run-result fields
 C-R31 | v2/common/dry-run-result outputs
 C-R31 | v2/common/engine-warning fields
@@ -1240,6 +1250,8 @@ C-R31 | v2/common/error-payload fields
 C-R31 | v2/common/error-payload outputs
 C-R31 | v2/common/font-list fields
 C-R31 | v2/common/font-list outputs
+C-R31 | v2/common/format-list fields
+C-R31 | v2/common/format-list outputs
 C-R31 | v2/common/input fields
 C-R31 | v2/common/input outputs
 C-R31 | v2/common/license fields
@@ -1254,10 +1266,12 @@ C-R31 | v2/common/output fields
 C-R31 | v2/common/output outputs
 C-R31 | v2/common/page-size fields
 C-R31 | v2/common/page-size outputs
+C-R31 | v2/common/resource-budget fields
+C-R31 | v2/common/resource-budget outputs
 C-R31 | v2/common/result-window fields
 C-R31 | v2/common/result-window outputs
-C-R31 | v2/common/schema-list fields
-C-R31 | v2/common/schema-list outputs
+C-R31 | v2/common/schema-catalog fields
+C-R31 | v2/common/schema-catalog outputs
 C-R31 | v2/common/skill-install fields
 C-R31 | v2/common/skill-install outputs
 C-R31 | v2/common/skill-list fields
@@ -1368,15 +1382,18 @@ C-R33 | v2/cells/render-result none
 C-R33 | v2/cells/search-result envelope
 C-R33 | v2/cells/search-result names
 C-R33 | v2/cells/search-result none
-C-R33 | v2/common/capabilities envelope
-C-R33 | v2/common/capabilities names
-C-R33 | v2/common/capabilities none
-C-R33 | v2/common/capabilities-summary envelope
-C-R33 | v2/common/capabilities-summary names
-C-R33 | v2/common/capabilities-summary none
+C-R33 | v2/common/budget-list envelope
+C-R33 | v2/common/budget-list names
+C-R33 | v2/common/budget-list none
+C-R33 | v2/common/command envelope
+C-R33 | v2/common/command names
+C-R33 | v2/common/command none
 C-R33 | v2/common/diagnostic-details envelope
 C-R33 | v2/common/diagnostic-details names
 C-R33 | v2/common/diagnostic-details none
+C-R33 | v2/common/diagnostic-list envelope
+C-R33 | v2/common/diagnostic-list names
+C-R33 | v2/common/diagnostic-list none
 C-R33 | v2/common/dry-run-result envelope
 C-R33 | v2/common/dry-run-result names
 C-R33 | v2/common/dry-run-result none
@@ -1392,6 +1409,9 @@ C-R33 | v2/common/error-payload none
 C-R33 | v2/common/font-list envelope
 C-R33 | v2/common/font-list names
 C-R33 | v2/common/font-list none
+C-R33 | v2/common/format-list envelope
+C-R33 | v2/common/format-list names
+C-R33 | v2/common/format-list none
 C-R33 | v2/common/input envelope
 C-R33 | v2/common/input names
 C-R33 | v2/common/input none
@@ -1413,12 +1433,15 @@ C-R33 | v2/common/output none
 C-R33 | v2/common/page-size envelope
 C-R33 | v2/common/page-size names
 C-R33 | v2/common/page-size none
+C-R33 | v2/common/resource-budget envelope
+C-R33 | v2/common/resource-budget names
+C-R33 | v2/common/resource-budget none
 C-R33 | v2/common/result-window envelope
 C-R33 | v2/common/result-window names
 C-R33 | v2/common/result-window none
-C-R33 | v2/common/schema-list envelope
-C-R33 | v2/common/schema-list names
-C-R33 | v2/common/schema-list none
+C-R33 | v2/common/schema-catalog envelope
+C-R33 | v2/common/schema-catalog names
+C-R33 | v2/common/schema-catalog none
 C-R33 | v2/common/skill-install envelope
 C-R33 | v2/common/skill-install names
 C-R33 | v2/common/skill-install none
@@ -1530,14 +1553,12 @@ C-R33 | v2/words/render-result none
 C-R33 | v2/words/search-result envelope
 C-R33 | v2/words/search-result names
 C-R33 | v2/words/search-result none
-C-R34 | capabilities
 C-R34 | cells convert
 C-R34 | cells create
 C-R34 | cells edit
 C-R34 | cells read
 C-R34 | cells render
 C-R34 | cells search
-C-R34 | docs
 C-R34 | fonts list
 C-R34 | global options folded
 C-R34 | license install
@@ -1577,7 +1598,6 @@ C-R34 | words search
 C-R35 | --version
 C-R35 | --version in JSON mode
 C-R35 | aspose-cli --help
-C-R35 | capabilities --help
 C-R35 | cells --help
 C-R35 | cells convert --help
 C-R35 | cells create --help
@@ -1585,7 +1605,6 @@ C-R35 | cells edit --help
 C-R35 | cells read --help
 C-R35 | cells render --help
 C-R35 | cells search --help
-C-R35 | docs --help
 C-R35 | fonts --help
 C-R35 | fonts list --help
 C-R35 | license --help
@@ -2215,7 +2234,6 @@ secret-hidden | words search --password-env
 secret-hidden | words search --password-env with a wrong password
 secret-hidden | words search --password-stdin
 secret-hidden | words search --password-stdin with a wrong password
-unknown-command | capabilities as cpaabilities
 unknown-command | cells as cellss
 unknown-command | cells convert as cnovert
 unknown-command | cells create as cerate
@@ -2223,7 +2241,6 @@ unknown-command | cells edit as editt
 unknown-command | cells read as readd
 unknown-command | cells render as rneder
 unknown-command | cells search as saerch
-unknown-command | docs as docss
 unknown-command | fonts as fontss
 unknown-command | fonts list as listt
 unknown-command | license as lciense
@@ -2271,7 +2288,6 @@ unknown-option | aspose-cli --output-format as --otuput-format
 unknown-option | aspose-cli --verbose as --vrebose
 unknown-option | aspose-cli --version as --vresion
 unknown-option | aspose-cli --workdir as --wrokdir
-unknown-option | capabilities --summary as --smumary
 unknown-option | cells convert --bom as --bomm
 unknown-option | cells convert --convert-dates as --cnovert-dates
 unknown-option | cells convert --convert-numbers as --cnovert-numbers
@@ -2445,7 +2461,6 @@ unknown-option | pdf validate --password as --psasword
 unknown-option | pdf validate --password-env as --psasword-env
 unknown-option | pdf validate --password-stdin as --psasword-stdin
 unknown-option | pdf validate --profile as --porfile
-unknown-option | schema --operation as --oepration
 unknown-option | skill install --dir as --dirr
 unknown-option | skill install --dry-run as --dyr-run
 unknown-option | skill install --host as --hostt

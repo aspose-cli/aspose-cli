@@ -299,7 +299,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
             SdkMetadataNames.FileFormatRecognition =>
                 member is "Match" or "FirstOf",
             SdkMetadataNames.FileProbePattern => true,
-            SdkMetadataNames.ResourceBudgetCapabilities =>
+            SdkMetadataNames.ResourceBudget =>
                 member == "Domain",
             SdkMetadataNames.ErrorCode =>
                 member == "NotFound" || IsDataMember(symbol),

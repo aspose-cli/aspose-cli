@@ -11,18 +11,27 @@ public sealed record ProductManifest
     /// <summary>Human-readable product name.</summary>
     public required string DisplayName { get; init; }
 
-    /// <summary>Deterministic order used by capabilities and UI surfaces.</summary>
+    /// <summary>The position of the product where products are listed.</summary>
     public int DisplayOrder { get; init; }
 
     /// <summary>Whether this product is the preferred generic default when compiled.</summary>
     public bool IsDefaultCandidate { get; init; }
 
-    /// <summary>Default engine compiled into the product.</summary>
-    public required ProductEngineCapabilities Engine { get; init; }
-
-    /// <summary>Engine ids available in this build.</summary>
-    public required IReadOnlyList<string> AvailableEngines { get; init; }
+    /// <summary>The engine compiled into the product.</summary>
+    public required ProductEngine Engine { get; init; }
 
     /// <summary>Product-owned domain resource budgets.</summary>
-    public IReadOnlyList<ResourceBudgetCapabilities> ResourceBudgets { get; init; } = [];
+    public IReadOnlyList<ResourceBudget> ResourceBudgets { get; init; } = [];
+}
+
+/// <summary>The engine a product runs on: its SDK package and the version the build compiles.</summary>
+public sealed record ProductEngine
+{
+    /// <summary>The engine's SDK package, e.g. <c>Aspose.Cells</c>.</summary>
+    [MinLength(1)]
+    public required string Sdk { get; init; }
+
+    /// <summary>The engine SDK package version.</summary>
+    [MinLength(1)]
+    public required string SdkVersion { get; init; }
 }

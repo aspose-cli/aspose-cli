@@ -38,7 +38,7 @@ and pagination.
 Fonts delivered beside the document reach the engine only through
 `--font-dir <dir>`, which adds to the system fonts and can repeat. Pass the
 same directories to every command whose output
-depends on layout; `capabilities` shows which commands accept `--font-dir`.
+depends on layout; each command's `--help` shows whether it accepts `--font-dir`.
 `aspose-cli fonts list` shows each engine's font sources and default fallback
 font.
 

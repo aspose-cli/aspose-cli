@@ -19,9 +19,8 @@ public sealed class CliException : Exception
         ErrorCode code,
         string message,
         JsonObject? details = null,
-        string? docs = null,
         Exception? innerException = null)
-        : this(message, innerException, RefuseShared(code), details, docs, explanation: null)
+        : this(message, innerException, RefuseShared(code), details, explanation: null)
     {
     }
 
@@ -30,7 +29,6 @@ public sealed class CliException : Exception
         Exception? innerException,
         ErrorCode code,
         JsonObject? details,
-        string? docs,
         string? explanation)
         : base(message, innerException)
     {
@@ -45,7 +43,6 @@ public sealed class CliException : Exception
 
         Code = code;
         Details = WithoutNulls(details);
-        Docs = docs;
         Explanation = explanation;
     }
 
@@ -70,9 +67,8 @@ public sealed class CliException : Exception
         ErrorCode code,
         string message,
         JsonObject? details = null,
-        string? docs = null,
         Exception? innerException = null,
-        string? explanation = null) => new(message, innerException, code, details, docs, explanation);
+        string? explanation = null) => new(message, innerException, code, details, explanation);
 
     private static ErrorCode RefuseShared(ErrorCode code)
     {
@@ -88,9 +84,6 @@ public sealed class CliException : Exception
 
     /// <summary>Structured context for the error.</summary>
     public JsonObject? Details { get; }
-
-    /// <summary>Topic name for <c>aspose-cli docs</c>.</summary>
-    public string? Docs { get; }
 
     /// <summary>
     /// Why the value or file was refused, as the clause that completes the message, for a caller
@@ -115,7 +108,6 @@ public sealed class CliException : Exception
             Code = Code.Name,
             Message = Message,
             Details = Details,
-            Docs = Docs,
         },
     };
 }

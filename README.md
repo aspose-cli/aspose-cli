@@ -10,17 +10,16 @@ in evaluation mode, and the CLI discloses every evaluation effect on its output.
 ## Quick start
 
 ```powershell
-aspose-cli capabilities --summary --output-format json
+aspose-cli schema
 aspose-cli skill list
-aspose-cli docs cells/overview
 aspose-cli skill install aspose-cli-platform --host codex
 aspose-cli skill install aspose-cli-cells --host codex
 ```
 
-The executable is the reference for what it supports: `capabilities` lists every command,
-each product's operations and batch limits, the resource budgets and every diagnostic code with
-its exit code; `--help` describes each command, `schema` prints the JSON Schemas and `docs` the
-bundled guides. The Skill `aspose-cli-platform` teaches agents the rules every product shares,
+The executable is the reference for what it supports: `schema` lists every product, command and
+format and the id of every document that describes them, such as a command's options, a result's
+JSON Schema, an object table, the resource budgets and every diagnostic code with its exit code;
+`--help` describes each command. The Skill `aspose-cli-platform` teaches agents the rules every product shares,
 and `aspose-cli-cells`, `aspose-cli-pdf`, `aspose-cli-slides` and `aspose-cli-words` teach each
 product's workflows; `skill install` supports the `codex`, `claude-code` and `opencode` hosts, in the
 project by default or for the user with `--user`.
@@ -33,7 +32,7 @@ project by default or for the user with `--user`.
 - **Read-back.** An edit reports each operation as it reads it from the saved file, opened again.
 - **A stable contract.** A command writes one JSON result to stdout or one JSON error to stderr,
   with a stable code and exit code; [Compatibility](#compatibility) says what stays stable.
-- **Bounded work.** Inputs, rendering and extraction are held to the budgets that `capabilities`
+- **Bounded work.** Inputs, rendering and extraction are held to the budgets that `schema`
   lists.
 - **No network access.** A document never causes a network request, and each omitted resource
   is reported ([SECURITY.md](SECURITY.md#boundaries)).
@@ -52,7 +51,7 @@ A breaking change removes or renames any of these, changes its type or meaning, 
 input it accepts, or changes a default or an exit code; it happens only in a major version.
 A minor or patch release may add commands, options, operations, optional input fields, result
 fields, warning codes, error codes and enumeration values. Text is not part of the contract:
-messages, help, the bundled docs and Skill prose and the diagnostic output of `--verbose` can
+messages, help, Skill prose and the diagnostic output of `--verbose` can
 change in any release.
 
 A consumer must ignore result fields, warning codes and error codes it does not know. The result
@@ -63,9 +62,9 @@ version, so 1.0 publishes `v2` schema ids. The `schema` field names a schema by 
 a URL to fetch, and `aspose-cli schema <id>` prints that schema offline.
 
 The environment variables in the contract are the license variables `ASPOSE_LICENSE_B64`,
-`ASPOSE_LICENSE_PATH` and their per-product forms (`aspose-cli docs licensing`), named without the
+`ASPOSE_LICENSE_PATH` and their per-product forms (the platform Skill's licensing reference), named without the
 CLI prefix on purpose so that other Aspose tools can share them; `ASPOSE_CLI_CONFIG_DIR`; and the
-variables that `capabilities` lists as the source of an option's value (now
+variables that a command's `schema` document lists as the source of an option's value (now
 `ASPOSE_CLI_MAX_INPUT_BYTES`, for `--max-input-bytes`). Any other `ASPOSE_CLI_*` variable is
 internal.
 
@@ -81,7 +80,7 @@ aspose-cli license status --output-format json
 ```
 
 A license comes from `--license`, an environment variable, a `.aspose` directory in the working
-directory or the licenses installed for the user; `aspose-cli docs licensing` gives the order. An
+directory or the licenses installed for the user; the platform Skill's licensing reference gives the order. An
 invalid configured license is an error, not a silent fall back to evaluation.
 `--license-mode evaluation` runs one command in evaluation mode without reading any of these
 sources, for checking what evaluation output looks like.

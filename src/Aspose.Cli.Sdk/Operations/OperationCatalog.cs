@@ -93,7 +93,7 @@ public sealed class OperationCatalog<TOp>
             {
                 Command = command,
                 InputSchema = SchemaCommandId,
-                OperationSchema = $"{DistributionInfo.CommandName} schema {SchemaCommandId} --operation <op>",
+                OperationSchema = $"{DistributionInfo.CommandName} schema {SchemaCommandId}/<op>",
                 MaximumOperationCount = MaximumOperationCount,
                 Ops = Names,
             },

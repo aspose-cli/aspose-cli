@@ -17,7 +17,7 @@ public sealed class ResourceBudgetOptionTests
         ProductCatalog catalog = Build("--max-items");
 
         Assert.Equal("--max-items", Assert.Single(
-            catalog.GetCapabilities(Assert.Single(catalog.Products)).ResourceBudgets).Option);
+            Assert.Single(catalog.Products).Manifest.ResourceBudgets).Option);
     }
 
     [Fact]
@@ -37,10 +37,9 @@ public sealed class ResourceBudgetOptionTests
                 DisplayName = "alpha",
                 ResourceBudgets =
                 [
-                    ResourceBudgetCapabilities.Domain("alpha.items", 10, 100, "items", "projection", budgetOption),
+                    ResourceBudget.Domain("alpha.items", 10, 100, "items", "projection", budgetOption),
                 ],
-                Engine = new ProductEngineCapabilities { Id = "aspose", Sdk = "Aspose.Test", SdkVersion = "1.0.0" },
-                AvailableEngines = ["aspose"],
+                Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine { Sdk = "Aspose.Test", SdkVersion = "1.0.0" },
             })
             .Formats([FormatDescriptor.Input("alpha", 0, RouteOwnership.Explicit, ".alpha")])
             .Diagnostics([])

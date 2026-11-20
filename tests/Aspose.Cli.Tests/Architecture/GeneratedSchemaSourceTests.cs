@@ -35,20 +35,15 @@ public sealed class GeneratedSchemaSourceTests : IDisposable
     }
 
     [Fact]
-    public async Task SchemaCommand_ServesEveryAdvertisedIdUnderItsOwnUri()
+    public void SchemaCommand_ServesEveryListedSchemaUnderItsOwnUri()
     {
-        // The two listings are independent runs, so they go at the same time.
-        CliResult[] runs = await Task.WhenAll(
-            Task.Run(() => _workspace.Run("schema", "--output-format", "json")),
-            Task.Run(() => _workspace.Run("capabilities", "--output-format", "json")));
-        (CliResult listed, CliResult capabilities) = (runs[0], runs[1]);
+        CliResult listed = _workspace.Run("schema", "--output-format", "json");
         Assert.True(listed.ExitCode == 0, listed.StdErr);
-        string[] served = [.. JsonNode.Parse(listed.StdOut)!["schemas"]!.AsArray().Select(static id => id!.GetValue<string>())];
-        Assert.True(capabilities.ExitCode == 0, capabilities.StdErr);
-        string[] advertised = [.. JsonNode.Parse(capabilities.StdOut)!["schemas"]!.AsArray().Select(static id => id!.GetValue<string>())];
+        string[] ids = [.. JsonNode.Parse(listed.StdOut)!["ids"]!.AsArray().Select(static id => id!.GetValue<string>())];
+        IReadOnlyList<string> served = Aspose.Cli.TestKit.Scenarios.CliCatalog.Current.SchemaIds;
 
         Assert.NotEmpty(served);
-        Assert.Equal(advertised, served);
+        Assert.Equal(ids, Aspose.Cli.TestKit.Scenarios.CliCatalog.Current.Ids);
         foreach (string id in served)
         {
             Assert.Equal(

@@ -39,7 +39,7 @@ internal static class ExtractCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "what each Slides command is for"),
+                CommandHelpLink.Schema(SlidesModule.Manifest, "extract-result", "the fields of the extract result"),
             ],
         };
     }

@@ -11,7 +11,7 @@ public sealed class JsonOutputStreamTests
     public void Json_SuccessAndFailureKeepTheirSingleDocumentContracts()
     {
         using var workspace = new TempWorkspace();
-        CliResult success = workspace.Run("capabilities", "--output-format", "json");
+        CliResult success = workspace.Run("schema", "--output-format", "json");
         Assert.Equal(0, success.ExitCode);
         Assert.Empty(success.StdErr);
         Assert.NotNull(JsonNode.Parse(success.StdOut)!["schema"]);
@@ -26,7 +26,7 @@ public sealed class JsonOutputStreamTests
     public void Default_IsJsonWithoutStartupNoise()
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run("capabilities");
+        CliResult result = workspace.Run("schema");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Empty(result.StdErr);

@@ -21,16 +21,16 @@ public sealed class RenderFormatTests
     {
         string[] declared =
         [
-            .. CliCatalog.Current.Document["commands"]!.AsArray()
-                .Where(static command => command!["path"]!.GetValue<string>().EndsWith(" render", StringComparison.Ordinal))
-                .SelectMany(static command => command!["options"]!.AsArray()
+            .. CliCatalog.Current.CommandNodes
+                .Where(static command => command["words"]!.GetValue<string>().EndsWith(" render", StringComparison.Ordinal))
+                .SelectMany(static command => command["options"]!.AsArray()
                     .Where(static option => option!["name"]!.GetValue<string>() == "--to"
                         && option["hasDefault"]?.GetValue<bool>() == true)
-                    .Select(option => $"{command["path"]!.GetValue<string>()} --to (default {option!["default"]})")),
+                    .Select(option => $"{command["words"]!.GetValue<string>()} --to (default {option!["default"]})")),
         ];
 
         Assert.True(declared.Length == 0,
-            "render --to takes the --out extension's format, else png, so capabilities declares no default for it: "
+            "render --to takes the --out extension's format, else png, so its command document declares no default for it: "
             + string.Join(" | ", declared));
     }
 

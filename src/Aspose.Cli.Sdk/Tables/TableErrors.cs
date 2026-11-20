@@ -257,7 +257,7 @@ public static class TableErrors
             details["at"] = at;
         }
 
-        return CliException.Create(error.Code, $"ops[{index}]: {error.Message}", details, error.Docs, error);
+        return CliException.Create(error.Code, $"ops[{index}]: {error.Message}", details, error);
     }
 
     private static string Subject(int? index) => index is null ? "The operation document is invalid: " : $"ops[{index}]: ";

@@ -118,14 +118,6 @@ internal sealed class ProductDefinitionValidator
             throw new InvalidOperationException(
                 $"Product '{manifest.Id}' has no display name.");
         }
-        if (string.IsNullOrWhiteSpace(manifest.Engine.Id)
-            || !manifest.AvailableEngines.Contains(
-                manifest.Engine.Id,
-                StringComparer.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"Product '{manifest.Id}' default engine must be listed as available.");
-        }
     }
 
     private static void ValidateOperations(ProductDefinition definition)

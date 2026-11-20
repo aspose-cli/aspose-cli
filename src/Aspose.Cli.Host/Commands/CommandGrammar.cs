@@ -2,25 +2,24 @@ using System.CommandLine;
 using System.Globalization;
 using System.Reflection;
 using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Host.Commands;
 
 /// <summary>A described command and the product whose command root it sits under, if any.</summary>
-/// <param name="Command">The command as capabilities lists it, with its path from the executable.</param>
+/// <param name="Command">The command's document, with its path from the executable.</param>
 /// <param name="Product">
 /// The product whose command root declares this command's owner where the tree is assembled;
 /// <see langword="null"/> for a host command.
 /// </param>
-internal sealed record OwnedCommand(CommandCapabilities Command, string? Product);
+/// <param name="Group">Whether the command only groups subcommands.</param>
+internal sealed record OwnedCommand(CommandDocument Command, string? Product, bool Group);
 
 internal static class CommandGrammar
 {
     /// <summary>
     /// Describes every public command under <paramref name="root"/>, in ordinal path order, with
     /// the product that owns it: the one a command root names in its invocation policy. A hidden
-    /// command is one the CLI starts for itself, so it and its subcommands stay out; a hidden
-    /// option of a public command is described, marked hidden.
+    /// command or option is left out, and so are a hidden command's subcommands.
     /// </summary>
     public static IReadOnlyList<OwnedCommand> Describe(Command root)
     {
@@ -46,31 +45,30 @@ internal static class CommandGrammar
             ? command.Name
             : parent + " " + command.Name;
         owner = command.Policy().ProductId ?? owner;
-        result.Add(new OwnedCommand(new CommandCapabilities
+        result.Add(new OwnedCommand(new CommandDocument
         {
             Path = path,
-            Name = command.Name,
-            Aliases = command.Aliases.Order(StringComparer.Ordinal).ToArray(),
             Description = command.Description,
             Options = command.Options
+                .Where(static option => !option.Hidden)
                 .OrderBy(static option => option.Name, StringComparer.Ordinal)
                 .Select(Describe)
                 .ToArray(),
             Arguments = command.Arguments
                 .Select(Describe)
                 .ToArray(),
-        }, owner));
+        }, owner, command.Subcommands.Count > 0));
         foreach (Command child in command.Subcommands)
         {
             Visit(child, path, owner, result);
         }
     }
 
-    private static CommandOptionCapabilities Describe(Option option)
+    private static CommandOption Describe(Option option)
     {
         ParameterMetadata metadata = option.GetParameterMetadata();
         bool secret = metadata.Secret;
-        return new CommandOptionCapabilities
+        return new CommandOption
         {
             Name = option.Name,
             Aliases = option.Aliases.Order(StringComparer.Ordinal).ToArray(),
@@ -79,7 +77,6 @@ internal static class CommandGrammar
             MaximumArity = option.Arity.MaximumNumberOfValues,
             Required = option.Required,
             Recursive = option.Recursive,
-            Hidden = option.Hidden,
             HasDefault = option.HasDefaultValue,
             Default = option.HasDefaultValue && !secret
                 ? ReadDefault(option)
@@ -92,7 +89,7 @@ internal static class CommandGrammar
         };
     }
 
-    private static CommandArgumentCapabilities Describe(Argument argument) =>
+    private static CommandArgument Describe(Argument argument) =>
         new()
         {
             Name = argument.Name,
@@ -111,7 +108,7 @@ internal static class CommandGrammar
             Description = argument.Description,
         };
 
-    /// <summary>The contract name of what a value names; none when it names nothing to read, so capabilities omits it.</summary>
+    /// <summary>The contract name of what a value names; none when it names nothing to read, so the document omits it.</summary>
     private static string? ContractName(InputKind kind) => kind == InputKind.None ? null : kind.ToContractName();
 
     private static string? ReadDefault(object symbol)

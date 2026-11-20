@@ -157,15 +157,6 @@ public abstract class ProductContractTests<TModule>
         ProductDefinition second = module.Define();
 
         Assert.Equal(Fingerprint(first), Fingerprint(second));
-        ProductCatalog firstCatalog = ProductCatalog.Build([new TModule()]);
-        ProductCatalog secondCatalog = ProductCatalog.Build([new TModule()]);
-        Assert.Equal(
-            JsonSerializer.Serialize(
-                firstCatalog.GetCapabilities(
-                    firstCatalog.Get(first.Manifest.Id))),
-            JsonSerializer.Serialize(
-                secondCatalog.GetCapabilities(
-                    secondCatalog.Get(second.Manifest.Id))));
     }
 
     /// <summary>

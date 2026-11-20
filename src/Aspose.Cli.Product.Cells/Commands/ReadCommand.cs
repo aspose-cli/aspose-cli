@@ -26,7 +26,7 @@ internal static class ReadCommand
             ],
             links:
             [
-                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "addresses, windows and the inventory"),
+                CommandHelpLink.Schema(CellsModule.Manifest, "read-result", "the fields of the read result"),
             ],
             listedWhenNamed: CellsKinds.ListedWhenNamed);
 }

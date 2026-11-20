@@ -31,7 +31,6 @@ internal static class EditCommand
             ],
             links:
             [
-                CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "addresses, the five operation shapes and the read-back"),
-                CommandHelpLink.Docs(SlidesModule.Manifest, "build-a-slide", "a new deck built in two batches"),
+                CommandHelpLink.Schema(SlidesModule.Manifest, "edit-result", "the fields of the edit result"),
             ]);
 }

@@ -17,7 +17,6 @@ internal sealed class HostContext
         ContractJson = new ContractJsonSerializer(catalog.JsonDefinitions, HostResultJsonContext.Default);
         Schemas = new Aspose.Cli.Host.Commands.HostSchemaCatalog(catalog);
         Skills = new SkillCatalog(catalog);
-        Docs = new DocsCatalog(Skills);
         EngineFailures = EngineFailureTranslator.Create(catalog);
     }
 
@@ -30,8 +29,6 @@ internal sealed class HostContext
     public ContractJsonSerializer ContractJson { get; }
 
     public Aspose.Cli.Host.Commands.HostSchemaCatalog Schemas { get; }
-
-    public DocsCatalog Docs { get; }
 
     public SkillCatalog Skills { get; }
 

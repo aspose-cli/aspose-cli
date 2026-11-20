@@ -28,7 +28,7 @@ internal static class ValidateCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "validate-result", "the fields of the validate result"),
             ],
         };
     }

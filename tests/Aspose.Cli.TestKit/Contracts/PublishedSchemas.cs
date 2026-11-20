@@ -15,7 +15,10 @@ public static class PublishedSchemas
     public const string UriSuffix = ".schema.json";
     private static readonly Lazy<Published> Current = new(Load);
 
-    /// <summary>Every schema id <c>aspose-cli schema</c> lists, in its order.</summary>
+    /// <summary>
+    /// Every id of a whole JSON Schema <c>aspose-cli schema</c> lists, in its order: not a command's
+    /// or another document that is a result, and not a part of an object table's schema.
+    /// </summary>
     public static IReadOnlyList<string> Ids => Current.Value.Ids;
 
     /// <summary>
@@ -82,7 +85,10 @@ public static class PublishedSchemas
         return new Published(ids, documents, options);
     }
 
-    /// <summary>Asks the built CLI for every schema it lists, as an agent would.</summary>
+    /// <summary>
+    /// Asks the built CLI for every document its catalog lists, as an agent would, and keeps the
+    /// whole JSON Schemas: a document with <c>$schema</c> whose <c>$id</c> is the id's own URI.
+    /// </summary>
     private static PublishedSchemaSnapshot Read()
     {
         using var workspace = new TempWorkspace();
@@ -92,9 +98,12 @@ public static class PublishedSchemas
             throw new InvalidOperationException("aspose-cli schema failed: " + list.StdErr);
         }
 
-        string[] ids = [.. JsonNode.Parse(list.StdOut)!["schemas"]!.AsArray().Select(static id => id!.GetValue<string>())];
+        string[] listed = [.. JsonNode.Parse(list.StdOut)!["ids"]!.AsArray().Select(static id => id!.GetValue<string>())];
+        HashSet<string> all = [.. listed];
+        // A part of an object table's schema is a view of the whole one, so it is not read.
+        string[] candidates = [.. listed.Where(id => !(id.LastIndexOf('/') is var slash and > 0 && id[..slash].EndsWith("/ops", StringComparison.Ordinal) && all.Contains(id[..slash])))];
         var documents = new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
-        Parallel.ForEach(ids, new ParallelOptions { MaxDegreeOfParallelism = 8 }, id =>
+        Parallel.ForEach(candidates, new ParallelOptions { MaxDegreeOfParallelism = 4 }, id =>
         {
             CliResult schema = workspace.Run("schema", id);
             if (schema.ExitCode != 0)
@@ -102,9 +111,14 @@ public static class PublishedSchemas
                 throw new InvalidOperationException($"aspose-cli schema {id} failed: {schema.StdErr}");
             }
 
-            documents[id] = schema.StdOut;
+            JsonNode? document = JsonNode.Parse(schema.StdOut);
+            if (document?["$schema"] is not null && document["$id"]?.GetValue<string>() == UriPrefix + id + UriSuffix)
+            {
+                documents[id] = schema.StdOut;
+            }
         });
 
+        string[] ids = [.. candidates.Where(documents.ContainsKey)];
         return new PublishedSchemaSnapshot(ids, documents);
     }
 

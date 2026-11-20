@@ -296,19 +296,16 @@ internal static partial class ContractRules
         ];
 
     /// <summary>
-    /// The product that reads a converted file: the one routing assigns to its extension, else the
-    /// converting product, else the first that takes it as input; null when none does.
+    /// The product that reads a converted file: the converting product, else the first that takes
+    /// it as input; null when none does.
     /// </summary>
     private static string? ReaderOf(CliCatalog catalog, string product, string file)
     {
         string extension = Path.GetExtension(file);
         string[] readers = Readers(catalog, extension);
-        return catalog.Routes.TryGetValue(extension, out string? routed) && readers.Contains(routed) ? routed
-            : readers.Contains(product) ? product
-            : readers.FirstOrDefault();
+        return readers.Contains(product) ? product : readers.FirstOrDefault();
     }
 
     private static IEnumerable<JsonNode> Formats(CliCatalog catalog, string product) =>
-        catalog.Document["products"]!.AsArray()
-            .Single(node => node!["id"]!.GetValue<string>() == product)!["formats"]!.AsArray().OfType<JsonNode>();
+        catalog.FormatNodes(product);
 }

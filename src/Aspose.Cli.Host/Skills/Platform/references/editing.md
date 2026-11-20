@@ -10,15 +10,15 @@ every related change in one document.
 The generated schema is the only reference. Ask it instead of guessing:
 
 ```powershell
-aspose-cli schema v2/pdf/ops --operation directory
-aspose-cli schema v2/pdf/ops --operation field
-aspose-cli schema v2/pdf/ops --operation do.stamp_text
+aspose-cli schema v2/pdf/ops/directory
+aspose-cli schema v2/pdf/ops/field
+aspose-cli schema v2/pdf/ops/do.stamp_text
 ```
 
-- `--operation directory` lists the kinds with their address forms, the rows
+- `ops/directory` lists the kinds with their address forms, the rows
   a `set` writes and the rows that are read only, each add with its
   parameters and each action with its parameters, in one short document.
-- `--operation <kind>`, `add.<kind>` or `do.<action>` prints one entry in
+- `ops/<kind>`, `add.<kind>` or `do.<action>` prints one entry in
   full: each row's or parameter's type and the engine member it names.
 - A row names one engine member: setting it sets that member only, and what
   else the engine changes with it is the engine's doing.
@@ -39,7 +39,7 @@ A PDF batch, for example:
 - Operations apply in order, each on what the ones before it left.
 - Write the document to a file and pass its path. `--ops` also takes `-` for
   stdin or the JSON itself, but how a shell passes inline JSON or piped text
-  varies (`aspose-cli docs troubleshooting`, Windows PowerShell), and only one
+  varies (`references/troubleshooting.md`, Windows PowerShell), and only one
   option of a command reads stdin.
 
 ## Atomic batches

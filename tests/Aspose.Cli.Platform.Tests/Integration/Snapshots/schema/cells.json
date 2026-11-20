@@ -1,13 +1,46 @@
 {
   "product": {
     "id": "cells",
-    "verbs": [
-      "read",
-      "search",
-      "create",
-      "edit",
-      "convert",
-      "render"
+    "description": "Read, edit, convert and render workbooks through the Aspose.Cells object model.",
+    "engine": "Aspose.Cells",
+    "engineVersion": "<build>",
+    "commands": [
+      {
+        "name": "convert",
+        "description": "Convert a workbook, or CSV or TSV text, to another format with the engine's options for it. An html, mhtml or md output is one file: it holds its images itself (SaveAsSingleFile, ExportImagesAsBase64)."
+      },
+      {
+        "name": "create",
+        "description": "Create a workbook: the engine's new workbook, or a copy of a template saved in the output's format."
+      },
+      {
+        "name": "edit",
+        "description": "Apply a batch of set, add, delete, move and do operations to a workbook; nothing is written when one fails."
+      },
+      {
+        "name": "read",
+        "description": "Read a workbook's objects, each with every row of the object table, and its inventory."
+      },
+      {
+        "name": "render",
+        "description": "Render sheets, or an area of one, to images as the engine draws them."
+      },
+      {
+        "name": "search",
+        "description": "Search the text of a workbook's cells, as their number formats show it, their formulas and their comments; each hit names the object's address and row."
+      }
+    ],
+    "loadFormats": [
+      "xlsx",
+      "xltx",
+      "xlsm",
+      "xltm",
+      "xlam",
+      "xlsb",
+      "xls",
+      "xlt",
+      "csv",
+      "tsv"
     ],
     "convertFormats": [
       "xlsx",
@@ -32,1690 +65,342 @@
       "png",
       "jpeg",
       "svg"
-    ],
-    "operations": [],
-    "loadFormats": [
-      "xlsx",
-      "xltx",
-      "xlsm",
-      "xltm",
-      "xlam",
-      "xlsb",
-      "xls",
-      "xlt",
-      "csv",
-      "tsv"
-    ],
-    "engine": {
-      "id": "aspose",
-      "sdk": "Aspose.Cells",
-      "sdkVersion": "<build>"
-    },
-    "availableEngines": [
-      "aspose"
-    ],
-    "formats": [
-      {
-        "id": "csv",
-        "extensions": [
-          ".csv",
-          ".txt"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "cells",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "html",
-        "extensions": [
-          ".htm",
-          ".html"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "jpeg",
-        "extensions": [
-          ".jpeg",
-          ".jpg"
-        ],
-        "aliases": [],
-        "uses": [
-          "render"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "json",
-        "extensions": [
-          ".json"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "md",
-        "extensions": [
-          ".markdown",
-          ".md"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "words",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "mhtml",
-        "extensions": [
-          ".mhtml"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "ods",
-        "extensions": [
-          ".ods"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "pdf",
-        "extensions": [
-          ".pdf"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "finalOwner": "pdf",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "png",
-        "extensions": [
-          ".png"
-        ],
-        "aliases": [],
-        "uses": [
-          "render"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "svg",
-        "extensions": [
-          ".svg"
-        ],
-        "aliases": [],
-        "uses": [
-          "render"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      },
-      {
-        "id": "tsv",
-        "extensions": [
-          ".tsv",
-          ".txt"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "cells",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "xlam",
-        "extensions": [
-          ".xlam"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "cells",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "xls",
-        "extensions": [
-          ".xls"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "cells",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "xlsb",
-        "extensions": [
-          ".xlsb"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "cells",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "xlsm",
-        "extensions": [
-          ".xlsm"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "cells",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "xlsx",
-        "extensions": [
-          ".xlsx"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "cells",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "xlt",
-        "extensions": [
-          ".xlt"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "cells",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "xltm",
-        "extensions": [
-          ".xltm"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "cells",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "xltx",
-        "extensions": [
-          ".xltx"
-        ],
-        "aliases": [],
-        "uses": [
-          "input",
-          "convert"
-        ],
-        "operations": [
-          "open"
-        ],
-        "declaredOwnership": "default",
-        "finalOwner": "cells",
-        "genericAvailable": true,
-        "explicitAvailable": true,
-        "recognizerStrategy": "standard-signature-v1",
-        "maxProbeBytes": 65536
-      },
-      {
-        "id": "xps",
-        "extensions": [
-          ".xps"
-        ],
-        "aliases": [],
-        "uses": [
-          "convert"
-        ],
-        "operations": [],
-        "declaredOwnership": "explicit",
-        "genericAvailable": false,
-        "explicitAvailable": false
-      }
-    ],
-    "commands": [
-      {
-        "path": "cells",
-        "name": "cells",
-        "aliases": [],
-        "description": "Read, edit, convert and render workbooks through the Aspose.Cells object model.",
-        "options": [],
-        "arguments": []
-      },
-      {
-        "path": "cells convert",
-        "name": "convert",
-        "aliases": [],
-        "description": "Convert a workbook, or CSV or TSV text, to another format with the engine's options for it. An html, mhtml or md output is one file: it holds its images itself (SaveAsSingleFile, ExportImagesAsBase64).",
-        "options": [
-          {
-            "name": "--bom",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Start a csv or tsv output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one."
-          },
-          {
-            "name": "--convert-dates",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "true or false: whether a .csv, .tsv or .txt input's dates become dates (TxtLoadOptions.ConvertDateTimeData). Required for such an input."
-          },
-          {
-            "name": "--convert-numbers",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "true or false: whether a .csv, .tsv or .txt input's numbers become numbers (TxtLoadOptions.ConvertNumericData). Required for such an input."
-          },
-          {
-            "name": "--culture",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The culture a text input's numbers and dates are read in, such as en-US or de-DE (LoadOptions.CultureInfo). Required when --convert-numbers or --convert-dates is true."
-          },
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--encoding",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The text encoding of a .csv, .tsv or .txt input, such as utf-8, gb18030 or windows-1252 (TxtLoadOptions.Encoding). Required for such an input."
-          },
-          {
-            "name": "--encrypt",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the output workbook. Discouraged: visible in the process list; prefer --encrypt-env."
-          },
-          {
-            "name": "--encrypt-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the output workbook."
-          },
-          {
-            "name": "--encrypt-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the output workbook from the first line of stdin."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--format-strategy",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "How a csv, tsv or md output writes cell values, a member name of the engine's CellValueFormatStrategy: None writes the values as they are stored, DisplayString as the number formats show them. Default: the engine's."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Output path. Default: the input path with the target extension (with '.out' inserted when that would overwrite the input)."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the workbook."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the workbook from the first line of stdin."
-          },
-          {
-            "name": "--separator",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The separator of a .csv or .txt input, one character (TxtLoadOptions.Separator). Required for such an input; a .tsv input is tab-separated."
-          },
-          {
-            "name": "--sheet",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 100000,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "A sheet to write, by its name: one for a csv, tsv or md output, which otherwise holds the sheet the engine writes, the active sheet; any for pdf, repeated. Other formats write the whole workbook."
-          },
-          {
-            "name": "--to",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "csv",
-              "html",
-              "json",
-              "md",
-              "mhtml",
-              "ods",
-              "pdf",
-              "tsv",
-              "xlam",
-              "xls",
-              "xlsb",
-              "xlsm",
-              "xlsx",
-              "xlt",
-              "xltm",
-              "xltx",
-              "xps"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Target format: xlsx, xltx, xlsm, xltm, xlam, xlsb, xls, xlt, csv, tsv, ods, html, mhtml, pdf, xps, json, md. Default: the --out extension's format."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Workbook file path."
-          }
-        ]
-      },
-      {
-        "path": "cells create",
-        "name": "create",
-        "aliases": [],
-        "description": "Create a workbook: the engine's new workbook, or a copy of a template saved in the output's format.",
-        "options": [
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--encrypt",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the output workbook. Discouraged: visible in the process list; prefer --encrypt-env."
-          },
-          {
-            "name": "--encrypt-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the output workbook."
-          },
-          {
-            "name": "--encrypt-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the output workbook from the first line of stdin."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--template",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "file",
-            "description": "A workbook to save as the new one. Default: the engine's new workbook, with one sheet."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Path of the workbook to create, e.g. report.xlsx."
-          }
-        ]
-      },
-      {
-        "path": "cells edit",
-        "name": "edit",
-        "aliases": [],
-        "description": "Apply a batch of set, add, delete, move and do operations to a workbook; nothing is written when one fails.",
-        "options": [
-          {
-            "name": "--encrypt",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the output workbook. Discouraged: visible in the process list; prefer --encrypt-env."
-          },
-          {
-            "name": "--encrypt-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the output workbook."
-          },
-          {
-            "name": "--encrypt-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the output workbook from the first line of stdin."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--in-place",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Modify the input file itself atomically."
-          },
-          {
-            "name": "--ops",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "json-source",
-            "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/cells/ops --operation directory; one of them in full: aspose-cli schema v2/cells/ops --operation <name>."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Output path. Default: the input path with '.out' inserted before the extension."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the workbook."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the workbook from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Workbook file path."
-          }
-        ]
-      },
-      {
-        "path": "cells read",
-        "name": "read",
-        "aliases": [],
-        "description": "Read a workbook's objects, each with every row of the object table, and its inventory.",
-        "options": [
-          {
-            "name": "--at",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The address of the object to read with everything below it, as read gives it in at. Default: the whole document."
-          },
-          {
-            "name": "--from",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The address of the object the window starts at; a truncated read's window.next gives it."
-          },
-          {
-            "name": "--kind",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 100000,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind. Objects of the kinds row, column, cell, style, point are listed only when --kind names them; window.notListedUnlessNamed names those a read left out."
-          },
-          {
-            "name": "--max-objects",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "200",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "The most objects one window lists. Range: 1-10000."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the workbook."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the workbook from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Workbook file path."
-          }
-        ]
-      },
-      {
-        "path": "cells render",
-        "name": "render",
-        "aliases": [],
-        "description": "Render sheets, or an area of one, to images as the engine draws them.",
-        "options": [
-          {
-            "name": "--area",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "An area of the one sheet named, such as A1:G20, set as its print area and drawn alone. Default: the whole sheet."
-          },
-          {
-            "name": "--dpi",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "192",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
-          },
-          {
-            "name": "--dry-run",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-          },
-          {
-            "name": "--font-dir",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 16,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Local font directory searched in addition to the system fonts; repeat for more."
-          },
-          {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Output path. Default: the input path with the image extension. Several sheets write <stem>.<sheet>.<ext> beside it."
-          },
-          {
-            "name": "--overwrite",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Replace the output file if it already exists."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the workbook."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the workbook from the first line of stdin."
-          },
-          {
-            "name": "--sheet",
-            "aliases": [],
-            "type": "string[]",
-            "minimumArity": 1,
-            "maximumArity": 100000,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "A sheet to render, by its name; repeat for several. Default: every sheet of the workbook. Several sheets are each written to <stem>.<sheet>.<ext>."
-          },
-          {
-            "name": "--to",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "jpeg",
-              "png",
-              "svg"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Image format. Default: the --out extension's format, else png."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Workbook file path."
-          }
-        ]
-      },
-      {
-        "path": "cells search",
-        "name": "search",
-        "aliases": [],
-        "description": "Search the text of a workbook's cells, as their number formats show it, their formulas and their comments; each hit names the object's address and row.",
-        "options": [
-          {
-            "name": "--case-sensitive",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Match letter case exactly."
-          },
-          {
-            "name": "--max-hits",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "100",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Maximum returned hits. Range: 1-10000."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the workbook."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the workbook from the first line of stdin."
-          },
-          {
-            "name": "--pattern",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Text to find, or a regular expression with --regex."
-          },
-          {
-            "name": "--regex",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
-          },
-          {
-            "name": "--skip",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "0",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Workbook file path."
-          }
-        ]
-      }
-    ],
-    "resourceBudgets": [
-      {
-        "kind": "cells.sheets",
-        "default": 1000,
-        "maximum": 10000,
-        "unit": "items",
-        "enforcementStage": "post-load"
-      },
-      {
-        "kind": "cells.cells",
-        "default": 10000000,
-        "maximum": 100000000,
-        "unit": "items",
-        "enforcementStage": "post-load"
-      },
-      {
-        "kind": "cells.objects",
-        "default": 100000,
-        "maximum": 1000000,
-        "unit": "items",
-        "enforcementStage": "post-load"
-      }
     ]
   },
-  "routes": [
-    {
-      "extension": ".csv",
-      "product": "cells",
-      "operations": [
-        "open"
+  "documents": {
+    "v2/cells/convert-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli cells convert",
+      "description": "Convert a workbook, or CSV or TSV text, to another format with the engine's options for it. An html, mhtml or md output is one file: it holds its images itself (SaveAsSingleFile, ExportImagesAsBase64).",
+      "options": [
+        {
+          "name": "--bom",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Start a csv or tsv output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one."
+        },
+        {
+          "name": "--convert-dates",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "true or false: whether a .csv, .tsv or .txt input's dates become dates (TxtLoadOptions.ConvertDateTimeData). Required for such an input."
+        },
+        {
+          "name": "--convert-numbers",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "true or false: whether a .csv, .tsv or .txt input's numbers become numbers (TxtLoadOptions.ConvertNumericData). Required for such an input."
+        },
+        {
+          "name": "--culture",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The culture a text input's numbers and dates are read in, such as en-US or de-DE (LoadOptions.CultureInfo). Required when --convert-numbers or --convert-dates is true."
+        },
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--encoding",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The text encoding of a .csv, .tsv or .txt input, such as utf-8, gb18030 or windows-1252 (TxtLoadOptions.Encoding). Required for such an input."
+        },
+        {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the output workbook. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the output workbook."
+        },
+        {
+          "name": "--encrypt-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the output workbook from the first line of stdin."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--format-strategy",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "How a csv, tsv or md output writes cell values, a member name of the engine's CellValueFormatStrategy: None writes the values as they are stored, DisplayString as the number formats show them. Default: the engine's."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Output path. Default: the input path with the target extension (with '.out' inserted when that would overwrite the input)."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the workbook."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the workbook from the first line of stdin."
+        },
+        {
+          "name": "--separator",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The separator of a .csv or .txt input, one character (TxtLoadOptions.Separator). Required for such an input; a .tsv input is tab-separated."
+        },
+        {
+          "name": "--sheet",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 100000,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "A sheet to write, by its name: one for a csv, tsv or md output, which otherwise holds the sheet the engine writes, the active sheet; any for pdf, repeated. Other formats write the whole workbook."
+        },
+        {
+          "name": "--to",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "csv",
+            "html",
+            "json",
+            "md",
+            "mhtml",
+            "ods",
+            "pdf",
+            "tsv",
+            "xlam",
+            "xls",
+            "xlsb",
+            "xlsm",
+            "xlsx",
+            "xlt",
+            "xltm",
+            "xltx",
+            "xps"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Target format: xlsx, xltx, xlsm, xltm, xlam, xlsb, xls, xlt, csv, tsv, ods, html, mhtml, pdf, xps, json, md. Default: the --out extension's format."
+        }
       ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Workbook file path."
+        }
+      ]
     },
-    {
-      "extension": ".tsv",
-      "product": "cells",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".xlam",
-      "product": "cells",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".xls",
-      "product": "cells",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".xlsb",
-      "product": "cells",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".xlsm",
-      "product": "cells",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".xlsx",
-      "product": "cells",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".xlt",
-      "product": "cells",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".xltm",
-      "product": "cells",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    },
-    {
-      "extension": ".xltx",
-      "product": "cells",
-      "operations": [
-        "open"
-      ],
-      "requiresContentProbe": true,
-      "recognizerStrategy": "standard-signature-v1",
-      "maxProbeBytes": 65536
-    }
-  ],
-  "diagnostics": [],
-  "schemas": {
     "v2/cells/convert-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/convert-result.schema.json",
@@ -1808,6 +493,124 @@
         }
       }
     },
+    "v2/cells/create-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli cells create",
+      "description": "Create a workbook: the engine's new workbook, or a copy of a template saved in the output's format.",
+      "options": [
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the output workbook. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the output workbook."
+        },
+        {
+          "name": "--encrypt-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the output workbook from the first line of stdin."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--template",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "file",
+          "description": "A workbook to save as the new one. Default: the engine's new workbook, with one sheet."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Path of the workbook to create, e.g. report.xlsx."
+        }
+      ]
+    },
     "v2/cells/create-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/create-result.schema.json",
@@ -1859,6 +662,200 @@
           }
         }
       }
+    },
+    "v2/cells/edit-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli cells edit",
+      "description": "Apply a batch of set, add, delete, move and do operations to a workbook; nothing is written when one fails.",
+      "options": [
+        {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the output workbook. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the output workbook."
+        },
+        {
+          "name": "--encrypt-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the output workbook from the first line of stdin."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--in-place",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Modify the input file itself atomically."
+        },
+        {
+          "name": "--ops",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "json-source",
+          "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/cells/ops/directory; one of them in full: aspose-cli schema v2/cells/ops/<name>."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Output path. Default: the input path with '.out' inserted before the extension."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the workbook."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the workbook from the first line of stdin."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Workbook file path."
+        }
+      ]
     },
     "v2/cells/edit-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1927,6 +924,228 @@
           }
         }
       }
+    },
+    "v2/cells/formats": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/format-list.schema.json",
+      "schemaVersion": 2,
+      "product": "cells",
+      "formats": [
+        {
+          "id": "csv",
+          "extensions": [
+            ".csv",
+            ".txt"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "html",
+          "extensions": [
+            ".htm",
+            ".html"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "jpeg",
+          "extensions": [
+            ".jpeg",
+            ".jpg"
+          ],
+          "aliases": [],
+          "uses": [
+            "render"
+          ]
+        },
+        {
+          "id": "json",
+          "extensions": [
+            ".json"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "md",
+          "extensions": [
+            ".markdown",
+            ".md"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "mhtml",
+          "extensions": [
+            ".mhtml"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "ods",
+          "extensions": [
+            ".ods"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "pdf",
+          "extensions": [
+            ".pdf"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        },
+        {
+          "id": "png",
+          "extensions": [
+            ".png"
+          ],
+          "aliases": [],
+          "uses": [
+            "render"
+          ]
+        },
+        {
+          "id": "svg",
+          "extensions": [
+            ".svg"
+          ],
+          "aliases": [],
+          "uses": [
+            "render"
+          ]
+        },
+        {
+          "id": "tsv",
+          "extensions": [
+            ".tsv",
+            ".txt"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "xlam",
+          "extensions": [
+            ".xlam"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "xls",
+          "extensions": [
+            ".xls"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "xlsb",
+          "extensions": [
+            ".xlsb"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "xlsm",
+          "extensions": [
+            ".xlsm"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "xlsx",
+          "extensions": [
+            ".xlsx"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "xlt",
+          "extensions": [
+            ".xlt"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "xltm",
+          "extensions": [
+            ".xltm"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "xltx",
+          "extensions": [
+            ".xltx"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ]
+        },
+        {
+          "id": "xps",
+          "extensions": [
+            ".xps"
+          ],
+          "aliases": [],
+          "uses": [
+            "convert"
+          ]
+        }
+      ]
     },
     "v2/cells/ops": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -6540,6 +5759,131 @@
         }
       }
     },
+    "v2/cells/read-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli cells read",
+      "description": "Read a workbook's objects, each with every row of the object table, and its inventory.",
+      "options": [
+        {
+          "name": "--at",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The address of the object to read with everything below it, as read gives it in at. Default: the whole document."
+        },
+        {
+          "name": "--from",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The address of the object the window starts at; a truncated read's window.next gives it."
+        },
+        {
+          "name": "--kind",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 100000,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "List only objects of this kind, one the ops schema lists; repeat for several. Default: every kind. Objects of the kinds row, column, cell, style, point are listed only when --kind names them; window.notListedUnlessNamed names those a read left out."
+        },
+        {
+          "name": "--max-objects",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "200",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "The most objects one window lists. Range: 1-10000."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the workbook."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the workbook from the first line of stdin."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Workbook file path."
+        }
+      ]
+    },
     "v2/cells/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json",
@@ -6601,6 +5945,201 @@
           }
         }
       }
+    },
+    "v2/cells/render-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli cells render",
+      "description": "Render sheets, or an area of one, to images as the engine draws them.",
+      "options": [
+        {
+          "name": "--area",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "An area of the one sheet named, such as A1:G20, set as its print area and drawn alone. Default: the whole sheet."
+        },
+        {
+          "name": "--dpi",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "192",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
+        },
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Output path. Default: the input path with the image extension. Several sheets write <stem>.<sheet>.<ext> beside it."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the output file if it already exists."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the workbook."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the workbook from the first line of stdin."
+        },
+        {
+          "name": "--sheet",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 100000,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "A sheet to render, by its name; repeat for several. Default: every sheet of the workbook. Several sheets are each written to <stem>.<sheet>.<ext>."
+        },
+        {
+          "name": "--to",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "jpeg",
+            "png",
+            "svg"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Image format. Default: the --out extension's format, else png."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Workbook file path."
+        }
+      ]
     },
     "v2/cells/render-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -6700,6 +6239,154 @@
           }
         }
       }
+    },
+    "v2/cells/search-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "schemaVersion": 2,
+      "path": "aspose-cli cells search",
+      "description": "Search the text of a workbook's cells, as their number formats show it, their formulas and their comments; each hit names the object's address and row.",
+      "options": [
+        {
+          "name": "--case-sensitive",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Match letter case exactly."
+        },
+        {
+          "name": "--max-hits",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "100",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Maximum returned hits. Range: 1-10000."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "description": "Name of an environment variable holding the password for the workbook."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "description": "Read the password for the workbook from the first line of stdin."
+        },
+        {
+          "name": "--pattern",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Text to find, or a regular expression with --regex."
+        },
+        {
+          "name": "--regex",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
+        },
+        {
+          "name": "--skip",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Workbook file path."
+        }
+      ]
     },
     "v2/cells/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",

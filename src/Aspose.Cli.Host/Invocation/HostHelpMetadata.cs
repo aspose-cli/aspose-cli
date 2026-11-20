@@ -1,4 +1,6 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk;
+using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -8,75 +10,53 @@ namespace Aspose.Cli.Host.Invocation;
 /// </summary>
 internal static class HostHelpMetadata
 {
-    private static readonly CommandHelpLink Overview = new("aspose-cli docs", "offline documentation bundled in this binary");
-    private static readonly CommandHelpLink Licensing = new("aspose-cli docs licensing", "license sources, installation and evaluation mode");
-    private static readonly CommandHelpLink Verification = new("aspose-cli docs verification", "the delivery checklist and fonts");
-    private static readonly CommandHelpLink Capabilities = new("aspose-cli capabilities --summary", "each product's commands, formats and operations");
-    private static readonly CommandHelpLink Schemas = new("aspose-cli schema", "the available JSON Schema identifiers");
+    private static readonly CommandHelpLink Catalog = new($"{DistributionInfo.CommandName} schema", "the products, commands, formats and document ids");
+    private static readonly CommandHelpLink Skills = new($"{DistributionInfo.CommandName} skill list", "the Agent Skills bundled with this build");
 
     public static void Attach(RootCommand root, ProductCatalog catalog)
     {
-        string[] narrowCapabilities = NarrowCapabilities(root, catalog);
-        root.WithExamples(
-            [
-                .. narrowCapabilities.TakeLast(1),
-                "schema",
-            ],
-            [Overview, Schemas, Capabilities]);
+        ArgumentNullException.ThrowIfNull(catalog);
+        root.WithExamples(["schema", "license status"], [Catalog, Skills]);
         if (FindOptional(root, "license") is { } license)
         {
+            CommandHelpLink status = Result("license-status", "the fields of the license status");
             license.WithExamples(
                 [
                     "license status --output-format json",
                     "license install Aspose.Total.lic",
                 ],
-                [Licensing]);
-            Find(license, "status").WithExamples(["license status", "license status --output-format json"], [Licensing]);
-            Find(license, "install").WithExamples(["license install Aspose.Total.lic", "license install Aspose.Total.lic --dry-run"], [Licensing]);
-            Find(license, "remove").WithExamples(["license remove --dry-run", "license remove"], [Licensing]);
+                [status]);
+            Find(license, "status").WithExamples(["license status", "license status --output-format json"], [status]);
+            Find(license, "install").WithExamples(["license install Aspose.Total.lic", "license install Aspose.Total.lic --dry-run"], [status]);
+            Find(license, "remove").WithExamples(["license remove --dry-run", "license remove"], [status]);
         }
 
         if (FindOptional(root, "fonts") is { } fonts)
         {
-            fonts.WithExamples(["fonts list --output-format json"], [Verification]);
-            Find(fonts, "list").WithExamples(["fonts list", "fonts list --output-format json"], [Verification]);
+            CommandHelpLink list = Result("font-list", "the fields of the font list");
+            fonts.WithExamples(["fonts list --output-format json"], [list]);
+            Find(fonts, "list").WithExamples(["fonts list", "fonts list --output-format json"], [list]);
         }
 
-        Find(root, "docs").WithExamples(["docs", "docs verification"], [Overview]);
-        Find(root, "schema").WithExamples(["schema", "schema v2/common/error"], [Capabilities]);
-        Find(root, "capabilities").WithExamples(
-            [
-                "capabilities --summary",
-                .. narrowCapabilities,
-            ],
-            [Schemas, Overview]);
+        Find(root, "schema").WithExamples(
+            ["schema", $"schema {ResultEnvelope.CatalogId("common", "diagnostics")}"],
+            [Result("schema-catalog", "the fields of the catalog"), Skills]);
         Command skill = Find(root, "skill").WithExamples(
             [
                 "skill list",
                 "skill install aspose-cli-platform --host codex",
                 "skill install aspose-cli-platform --host claude-code --user",
             ],
-            [Overview]);
-        Find(skill, "list").WithExamples(["skill list", "skill list --output-format json"], [Overview]);
+            [Skills]);
+        Find(skill, "list").WithExamples(["skill list", "skill list --output-format json"], [Result("skill-list", "the fields of the skill list")]);
         Find(skill, "install").WithExamples(
             ["skill install aspose-cli-platform --host codex", "skill install aspose-cli-platform --host claude-code --user --dry-run"],
-            [Overview]);
+            [Skills]);
     }
 
-    // Narrowing capabilities to one product, and to its edit command, keeps the answer small.
-    private static string[] NarrowCapabilities(RootCommand root, ProductCatalog catalog)
-    {
-        if (catalog.Products.FirstOrDefault() is not { } product)
-        {
-            return [];
-        }
-
-        string id = product.Manifest.Id;
-        string whole = $"capabilities {id} --output-format json";
-        return FindOptional(Find(root, id), "edit") is null
-            ? [whole]
-            : [whole, $"capabilities {id} edit --output-format json"];
-    }
+    /// <summary>A link to the JSON Schema of a result the host publishes, such as <c>license-status</c>.</summary>
+    private static CommandHelpLink Result(string id, string description) =>
+        new($"{DistributionInfo.CommandName} schema {ResultEnvelope.CatalogId("common", id)}", description);
 
     private static Command Find(Command parent, string name) =>
         parent.Subcommands.Single(command =>

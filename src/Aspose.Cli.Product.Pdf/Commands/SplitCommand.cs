@@ -33,7 +33,7 @@ internal static class SplitCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "split-result", "the fields of the split result"),
             ],
         };
     }

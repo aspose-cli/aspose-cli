@@ -17,6 +17,6 @@ internal static class SearchCommand
             ],
             links:
             [
-                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
+                CommandHelpLink.Schema(WordsModule.Manifest, "search-result", "the fields of the search result"),
             ]);
 }

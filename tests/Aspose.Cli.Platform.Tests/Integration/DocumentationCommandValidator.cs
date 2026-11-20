@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
@@ -9,33 +9,24 @@ namespace Aspose.Cli.IntegrationTests;
 internal sealed class DocumentationCommandValidator
 {
     private readonly Dictionary<string, JsonNode> _commands;
-    private readonly ILookup<string, JsonNode> _children;
-    private readonly HashSet<string> _topics;
+    private readonly ILookup<string, string> _children;
     private readonly HashSet<string> _schemas;
 
-    private DocumentationCommandValidator(JsonNode capabilities, string topics)
+    private DocumentationCommandValidator(CliCatalog catalog)
     {
-        _commands = capabilities["commands"]!.AsArray().ToDictionary(
-            static item => item!["path"]!.GetValue<string>(),
-            static item => item!,
+        _commands = catalog.CommandNodes.ToDictionary(
+            static item => Path(item["words"]!.GetValue<string>()),
+            static item => item,
             StringComparer.Ordinal);
-        _children = _commands.Values.Where(static command => command["path"]!.GetValue<string>().Contains(' '))
-            .ToLookup(static command => Parent(command["path"]!.GetValue<string>()), StringComparer.Ordinal);
-        _topics = topics.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
-        _schemas = capabilities["schemas"]!.AsArray().Select(static id => id!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+        _children = _commands.Keys.Where(static path => path.Contains(' '))
+            .ToLookup(static path => Parent(path), StringComparer.Ordinal);
+        _schemas = catalog.Ids.Concat(catalog.PartIds).ToHashSet(StringComparer.Ordinal);
     }
 
-    public static DocumentationCommandValidator Read(TempWorkspace workspace)
-    {
-        CliResult capabilities = workspace.Run("capabilities", "--output-format", "json");
-        CliResult topics = workspace.Run("docs");
-        Assert.True(capabilities.ExitCode == 0, capabilities.StdErr);
-        Assert.True(topics.ExitCode == 0, topics.StdErr);
-        return new DocumentationCommandValidator(JsonNode.Parse(capabilities.StdOut)!, topics.StdOut);
-    }
+    public static DocumentationCommandValidator Read() => new(CliCatalog.Current);
 
-    /// <summary>Whether <c>docs</c> lists the topic.</summary>
-    public bool HasTopic(string topic) => _topics.Contains(topic);
+    /// <summary>A command's path from the executable, such as <c>aspose-cli cells read</c>.</summary>
+    private static string Path(string words) => words.Length == 0 ? "aspose-cli" : "aspose-cli " + words;
 
     public void AssertMarkdown(string source, string content)
     {
@@ -125,10 +116,10 @@ internal sealed class DocumentationCommandValidator
                 continue;
             }
 
-            JsonNode? child = positional ? null : _children[path].FirstOrDefault(candidate => Named(candidate, token));
+            string? child = positional ? null : _children[path].FirstOrDefault(candidate => candidate == path + " " + token);
             if (child is not null)
             {
-                path = child["path"]!.GetValue<string>();
+                path = child;
                 continue;
             }
 
@@ -140,10 +131,6 @@ internal sealed class DocumentationCommandValidator
             // Teaching snippets may omit arguments or contain placeholder data.
             if (!positional && Regex.IsMatch(token, @"^[A-Za-z0-9][A-Za-z0-9_./-]*$", RegexOptions.CultureInvariant))
             {
-                if (path == "aspose-cli docs" && !_topics.Contains(token))
-                {
-                    return $"Unknown documentation topic '{token}'.";
-                }
                 if (path == "aspose-cli schema" && !_schemas.Contains(token))
                 {
                     return $"Unknown schema id '{token}'.";

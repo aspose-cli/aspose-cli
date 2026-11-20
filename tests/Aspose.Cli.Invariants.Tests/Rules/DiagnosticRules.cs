@@ -92,7 +92,7 @@ internal static partial class ContractRules
         yield return Check("C-R27", "warning envelope shape", () => EnvelopeShapeProblems(
             catalog, "v2/common/warning", definition: null, "the warning",
             required: ["code", "message"],
-            properties: ["code", "message", "docs", "location", "affectsCompleteness"],
+            properties: ["code", "message", "location", "affectsCompleteness"],
             optional: ["details"]));
     }
 
@@ -135,8 +135,8 @@ internal static partial class ContractRules
 
     private static Diagnostic[] Diagnostics(CliCatalog catalog) =>
     [
-        .. catalog.Document["diagnostics"]!.AsArray().Select(static node => new Diagnostic(
-            node!["code"]!.GetValue<string>(),
+        .. catalog.DiagnosticNodes.Select(static node => new Diagnostic(
+            node["code"]!.GetValue<string>(),
             node["owner"]!.GetValue<string>(),
             node["severity"]!.GetValue<string>(),
             node["category"]!.GetValue<string>(),

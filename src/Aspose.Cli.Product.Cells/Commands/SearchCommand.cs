@@ -17,6 +17,6 @@ internal static class SearchCommand
             ],
             links:
             [
-                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "what each Cells command is for"),
+                CommandHelpLink.Schema(CellsModule.Manifest, "search-result", "the fields of the search result"),
             ]);
 }

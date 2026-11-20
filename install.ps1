@@ -431,26 +431,26 @@ function Read-BuildMetadata {
     return $metadata
 }
 
-function Assert-CapabilitiesMatchBuildMetadata {
+function Assert-VersionMatchesBuildMetadata {
     param(
-        [Parameter(Mandatory)] $Capabilities,
+        [Parameter(Mandatory)] $Identity,
         [Parameter(Mandatory)] $Metadata
     )
 
-    $properties = @($Capabilities.PSObject.Properties.Name)
+    $properties = @($Identity.PSObject.Properties.Name)
     if ('sourceRevision' -cnotin $properties -or 'buildDirty' -cnotin $properties -or
-        $Capabilities.sourceRevision -cne $Metadata.sourceRevision -or
-        $Capabilities.buildDirty -isnot [bool] -or
-        [bool]$Capabilities.buildDirty -ne [bool]$Metadata.buildDirty) {
-        throw 'Executable capabilities do not match the verified build manifest.'
+        $Identity.sourceRevision -cne $Metadata.sourceRevision -or
+        $Identity.buildDirty -isnot [bool] -or
+        [bool]$Identity.buildDirty -ne [bool]$Metadata.buildDirty) {
+        throw 'Executable version does not match the verified build manifest.'
     }
 
     $provenance = @($Metadata.enginePackages)
-    Assert-SetEqual @($provenance | ForEach-Object { [string]$_.product }) @($Capabilities.products | ForEach-Object { [string]$_.id }) 'compiled product graph'
+    Assert-SetEqual @($provenance | ForEach-Object { [string]$_.product }) @($Identity.enginePins | ForEach-Object { [string]$_.product }) 'compiled product graph'
     foreach ($engine in $provenance) {
-        $actual = @($Capabilities.products | Where-Object { $_.id -ceq [string]$engine.product })
-        if ($actual.Count -ne 1 -or $actual[0].engine.sdkVersion -cne [string]$engine.version) { throw 'Executable engine version does not match the packaged build provenance.' }
-        if ($actual[0].engine.sdk -cne [string]$engine.packageId) { throw 'Executable SDK name does not match the packaged build provenance.' }
+        $actual = @($Identity.enginePins | Where-Object { $_.product -ceq [string]$engine.product })
+        if ($actual.Count -ne 1 -or $actual[0].version -cne [string]$engine.version) { throw 'Executable engine version does not match the packaged build provenance.' }
+        if ($actual[0].engine -cne [string]$engine.packageId) { throw 'Executable SDK name does not match the packaged build provenance.' }
     }
 }
 
@@ -639,15 +639,15 @@ function Get-InventorySnapshot {
     return Get-StringSha256 ($lines -join "`n")
 }
 
-function Invoke-Capabilities {
+function Invoke-VersionIdentity {
     param([Parameter(Mandatory)][string] $Executable)
-    $result = Invoke-CliChildProcess $Executable @('capabilities','--output-format','json')
-    if ($result.ExitCode -ne 0) { throw "Executable capability validation failed with exit code $($result.ExitCode): $(Get-ChildProcessDiagnostic $result)" }
+    $result = Invoke-CliChildProcess $Executable @('--version','--output-format','json')
+    if ($result.ExitCode -ne 0) { throw "Executable version validation failed with exit code $($result.ExitCode): $(Get-ChildProcessDiagnostic $result)" }
     $json = $result.StdOut
-    if ($json.Length -gt 16MB) { throw 'Executable capabilities output exceeds 16 MiB.' }
-    Assert-JsonHasNoDuplicateProperties $json 'executable capabilities output'
+    if ($json.Length -gt 16MB) { throw 'Executable version output exceeds 16 MiB.' }
+    Assert-JsonHasNoDuplicateProperties $json 'executable version output'
     try { return $json | ConvertFrom-Json }
-    catch { throw "Executable capabilities output is invalid JSON: $($_.Exception.Message)" }
+    catch { throw "Executable version output is invalid JSON: $($_.Exception.Message)" }
 }
 
 
@@ -1583,7 +1583,7 @@ function Install-Release {
     foreach ($payload in $verifiedFiles) {
         if ($payload.Sha256 -cne $checksums[$payload.Path]) { throw "Checksum mismatch for '$($payload.Path)': expected $($checksums[$payload.Path]), got $($payload.Sha256)." }
     }
-    $capabilities = Invoke-Capabilities $sourceExecutable
+    $identity = Invoke-VersionIdentity $sourceExecutable
     $releaseIndicators = @('install.ps1',$script:BuildManifestName) |
         Where-Object { $_ -cin @($packageInventory.Files.Path) }
     if (@($releaseIndicators).Count -ne 0) {
@@ -1591,7 +1591,7 @@ function Install-Release {
             if ($required -cnotin @($packageInventory.Files.Path)) { throw "Release package is missing '$required'." }
         }
         $packageBuildMetadata = Read-BuildMetadata $packageDirectory
-        Assert-CapabilitiesMatchBuildMetadata $capabilities $packageBuildMetadata
+        Assert-VersionMatchesBuildMetadata $identity $packageBuildMetadata
     }
 
     $installRoot = Resolve-InstallRoot $InstallDirectory
@@ -1635,7 +1635,7 @@ function Install-Release {
         }
         # Development packages are local builds that may replace any build.
         if ($null -ne $existingState -and -not $DevelopmentPackage) {
-            Assert-InstallationUpgrade $existingState ([string]$capabilities.cliVersion) ([string]$capabilities.sourceRevision)
+            Assert-InstallationUpgrade $existingState ([string]$identity.cliVersion) ([string]$identity.sourceRevision)
         }
 
         if ($customLocation) { New-CustomLocationStage $stage $installRoot }
@@ -1655,8 +1655,8 @@ function Install-Release {
         $marker = [ordered]@{
             schemaVersion = 4
             productId = $script:ProductId
-            cliVersion = [string]$capabilities.cliVersion
-            sourceRevision = [string]$capabilities.sourceRevision
+            cliVersion = [string]$identity.cliVersion
+            sourceRevision = [string]$identity.sourceRevision
             payloadManifest = $script:PayloadManifestName
             payloadManifestSha256 = Get-FileSha256 $payloadManifestPath
             # The choices this installation was made with; -Update and -Uninstall replay them.
@@ -1801,7 +1801,7 @@ function Install-Release {
         }
 
         $final = Get-ManagedInstallState $installRoot
-        if ($final.Snapshot -cne $newState.Snapshot -or $final.CliVersion -cne $capabilities.cliVersion) { throw 'Final installed CLI validation failed.' }
+        if ($final.Snapshot -cne $newState.Snapshot -or $final.CliVersion -cne $identity.cliVersion) { throw 'Final installed CLI validation failed.' }
         $journal.phase = 'committed'
         Write-Journal $journalPath $journal
         # Once committed, an injected ordinary failure must not report a rollbackable
@@ -1830,7 +1830,7 @@ function Install-Release {
                 $licenseFailure = "The CLI is installed, but the validated license could not be installed (exit code $($licenseResult.ExitCode)): $(Get-ChildProcessDiagnostic $licenseResult) Retry with: $($script:CommandName) $($licenseArguments[0..($licenseArguments.Count - 3)] -join ' ')"
             }
         }
-        Write-Host "$($script:DisplayName) $($capabilities.cliVersion) installed to $installRoot"
+        Write-Host "$($script:DisplayName) $($identity.cliVersion) installed to $installRoot"
         if ($customLocation) { Write-InstallDirectoryAccessWarning $installRoot }
         if (-not $skipPath) { Write-Host 'The user PATH contains exactly one install-directory entry; restart terminals and AI agents to pick it up.' }
         if ($installedSkills -ne 0) { Write-Host "Installed or updated $installedSkills pristine bundled Agent Skill package(s)." }

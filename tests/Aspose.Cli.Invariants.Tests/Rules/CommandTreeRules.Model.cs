@@ -4,9 +4,9 @@ using Aspose.Cli.TestKit.Scenarios;
 
 namespace Aspose.Cli.Invariants.Tests;
 
-/// <summary>One command of the capabilities document with the fields the command tree rules read.</summary>
+/// <summary>One command document with the fields the command tree rules read.</summary>
 /// <param name="Command">The catalog's reading of the command: words, product, subcommands.</param>
-/// <param name="Options">The command's own options, as capabilities declares them.</param>
+/// <param name="Options">The command's own options, as its document declares them.</param>
 /// <param name="Arguments">The command's positional arguments in order.</param>
 internal sealed record TreeCommand(CliCommand Command, IReadOnlyList<TreeOption> Options, IReadOnlyList<TreeArgument> Arguments)
 {
@@ -29,7 +29,7 @@ internal sealed record TreeCommand(CliCommand Command, IReadOnlyList<TreeOption>
     public override string ToString() => Command.ToString();
 }
 
-/// <summary>One option of a command as capabilities declares it.</summary>
+/// <summary>One option of a command as its document declares it.</summary>
 internal sealed record TreeOption(JsonNode Node)
 {
     public string Name => Node["name"]!.GetValue<string>();
@@ -42,7 +42,8 @@ internal sealed record TreeOption(JsonNode Node)
 
     public bool Recursive => Node["recursive"]!.GetValue<bool>();
 
-    public bool Hidden => Node["hidden"]!.GetValue<bool>();
+    /// <summary>A command document lists no hidden option, so a listed one is visible.</summary>
+    public bool Hidden => false;
 
     public IReadOnlyList<string> AllowedValues => CommandTree.Strings(Node["allowedValues"]);
 
@@ -56,7 +57,7 @@ internal sealed record TreeOption(JsonNode Node)
     public bool IsBoolean => Type == "boolean";
 }
 
-/// <summary>One positional argument of a command as capabilities declares it.</summary>
+/// <summary>One positional argument of a command as its document declares it.</summary>
 internal sealed record TreeArgument(JsonNode Node)
 {
     public string Name => Node["name"]!.GetValue<string>();
@@ -69,7 +70,7 @@ internal sealed record TreeArgument(JsonNode Node)
     public string Description => Node["description"]?.GetValue<string>() ?? string.Empty;
 }
 
-/// <summary>The command tree of the capabilities document, read once per catalog.</summary>
+/// <summary>The command tree of the command documents, read once per catalog.</summary>
 internal static partial class CommandTree
 {
     /// <summary>
@@ -79,10 +80,10 @@ internal static partial class CommandTree
     public static readonly string[] ProductVerbs =
         ["inspect", "read", "search", "create", "edit", "convert", "render", "compare", "extract", "split", "merge", "sign", "validate"];
 
-    /// <summary>Every command in the order capabilities lists them, hidden ones included.</summary>
+    /// <summary>Every command, in the catalog's order.</summary>
     public static IReadOnlyList<TreeCommand> Of(CliCatalog catalog)
     {
-        JsonArray nodes = catalog.Document["commands"]!.AsArray();
+        IReadOnlyList<JsonNode> nodes = catalog.CommandNodes;
         return
         [
             .. catalog.Commands.Select((command, index) => new TreeCommand(
@@ -98,8 +99,8 @@ internal static partial class CommandTree
 
     /// <summary>Every format id the products declare.</summary>
     public static IReadOnlySet<string> FormatIds(CliCatalog catalog) =>
-        catalog.Document["products"]!.AsArray()
-            .SelectMany(static product => product!["formats"]!.AsArray())
+        catalog.Products
+            .SelectMany(product => catalog.FormatNodes(product.Id))
             .Select(static format => format!["id"]!.GetValue<string>())
             .ToHashSet(StringComparer.Ordinal);
 

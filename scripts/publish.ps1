@@ -223,17 +223,17 @@ if ($customerPublish) {
     if ($LASTEXITCODE -ne 0) {
         throw "Published executable failed --version with exit code $LASTEXITCODE."
     }
-    $capabilitiesText = & $executable capabilities --output-format json
+    $identityText = & $executable --version --output-format json
     if ($LASTEXITCODE -ne 0) {
-        throw "Published executable failed capabilities with exit code $LASTEXITCODE."
+        throw "Published executable failed --version --output-format json with exit code $LASTEXITCODE."
     }
-    $capabilities = ($capabilitiesText -join [Environment]::NewLine) | ConvertFrom-Json
+    $identity = ($identityText -join [Environment]::NewLine) | ConvertFrom-Json
     $declaredVersion = $buildDefaults.SelectSingleNode('/Project/PropertyGroup/Version').InnerText
-    if ($capabilities.cliVersion -cne $declaredVersion) {
-        throw "Published version '$($capabilities.cliVersion)' does not match declared version '$declaredVersion'."
+    if ($identity.cliVersion -cne $declaredVersion) {
+        throw "Published version '$($identity.cliVersion)' does not match declared version '$declaredVersion'."
     }
-    if ($capabilities.sourceRevision -cne $provenance.SourceRevision -or
-        [bool]$capabilities.buildDirty -ne [bool]$provenance.BuildDirty) {
+    if ($identity.sourceRevision -cne $provenance.SourceRevision -or
+        [bool]$identity.buildDirty -ne [bool]$provenance.BuildDirty) {
         throw 'Published executable provenance does not match the captured repository provenance.'
     }
     $skillsText = & $executable skill list --output-format json
