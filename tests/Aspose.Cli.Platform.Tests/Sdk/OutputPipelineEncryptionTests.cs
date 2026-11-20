@@ -28,7 +28,7 @@ public sealed class OutputPipelineEncryptionTests
 
         pipeline.Write(temp.File("out.txt"), Txt, false, null, Save);
         pipeline.Write(temp.File("other.txt"), Txt, false, null, Save);
-        ResultEnvelope result = pipeline.Disclose(new SchemaListResult { Schemas = [], Warnings = [Other] });
+        ResultEnvelope result = pipeline.Disclose(new SkillListResult { Skills = [], Warnings = [Other] });
 
         Assert.Equal([WarningCodes.EncryptionRemoved, Other.Code], result.Warnings!.Select(static warning => warning.Code));
         Assert.Contains("'txt' output is not encrypted", result.Warnings![0].Message, StringComparison.Ordinal);
@@ -122,7 +122,7 @@ public sealed class OutputPipelineEncryptionTests
             set.Stage(temp.File("part.pdf"), Pdf, false, null, Save);
         }
 
-        SchemaListResult result = new() { Schemas = [] };
+        SkillListResult result = new() { Skills = [] };
         Assert.Same(result, pipeline.Disclose(result));
     }
 

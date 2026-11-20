@@ -105,7 +105,7 @@ internal static class ConvertCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "what each Cells command is for"),
+                CommandHelpLink.Schema(CellsModule.Manifest, "convert-result", "the fields of the convert result"),
             ],
         };
     }

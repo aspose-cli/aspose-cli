@@ -138,7 +138,7 @@ public sealed partial class WarningCodeDeclarationTests
     [Fact]
     public void Capabilities_ListExactlyTheDeclaredWarningCodes()
     {
-        Dictionary<string, string> diagnostics = CliCatalog.Current.Document["diagnostics"]!.AsArray().ToDictionary(
+        Dictionary<string, string> diagnostics = CliCatalog.Current.DiagnosticNodes.ToDictionary(
             static diagnostic => diagnostic!["code"]!.GetValue<string>(),
             static diagnostic => diagnostic!["severity"]!.GetValue<string>() + "/" + diagnostic["category"]!.GetValue<string>(),
             StringComparer.Ordinal);
@@ -153,7 +153,7 @@ public sealed partial class WarningCodeDeclarationTests
             }
             else if (!diagnostics.ContainsKey(site.Code))
             {
-                problems.Add($"  {site.Location}: {site.Code} is emitted but capabilities does not list it");
+                problems.Add($"  {site.Location}: {site.Code} is emitted but the diagnostics document does not list it");
             }
         }
 
@@ -162,15 +162,15 @@ public sealed partial class WarningCodeDeclarationTests
             HashSet<string> declared = [.. Declarations(descriptor.Name).Select(static declaration => declaration.Code)];
             problems.AddRange(declared.Where(code => !diagnostics.TryGetValue(code, out string? kind) || !kind.StartsWith("warning/", StringComparison.Ordinal))
                 .Order(StringComparer.Ordinal)
-                .Select(static code => $"  {code} is declared but capabilities does not list it as a warning"));
+                .Select(static code => $"  {code} is declared but the diagnostics document does not list it as a warning"));
             problems.AddRange(diagnostics.Where(pair => pair.Value == "warning/warning" && !declared.Contains(pair.Key))
                 .Select(static pair => pair.Key)
                 .Order(StringComparer.Ordinal)
-                .Select(static code => $"  {code} is listed by capabilities but declared by no descriptor"));
+                .Select(static code => $"  {code} is listed by the diagnostics document but declared by no descriptor"));
         }
 
         Assert.True(problems.Count == 0,
-            "Every warning code the CLI emits is a declared descriptor and capabilities lists exactly the declared codes:"
+            "Every warning code the CLI emits is a declared descriptor and the diagnostics document lists exactly the declared codes:"
             + Environment.NewLine + string.Join(Environment.NewLine, problems));
     }
 

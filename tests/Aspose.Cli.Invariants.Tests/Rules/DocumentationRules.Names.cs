@@ -152,9 +152,7 @@ internal static partial class ContractRules
                 "'do.stamp_text' has no field 'agrs'"),
             (null, "slides query deck.pptx", "slides read deck.pptx", "'slides' has no command 'query'"),
             (null, "license frobnicate", "license status", "'license' has no command 'frobnicate'"),
-            (null, "docs licencing", "docs licensing", "'docs' has no topic 'licencing'"),
             (null, "schema v2/cells/opz", "schema v2/cells/ops", "'schema' has no schema 'v2/cells/opz'"),
-            (null, "capabilities --sumary", "capabilities --summary", "'capabilities' has no option '--sumary'"),
             (null, "cells read book.xlsx --version", "cells read book.xlsx --verbose", "'cells read' has no option '--version'"),
             (null, "license status extra", "license status --product pdf", "'license status' has no command 'extra'"),
             (null, "words merge a.docx", "words edit a.docx --ops ops.json --in-place", "'words' has no command 'merge'"),
@@ -236,31 +234,23 @@ internal static partial class ContractRules
         private readonly string[] _products;
         private readonly HashSet<string> _commandWords;
         private readonly HashSet<string> _schemas;
-        private readonly Lazy<HashSet<string>> _topics = new(static () =>
-        {
-            using var workspace = new TempWorkspace();
-            CliResult docs = workspace.Run("docs");
-            return docs.ExitCode == 0
-                ? [.. docs.StdOut.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)]
-                : throw new InvalidOperationException("docs failed: " + docs.StdErr);
-        });
         private readonly ConcurrentDictionary<string, Lazy<SourceFindings>> _findings = new(StringComparer.Ordinal);
 
         public SourceNames(CliCatalog catalog)
         {
             _catalog = catalog;
             _fields = new OperationFields(catalog);
-            JsonArray commands = catalog.Document["commands"]!.AsArray();
+            IReadOnlyList<JsonNode> commands = catalog.CommandNodes;
             _commandOptions = commands.ToDictionary(
-                static command => Words(command!["path"]!.GetValue<string>()),
-                static command => new HashSet<string>(command!["options"]!.AsArray().SelectMany(NamesOf), StringComparer.Ordinal),
+                static command => command["words"]!.GetValue<string>(),
+                static command => new HashSet<string>(command["options"]!.AsArray().SelectMany(NamesOf), StringComparer.Ordinal),
                 StringComparer.Ordinal);
             _options = [.. _commandOptions.Values.SelectMany(static options => options)];
             _globalOptions = _commandOptions[string.Empty];
             _recursiveOptions = commands.ToDictionary(
-                static command => Words(command!["path"]!.GetValue<string>()),
+                static command => command["words"]!.GetValue<string>(),
                 static command => new HashSet<string>(
-                    command!["options"]!.AsArray().Where(static option => option!["recursive"]!.GetValue<bool>()).SelectMany(NamesOf),
+                    command["options"]!.AsArray().Where(static option => option!["recursive"]!.GetValue<bool>()).SelectMany(NamesOf),
                     StringComparer.Ordinal),
                 StringComparer.Ordinal);
             _globalValueOptions =
@@ -278,12 +268,9 @@ internal static partial class ContractRules
                     static group => new HashSet<string>(group.SelectMany(static option => option.AllowedValues), StringComparer.Ordinal),
                     StringComparer.Ordinal);
             _codes = [.. catalog.Diagnostics.Keys];
-            // The operations capabilities lists, and the actions of each object table (do.<name> in its ops schema).
+            // The actions of each object table (do.<name> in its ops schema).
             _operations =
             [
-                .. catalog.Document["products"]!.AsArray()
-                    .SelectMany(static product => product!["operations"]?.AsArray() ?? [])
-                    .SelectMany(static operation => operation!["ops"]!.AsArray().Select(static op => op!.GetValue<string>())),
                 .. PublishedSchema.Ids(catalog).Where(PublishedSchema.IsOps)
                     .SelectMany(static id => PublishedSchema.Definitions(id))
                     .Where(static name => name.StartsWith("do.", StringComparison.Ordinal))
@@ -291,7 +278,7 @@ internal static partial class ContractRules
             ];
             string roots = string.Join('|', catalog.Command(string.Empty).Subcommands.Select(Regex.Escape));
             _products = [.. catalog.Products.Select(static product => product.Id)];
-            _schemas = [.. PublishedSchema.Ids(catalog)];
+            _schemas = [.. catalog.Ids, .. catalog.PartIds];
             _commandWords = [.. CommandTree.ProductVerbs, .. catalog.Commands.SelectMany(static command => command.Tokens)];
             string products = string.Join('|', _products.Select(Regex.Escape));
             _bare = new Regex($@"(?<![\w./\\-])(?<product>{products}) (?<verb>[a-z]+)(?: (?<next>[a-z]+))?\b", RegexOptions.CultureInvariant);
@@ -306,9 +293,6 @@ internal static partial class ContractRules
 
         private static IEnumerable<string> NamesOf(JsonNode? option) =>
             option!["aliases"]!.AsArray().Select(static alias => alias!.GetValue<string>()).Append(option["name"]!.GetValue<string>());
-
-        private static string Words(string path) =>
-            path.Contains(' ', StringComparison.Ordinal) ? path[(path.IndexOf(' ', StringComparison.Ordinal) + 1)..] : string.Empty;
 
         /// <summary>The reading of one source project's C# files.</summary>
         public SourceFindings Of(string project) =>
@@ -647,7 +631,7 @@ internal static partial class ContractRules
                             + $"'{repeated.Option.Name} {repeated.Value} {repeated.Option.Name} {tokens[index]}'";
                     }
 
-                    // The first argument of docs and schema names a topic or a schema.
+                    // The first argument of schema names a document.
                     if (positionals == 1 && CheckArgument(command, tokens[index], kinds) is { } unknown)
                     {
                         yield return unknown;
@@ -702,7 +686,6 @@ internal static partial class ContractRules
         {
             (HashSet<string>? names, string what) = command.Words switch
             {
-                "docs" => (_topics.Value, "topic"),
                 "schema" => (_schemas, "schema"),
                 _ => ((HashSet<string>?)null, string.Empty),
             };

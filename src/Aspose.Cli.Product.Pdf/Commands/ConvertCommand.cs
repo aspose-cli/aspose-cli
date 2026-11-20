@@ -71,7 +71,7 @@ internal static class ConvertCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "convert-result", "the fields of the convert result"),
             ],
         };
     }

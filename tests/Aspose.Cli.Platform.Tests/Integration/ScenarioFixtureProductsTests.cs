@@ -16,7 +16,7 @@ public sealed class ScenarioFixtureProductsTests
         string[] fixtures = [.. ScenarioFixtures.Products.Order(StringComparer.Ordinal)];
 
         Assert.True(catalog.SequenceEqual(fixtures, StringComparer.Ordinal),
-            $"ScenarioFixtures lists the products [{string.Join(", ", fixtures)}] but capabilities lists "
+            $"ScenarioFixtures lists the products [{string.Join(", ", fixtures)}] but the schema catalog lists "
             + $"[{string.Join(", ", catalog)}]; give each product a primary format and an operation in ScenarioFixtures.");
     }
 }

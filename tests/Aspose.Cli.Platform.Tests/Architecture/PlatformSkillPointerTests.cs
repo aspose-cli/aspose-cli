@@ -72,7 +72,7 @@ public sealed partial class PlatformSkillPointerTests
 
         Assert.True(catalogs.Count == 0,
             "A Skill restates no catalog of codes, details keys, result fields or exit codes; point to "
-            + "'aspose-cli capabilities', 'aspose-cli schema <id>' or the error's details instead:"
+            + "'aspose-cli schema', 'aspose-cli schema <id>' or the error's details instead:"
             + Environment.NewLine + string.Join(Environment.NewLine, catalogs));
     }
 

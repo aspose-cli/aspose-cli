@@ -228,7 +228,7 @@ public sealed class ProductCatalogGeneratorTests
             RoslynTestSupport.PlatformReferences()
             .Append(MetadataReference.CreateFromFile(typeof(IProductModule).Assembly.Location))
             .Append(MetadataReference.CreateFromFile(
-                typeof(Aspose.Cli.Sdk.Contracts.ProductCapabilities).Assembly.Location))
+                typeof(Aspose.Cli.Sdk.Contracts.ResourceBudget).Assembly.Location))
             .Append(MetadataReference.CreateFromFile(
                 typeof(Aspose.Cli.Sdk.IO.Publication.SafeFileWriter).Assembly.Location));
         CSharpCompilation compilation = CSharpCompilation.Create(

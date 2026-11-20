@@ -43,9 +43,8 @@ internal static class PublishedSchema
     private static readonly string[] SchemaChildren = ["items", "additionalProperties", "not", "if", "then", "else", "contains", "propertyNames"];
     private static readonly string[] SchemaArrays = ["anyOf", "oneOf", "allOf", "prefixItems"];
 
-    /// <summary>Every schema id capabilities lists, in its order.</summary>
-    public static IReadOnlyList<string> Ids(CliCatalog catalog) =>
-        [.. catalog.Document["schemas"]!.AsArray().Select(static id => id!.GetValue<string>())];
+    /// <summary>Every JSON Schema id the catalog lists, in its order.</summary>
+    public static IReadOnlyList<string> Ids(CliCatalog catalog) => catalog.SchemaIds;
 
     /// <summary>Whether <paramref name="id"/> is a product's operation (input) schema.</summary>
     public static bool IsOps(string id) => id.EndsWith("/ops", StringComparison.Ordinal);

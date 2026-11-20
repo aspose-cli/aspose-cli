@@ -419,7 +419,8 @@ internal static class TableSchemaWriter
     /// <summary>
     /// The directory of a table: per kind its address forms, the rows a set can write, the rows
     /// that are read only, and whether it can be deleted and moved; per add the kinds it adds to
-    /// and its parameter names; per action its parameter names. JSON, written from the table.
+    /// and its parameter names; per action its parameter names; and how the id of the schema of
+    /// one kind, add or action is written. JSON, written from the table.
     /// </summary>
     internal static string Directory(DocumentTable table)
     {
@@ -471,7 +472,20 @@ internal static class TableSchemaWriter
             actions[action.Name] = new JsonObject { ["args"] = Names(action.Arguments.Select(static argument => argument.Name)) };
         }
 
-        var directory = new JsonObject { ["kinds"] = kinds, ["adds"] = adds, ["actions"] = actions };
+        string[] examples =
+        [
+            .. table.Kinds.Take(1).Select(static kind => kind.Name),
+            .. table.Adders.Take(1).Select(static adder => "add." + adder.Name),
+            .. table.Actions.Take(1).Select(static action => "do." + action.Name),
+        ];
+        var directory = new JsonObject
+        {
+            ["kinds"] = kinds,
+            ["adds"] = adds,
+            ["actions"] = actions,
+            ["partIds"] = $"The schema of one kind, add or action has this document's id with {TableSchema.DirectoryView} replaced by the kind, add.<add> or do.<action>, such as "
+                + string.Join(", ", examples.Select(static example => $"{DocumentTable.SchemaId}/{example}")) + ".",
+        };
         if (Recursive(table).Count > 0)
         {
             directory["addressForms"] = "A form that starts with {kind} continues an address of an object of that kind, one of the kind's own addresses.";

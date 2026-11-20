@@ -113,22 +113,6 @@ internal static class IsolationCases
                 {
                     commands.Add((command, null, false));
                 }
-                else if (command.Product is null && reads)
-                {
-                    // A platform command routes the input by its extension; one no route assigns
-                    // needs the product named, so a command without --product cannot open it.
-                    if (catalog.Routes.TryGetValue("." + IsolationDocuments.Extension(format), out string? routed))
-                    {
-                        if (routed == product.Id)
-                        {
-                            commands.Add((command, null, false));
-                        }
-                    }
-                    else if (command.Has("--product"))
-                    {
-                        commands.Add((command, null, true));
-                    }
-                }
             }
             foreach (CliCommand command in catalog.Commands.Where(command => command.Product == product.Id && command.Verb == "create" && !convertOnly))
             {

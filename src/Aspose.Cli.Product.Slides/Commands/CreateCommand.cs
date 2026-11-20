@@ -33,7 +33,7 @@ internal static class CreateCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(SlidesModule.Manifest, "build-a-slide", "a new deck built in two batches"),
+                CommandHelpLink.Schema(SlidesModule.Manifest, "create-result", "the fields of the create result"),
             ],
         };
     }

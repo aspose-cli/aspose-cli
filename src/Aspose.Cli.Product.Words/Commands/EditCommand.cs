@@ -30,6 +30,6 @@ internal static class EditCommand
             ],
             links:
             [
-                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "addresses, the five operation shapes and the read-back"),
+                CommandHelpLink.Schema(WordsModule.Manifest, "edit-result", "the fields of the edit result"),
             ]);
 }

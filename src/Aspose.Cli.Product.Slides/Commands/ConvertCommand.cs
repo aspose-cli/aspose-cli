@@ -43,7 +43,7 @@ internal static class ConvertCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "what each Slides command is for"),
+                CommandHelpLink.Schema(SlidesModule.Manifest, "convert-result", "the fields of the convert result"),
             ],
         };
     }

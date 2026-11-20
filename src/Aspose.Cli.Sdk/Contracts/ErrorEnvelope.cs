@@ -55,7 +55,4 @@ public sealed record ErrorPayload
     /// </summary>
     [ErrorDetails]
     public JsonObject? Details { get; init; }
-
-    /// <summary>Topic name for <c>aspose-cli docs &lt;topic&gt;</c> with background details.</summary>
-    public string? Docs { get; init; }
 }

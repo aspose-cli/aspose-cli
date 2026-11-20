@@ -26,6 +26,6 @@ internal static class ReadCommand
             ],
             links:
             [
-                CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "addresses, windows and the inventory"),
+                CommandHelpLink.Schema(SlidesModule.Manifest, "read-result", "the fields of the read result"),
             ]);
 }

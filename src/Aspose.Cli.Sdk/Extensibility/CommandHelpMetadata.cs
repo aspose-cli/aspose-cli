@@ -12,15 +12,15 @@ public sealed record CommandHelpLink(
     string Command,
     string Description)
 {
-    /// <summary>Links one of a product's documentation topics, such as its <c>editing</c> topic.</summary>
-    /// <param name="product">The product whose topic is linked.</param>
-    /// <param name="topic">The topic name within the product.</param>
-    /// <param name="description">A short description of the topic.</param>
-    public static CommandHelpLink Docs(ProductManifest product, string topic, string description)
+    /// <summary>Links a document the <c>schema</c> command prints, such as a product's <c>convert-result</c>.</summary>
+    /// <param name="product">The product that publishes the document.</param>
+    /// <param name="id">The document's id within the product, such as <c>convert-result</c>.</param>
+    /// <param name="description">A short description of the document.</param>
+    public static CommandHelpLink Schema(ProductManifest product, string id, string description)
     {
         ArgumentNullException.ThrowIfNull(product);
-        ArgumentException.ThrowIfNullOrWhiteSpace(topic);
-        return new($"{DistributionInfo.CommandName} docs {product.Id}/{topic}", description);
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        return new($"{DistributionInfo.CommandName} schema {ResultEnvelope.CatalogId(product.Id, id)}", description);
     }
 
     /// <summary>Links the JSON schema of an operation vocabulary.</summary>

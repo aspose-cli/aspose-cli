@@ -75,7 +75,7 @@ public static class TableCommands
             Required = true,
             Description = "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value "
                 + $"starts with {{ (inline). At most {TableBatch.MaximumOperations} operations; each is a set, add, delete, move or do. "
-                + $"The kinds, rows, adds and actions: {schema} --operation {TableSchema.DirectoryView}; one of them in full: {schema} --operation <name>.",
+                + $"The kinds, rows, adds and actions: {schema}/{TableSchema.DirectoryView}; one of them in full: {schema}/<name>.",
         }.WithInput(InputKind.JsonSource);
         return new CommandDefinition<TRequest, TResult>(
             "edit",
@@ -107,8 +107,8 @@ public static class TableCommands
             Examples = examples ?? [],
             Links =
             [
-                new CommandHelpLink($"{schema} --operation {TableSchema.DirectoryView}", "the kinds and their rows, the adds and the actions an operation names"),
-                new CommandHelpLink($"{schema} --operation <name>", "one kind, add or action in full"),
+                new CommandHelpLink($"{schema}/{TableSchema.DirectoryView}", "the kinds and their rows, the adds and the actions an operation names"),
+                new CommandHelpLink($"{schema}/<name>", "one kind, add or action in full"),
                 .. links ?? [],
             ],
             Table = table,
@@ -203,7 +203,7 @@ public static class TableCommands
             })
         {
             Examples = examples ?? [],
-            Links = [new CommandHelpLink($"{Schema<TResult>()} --operation {TableSchema.DirectoryView}", "the kinds an address and --kind name, with their rows"), .. links ?? []],
+            Links = [new CommandHelpLink($"{Schema<TResult>()}/{TableSchema.DirectoryView}", "the kinds an address and --kind name, with their rows"), .. links ?? []],
         };
     }
 

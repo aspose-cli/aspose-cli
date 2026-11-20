@@ -119,13 +119,10 @@ public sealed class ProductMenuCompletenessTests : IDisposable
     /// <summary>How often each command name occurs below the product's group in the built tree.</summary>
     private Dictionary<string, int> TreeNodeNames(string product)
     {
-        CliResult result = _workspace.Run("capabilities", product, "--output-format", "json");
-        Assert.True(result.ExitCode == 0, $"capabilities {product} exited {result.ExitCode}: {result.StdErr}");
-        JsonNode entry = Assert.Single(JsonNode.Parse(result.StdOut)!["products"]!.AsArray())!;
         var names = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (JsonNode? command in entry["commands"]!.AsArray())
+        foreach (Aspose.Cli.TestKit.Scenarios.CliCommand command in Aspose.Cli.TestKit.Scenarios.CliCatalog.Current.Commands.Where(command => command.Product == product))
         {
-            string[] path = command!["path"]!.GetValue<string>().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            string[] path = command.Tokens;
             if (path.Length >= 2)
             {
                 names[path[^1]] = names.GetValueOrDefault(path[^1]) + 1;

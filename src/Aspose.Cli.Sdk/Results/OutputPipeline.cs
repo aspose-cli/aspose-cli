@@ -330,7 +330,6 @@ internal static class EvaluationDisclosure
         sentences.Add("The license does not remove them.");
         return new Warning(WarningCodes.EvaluationInputMarked, string.Join(" ", sentences))
         {
-            Docs = "licensing",
             AffectsCompleteness = kept.IsTruncated,
         };
     }
@@ -345,7 +344,6 @@ internal static class EvaluationDisclosure
         WarningCodes.EvaluationInputTruncated,
         $"{engine} evaluation mode {truncation}, so this result does not hold all of the input's content.")
     {
-        Docs = "licensing",
         // What a command covers stays complete; the warning says the content it read is not.
     };
 

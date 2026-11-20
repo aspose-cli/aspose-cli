@@ -30,7 +30,7 @@ public sealed class SkillInstallTests : IDisposable
     [Fact]
     public void BundledSkillResources_AreCompleteLinkedDocumentedAndUseKnownCommands()
     {
-        DocumentationCommandValidator commands = DocumentationCommandValidator.Read(_workspace);
+        DocumentationCommandValidator commands = DocumentationCommandValidator.Read();
 
         CliResult listed = _workspace.Run("skill", "list", "--output-format", "json");
         Assert.Equal(0, listed.ExitCode);
@@ -70,33 +70,12 @@ public sealed class SkillInstallTests : IDisposable
                     path => IsUnder(path, Path.Combine(root, "examples")));
             }
 
-            // docs reads the resources the install extracted, so a document is its docs
-            // topic exactly when docs lists the topic and no other document claims it.
-            var topics = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (string markdown in markdownFiles)
             {
                 string content = File.ReadAllText(markdown);
                 AssertLocalLinksResolve(root, markdown, content);
                 commands.AssertMarkdown(markdown, content);
-
-                string? topic = DocsTopic(skill, root, markdown);
-                if (topic is null)
-                {
-                    continue;
-                }
-
-                Assert.True(commands.HasTopic(topic), $"docs does not list '{topic}' for {markdown}");
-                Assert.True(
-                    topics.TryAdd(topic, markdown),
-                    $"{markdown} and {topics[topic]} share the docs topic '{topic}'");
             }
-
-            // docs prints the document itself, without an envelope or other changes.
-            CliResult docs = _workspace.Run("docs", DocsTopic(skill, root, skillFile)!);
-            Assert.True(docs.ExitCode == 0, docs.StdErr);
-            Assert.Equal(
-                NormalizeNewLines(File.ReadAllText(skillFile)).TrimEnd(),
-                NormalizeNewLines(docs.StdOut).TrimEnd());
         }
     }
 
@@ -403,39 +382,6 @@ public sealed class SkillInstallTests : IDisposable
     }
 
     private const string PlatformSkill = "aspose-cli-platform";
-
-    /// <summary>
-    /// The docs topic of a Skill document: the platform Skill's documents are unprefixed, a
-    /// product Skill's are prefixed with the product id.
-    /// </summary>
-    private static string? DocsTopic(
-        string skill,
-        string root,
-        string markdown)
-    {
-        string prefix = skill == PlatformSkill ? string.Empty : skill["aspose-cli-".Length..] + "/";
-        string relative = Path.GetRelativePath(root, markdown)
-            .Replace(Path.DirectorySeparatorChar, '/');
-        if (string.Equals(relative, "SKILL.md", StringComparison.Ordinal))
-        {
-            return prefix + "overview";
-        }
-        if (relative.StartsWith("references/", StringComparison.Ordinal))
-        {
-            return prefix + relative[
-                "references/".Length..(relative.Length - ".md".Length)];
-        }
-        if (relative.StartsWith("examples/", StringComparison.Ordinal)
-            && relative.EndsWith("/README.md", StringComparison.Ordinal))
-        {
-            return prefix + relative[
-                "examples/".Length..(relative.Length - "/README.md".Length)];
-        }
-        return null;
-    }
-
-    private static string NormalizeNewLines(string value) =>
-        value.Replace("\r\n", "\n", StringComparison.Ordinal);
 
     private static JsonNode Parse(string json) =>
         JsonNode.Parse(json) ?? throw new InvalidOperationException("Output was not JSON:\n" + json);

@@ -8,13 +8,13 @@ namespace Aspose.Cli.Host.Commands;
 /// </summary>
 internal sealed class HostSchemaCatalog
 {
-    /// <summary>The schemas the host itself publishes under <c>v2/common</c>.</summary>
+    /// <summary>The schemas the host itself publishes under <c>common</c>.</summary>
     private static readonly ResultSchemaSet HostSchemas = new(
         "common",
         [.. SdkSchemaCatalog.ResultRecordsOf(HostResultJsonContext.Default)],
         SdkSchemaCatalog.Schemas);
 
-    /// <summary>Every <c>v2/common</c> schema id, the SDK's and the host's, in ordinal order.</summary>
+    /// <summary>Every <c>common</c> schema id, the SDK's and the host's, in ordinal order.</summary>
     internal static IReadOnlyList<string> CommonIds { get; } =
         [.. SdkSchemaCatalog.Ids.Concat(HostSchemas.Ids).Order(StringComparer.Ordinal)];
 
@@ -41,7 +41,7 @@ internal sealed class HostSchemaCatalog
         [NotNullWhen(true)] out string? document) =>
         _catalog.Resources.TryRead(id, out document) || TryReadCommon(id, out document);
 
-    /// <summary>Reads a <c>v2/common</c> schema, the SDK's or the host's.</summary>
+    /// <summary>Reads a <c>common</c> schema, the SDK's or the host's.</summary>
     internal static bool TryReadCommon(
         string id,
         [NotNullWhen(true)] out string? document) =>

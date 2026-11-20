@@ -34,14 +34,11 @@ public sealed partial class RenderDpiContractTests : IDisposable
             ["slides"] = "deck.pptx",
         };
 
-        CliResult capabilities = _workspace.Run("capabilities", "--output-format", "json");
-        capabilities.Succeeded();
         var problems = new List<string>();
         foreach ((string product, string input) in inputs)
         {
-            JsonNode option = JsonNode.Parse(capabilities.StdOut)!["products"]!.AsArray()
-                .Single(entry => entry!["id"]!.GetValue<string>() == product)!["commands"]!.AsArray()
-                .Single(command => command!["path"]!.GetValue<string>() == $"{product} render")!["options"]!.AsArray()
+            JsonNode option = Aspose.Cli.TestKit.Scenarios.CliCatalog.Current.CommandNodes
+                .Single(command => command["words"]!.GetValue<string>() == $"{product} render")["options"]!.AsArray()
                 .Single(entry => entry!["name"]!.GetValue<string>() == "--dpi")!;
             Match stated = StatedRange().Match(option["description"]!.GetValue<string>());
             Assert.True(stated.Success, $"{product} render --dpi states no range: {option["description"]}");

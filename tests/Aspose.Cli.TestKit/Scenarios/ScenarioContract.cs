@@ -73,7 +73,8 @@ public static partial class ScenarioContract
         {
             report(NoInternalError, $"exit {result.ExitCode}, the internal failure exit code: {Excerpt(result.StdErr)}");
         }
-        bool raw = args.Count > 0 && args[0] is "schema" or "docs";
+        // A document schema prints for an id is a JSON Schema or a document, not a command result.
+        bool raw = args.Count > 1 && args[0] == "schema";
         bool succeeded = result.ExitCode == 0 || (result.ExitCode == 8 && !string.IsNullOrWhiteSpace(result.StdOut));
         if (succeeded)
         {

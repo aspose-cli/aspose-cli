@@ -41,7 +41,7 @@ internal static class MergeCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "merge-result", "the fields of the merge result"),
             ],
         };
     }

@@ -83,28 +83,6 @@ public sealed class CommonSchemaContractTests
         }
     }
 
-    [Fact]
-    public void OperationDescriptor_SerializesInDeterministicContractOrder()
-    {
-        string json = CommonSerializer.Serialize(CommonSchemaSamples.Capabilities);
-        JsonObject operation = JsonNode.Parse(json)!["products"]![0]![
-            "operations"]![0]!.AsObject();
-
-        Assert.Equal(
-            [
-                "command",
-                "inputSchema",
-                "operationSchema",
-                "contractFingerprint",
-                "maximumOperationCount",
-                "ops",
-            ],
-            operation.Select(static property => property.Key));
-        Assert.Equal(
-            """{"command":"edit","inputSchema":"v2/test/ops","operationSchema":"aspose-cli schema v2/test/ops --operation <op>","contractFingerprint":"sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","maximumOperationCount":16,"ops":["replace_text"]}""",
-            operation.ToJsonString(new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
-    }
-
     [Theory]
     [InlineData("v2/common/operation-outcome", typeof(BoundedOperationOutcome))]
     [InlineData("v2/common/verification-issue", typeof(VerificationIssue))]
@@ -133,10 +111,13 @@ public sealed class CommonSchemaContractTests
     {
         string[] results =
         [
-            "capabilities-summary",
+            "budget-list",
+            "command",
+            "diagnostic-list",
             "font-list",
+            "format-list",
             "license-status",
-            "schema-list",
+            "schema-catalog",
             "skill-install",
             "skill-list",
             "version",
@@ -203,13 +184,11 @@ public sealed class CommonSchemaContractTests
                 {
                     Id = productId,
                     DisplayName = "Test",
-                    Engine = new ProductEngineCapabilities
+                    Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
                     {
-                        Id = "test",
                         Sdk = "Aspose.Test",
                         SdkVersion = "1.0.0",
                     },
-                    AvailableEngines = ["test"],
                 })
             .Formats(
             [

@@ -20,9 +20,9 @@ exits non-zero:
 }
 ```
 
-- `code` is stable; branch on it, never on `message`. `capabilities` lists
-  every error and warning code of this build under `diagnostics`, with its
-  category and exit code.
+- `code` is stable; branch on it, never on `message`.
+  `aspose-cli schema v2/common/diagnostics` lists every error and warning code
+  of this build, with its category and exit code.
 - `details` carries structured context: the resolved path, the option or
   argument at fault, the valid alternatives (`available`), the
   failing operation's `id` and `op`. `aspose-cli schema v2/common/error-payload`
@@ -30,7 +30,6 @@ exits non-zero:
   `details.reason`, when present, is a short kebab-case token such as
   `unknown-field`; branch on it, and read `message` for the explanation. An
   `OPS_INVALID` about one field names its path in `details.field`.
-- `docs`, when present, names a topic for `aspose-cli docs <topic>`.
 
 Warnings do not fail a command. They appear in the result's `warnings` array
 with a `code`, `message` and, when there are any, `details`. A warning with
@@ -59,7 +58,7 @@ Branch on the exit code first, then on the code in the envelope:
   overflow in a document engine does. No error envelope is written, and what
   the command wrote before can remain.
 - Any other non-zero exit comes with an error envelope; its code's category
-  and exit code are listed in `capabilities`. Usage errors (exit 2) are fixed
+  and exit code are listed in `aspose-cli schema v2/common/diagnostics`. Usage errors (exit 2) are fixed
   on the command line, input errors (exit 3) in the input file or its
   password, and `OPERATION_TIMEOUT` (exit 9) by a smaller request. A
   publication that failed and could not be fully restored
@@ -71,7 +70,7 @@ Branch on the exit code first, then on the code in the envelope:
 
 ```powershell
 aspose-cli license status --output-format json
-aspose-cli capabilities --output-format json
+aspose-cli schema v2/common/diagnostics
 ```
 
 - `--verbose` writes structured JSONL diagnostics (timings, error codes) to
@@ -156,7 +155,7 @@ aspose-cli capabilities --output-format json
   supplied exceeded its own budget; simplify it or search a narrower part of
   the document.
 - Evaluation codes (`EVALUATION_LIMIT` and the `EVALUATION_*` warnings): see
-  `aspose-cli docs licensing`.
+  `references/licensing.md`.
 
 ## Windows PowerShell
 

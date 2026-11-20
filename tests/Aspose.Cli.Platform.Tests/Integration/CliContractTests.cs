@@ -41,21 +41,20 @@ public sealed class CliContractTests : IDisposable
     [InlineData("--version", "--output-format", "json")]
     [InlineData("--output-format", "json", "--version")]
     [InlineData("--version", "--output-format=json")]
-    public void VersionWithJsonOutput_ReportsTheCapabilitiesBuildIdentity(params string[] args)
+    public void VersionWithJsonOutput_ReportsTheCatalogsBuildIdentity(params string[] args)
     {
         CliResult plain = _workspace.Run("--version");
         CliResult result = _workspace.Run(args);
-        CliResult capabilities = _workspace.Run("capabilities", "--output-format", "json");
+        JsonNode catalog = Parse(_workspace.Run("schema").StdOut);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal(string.Empty, result.StdErr);
         AssertConformsTo(ResultEnvelope.SchemaUri("common", "version"), result.StdOut);
         JsonNode version = Parse(result.StdOut);
-        JsonNode expected = Parse(capabilities.StdOut);
-        foreach (string field in new[] { "cliVersion", "sourceRevision", "buildDirty", "enginePins" })
-        {
-            Assert.True(JsonNode.DeepEquals(expected[field], version[field]), field);
-        }
+        Assert.Equal(catalog["cliVersion"]!.GetValue<string>(), version["cliVersion"]!.GetValue<string>());
+        Assert.Equal(
+            catalog["products"]!.AsArray().Select(static product => $"{product!["id"]} {product["engine"]} {product["engineVersion"]}").Order(StringComparer.Ordinal),
+            version["enginePins"]!.AsArray().Select(static pin => $"{pin!["product"]} {pin["engine"]} {pin["version"]}"));
         // Plain --version prints the artifact version; the result names it only when it differs.
         string artifact = version["artifactVersion"]?.GetValue<string>()
             ?? version["cliVersion"]!.GetValue<string>();
@@ -91,23 +90,17 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Fact]
-    public void Capabilities_ExposeTheCurrentDeterministicSourceRevision()
+    public void Version_ExposesTheCurrentDeterministicSourceRevision()
     {
-        CliResult first = _workspace.Run("capabilities", "--output-format", "json");
-        CliResult compact = _workspace.Run("capabilities", "--output-format", "compact");
+        CliResult result = _workspace.Run("--version", "--output-format", "json");
 
-        Assert.Equal(0, first.ExitCode);
-        Assert.Equal(0, compact.ExitCode);
-        // Compact output is the same document on one line.
-        Assert.Single(compact.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries));
-        Assert.True(JsonNode.DeepEquals(Parse(first.StdOut), Parse(compact.StdOut)));
-
-        using JsonDocument capabilities = JsonDocument.Parse(first.StdOut);
-        string sourceRevision = capabilities.RootElement
+        Assert.Equal(0, result.ExitCode);
+        using JsonDocument version = JsonDocument.Parse(result.StdOut);
+        string sourceRevision = version.RootElement
             .GetProperty("sourceRevision")
             .GetString()!;
 
-        bool dirty = capabilities.RootElement.GetProperty("buildDirty").GetBoolean();
+        bool dirty = version.RootElement.GetProperty("buildDirty").GetBoolean();
         if (sourceRevision == "unknown")
         {
             Assert.True(dirty);
@@ -116,50 +109,49 @@ public sealed class CliContractTests : IDisposable
         {
             Assert.Matches("^[0-9a-f]{40}$", sourceRevision);
         }
-        Assert.True(capabilities.RootElement.TryGetProperty("enginePins", out _));
+        Assert.True(version.RootElement.TryGetProperty("enginePins", out _));
         string declaredVersion = XDocument.Load(Path.Combine(RepositoryPaths.Root, "Directory.Build.props"))
             .Descendants("Version").Single().Value;
-        Assert.Equal(declaredVersion, capabilities.RootElement.GetProperty("cliVersion").GetString());
+        Assert.Equal(declaredVersion, version.RootElement.GetProperty("cliVersion").GetString());
     }
 
     /// <summary>
-    /// Pins the complete capabilities of each product, including every command's option metadata
-    /// and the product's operation and result schemas, in <c>capabilities/&lt;product&gt;.json</c>
-    /// (see <see cref="CapabilitiesSnapshots"/>). Only the build identity is normalized: the CLI
-    /// version, source revision, dirty flag and engine package versions change with releases and
-    /// SDK updates, not with command definitions, and
-    /// <see cref="Capabilities_ExposeTheCurrentDeterministicSourceRevision"/> checks them.
+    /// Pins what <c>schema</c> publishes for each product, its catalog entry and every document
+    /// its ids name, in <c>schema/&lt;product&gt;.json</c> (see <see cref="SchemaSnapshots"/>). Only the
+    /// build identity is normalized: the CLI version and the engine package versions change with
+    /// releases and SDK updates, not with command definitions, and
+    /// <see cref="Version_ExposesTheCurrentDeterministicSourceRevision"/> checks them.
     /// </summary>
     [Theory]
     [MemberData(nameof(ProductIds))]
-    public void ProductCapabilities_MatchTheSnapshot(string product)
+    public void ProductSchema_MatchesTheSnapshot(string product)
     {
-        JsonNode capabilities = NormalizedCapabilities();
+        JsonNode catalog = NormalizedCatalog();
 
-        Assert.Contains(product, CapabilitiesSnapshots.Products(capabilities));
+        Assert.Contains(product, SchemaSnapshots.Products(catalog));
         AssertSnapshot(
-            Path.Combine("capabilities", product + ".json"),
-            CapabilitiesSnapshots.Product(capabilities, product, ProductCapabilities, SchemaDocument));
+            Path.Combine("schema", product + ".json"),
+            SchemaSnapshots.Product(catalog, product, Document));
     }
 
     /// <summary>
-    /// Pins the rest of the capabilities document in <c>capabilities/host.json</c>: the Host
-    /// commands, common diagnostics, routing defaults, budgets, engine pins and common schemas.
-    /// The build identity is normalized as in <see cref="ProductCapabilities_MatchTheSnapshot"/>.
+    /// Pins the rest of what <c>schema</c> publishes in <c>schema/common.json</c>: the catalog
+    /// without the products' entries, and every common document. The build identity is normalized
+    /// as in <see cref="ProductSchema_MatchesTheSnapshot"/>.
     /// </summary>
     [Fact]
-    public void HostCapabilities_MatchTheSnapshot()
+    public void CommonSchema_MatchesTheSnapshot()
     {
-        JsonNode capabilities = NormalizedCapabilities();
+        JsonNode catalog = NormalizedCatalog();
 
         AssertSnapshot(
-            Path.Combine("capabilities", "host.json"),
-            CapabilitiesSnapshots.Host(capabilities, ProductCapabilities, SchemaDocument));
+            Path.Combine("schema", "common.json"),
+            SchemaSnapshots.Common(catalog, Document));
     }
 
-    private JsonNode NormalizedCapabilities()
+    private JsonNode NormalizedCatalog()
     {
-        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
+        CliResult result = _workspace.Run("schema");
 
         Assert.Equal(0, result.ExitCode);
         return Parse(BuildIdentity.Replace(
@@ -167,14 +159,7 @@ public sealed class CliContractTests : IDisposable
             static match => match.Groups["key"].Value + "\"<build>\""));
     }
 
-    private JsonNode ProductCapabilities(string product)
-    {
-        CliResult result = _workspace.Run("capabilities", product, "--output-format", "json");
-        Assert.True(result.ExitCode == 0, $"capabilities {product}: {result.StdErr}");
-        return Parse(result.StdOut);
-    }
-
-    private JsonNode SchemaDocument(string id)
+    private JsonNode Document(string id)
     {
         CliResult result = _workspace.Run("schema", id);
         Assert.True(result.ExitCode == 0, $"schema {id}: {result.StdErr}");
@@ -182,119 +167,35 @@ public sealed class CliContractTests : IDisposable
     }
 
     /// <summary>
-    /// Pins the capabilities summary; the build identity is normalized as in
-    /// <see cref="ProductCapabilities_MatchTheSnapshot"/>.
-    /// </summary>
-    [Fact]
-    public void CapabilitiesSummary_MatchesTheSnapshot()
-    {
-        CliResult result = _workspace.Run("capabilities", "--summary", "--output-format", "json");
-
-        Assert.Equal(0, result.ExitCode);
-        string normalized = BuildIdentity.Replace(
-            result.StdOut,
-            static match => match.Groups["key"].Value + "\"<build>\"");
-        AssertSnapshot("capabilities-summary.json", normalized);
-    }
-
-    [Fact]
-    public void CapabilitiesSummary_ProjectsTheCapabilitiesDocument()
-    {
-        CliResult result = _workspace.Run("capabilities", "--summary", "--output-format", "json");
-        CliResult full = _workspace.Run("capabilities", "--output-format", "json");
-
-        Assert.Equal(0, result.ExitCode);
-        AssertConformsTo(ResultEnvelope.SchemaUri("common", "capabilities-summary"), result.StdOut);
-        // The first look stays small next to the full document.
-        Assert.True(result.StdOut.Length < 16 * 1024, $"The summary is {result.StdOut.Length} characters.");
-        JsonNode summary = Parse(result.StdOut);
-        JsonNode capabilities = Parse(full.StdOut);
-        Assert.Equal(capabilities["cliVersion"]!.GetValue<string>(), summary["cliVersion"]!.GetValue<string>());
-        JsonArray products = capabilities["products"]!.AsArray();
-        JsonArray summarized = summary["products"]!.AsArray();
-        Assert.Equal(
-            products.Select(static product => product!["id"]!.GetValue<string>()),
-            summarized.Select(static product => product!["id"]!.GetValue<string>()));
-        foreach ((JsonNode? product, JsonNode? entry) in products.Zip(summarized))
-        {
-            string id = product!["id"]!.GetValue<string>();
-            foreach (string formats in new[] { "loadFormats", "convertFormats", "renderFormats" })
-            {
-                Assert.True(JsonNode.DeepEquals(product[formats], entry![formats]), $"{id} {formats}");
-            }
-            Assert.Equal(product["engine"]!["sdkVersion"]!.GetValue<string>(), entry!["engineVersion"]!.GetValue<string>());
-            Assert.Equal(
-                product["commands"]!.AsArray()
-                    .Select(static command => command!["path"]!.GetValue<string>())
-                    .Where(path => path != id)
-                    .Select(path => path[(id.Length + 1)..]),
-                entry["commands"]!.AsArray().Select(static command => command!["command"]!.GetValue<string>()));
-            Assert.True(
-                JsonNode.DeepEquals(
-                    new JsonArray(product["operations"]!.AsArray()
-                        .Select(static operation => (JsonNode)new JsonObject
-                        {
-                            ["command"] = operation!["command"]!.DeepClone(),
-                            ["ops"] = operation["ops"]!.DeepClone(),
-                        })
-                        .ToArray()),
-                    entry["operations"]),
-                $"{id} operations");
-        }
-    }
-
-    [Fact]
-    public void CapabilitiesSummary_SelectsOneProductButNoCommand()
-    {
-        CliResult cells = _workspace.Run("capabilities", "cells", "--summary", "--output-format", "json");
-        CliResult command = _workspace.Run("capabilities", "cells", "edit", "--summary", "--output-format", "json");
-        CliResult unknown = _workspace.Run("capabilities", "missing", "--summary", "--output-format", "json");
-
-        Assert.Equal(0, cells.ExitCode);
-        Assert.Equal("cells", Assert.Single(Parse(cells.StdOut)["products"]!.AsArray())!["id"]!.GetValue<string>());
-        Assert.Equal(2, command.ExitCode);
-        Assert.Equal("USAGE_ERROR", Parse(command.StdErr)["error"]!["code"]!.GetValue<string>());
-        Assert.Equal(2, unknown.ExitCode);
-        Assert.Equal("OPTION_INVALID", Parse(unknown.StdErr)["error"]!["code"]!.GetValue<string>());
-    }
-
-    /// <summary>
     /// Pins the help text of a product group and of every command under it, byte for byte.
-    /// The command list comes from the capabilities document, whose snapshot pins that list.
+    /// The command list comes from the schema catalog, whose snapshot pins that list.
     /// </summary>
     [Theory]
     [MemberData(nameof(ProductIds))]
     public void ProductHelp_MatchesTheSnapshot(string product)
     {
-        CliResult capabilities = _workspace.Run("capabilities", product, "--output-format", "json");
-        Assert.Equal(0, capabilities.ExitCode);
-        IEnumerable<string[]> paths = Assert.Single(Parse(capabilities.StdOut)["products"]!.AsArray())!["commands"]!.AsArray()
-            .Select(static command => command!["path"]!.GetValue<string>().Split(' '));
+        IEnumerable<string[]> paths = CliCatalog.Current.Commands
+            .Where(command => command.Product == product)
+            .Select(static command => command.Tokens);
         AssertSnapshot($"{product}.help.txt", CollectHelp(paths));
     }
 
     /// <summary>
-    /// Pins the help text of the root command and of every Host command, including hidden ones,
-    /// byte for byte. The command list is every capabilities command outside a product group.
+    /// Pins the help text of the root command and of every Host command, byte for byte. The
+    /// command list is every command of the schema catalog outside a product group.
     /// </summary>
     [Fact]
     public void HostHelp_MatchesTheSnapshot()
     {
-        CliResult capabilities = _workspace.Run("capabilities", "--output-format", "json");
-        Assert.Equal(0, capabilities.ExitCode);
-        JsonNode json = Parse(capabilities.StdOut);
-        HashSet<string> products = json["products"]!.AsArray()
-            .Select(static product => product!["id"]!.GetValue<string>())
-            .ToHashSet(StringComparer.Ordinal);
-        IEnumerable<string[]> paths = json["commands"]!.AsArray()
-            .Select(static command => command!["path"]!.GetValue<string>().Split(' ').Skip(1).ToArray())
-            .Where(path => path.Length == 0 || !products.Contains(path[0]));
+        IEnumerable<string[]> paths = CliCatalog.Current.Commands
+            .Where(static command => command.Product is null)
+            .Select(static command => command.Tokens);
         AssertSnapshot("host.help.txt", CollectHelp(paths));
     }
 
     /// <summary>
     /// A long value list moves from the option label into the description, so it cannot widen the
-    /// option column of every row; capabilities still list every value.
+    /// option column of every row; the command's schema document still lists every value.
     /// </summary>
     [Theory]
     [InlineData("--to <to>", "Values: azw3, doc, ", "words", "convert")]
@@ -333,135 +234,44 @@ public sealed class CliContractTests : IDisposable
         return help.ToString();
     }
 
-    [Theory]
-    [InlineData("product")]
-    [InlineData("command")]
-    [InlineData("unknown-product")]
-    [InlineData("unknown-command")]
-    public void Capabilities_Selection_IsSmallAndActionable(
-        string selection)
-    {
-        CliResult result = selection switch
-        {
-            "product" => _workspace.Run(
-                "capabilities", "cells", "--output-format", "json"),
-            "command" => _workspace.Run(
-                "capabilities", "cells", "edit", "--output-format", "json"),
-            "unknown-product" => _workspace.Run(
-                "capabilities", "missing", "--output-format", "json"),
-            "unknown-command" => _workspace.Run(
-                "capabilities", "cells", "missing", "--output-format", "json"),
-            _ => throw new ArgumentOutOfRangeException(nameof(selection)),
-        };
-
-        if (selection.StartsWith("unknown", StringComparison.Ordinal))
-        {
-            Assert.Equal(2, result.ExitCode);
-            Assert.Equal(string.Empty, result.StdOut);
-            JsonNode error = Parse(result.StdErr)["error"]!;
-            Assert.Equal(
-                "OPTION_INVALID",
-                error["code"]!.GetValue<string>());
-            JsonNode details = error["details"]!;
-            Assert.Equal(
-                selection == "unknown-product"
-                    ? "product"
-                    : "command",
-                details["argument"]!.GetValue<string>());
-            Assert.Null(details["option"]);
-            Assert.NotEmpty(details["available"]!.AsArray());
-            return;
-        }
-
-        Assert.Equal(0, result.ExitCode);
-        JsonNode json = Parse(result.StdOut);
-        JsonNode product = Assert.Single(json["products"]!.AsArray())!;
-        Assert.Equal("cells", product["id"]!.GetValue<string>());
-        Assert.All(
-            json["schemas"]!.AsArray(),
-            schema => Assert.True(
-                schema!.GetValue<string>().StartsWith(
-                    "v2/common/",
-                    StringComparison.Ordinal)
-                || schema.GetValue<string>().StartsWith(
-                    "v2/cells/",
-                    StringComparison.Ordinal)));
-        Assert.All(
-            json["diagnostics"]!.AsArray(),
-            diagnostic => Assert.Contains(
-                diagnostic!["owner"]!.GetValue<string>(),
-                new[] { "common", "cells" }));
-        Assert.All(
-            json["commands"]!.AsArray(),
-            command => Assert.StartsWith(
-                "aspose-cli cells",
-                command!["path"]!.GetValue<string>(),
-                StringComparison.Ordinal));
-
-        if (selection == "command")
-        {
-            Assert.Equal(
-                ["edit"],
-                product["verbs"]!.AsArray()
-                    .Select(static verb => verb!.GetValue<string>()));
-            Assert.All(
-                product["operations"]!.AsArray(),
-                operation => Assert.Equal(
-                    "edit",
-                    operation!["command"]!.GetValue<string>()));
-            Assert.All(
-                product["commands"]!.AsArray(),
-                command => Assert.StartsWith(
-                    "cells edit",
-                    command!["path"]!.GetValue<string>(),
-                    StringComparison.Ordinal));
-        }
-    }
-
     [Fact]
-    public void SchemaOperation_ReturnsExactViewAndUnknownIdsAreActionable()
+    public void SchemaPart_ReturnsExactViewAndUnknownIdsAreActionable()
     {
-        const string schemaId = "v2/pdf/ops";
-        const string operationId = "field";
+        string schemaId = ResultEnvelope.CatalogId("pdf", "ops");
+        const string part = "field";
 
-        CliResult selected = _workspace.Run(
-            "schema", schemaId, "--operation", operationId);
+        CliResult selected = _workspace.Run("schema", $"{schemaId}/{part}");
         Assert.Equal(0, selected.ExitCode);
         Assert.Equal(string.Empty, selected.StdErr);
         JsonNode selectedSchema = Parse(selected.StdOut);
         Assert.Equal(
-            $"https://schemas.aspose.com/aspose-cli/{schemaId}.schema.json#/$defs/{operationId}",
+            $"{ResultEnvelope.SchemaUri("pdf", "ops")}#/$defs/{part}",
             selectedSchema["$id"]!.GetValue<string>());
 
-        CliResult unknown = _workspace.Run(
-            "schema", schemaId, "--operation", "__unknown_operation__");
+        CliResult unknown = _workspace.Run("schema", $"{schemaId}/__unknown_part__");
         Assert.Equal(2, unknown.ExitCode);
         Assert.Equal(string.Empty, unknown.StdOut);
         JsonNode error = Parse(unknown.StdErr)["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains(
-            operationId,
+            $"{schemaId}/{part}",
             error["details"]!["available"]!.AsArray()
                 .Select(static item => item!.GetValue<string>()));
     }
 
     [Fact]
-    public void SchemaList_UsesTheEnvelope()
+    public void SchemaCatalog_UsesTheEnvelopeAndStaysSmall()
     {
         CliResult json = _workspace.Run("schema", "--output-format", "json");
+        CliResult compact = _workspace.Run("schema", "--output-format", "compact");
         Assert.Equal(0, json.ExitCode);
-        JsonNode list = Parse(json.StdOut);
-        Assert.Equal(
-            "https://schemas.aspose.com/aspose-cli/v2/common/schema-list.schema.json",
-            list["schema"]!.GetValue<string>());
-        Assert.NotEmpty(list["schemas"]!.AsArray());
-        Assert.True(
-            list["schemas"]!.AsArray().Select(item => item!.GetValue<string>())
-                .SequenceEqual(
-                    list["schemas"]!.AsArray()
-                        .Select(item => item!.GetValue<string>())
-                        .Order(StringComparer.Ordinal),
-                    StringComparer.Ordinal));
+        AssertConformsTo(ResultEnvelope.SchemaUri("common", "schema-catalog"), json.StdOut);
+        // The first look stays small next to the documents it lists.
+        Assert.True(json.StdOut.Length < 30_000, $"The catalog is {json.StdOut.Length} characters.");
+        Assert.Single(compact.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries));
+        Assert.True(JsonNode.DeepEquals(Parse(json.StdOut), Parse(compact.StdOut)));
+        string[] ids = [.. Parse(json.StdOut)["ids"]!.AsArray().Select(static item => item!.GetValue<string>())];
+        Assert.Equal(ids.Order(StringComparer.Ordinal), ids);
     }
 
     [Fact]
@@ -558,37 +368,14 @@ public sealed class CliContractTests : IDisposable
     }
 
     /// <summary>
-    /// The full capabilities document describes the public grammar: the hidden internal commands
-    /// that the CLI starts for itself stay out, while a hidden option of a public command is still
-    /// listed, marked hidden. It states no separate resource-budget contract version.
+    /// The schema catalog describes the public grammar: the hidden internal commands that the CLI
+    /// starts for itself stay out.
     /// </summary>
     [Fact]
-    public void Capabilities_ListNoInternalCommandOrBudgetContractVersion()
+    public void SchemaCatalog_ListsNoInternalCommand()
     {
-        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        JsonNode capabilities = Parse(result.StdOut);
-
-        string[] paths = [.. capabilities["commands"]!.AsArray().Select(static item => item!["path"]!.GetValue<string>())];
-        Assert.DoesNotContain(paths, static path => path.Contains("__", StringComparison.Ordinal));
-        Assert.DoesNotContain(capabilities["commands"]!.AsArray(), static command => command!.AsObject().ContainsKey("hidden"));
-        Assert.DoesNotContain(
-            capabilities["products"]!.AsArray().SelectMany(static product => product!["commands"]!.AsArray()),
-            static command => command!["path"]!.GetValue<string>().Contains("__", StringComparison.Ordinal));
-        Assert.False(capabilities.AsObject().ContainsKey("resourceBudgetContractVersion"));
-        Assert.NotEmpty(capabilities["resourceBudgets"]!.AsArray());
-    }
-
-    [Theory]
-    [InlineData("cells convert", "--out", false)]
-    public void Capabilities_PublishWhetherAnOptionIsHidden(string command, string option, bool hidden)
-    {
-        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
-
-        JsonNode described = Parse(result.StdOut)["commands"]!.AsArray()
-            .Single(item => item!["path"]!.GetValue<string>() == $"aspose-cli {command}")!["options"]!.AsArray()
-            .Single(item => item!["name"]!.GetValue<string>() == option)!;
-        Assert.Equal(hidden, described["hidden"]!.GetValue<bool>());
+        Assert.DoesNotContain(CliCatalog.Current.Commands, static command => command.Words.Contains("__", StringComparison.Ordinal));
+        Assert.DoesNotContain(CliCatalog.Current.Ids, static id => id.Contains("__", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -640,7 +427,7 @@ public sealed class CliContractTests : IDisposable
 
     /// <summary>
     /// The numbers this repository gives its own requirements and rules, such as P-5, C-R26,
-    /// C-N115, C-B01 or (D7), which mean nothing to a reader of the help, the capabilities or a schema.
+    /// C-N115, C-B01 or (D7), which mean nothing to a reader of the help or of a schema document.
     /// </summary>
     private static readonly Regex InternalNumber = new(
         @"\bP-[0-9]+\b|\bC-[RNB][0-9]+\b|\(D[0-9]+\)",

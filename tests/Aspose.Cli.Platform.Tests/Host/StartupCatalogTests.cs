@@ -84,13 +84,11 @@ public sealed class StartupCatalogTests
             {
                 Id = "alpha",
                 DisplayName = "alpha",
-                Engine = new ProductEngineCapabilities
+                Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
                 {
-                    Id = "aspose",
                     Sdk = "Aspose.Test",
                     SdkVersion = "1.0.0",
                 },
-                AvailableEngines = ["aspose"],
             })
             .Formats([FormatDescriptor.Input("alpha", 0, RouteOwnership.Explicit, ".alpha")])
             .Diagnostics([diagnostic])

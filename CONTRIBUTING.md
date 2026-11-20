@@ -22,7 +22,7 @@ a license, so before opening a pull request run the licensed cases it skips:
 
 Run `-Scope Full` before a release and after an SDK update; `-CiLike` reproduces a CI failure
 locally. After a catalog, identity or dependency change, run `scripts/sync.ps1`. After an intended
-change to help, capabilities or schemas, rerun `CliContractTests` with
+change to help or what `schema` prints, rerun `CliContractTests` with
 `ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1` and review the snapshot diff.
 The invariant tests run their command lines in warm `aspose-cli` worker processes;
 `ASPOSE_CLI_TEST_WORKERS=0` runs each as a child process instead, and `ASPOSE_CLI_TEST_WORKERS=n`

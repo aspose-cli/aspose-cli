@@ -30,8 +30,8 @@ internal static class InvocationChecks
 
     /// <summary>An option's <c>inputKind</c>, which <see cref="CliOption"/> does not carry.</summary>
     public static string? InputKind(CliCatalog catalog, CliCommand command, string option) =>
-        catalog.Document["commands"]!.AsArray()
-            .Single(node => node!["path"]!.GetValue<string>() == (command.Words.Length == 0 ? "aspose-cli" : "aspose-cli " + command.Words))!
+        catalog.CommandNodes
+            .Single(node => node["words"]!.GetValue<string>() == command.Words)
             ["options"]!.AsArray()
             .Single(node => node!["name"]!.GetValue<string>() == option)!
             ["inputKind"]?.GetValue<string>();

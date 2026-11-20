@@ -125,7 +125,7 @@ public static class Product
 /// <remarks>
 /// A product lists its commands as a menu: each <c>Command</c> line pairs a command definition
 /// with the static handler that serves it. The menu lines live in <c>Aspose.Cli.Sdk.Extensibility.Commanding.ProductMenu</c>; their
-/// order is the order of help and capabilities.
+/// order is the order of help and the schema catalog.
 /// </remarks>
 /// <typeparam name="TSession">The product's engine session.</typeparam>
 public sealed class ProductDefinitionBuilder<TSession>
@@ -374,7 +374,6 @@ public sealed class ProductDefinitionBuilder<TSession>
         manifest with
         {
             Engine = manifest.Engine with { },
-            AvailableEngines = ReadOnly(manifest.AvailableEngines),
             ResourceBudgets = Array.AsReadOnly(
                 manifest.ResourceBudgets.Select(static budget =>
                     budget with { }).ToArray()),

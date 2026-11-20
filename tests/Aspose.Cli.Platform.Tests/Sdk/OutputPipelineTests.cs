@@ -21,7 +21,7 @@ public sealed class OutputPipelineTests
     {
         OutputPipeline<Document> pipeline = Pipeline(LicenseState.Evaluation);
 
-        SchemaListResult result = new() { Schemas = [], Warnings = [Other] };
+        SkillListResult result = new() { Skills = [], Warnings = [Other] };
 
         Assert.Same(result, pipeline.Disclose(result));
         Assert.Null(pipeline.Disclosure());
@@ -39,7 +39,7 @@ public sealed class OutputPipelineTests
             File.WriteAllText(path, "saved");
             document.Marks.Add("the warning sheet");
         });
-        ResultEnvelope result = pipeline.Disclose(new SchemaListResult { Schemas = [], Warnings = [Other] });
+        ResultEnvelope result = pipeline.Disclose(new SkillListResult { Skills = [], Warnings = [Other] });
 
         Assert.Equal([WarningCodes.EvaluationMode, Other.Code], result.Warnings!.Select(static warning => warning.Code));
         Assert.EndsWith("The output carries the banner and the warning sheet.", result.Warnings![0].Message, StringComparison.Ordinal);

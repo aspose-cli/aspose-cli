@@ -9,11 +9,7 @@ public sealed class DocumentationContractFixture
 {
     internal DocumentationCommandValidator Validator { get; } = Load();
 
-    private static DocumentationCommandValidator Load()
-    {
-        using var workspace = new TempWorkspace();
-        return DocumentationCommandValidator.Read(workspace);
-    }
+    private static DocumentationCommandValidator Load() => DocumentationCommandValidator.Read();
 }
 
 /// <summary>Repository examples and guard counterexamples use the current executable's grammar.</summary>
@@ -33,8 +29,7 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
     [InlineData("aspose-cli --max-input-bytes=30 words missing-command")]
     [InlineData("aspose-cli cells query range book.xlsx")]
     [InlineData("aspose-cli docs cells/commands")]
-    [InlineData("aspose-cli docs pdf/security")]
-    [InlineData("aspose-cli --output-format json docs unknown-topic")]
+    [InlineData("aspose-cli capabilities")]
     [InlineData("aspose-cli schema v2/pdf/info")]
     public void Validator_RejectsInvalidSubcommandsAndLiteralReferences(string command) =>
         Assert.NotNull(fixture.Validator.ValidateCommand(command));
@@ -44,20 +39,20 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
     [InlineData("aspose-cli cells")]
     [InlineData("aspose-cli --max-input-bytes 30 cells read book.xlsx")]
     [InlineData("aspose-cli cells read book.xlsx --at sheet/Sheet1/range/A1:B2")]
-    [InlineData("aspose-cli docs cells/engine-behavior")]
-    [InlineData("aspose-cli docs pdf/engine-behavior")]
+    [InlineData("aspose-cli schema v2/pdf/ops/directory")]
+    [InlineData("aspose-cli schema v2/pdf/convert-command")]
     [InlineData("aspose-cli schema v2/pdf/ops")]
     [InlineData("aspose-cli schema <id>")]
     [InlineData("aspose-cli cells edit book.xlsx --ops '{\"ops\":[{\"set\":\"sheet/Sheet1/cell/A1\", \"props\":{\"value\":\"--opaque\"}}]}' --in-place")]
     [InlineData("aspose-cli cells convert source.csv --to xlsx --out=\"path with spaces.xlsx\"")]
-    [InlineData("aspose-cli docs cells/engine-behavior | more")]
+    [InlineData("aspose-cli schema v2/pdf/ops | more")]
     public void Validator_AcceptsCurrentCommandsAndTeachingPlaceholders(string command) =>
         Assert.Null(fixture.Validator.ValidateCommand(command));
 
     [Fact]
     public void MarkdownExtraction_ChecksInlineAndContinuedCommands()
     {
-        string markdown = "Use \u0060aspose-cli\n docs missing-inline-topic\u0060.\n"
+        string markdown = "Use \u0060aspose-cli\n cells missing-inline-command\u0060.\n"
             + "\u0060\u0060\u0060powershell\naspose-cli --verbose \u0060\n  cells missing-command\n\u0060\u0060\u0060\n";
         string[] commands = DocumentationCommandValidator.CommandsInMarkdown(markdown).ToArray();
         Assert.Equal(2, commands.Length);

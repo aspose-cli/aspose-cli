@@ -27,7 +27,7 @@ internal static class ReadCommand
             ],
             links:
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "addresses, windows and the inventory"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "read-result", "the fields of the read result"),
             ],
             listedWhenNamed: PdfKinds.ListedWhenNamed);
 }

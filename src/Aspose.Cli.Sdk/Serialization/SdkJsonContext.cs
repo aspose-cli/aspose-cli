@@ -10,7 +10,6 @@ namespace Aspose.Cli.Sdk.Serialization;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     WriteIndented = true)]
 [JsonSerializable(typeof(ErrorEnvelope))]
-[JsonSerializable(typeof(CapabilitiesResult))]
 [JsonSerializable(typeof(VersionResult))]
 [JsonSerializable(typeof(FontListResult))]
 [JsonSerializable(typeof(DryRunResult))]

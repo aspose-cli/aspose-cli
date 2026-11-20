@@ -105,7 +105,7 @@ public sealed class ScenarioGapTests
               "files": { ".aspose-publication-1a2b/part.tmp": { "text": "left" }, "aspose-publication.txt": { "text": "kept" } },
               "steps": [
                 {
-                  "args": ["capabilities"],
+                  "args": ["schema"],
                   "expect": { "exitCode": 0, "files": { "absent": [".aspose-publication-*"] } }
                 }
               ]

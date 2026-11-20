@@ -4,7 +4,7 @@ using System.CommandLine.Completions;
 namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>
-/// The values an option or argument declares through its completions, read for capabilities,
+/// The values an option or argument declares through its completions, read for the command documents of schema,
 /// help and the error for a value the parser refused.
 /// </summary>
 internal static class OptionCompletions

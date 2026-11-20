@@ -57,7 +57,7 @@ internal static partial class ContractRules
             .. EnvelopeShapeProblems(catalog, ErrorSchema, definition: null, "the error envelope",
                 required: ["schema", "schemaVersion", "error"], properties: ["schema", "schemaVersion", "error"]),
             .. EnvelopeShapeProblems(catalog, ErrorPayload().SchemaId, definition: null, "error",
-                required: ["code", "message"], properties: ["code", "message", "details", "docs"]),
+                required: ["code", "message"], properties: ["code", "message", "details"]),
         ]);
         yield return Check("C-R25", "error schema publishes the details dictionary", () => PublishedDictionaryProblems(catalog));
         foreach (DetailsSample sample in DetailsSamples(catalog))
@@ -125,7 +125,6 @@ internal static partial class ContractRules
     {
         yield return new DetailsSample("platform unknown command", InvariantCases.Platform, new Invocation(["no-such-command"]));
         yield return new DetailsSample("platform unknown schema id", InvariantCases.Platform, new Invocation(["schema", "no-such-schema"]));
-        yield return new DetailsSample("platform unknown docs topic", InvariantCases.Platform, new Invocation(["docs", "no-such-topic"]));
         foreach (CliProduct product in catalog.Products.Where(static product => ScenarioFixtures.Products.Contains(product.Id)))
         {
             string id = product.Id;

@@ -70,7 +70,7 @@ internal static class CompareCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
+                CommandHelpLink.Schema(WordsModule.Manifest, "compare-result", "the fields of the compare result"),
             ],
         };
     }

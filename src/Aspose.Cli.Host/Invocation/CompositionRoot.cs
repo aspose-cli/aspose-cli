@@ -117,10 +117,8 @@ internal static class CompositionRoot
             [ResourceBudgetKinds.InputBytes] = globals.MaxInputBytes,
         };
         if (outputBytesLimit is { } bytes) { limits[ResourceBudgetKinds.OutputBytes] = bytes; }
-        foreach (ResourceBudgetCapabilities budget
-            in catalog.Products
-                .Select(catalog.GetCapabilities)
-                .SelectMany(static product => product.ResourceBudgets))
+        foreach (ResourceBudget budget
+            in catalog.Products.SelectMany(static product => product.Manifest.ResourceBudgets))
         {
             if (budget.Default <= 0 || budget.Default > budget.Maximum)
             {

@@ -1,31 +1,26 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
 
 /// <summary>
-/// capabilities projects the command tree and guesses nothing: the commands it lists are the
-/// commands help reaches, a product selection lists that product's commands under the same paths,
-/// and every option's allowed values are the values its declaration accepts, which help shows in
-/// the option label or description. A value list inferred from an option's name (such as
+/// The command documents of <c>schema</c> project the command tree and guess nothing: the commands
+/// the catalog lists are the commands help reaches, and every option's allowed values are the values
+/// its declaration accepts, which help shows in the option label or description. A value list inferred from an option's name (such as
 /// <c>--to</c> or <c>--view</c>) instead of read from the option would differ from help.
 /// </summary>
-public sealed partial class CapabilitiesDeclarationTests : IDisposable
+public sealed partial class SchemaDeclarationTests
 {
-    private readonly TempWorkspace _workspace = new();
-
-    public void Dispose() => _workspace.Dispose();
-
     [Fact]
     public void CommandPaths_AreTheCommandsHelpReaches()
     {
-        JsonNode capabilities = Capabilities();
         string[] listed =
         [
-            .. capabilities["commands"]!.AsArray()
-                .Select(static command => command!["path"]!.GetValue<string>())
+            .. CliCatalog.Current.Commands
+                .Select(static command => Path(command.Words))
                 .Order(StringComparer.Ordinal),
         ];
 
@@ -42,49 +37,24 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
 
         string[] helped = [.. reached.Order(StringComparer.Ordinal)];
         Assert.True(listed.SequenceEqual(helped, StringComparer.Ordinal),
-            "capabilities lists exactly the visible commands help reaches. Only in capabilities: ["
+            "The schema catalog lists exactly the visible commands help reaches. Only in the catalog: ["
             + string.Join(", ", listed.Except(helped)) + "]; only in help: [" + string.Join(", ", helped.Except(listed)) + "].");
-    }
-
-    [Fact]
-    public void ProductSelection_ListsTheProductsCommandsUnderTheSamePaths()
-    {
-        JsonNode capabilities = Capabilities();
-        string[] all = [.. capabilities["commands"]!.AsArray().Select(static command => command!["path"]!.GetValue<string>())];
-        foreach (string product in capabilities["products"]!.AsArray().Select(static product => product!["id"]!.GetValue<string>()))
-        {
-            CliResult result = _workspace.Run("capabilities", product, "--output-format", "json");
-            Assert.True(result.ExitCode == 0, result.StdErr);
-            JsonNode selected = JsonNode.Parse(result.StdOut)!;
-            string[] expected = [.. all.Where(path => path == "aspose-cli " + product || path.StartsWith("aspose-cli " + product + " ", StringComparison.Ordinal))];
-            string[] commands = [.. selected["commands"]!.AsArray().Select(static command => command!["path"]!.GetValue<string>())];
-            string[] productCommands =
-            [
-                .. Assert.Single(selected["products"]!.AsArray())!["commands"]!.AsArray()
-                    .Select(static command => "aspose-cli " + command!["path"]!.GetValue<string>()),
-            ];
-            Assert.True(expected.SequenceEqual(commands, StringComparer.Ordinal),
-                $"capabilities {product} lists the commands of the full tree under {product}; it lists: [{string.Join(", ", commands)}]");
-            Assert.True(expected.Order(StringComparer.Ordinal).SequenceEqual(productCommands.Order(StringComparer.Ordinal), StringComparer.Ordinal),
-                $"The {product} product entry names the same commands, relative to the executable: [{string.Join(", ", productCommands)}]");
-        }
     }
 
     [Fact]
     public void AllowedValues_AreTheValuesHelpShows()
     {
-        JsonNode capabilities = Capabilities();
-        JsonNode[] commands = [.. capabilities["commands"]!.AsArray().Select(static command => command!)];
-        HelpOutputs.Prefetch(commands.Select(static command => command["path"]!.GetValue<string>().Split(' ')[1..]));
+        IReadOnlyList<JsonNode> commands = CliCatalog.Current.CommandNodes;
+        HelpOutputs.Prefetch(commands.Select(static command => Path(command["words"]!.GetValue<string>()).Split(' ')[1..]));
         var problems = new List<string>();
         foreach (JsonNode command in commands)
         {
-            string path = command["path"]!.GetValue<string>();
+            string path = Path(command["words"]!.GetValue<string>());
             Dictionary<string, HelpValues> help = HelpOptions(Help(path));
             foreach (JsonNode? option in command["options"]!.AsArray())
             {
                 string name = option!["name"]!.GetValue<string>();
-                if (option["hidden"]!.GetValue<bool>() || option["type"]!.GetValue<string>() == "boolean")
+                if (option["type"]!.GetValue<string>() == "boolean")
                 {
                     continue;
                 }
@@ -101,23 +71,19 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
                         : declared.SequenceEqual(shown.Values.Order(StringComparer.Ordinal), StringComparer.Ordinal);
                 if (!same)
                 {
-                    problems.Add($"{path} {name}: capabilities [{string.Join(", ", declared)}], help "
+                    problems.Add($"{path} {name}: schema [{string.Join(", ", declared)}], help "
                         + (shown.Count is { } total ? $"{total} values" : $"[{string.Join(", ", shown.Values)}]"));
                 }
             }
         }
 
         Assert.True(problems.Count == 0,
-            "Every option's allowed values in capabilities are the values its declaration accepts, as help shows them:"
+            "Every option's allowed values in its command's schema document are the values its declaration accepts, as help shows them:"
             + Environment.NewLine + string.Join(Environment.NewLine, problems.Order(StringComparer.Ordinal)));
     }
 
-    private JsonNode Capabilities()
-    {
-        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        return JsonNode.Parse(result.StdOut)!;
-    }
+    /// <summary>A command's path from the executable, such as <c>aspose-cli cells read</c>.</summary>
+    private static string Path(string words) => words.Length == 0 ? "aspose-cli" : "aspose-cli " + words;
 
     private static string Help(string path)
     {
@@ -213,6 +179,6 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
     [GeneratedRegex(@"Values: (?<values>[^\[]+?)\.(?=\s*(\[|$))")]
     private static partial Regex ListedValues();
 
-    [GeneratedRegex(@"Accepts (?<count>[0-9]+) values, listed in aspose-cli capabilities\.")]
+    [GeneratedRegex(@"Accepts (?<count>[0-9]+) values, listed in the command's document of aspose-cli schema\.")]
     private static partial Regex CountedValues();
 }

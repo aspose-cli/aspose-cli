@@ -291,13 +291,11 @@ public sealed class ProductContractAnalyzerTests
                     {
                         Id = "deferred",
                         DisplayName = "Deferred",
-                        Engine = new Aspose.Cli.Sdk.Contracts.ProductEngineCapabilities
+                        Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
                         {
-                            Id = "aspose",
                             Sdk = "Aspose.Test",
                             SdkVersion = "1.0.0",
                         },
-                        AvailableEngines = new[] { "aspose" },
                     })
                     .Activator(context =>
                     {
@@ -418,13 +416,11 @@ public sealed class ProductContractAnalyzerTests
                     {
                         Id = "menu",
                         DisplayName = "Menu",
-                        Engine = new Aspose.Cli.Sdk.Contracts.ProductEngineCapabilities
+                        Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
                         {
-                            Id = "aspose",
                             Sdk = "Aspose.Test",
                             SdkVersion = "1.0.0",
                         },
-                        AvailableEngines = new[] { "aspose" },
                     })
                     {{menu}}
                     .Build();

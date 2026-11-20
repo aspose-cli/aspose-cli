@@ -68,8 +68,15 @@ internal static class VersionOutput
             : VersionInfo.ArtifactVersion,
         SourceRevision = VersionInfo.SourceRevision,
         BuildDirty = VersionInfo.BuildDirty,
-        EnginePins = CliCapabilitySnapshot.EnginePins(
-            catalog.Products.Select(catalog.GetCapabilities)),
+        EnginePins = catalog.Products
+            .Select(static product => new EnginePin
+            {
+                Product = product.Manifest.Id,
+                Engine = product.Manifest.Engine.Sdk,
+                Version = product.Manifest.Engine.SdkVersion,
+            })
+            .OrderBy(static pin => pin.Product, StringComparer.Ordinal)
+            .ToArray(),
     };
 
     private sealed class VersionAction(

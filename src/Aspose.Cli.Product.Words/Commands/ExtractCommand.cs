@@ -33,7 +33,7 @@ internal static class ExtractCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
+                CommandHelpLink.Schema(WordsModule.Manifest, "extract-result", "the fields of the extract result"),
             ],
         };
     }

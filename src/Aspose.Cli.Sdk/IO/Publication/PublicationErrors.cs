@@ -73,7 +73,6 @@ internal static class PublicationErrors
                 original.Code,
                 original.Message,
                 details: originalDetails,
-                docs: original.Docs,
                 innerException: original);
         }
 

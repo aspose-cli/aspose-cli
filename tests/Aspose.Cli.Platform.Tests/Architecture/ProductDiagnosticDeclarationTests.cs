@@ -31,7 +31,7 @@ public sealed class ProductDiagnosticDeclarationTests
                 .Select(declaration => owner.File.At(declaration.Node, $"{owner.Name}.{declaration.Name} is not in {owner.Name}.{AllMember}"))),
         ];
         OwnershipSourceFiles.AssertNone(missing,
-            $"A product's or the Host's diagnostics class lists every code it declares in its {AllMember}, which capabilities publishes:");
+            $"A product's or the Host's diagnostics class lists every code it declares in its {AllMember}, which the diagnostics document of schema publishes:");
 
         string[] orphans =
         [

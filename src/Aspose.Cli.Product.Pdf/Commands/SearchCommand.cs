@@ -17,6 +17,6 @@ internal static class SearchCommand
             ],
             links:
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "search-result", "the fields of the search result"),
             ]);
 }

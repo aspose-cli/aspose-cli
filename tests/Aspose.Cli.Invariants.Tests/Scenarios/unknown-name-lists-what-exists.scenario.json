@@ -1,22 +1,6 @@
 {
-  "name": "an unknown guide, schema or operation name lists what exists",
+  "name": "an unknown schema id lists what exists",
   "steps": [
-    {
-      "args": [
-        "docs",
-        "edting"
-      ],
-      "expect": {
-        "exitCode": 2,
-        "error": "OPTION_INVALID",
-        "json": [
-          {
-            "path": "error.details.available",
-            "contains": "editing"
-          }
-        ]
-      }
-    },
     {
       "args": [
         "schema",
@@ -36,9 +20,7 @@
     {
       "args": [
         "schema",
-        "v2/pdf/ops",
-        "--operation",
-        "fild"
+        "v2/pdf/ops/fild"
       ],
       "expect": {
         "exitCode": 2,
@@ -46,7 +28,7 @@
         "json": [
           {
             "path": "error.details.available",
-            "contains": "field"
+            "contains": "v2/pdf/ops/field"
           }
         ]
       }

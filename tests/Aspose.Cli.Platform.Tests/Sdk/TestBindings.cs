@@ -89,13 +89,11 @@ internal static class TestProducts
     {
         Id = "test",
         DisplayName = "Test",
-        Engine = new ProductEngineCapabilities
+        Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
         {
-            Id = "aspose",
             Sdk = "Aspose.Test",
             SdkVersion = "1.0.0",
         },
-        AvailableEngines = ["aspose"],
     };
 
     /// <summary>The product command whose menu <paramref name="menu"/> adds and whose commands run through <paramref name="runner"/>.</summary>

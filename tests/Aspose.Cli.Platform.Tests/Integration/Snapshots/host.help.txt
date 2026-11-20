@@ -1,6 +1,6 @@
 ## aspose-cli --help
 Description:
-  Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. Structured commands print JSON contract envelopes; explicit schema and docs documents remain raw.
+  Aspose CLI: read, edit, convert and render documents with the Aspose engines. Every command prints JSON; 'schema' lists the commands and the documents that describe them.
 
 Usage:
   aspose-cli [command] [options]
@@ -16,73 +16,22 @@ Options:
   --version                            Show version information
 
 Commands:
-  cells                             Read, edit, convert and render workbooks through the Aspose.Cells object model.
-  pdf                               Read, edit, convert and render PDF documents through the Aspose.PDF object model.
-  slides                            Read, edit, convert and render presentations through the Aspose.Slides object model.
-  words                             Read, edit, convert and render documents through the Aspose.Words object model.
-  license                           Inspect and manage the Aspose license used by the CLI.
-  capabilities <product> <command>  Describe everything this build supports (products, verbs, formats), as data.
-  skill                             List or install Agent Skills bundled with this binary.
-  schema <id>                       List schema ids as an envelope, or print one raw JSON Schema document when an id is supplied.
-  docs <topic>                      Print an offline reference document bundled with this binary.
-  fonts                             Diagnose the font environment used for rendering.
+  cells        Read, edit, convert and render workbooks through the Aspose.Cells object model.
+  pdf          Read, edit, convert and render PDF documents through the Aspose.PDF object model.
+  slides       Read, edit, convert and render presentations through the Aspose.Slides object model.
+  words        Read, edit, convert and render documents through the Aspose.Words object model.
+  license      Inspect and manage the Aspose license used by the CLI.
+  skill        List or install Agent Skills bundled with this binary.
+  schema <id>  Print the catalog of products, commands and document ids, or the document an id names.
+  fonts        Diagnose the font environment used for rendering.
 
 Examples:
-  aspose-cli capabilities cells edit --output-format json
   aspose-cli schema
+  aspose-cli license status
 
 Learn more:
-  aspose-cli docs                    offline documentation bundled in this binary
-  aspose-cli schema                  the available JSON Schema identifiers
-  aspose-cli capabilities --summary  each product's commands, formats and operations
-
-
-## aspose-cli capabilities --help
-Description:
-  Describe everything this build supports (products, verbs, formats), as data.
-
-Usage:
-  aspose-cli capabilities [<product> [<command>]] [options]
-
-Arguments:
-  <product>  Product id, such as pdf: describe only that product.
-  <command>  Product-relative command path, such as edit: describe only that command.
-
-Options:
-  --summary  List only each product's commands, formats and edit operation names.
-
-Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli capabilities --summary
-  aspose-cli capabilities cells --output-format json
-  aspose-cli capabilities cells edit --output-format json
-
-Learn more:
-  aspose-cli schema  the available JSON Schema identifiers
-  aspose-cli docs    offline documentation bundled in this binary
-
-
-## aspose-cli docs --help
-Description:
-  Print an offline reference document bundled with this binary.
-
-Usage:
-  aspose-cli docs [<topic>]
-
-Arguments:
-  <topic>  Doc topic to print; omit to list the available topics.
-
-Global options:
-  -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli docs
-  aspose-cli docs verification
-
-Learn more:
-  aspose-cli docs  offline documentation bundled in this binary
+  aspose-cli schema      the products, commands, formats and document ids
+  aspose-cli skill list  the Agent Skills bundled with this build
 
 
 ## aspose-cli fonts --help
@@ -102,7 +51,7 @@ Examples:
   aspose-cli fonts list --output-format json
 
 Learn more:
-  aspose-cli docs verification  the delivery checklist and fonts
+  aspose-cli schema v2/common/font-list  the fields of the font list
 
 
 ## aspose-cli fonts list --help
@@ -123,7 +72,7 @@ Examples:
   aspose-cli fonts list --output-format json
 
 Learn more:
-  aspose-cli docs verification  the delivery checklist and fonts
+  aspose-cli schema v2/common/font-list  the fields of the font list
 
 
 ## aspose-cli license --help
@@ -146,7 +95,7 @@ Examples:
   aspose-cli license install Aspose.Total.lic
 
 Learn more:
-  aspose-cli docs licensing  license sources, installation and evaluation mode
+  aspose-cli schema v2/common/license-status  the fields of the license status
 
 
 ## aspose-cli license install --help
@@ -171,7 +120,7 @@ Examples:
   aspose-cli license install Aspose.Total.lic --dry-run
 
 Learn more:
-  aspose-cli docs licensing  license sources, installation and evaluation mode
+  aspose-cli schema v2/common/license-status  the fields of the license status
 
 
 ## aspose-cli license remove --help
@@ -193,7 +142,7 @@ Examples:
   aspose-cli license remove
 
 Learn more:
-  aspose-cli docs licensing  license sources, installation and evaluation mode
+  aspose-cli schema v2/common/license-status  the fields of the license status
 
 
 ## aspose-cli license status --help
@@ -214,31 +163,29 @@ Examples:
   aspose-cli license status --output-format json
 
 Learn more:
-  aspose-cli docs licensing  license sources, installation and evaluation mode
+  aspose-cli schema v2/common/license-status  the fields of the license status
 
 
 ## aspose-cli schema --help
 Description:
-  List schema ids as an envelope, or print one raw JSON Schema document when an id is supplied.
+  Print the catalog of products, commands and document ids, or the document an id names.
 
 Usage:
-  aspose-cli schema [<id>] [options]
+  aspose-cli schema [<id>]
 
 Arguments:
-  <id>  Schema id to print; omit it to return the available ids.
-
-Options:
-  --operation <operation>  Narrow an ops schema to one exact operation id.
+  <id>  Id of the document to print: one the catalog lists, or a part of an object table's schema that its directory names; omit it for the catalog.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli schema
-  aspose-cli schema v2/common/error
+  aspose-cli schema v2/common/diagnostics
 
 Learn more:
-  aspose-cli capabilities --summary  each product's commands, formats and operations
+  aspose-cli schema v2/common/schema-catalog  the fields of the catalog
+  aspose-cli skill list                       the Agent Skills bundled with this build
 
 
 ## aspose-cli skill --help
@@ -261,7 +208,7 @@ Examples:
   aspose-cli skill install aspose-cli-platform --host claude-code --user
 
 Learn more:
-  aspose-cli docs  offline documentation bundled in this binary
+  aspose-cli skill list  the Agent Skills bundled with this build
 
 
 ## aspose-cli skill install --help
@@ -289,7 +236,7 @@ Examples:
   aspose-cli skill install aspose-cli-platform --host claude-code --user --dry-run
 
 Learn more:
-  aspose-cli docs  offline documentation bundled in this binary
+  aspose-cli skill list  the Agent Skills bundled with this build
 
 
 ## aspose-cli skill list --help
@@ -307,6 +254,6 @@ Examples:
   aspose-cli skill list --output-format json
 
 Learn more:
-  aspose-cli docs  offline documentation bundled in this binary
+  aspose-cli schema v2/common/skill-list  the fields of the skill list
 
 

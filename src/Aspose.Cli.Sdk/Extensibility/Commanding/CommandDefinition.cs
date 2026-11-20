@@ -27,7 +27,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <list type="bullet">
 /// <item>The menu line in the product module pairs the definition factory with the handler:
 /// <c>.Command(RenderCommand.Create, DocumentRender.Run)</c>. The menu lists only method groups; its order is the order of help and
-/// capabilities. <c>.Describe(description, help)</c> gives the product command its help, and
+/// the schema catalog. <c>.Describe(description, help)</c> gives the product command its help, and
 /// <c>.Guard((session, run) =&gt; …)</c> wraps every handler and view adapter call.</item>
 /// <item>The session is an immutable record of the dependencies the handlers share, built by the
 /// product's activator from the binding: for a licensed engine its <c>OutputPipeline&lt;TDocument&gt;</c>
@@ -104,7 +104,7 @@ public sealed class CommandDefinition<TRequest, TResult>
 
     /// <summary>
     /// Loads the object table whose operation documents the command applies; <see cref="TableCommands"/>
-    /// sets it. The table names engine types, so nothing calls it to build help or capabilities.
+    /// sets it. The table names engine types, so nothing calls it to build help or the schema documents.
     /// </summary>
     internal Func<Tables.DocumentTable>? Table { get; init; }
 

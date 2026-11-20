@@ -14,16 +14,14 @@ public sealed class PdfModule : IProductModule
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
             ResourceBudgets =
             [
-                ResourceBudgetCapabilities.Domain(PdfBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),
-                ResourceBudgetCapabilities.Domain(PdfBudgetDomains.Objects, 1_000_000, 5_000_000, "items", "post-load"),
+                ResourceBudget.Domain(PdfBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),
+                ResourceBudget.Domain(PdfBudgetDomains.Objects, 1_000_000, 5_000_000, "items", "post-load"),
             ],
-            Engine = new ProductEngineCapabilities
+            Engine = new ProductEngine
             {
-                Id = "aspose",
                 Sdk = ProductBuildMetadata.EngineName,
                 SdkVersion = ProductBuildMetadata.SdkVersion,
             },
-            AvailableEngines = ["aspose"],
     };
 
     /// <summary>Loads the PDF object table, which names engine types: the commands call it only when they run.</summary>
@@ -56,6 +54,6 @@ public sealed class PdfModule : IProductModule
             "pdf edit form.pdf --ops ops.json --out filled.pdf",
         ],
         [
-            new("aspose-cli schema v2/pdf/ops --operation directory", "the object table: kinds, addresses, rows, adds and actions"),
+            new("aspose-cli schema v2/pdf/ops/directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

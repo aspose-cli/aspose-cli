@@ -338,13 +338,11 @@ public sealed class ProductFileRouterTests
                 {
                     Id = "unsafe",
                     DisplayName = "unsafe",
-                    Engine = new ProductEngineCapabilities
+                    Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
                     {
-                        Id = "aspose",
                         Sdk = "Aspose.Test",
                         SdkVersion = "1.0.0",
                     },
-                    AvailableEngines = ["aspose"],
                 })
             .Formats(
             [
@@ -509,7 +507,6 @@ public sealed class ProductFileRouterTests
         {
             Assert.True(catalog.TryGetDefaultOwner(".txt", out ProductDefinition? owner));
             Assert.Equal("one", owner!.Manifest.Id);
-            Assert.Equal("two", Assert.Single(catalog.GetRoutingCapabilities().Routes, static route => route.Extension == ".rows").Product);
 
             ProductDefinition routed = await new ProductFileRouter(catalog).RouteAsync(path);
             Assert.Equal("one", routed.Manifest.Id);
@@ -653,13 +650,11 @@ public sealed class ProductFileRouterTests
             {
                 Id = id,
                 DisplayName = id,
-                Engine = new ProductEngineCapabilities
+                Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
                 {
-                    Id = "aspose",
                     Sdk = "Aspose.Test",
                     SdkVersion = "1.0.0",
                 },
-                AvailableEngines = ["aspose"],
             })
             .Formats(
             [
@@ -716,13 +711,11 @@ public sealed class ProductFileRouterTests
     {
         Id = id,
         DisplayName = id,
-        Engine = new ProductEngineCapabilities
+        Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
         {
-            Id = "aspose",
             Sdk = "Aspose.Test",
             SdkVersion = "1.0.0",
         },
-        AvailableEngines = ["aspose"],
     };
 
     private static IFileRecognizer Match(FileRecognitionKind kind) =>

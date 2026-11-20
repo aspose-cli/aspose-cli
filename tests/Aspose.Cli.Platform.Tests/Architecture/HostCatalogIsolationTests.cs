@@ -31,16 +31,6 @@ public sealed class HostCatalogIsolationTests
         Assert.DoesNotContain(alphaRoot.Subcommands, static command => command.Name == "beta");
         Assert.Contains(betaRoot.Subcommands, static command => command.Name == "beta");
         Assert.DoesNotContain(betaRoot.Subcommands, static command => command.Name == "alpha");
-
-        Command capabilities = alphaRoot.Subcommands.Single(
-            static command => command.Name == "capabilities");
-        Assert.True(capabilities.TryGetHelpMetadata(out CommandHelpMetadata? metadata));
-        Assert.Equal(
-        [
-            "aspose-cli capabilities --summary",
-            "aspose-cli capabilities alpha --output-format json",
-        ],
-            metadata!.Examples);
     }
 
     private static ProductCatalog Catalog(string id, string extension)
@@ -50,13 +40,11 @@ public sealed class HostCatalogIsolationTests
                 {
                     Id = id,
                     DisplayName = id,
-                    Engine = new ProductEngineCapabilities
+                    Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
                     {
-                        Id = "test",
                         Sdk = "Aspose.Test",
                         SdkVersion = "1.0.0",
                     },
-                    AvailableEngines = ["test"],
                 })
             .Formats(
             [

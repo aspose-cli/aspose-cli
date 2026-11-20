@@ -97,13 +97,13 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The text capabilities publishes for people and agents: the descriptions of the visible
-    /// commands and of their visible options and arguments, which help prints too. Schema
-    /// descriptions and Skills are outside capabilities, so this part does not read them.
+    /// The text the command documents publish for people and agents: the descriptions of the
+    /// commands and of their options and arguments, which help prints too. Schema descriptions and
+    /// Skills are outside the command documents, so this part does not read them.
     /// </summary>
     private static IEnumerable<(string Where, string Text)> PublicTexts(CliCatalog catalog, IReadOnlyList<TreeCommand> tree)
     {
-        foreach ((TreeCommand command, JsonNode node) in tree.Zip(catalog.Document["commands"]!.AsArray().Select(static node => node!)))
+        foreach ((TreeCommand command, JsonNode node) in tree.Zip(catalog.CommandNodes))
         {
             yield return ($"The description of {command}", node["description"]?.GetValue<string>() ?? string.Empty);
             foreach (TreeOption option in command.Options.Where(static option => !option.Hidden))
@@ -398,10 +398,9 @@ internal static partial class ContractRules
 
     private static IEnumerable<InvariantCase> R36(CliCatalog catalog)
     {
-        foreach (JsonNode product in catalog.Document["products"]!.AsArray().Select(static product => product!))
+        foreach (string id in catalog.Products.Select(static product => product.Id))
         {
-            string id = product["id"]!.GetValue<string>();
-            JsonNode[] formats = [.. product["formats"]!.AsArray().Select(static format => format!)];
+            JsonNode[] formats = [.. catalog.FormatNodes(id)];
             yield return Check("C-R36", $"{id} formats", () =>
             [
                 .. formats
@@ -417,7 +416,7 @@ internal static partial class ContractRules
                 yield return Check("C-R36", $"{command} --to", () =>
                 {
                     string list = command.ProductVerb == "render" ? "renderFormats" : "convertFormats";
-                    string[] expected = [.. CommandTree.Strings(product[list]).Order(StringComparer.Ordinal)];
+                    string[] expected = [.. (list == "renderFormats" ? catalog.Product(id).RenderFormats : catalog.Product(id).ConvertFormats).Order(StringComparer.Ordinal)];
                     string[] actual = [.. command.Option("--to")!.AllowedValues.Order(StringComparer.Ordinal)];
                     return actual.SequenceEqual(expected, StringComparer.Ordinal)
                         ? []

@@ -90,13 +90,11 @@ public sealed class DiagnosticCatalogTests
             {
                 Id = id,
                 DisplayName = id,
-                Engine = new Aspose.Cli.Sdk.Contracts.ProductEngineCapabilities
+                Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
                 {
-                    Id = "aspose",
                     Sdk = "Aspose.Test",
                     SdkVersion = "1.0.0",
                 },
-                AvailableEngines = ["aspose"],
             })
             .Formats(
             [

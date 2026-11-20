@@ -31,7 +31,7 @@ internal static class CreateCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each Pdf command is for"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "create-result", "the fields of the create result"),
             ],
         };
     }

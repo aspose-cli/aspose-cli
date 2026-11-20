@@ -71,7 +71,7 @@ internal static class ConvertCommand
             ],
             Links =
             [
-                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
+                CommandHelpLink.Schema(WordsModule.Manifest, "convert-result", "the fields of the convert result"),
             ],
         };
     }

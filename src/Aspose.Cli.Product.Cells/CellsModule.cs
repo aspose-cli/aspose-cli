@@ -15,17 +15,15 @@ public sealed class CellsModule : IProductModule
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
             ResourceBudgets =
             [
-                ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Sheets, 1_000, 10_000, "items", "post-load"),
-                ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Cells, 10_000_000, 100_000_000, "items", "post-load"),
-                ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Objects, 100_000, 1_000_000, "items", "post-load"),
+                ResourceBudget.Domain(CellsBudgetDomains.Sheets, 1_000, 10_000, "items", "post-load"),
+                ResourceBudget.Domain(CellsBudgetDomains.Cells, 10_000_000, 100_000_000, "items", "post-load"),
+                ResourceBudget.Domain(CellsBudgetDomains.Objects, 100_000, 1_000_000, "items", "post-load"),
             ],
-            Engine = new ProductEngineCapabilities
+            Engine = new ProductEngine
             {
-                Id = "aspose",
                 Sdk = ProductBuildMetadata.EngineName,
                 SdkVersion = ProductBuildMetadata.SdkVersion,
             },
-            AvailableEngines = ["aspose"],
     };
 
     /// <summary>Loads the Cells object table, which names engine types: the commands call it only when they run.</summary>
@@ -54,6 +52,6 @@ public sealed class CellsModule : IProductModule
             "cells edit book.xlsx --ops ops.json --out revised.xlsx",
         ],
         [
-            new("aspose-cli schema v2/cells/ops --operation directory", "the object table: kinds, addresses, rows, adds and actions"),
+            new("aspose-cli schema v2/cells/ops/directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

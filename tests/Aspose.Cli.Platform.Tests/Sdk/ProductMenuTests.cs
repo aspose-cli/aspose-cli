@@ -30,13 +30,11 @@ public sealed class ProductMenuTests : IDisposable
     {
         Id = "menu",
         DisplayName = "Menu",
-        Engine = new ProductEngineCapabilities
+        Engine = new Aspose.Cli.Sdk.Extensibility.ProductEngine
         {
-            Id = "aspose",
             Sdk = "Aspose.Test",
             SdkVersion = "1.0.0",
         },
-        AvailableEngines = ["aspose"],
     };
 
     // What the commands, guard and font scope of one test did, in order. The tests of a class
@@ -69,7 +67,7 @@ public sealed class ProductMenuTests : IDisposable
         Assert.Equal(["inspect", "read", "search"], product.Subcommands.Select(static command => command.Name));
         Assert.True(product.TryGetHelpMetadata(out CommandHelpMetadata? help));
         Assert.Equal(["aspose-cli menu inspect doc.test"], help!.Examples);
-        Assert.Equal(["aspose-cli docs menu/editing"], help.LearnMore.Select(static link => link.Command));
+        Assert.Equal([$"aspose-cli schema {Aspose.Cli.Sdk.Contracts.ResultEnvelope.CatalogId("menu", "inspect-result")}"], help.LearnMore.Select(static link => link.Command));
         Assert.True(product.Subcommands[0].TryGetHelpMetadata(out CommandHelpMetadata? info));
         Assert.Equal(["aspose-cli menu inspect doc.test --font-dir fonts"], info!.Examples);
     }
@@ -194,7 +192,7 @@ public sealed class ProductMenuTests : IDisposable
         ExtProduct.Define<TestSession>(Manifest)
             .Describe("A product in a menu.", static () => new CommandHelp(
                 ["menu inspect doc.test"],
-                [CommandHelpLink.Docs(Manifest, "editing", "editing")]))
+                [CommandHelpLink.Schema(Manifest, "inspect-result", "the inspect result")]))
             .Guard(static (session, run) =>
             {
                 session.Log.Add("guard >");

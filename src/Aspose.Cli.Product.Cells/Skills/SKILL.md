@@ -21,11 +21,11 @@ errors) are in the Platform Skill.
 
 ## The object table
 
-`aspose-cli schema v2/cells/ops --operation directory` lists the vocabulary in one short JSON
+`aspose-cli schema v2/cells/ops/directory` lists the vocabulary in one short JSON
 document: each kind with its address forms, the rows a set writes (`rows`) and the rows that are
 read only (`readOnlyRows`), and whether it can be deleted and moved; each add with the kind it adds
 to and its parameters; each action with its parameters. One entry in full, with each row's type and
-the engine member it names: `--operation style`, `--operation add.chart`, `--operation do.sort`. A
+the engine member it names: `ops/style`, `ops/add.chart`, `ops/do.sort`. A
 row names one engine member; setting it sets that member only, and whatever else the engine
 changes with it is the engine's doing. Colors are `#RRGGBB`, sizes are points unless the row names
 another unit (a column's `width` is in characters), enumeration values are the engine's member
@@ -99,7 +99,7 @@ aspose-cli cells edit book.xlsx --ops ops.json --out book.edited.xlsx
 - A position in `at` is read after the whole batch: when a later operation inserts or deletes
   before it, `now` is whatever object is at that position then.
 - Every argument of an add or an action is the engine call's parameter of that name; the ones not
-  given are not passed. `--operation add.<name>` and `--operation do.<name>` list them. An
+  given are not passed. `ops/add.<name>` and `ops/do.<name>` list them. An
   argument that takes an object takes its address: `{"do": "sort", "args": {"range":
   "sheet/Sales/range/A1:C5", …}}`.
 

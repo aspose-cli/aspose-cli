@@ -518,14 +518,11 @@ internal static partial class ContractRules
         string rootTypo = InvariantCases.Typo(first, commands);
         yield return R26Case(output, $"command {first} as {rootTypo}", InvariantCases.Platform,
             new Invocation([rootTypo]));
-        string[] products = [.. catalog.Products.Select(static product => product.Id)];
-        string productTypo = InvariantCases.Typo(first, products);
-        yield return R26Case(output, $"capabilities product {first} as {productTypo}", InvariantCases.Platform,
-            new Invocation(["capabilities", productTypo]));
-        // editing is the platform guide every build ships (aspose-cli docs lists the topics).
-        const string Topic = "editing";
-        yield return R26Case(output, $"docs topic {Topic} as {InvariantCases.Typo(Topic, [Topic])}", InvariantCases.Platform,
-            new Invocation(["docs", InvariantCases.Typo(Topic, [Topic])]));
+        // An unknown part of an object table lists the table's parts.
+        string ops = catalog.Ids.First(static id => id.EndsWith("/ops", StringComparison.Ordinal));
+        const string Part = "directory";
+        yield return R26Case(output, $"schema part {Part} as {InvariantCases.Typo(Part, [Part])}", InvariantCases.Platform,
+            new Invocation(["schema", $"{ops}/{InvariantCases.Typo(Part, [Part])}"]));
         if (catalog.Commands.FirstOrDefault(static command => command.Product == "cells" && command.Has("--sheet") && !command.Has("--out")
             && command.Arguments.Any(static argument => argument.Required && argument.InputKind == "file")) is { } sheets)
         {
@@ -537,11 +534,10 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>The extensions of the formats <paramref name="ids"/> of a product, in the order capabilities lists them.</summary>
+    /// <summary>The extensions of the formats <paramref name="ids"/> of a product, in the order the formats document lists them.</summary>
     private static IEnumerable<string> Extensions(CliCatalog catalog, string product, IEnumerable<string> ids) =>
-        ids.SelectMany(id => catalog.Document["products"]!.AsArray()
-            .Single(entry => entry!["id"]!.GetValue<string>() == product)!["formats"]!.AsArray()
-            .Single(format => format!["id"]!.GetValue<string>() == id)!["extensions"]!.AsArray()
+        ids.SelectMany(id => catalog.FormatNodes(product)
+            .Single(format => format["id"]!.GetValue<string>() == id)["extensions"]!.AsArray()
             .Select(static extension => extension!.GetValue<string>()))
         .Distinct(StringComparer.OrdinalIgnoreCase);
 

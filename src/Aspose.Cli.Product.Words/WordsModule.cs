@@ -15,15 +15,13 @@ public sealed class WordsModule : IProductModule
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
             ResourceBudgets =
             [
-                ResourceBudgetCapabilities.Domain(WordsBudgetDomains.Nodes, 1_000_000, 5_000_000, "items", "post-load"),
+                ResourceBudget.Domain(WordsBudgetDomains.Nodes, 1_000_000, 5_000_000, "items", "post-load"),
             ],
-            Engine = new ProductEngineCapabilities
+            Engine = new ProductEngine
             {
-                Id = "aspose",
                 Sdk = ProductBuildMetadata.EngineName,
                 SdkVersion = ProductBuildMetadata.SdkVersion,
             },
-            AvailableEngines = ["aspose"],
     };
 
     /// <summary>Loads the Words object table, which names engine types: the commands call it only when they run.</summary>
@@ -55,6 +53,6 @@ public sealed class WordsModule : IProductModule
             "words edit contract.docx --ops ops.json --out revised.docx",
         ],
         [
-            new("aspose-cli schema v2/words/ops --operation directory", "the object table: kinds, addresses, rows, adds and actions"),
+            new("aspose-cli schema v2/words/ops/directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

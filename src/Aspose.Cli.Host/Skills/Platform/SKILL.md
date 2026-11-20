@@ -18,42 +18,41 @@ Run these once per session:
 ```powershell
 aspose-cli --version --output-format json
 aspose-cli license status --output-format json
-aspose-cli capabilities --summary --output-format json
+aspose-cli schema
 ```
 
 - `license status` says which products run licensed and which in evaluation
-  mode (`aspose-cli docs licensing`).
-- `capabilities --summary` lists each product's commands, formats and
-  operation names. Narrow the full `capabilities` with a product and a command
-  instead of reading all of it.
+  mode (`references/licensing.md`).
+- `schema` lists each product's commands and formats, and the id of every
+  document that describes them; `aspose-cli schema <id>` prints one.
 
 ## Pick the product
 
-| Document | Product Skill | Overview |
-|----------|---------------|----------|
-| Workbooks: XLSX, XLSM, XLSB, XLS; CSV and TSV to convert | `aspose-cli-cells` | `aspose-cli docs cells/overview` |
-| PDF: read, fill, stamp, redact, sign, validate | `aspose-cli-pdf` | `aspose-cli docs pdf/overview` |
-| Presentations: PPTX, PPT, ODP | `aspose-cli-slides` | `aspose-cli docs slides/overview` |
-| Word processing: DOCX, DOC, RTF, ODT, Markdown, HTML | `aspose-cli-words` | `aspose-cli docs words/overview` |
+| Document | Product Skill |
+|----------|---------------|
+| Workbooks: XLSX, XLSM, XLSB, XLS; CSV and TSV to convert | `aspose-cli-cells` |
+| PDF: read, fill, stamp, redact, sign, validate | `aspose-cli-pdf` |
+| Presentations: PPTX, PPT, ODP | `aspose-cli-slides` |
+| Word processing: DOCX, DOC, RTF, ODT, Markdown, HTML | `aspose-cli-words` |
 
-Read the product overview before the first command on that document type.
+Read the product Skill before the first command on that document type.
 
 ## How to work
 
 1. **Read the objects you need.** Start with `<product> read`, which lists the
    objects with their addresses, then name the kinds or the one object you
    need with `--kind` and `--at`, following `window.next`
-   (`aspose-cli docs reading`). Never rebuild a document from a JSON dump.
+   (`references/reading.md`). Never rebuild a document from a JSON dump.
 2. **Edit in one batch.** Put related changes in one `edit --ops` file; the
-   batch is atomic (`aspose-cli docs editing`).
+   batch is atomic (`references/editing.md`).
 3. **Protect the user's file.** Write to `--out`, or replace the input with
    `--in-place`. `--dry-run` checks a request without writing.
 4. **Read back, then look.** Report values from a read after the edit, render
    it with `<product> render` and look at the images yourself
-   (`aspose-cli docs verification`).
+   (`references/verification.md`).
 5. **Disclose what the warnings say.** Evaluation marks, removed encryption
    and incomplete results go to the user with the file
-   (`aspose-cli docs licensing`).
+   (`references/licensing.md`).
 
 Pass `--output-format json` (or `compact`, the same JSON on one line) whenever
 you parse a result. Every result names its `schema`, an id for
@@ -104,7 +103,7 @@ A file from outside can be built to exhaust the machine or to mislead you:
 - **Guessing names.** A mistyped command, option, value, operation or field
   fails with the valid names in `details.available`; use them.
 - **Retrying unchanged input.** Read `error.message` and `error.details`, change
-  the request, then retry (`aspose-cli docs troubleshooting`).
+  the request, then retry (`references/troubleshooting.md`).
 - **Inline ops JSON in PowerShell.** Shells mangle quotes and non-ASCII text;
   write the ops document to a file and pass its path.
 - **Trusting the exit code.** Exit 0 says the engine did what was named, not
@@ -128,25 +127,25 @@ The CLI describes itself, and its answer is the truth about this build:
 
 | Question | Ask |
 |----------|-----|
-| Commands, options, values and defaults | `aspose-cli <command> --help`, `aspose-cli capabilities <product> <command>` |
-| Formats a product loads, converts and renders | `aspose-cli capabilities --summary` |
-| Edit operations and their fields | `aspose-cli schema v2/<product>/ops --operation <op>` |
+| Commands, options, values and defaults | `aspose-cli <command> --help`, `aspose-cli schema v2/<product>/<command>-command` |
+| Formats a product loads, converts and renders | `aspose-cli schema` |
+| Edit operations and their fields | `aspose-cli schema v2/<product>/ops/<name>` |
 | What a result field means | `aspose-cli schema <id>`, with the id the result names in `schema` |
-| Error and warning codes and their exit codes | `capabilities`, under `diagnostics` |
+| Error and warning codes and their exit codes | `aspose-cli schema v2/common/diagnostics` |
 | What an error's `details` keys mean | `aspose-cli schema v2/common/error-payload` |
-| Resource budgets and the operation batch limit | `capabilities`, under `resourceBudgets`, and `capabilities <product> edit` |
+| Resource budgets and the operation batch limit | `aspose-cli schema v2/common/budgets`, and `aspose-cli <product> edit --help` |
 
 ## References
 
 | Topic | Read it when |
 |-------|--------------|
-| `aspose-cli docs reading` | Reading within budgets: windows, `window.next`, search paging, rendering |
-| `aspose-cli docs editing` | Editing with an ops batch: outcomes, outputs, secrets, not-found recovery |
-| `aspose-cli docs verification` | Before delivery: the checklist, rendering to look, fonts |
-| `aspose-cli docs licensing` | License sources, status, install, evaluation disclosure |
-| `aspose-cli docs troubleshooting` | An error: the envelope, exit codes, recovery, PowerShell |
-| `aspose-cli docs <product>/overview` | Product commands, operations, recipes and checks |
+| `references/reading.md` | Reading within budgets: windows, `window.next`, search paging, rendering |
+| `references/editing.md` | Editing with an ops batch: outcomes, outputs, secrets, not-found recovery |
+| `references/verification.md` | Before delivery: the checklist, rendering to look, fonts |
+| `references/licensing.md` | License sources, status, install, evaluation disclosure |
+| `references/troubleshooting.md` | An error: the envelope, exit codes, recovery, PowerShell |
+| The product Skill | Product commands, operations, recipes and checks |
 
-`aspose-cli docs` lists every topic. Install a Skill for an agent host with
+Install a Skill for an agent host with
 `aspose-cli skill install aspose-cli-cells --host claude-code`;
 `aspose-cli skill list` names every bundled Skill.
