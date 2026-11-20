@@ -98,10 +98,9 @@ public sealed class DiagnosticCatalogTests
             })
             .Formats(
             [
-                FormatDescriptor.Input(
+                FormatDescriptor.Declare(
                     "alpha",
-                    0,
-                    RouteOwnership.Explicit,
+                    FormatUse.Input,
                     ".alpha"),
             ])
             .Diagnostics(diagnostics)

@@ -21,7 +21,7 @@ public sealed class CommandDefinitionTests : IDisposable
     private static readonly EncryptedOutput Encrypted = new("the output report");
 
     // The one format the commands below write without a --to.
-    private static readonly FormatDescriptor[] Out = [FormatDescriptor.Declare("out", FormatUse.Convert, false, ".out", ".test")];
+    private static readonly FormatDescriptor[] Out = [FormatDescriptor.Declare("out", FormatUse.Convert, ".out", ".test")];
 
     private static CommandTraits Paired => new()
     {
@@ -268,7 +268,7 @@ public sealed class CommandDefinitionTests : IDisposable
             {
                 Input = Report,
                 Output = OutputTarget.Directory("Parts."),
-                Target = TargetFormat.Convert("Form format.", [FormatDescriptor.Declare("form", FormatUse.Convert, false, ".form", ".xfdf")]),
+                Target = TargetFormat.Convert("Form format.", [FormatDescriptor.Declare("form", FormatUse.Convert, ".form", ".xfdf")]),
             },
             (_, _) => Result()));
 
@@ -296,10 +296,10 @@ public sealed class CommandDefinitionTests : IDisposable
     {
         FormatDescriptor[] formats =
         [
-            FormatDescriptor.Declare("png", FormatUse.Render, false, ".png"),
-            FormatDescriptor.Declare("jpeg", FormatUse.Render, false, ".jpg", ".jpeg") with { Aliases = ["jpg"] },
-            FormatDescriptor.Declare("svg", FormatUse.Render, false, ".svg"),
-            FormatDescriptor.Declare("doc", FormatUse.Convert, false, ".doc"),
+            FormatDescriptor.Declare("png", FormatUse.Render, ".png"),
+            FormatDescriptor.Declare("jpeg", FormatUse.Render, ".jpg", ".jpeg") with { Aliases = ["jpg"] },
+            FormatDescriptor.Declare("svg", FormatUse.Render, ".svg"),
+            FormatDescriptor.Declare("doc", FormatUse.Convert, ".doc"),
         ];
         var traits = new CommandTraits
         {
@@ -341,10 +341,10 @@ public sealed class CommandDefinitionTests : IDisposable
     {
         FormatDescriptor[] formats =
         [
-            FormatDescriptor.Declare("docx", FormatUse.Convert, false, ".docx"),
-            FormatDescriptor.Declare("md", FormatUse.Convert, false, ".md", ".markdown") with { Aliases = ["markdown"] },
-            FormatDescriptor.Declare("csv", FormatUse.Convert, false, ".csv", ".txt"),
-            FormatDescriptor.Declare("png", FormatUse.Render, false, ".png"),
+            FormatDescriptor.Declare("docx", FormatUse.Convert, ".docx"),
+            FormatDescriptor.Declare("md", FormatUse.Convert, ".md", ".markdown") with { Aliases = ["markdown"] },
+            FormatDescriptor.Declare("csv", FormatUse.Convert, ".csv", ".txt"),
+            FormatDescriptor.Declare("png", FormatUse.Render, ".png"),
         ];
         Command command = Create(
             new CommandTraits
@@ -381,10 +381,10 @@ public sealed class CommandDefinitionTests : IDisposable
     {
         FormatDescriptor[] writes =
         [
-            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, false, ".tst", ".test") with { Protectable = true },
-            FormatDescriptor.Declare("tsx", FormatUse.Input | FormatUse.Convert, false, ".tsx"),
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, ".tst", ".test") with { Protectable = true },
+            FormatDescriptor.Declare("tsx", FormatUse.Input | FormatUse.Convert, ".tsx"),
         ];
-        FormatDescriptor pdf = FormatDescriptor.Declare("pdf", FormatUse.Convert, false, ".pdf");
+        FormatDescriptor pdf = FormatDescriptor.Declare("pdf", FormatUse.Convert, ".pdf");
         Command create = Create(
             "create", "Creates.",
             new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", writes), Encrypt = new EncryptedOutput("the file") },
@@ -424,9 +424,9 @@ public sealed class CommandDefinitionTests : IDisposable
     {
         FormatDescriptor[] writes =
         [
-            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, false, ".test"),
-            FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, false, ".test"),
-            FormatDescriptor.Declare("tsx", FormatUse.Input | FormatUse.Convert, false, ".tsx"),
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, ".test"),
+            FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, ".test"),
+            FormatDescriptor.Declare("tsx", FormatUse.Input | FormatUse.Convert, ".tsx"),
         ];
         Command edit = Create(
             "edit", "Edits.",
@@ -449,7 +449,7 @@ public sealed class CommandDefinitionTests : IDisposable
     [Fact]
     public void Output_DerivesTheOnlyFormatWithTheCommandsMarker()
     {
-        FormatDescriptor pdf = FormatDescriptor.Declare("pdf", FormatUse.Convert, false, ".pdf");
+        FormatDescriptor pdf = FormatDescriptor.Declare("pdf", FormatUse.Convert, ".pdf");
         Command sign = Create(
             new CommandTraits { Input = Report, Output = OutputTarget.File("Signed file.", [pdf], derivedMarker: ".signed") },
             (_, standard) => Result(Path.GetFileName(standard.Output.Path)));
@@ -462,7 +462,7 @@ public sealed class CommandDefinitionTests : IDisposable
     [Fact]
     public void ResolvedOutput_NamesItsPartsBesideIt()
     {
-        var output = new ResolvedOutput(FormatDescriptor.Declare("png", FormatUse.Render, false, ".png"), _temp.File("deck.png"));
+        var output = new ResolvedOutput(FormatDescriptor.Declare("png", FormatUse.Render, ".png"), _temp.File("deck.png"));
 
         Assert.Equal([_temp.File("deck.png")], output.Parts([3]));
         Assert.Equal([_temp.File("deck.3.png"), _temp.File("deck.4.png")], output.Parts([3, 4]));
@@ -476,8 +476,8 @@ public sealed class CommandDefinitionTests : IDisposable
     {
         FormatDescriptor[] writes =
         [
-            FormatDescriptor.Declare("secure", FormatUse.Convert, false, ".secure") with { Protectable = true },
-            FormatDescriptor.Declare("plain", FormatUse.Convert, false, ".plain"),
+            FormatDescriptor.Declare("secure", FormatUse.Convert, ".secure") with { Protectable = true },
+            FormatDescriptor.Declare("plain", FormatUse.Convert, ".plain"),
         ];
         Command command = Create(
             new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.", writes), Encrypt = Encrypted },
@@ -498,7 +498,7 @@ public sealed class CommandDefinitionTests : IDisposable
     {
         FormatDescriptor[] writes =
         [
-            FormatDescriptor.Declare("secure", FormatUse.Convert, false, ".secure") with { Protectable = true },
+            FormatDescriptor.Declare("secure", FormatUse.Convert, ".secure") with { Protectable = true },
         ];
         Command command = Create(
             new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.", writes), Encrypt = Encrypted },

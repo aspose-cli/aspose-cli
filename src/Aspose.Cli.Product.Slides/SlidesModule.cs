@@ -12,7 +12,6 @@ public sealed class SlidesModule : IProductModule
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = ProductBuildMetadata.DisplayOrder,
-        IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
             ResourceBudgets =
             [
                 ResourceBudget.Domain(SlidesBudgetDomains.Slides, 10_000, 50_000, "items", "post-load"),

@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.Sdk.Licensing;
@@ -37,6 +38,9 @@ public sealed class ProductActivationContext
 
     /// <summary>Invocation-scoped resource ledger shared by every product phase.</summary>
     public required ResourceBudgetLedger ResourceBudgets { get; init; }
+
+    /// <summary>The format declarations of every product of the catalog.</summary>
+    public IReadOnlyList<FormatDescriptor> Formats { get; init; } = [];
 
     internal object SyncRoot { get; } = new();
 
@@ -130,7 +134,7 @@ public abstract class ProductBinding
             context,
             productId,
             applyLicense);
-        var outputs = new OutputPipeline<TDocument>(license, evaluation, context.SafeFileWriter);
+        var outputs = new OutputPipeline<TDocument>(license, evaluation, context.SafeFileWriter) { DeclaredFormats = context.Formats };
         return new ProductBinding<TSession>(
             productId,
             new Lazy<TSession>(() => createSession(outputs)),

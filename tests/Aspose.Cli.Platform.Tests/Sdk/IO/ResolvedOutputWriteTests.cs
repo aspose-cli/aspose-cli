@@ -12,7 +12,7 @@ namespace Aspose.Cli.Sdk.Tests.IO;
 
 public sealed class ResolvedOutputWriteTests
 {
-    private static readonly FormatDescriptor Page = FormatDescriptor.Declare("page", FormatUse.Convert, false, ".html");
+    private static readonly FormatDescriptor Page = FormatDescriptor.Declare("page", FormatUse.Convert, ".html");
 
     [Fact]
     public void AFormatWithCompanionFilesPublishesThemBesideTheOutputAsOneSet()

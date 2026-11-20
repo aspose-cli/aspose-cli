@@ -71,11 +71,11 @@ public sealed class CliCatalog
         string[] words = [.. CommandNodes.Select(static node => node["words"]!.GetValue<string>())];
         string[] productIds = [.. Catalog["products"]!.AsArray().Select(static product => product!["id"]!.GetValue<string>())];
         Commands = [.. CommandNodes.Select(node => ReadCommand(node, words, productIds))];
-        Products = [.. Catalog["products"]!.AsArray().Select(static product => ReadProduct(product!))];
         _formats = productIds.ToDictionary(
             static id => id,
             id => JsonNode.Parse(SchemaText(Id(id, "formats")))!["formats"]!.AsArray(),
             StringComparer.Ordinal);
+        Products = [.. Catalog["products"]!.AsArray().Select(product => ReadProduct(product!, _formats[product!["id"]!.GetValue<string>()]))];
         _documents.UnionWith(productIds.Select(id => Id(id, "formats")));
         _documents.UnionWith([Id("common", "diagnostics"), Id("common", "budgets")]);
         DiagnosticNodes = [.. JsonNode.Parse(SchemaText(Id("common", "diagnostics")))!["diagnostics"]!.AsArray().Select(static node => node!)];
@@ -157,7 +157,7 @@ public sealed class CliCatalog
     public string? ReaderOf(string path, string? preferred = null)
     {
         string format = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
-        bool Loads(string id) => Product(id).LoadFormats.Contains(format, StringComparer.OrdinalIgnoreCase);
+        bool Loads(string id) => Product(id).ReadFormats.Contains(format, StringComparer.OrdinalIgnoreCase);
         if (preferred is not null && Loads(preferred))
         {
             return preferred;
@@ -232,9 +232,18 @@ public sealed class CliCatalog
         argument["maximumArity"]!.GetValue<int>(),
         argument["required"]!.GetValue<bool>());
 
-    private static CliProduct ReadProduct(JsonNode product) => new(
+    /// <summary>
+    /// A product of the catalog; its read formats, which some command opens, are its load formats
+    /// in the catalog's order, then those its formats document marks <c>convert-input</c>.
+    /// </summary>
+    private static CliProduct ReadProduct(JsonNode product, JsonArray formats) => new(
         product["id"]!.GetValue<string>(),
-        Strings(product["loadFormats"]),
+        [
+            .. Strings(product["loadFormats"]),
+            .. formats
+                .Where(static format => format!["uses"]!.AsArray().Any(static use => use!.GetValue<string>() == "convert-input"))
+                .Select(static format => format!["id"]!.GetValue<string>()),
+        ],
         Strings(product["convertFormats"]),
         Strings(product["renderFormats"]),
         null,
@@ -298,7 +307,7 @@ public sealed record CliArgument(string? InputKind, int MaximumArity, bool Requi
 /// <summary>One product of the catalog.</summary>
 public sealed record CliProduct(
     string Id,
-    IReadOnlyList<string> LoadFormats,
+    IReadOnlyList<string> ReadFormats,
     IReadOnlyList<string> ConvertFormats,
     IReadOnlyList<string> RenderFormats,
     string? OpsSchemaId,

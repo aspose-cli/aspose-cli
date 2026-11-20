@@ -7,9 +7,8 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 
 /// <summary>
 /// Decision D8: the SDK owns load results, so a product refuses an input it recognizes but cannot
-/// load with the same code as every other product. The decision does not name the code; the
-/// platform Skill allows <c>FILE_CORRUPT</c> or <c>FORMAT_MISMATCH</c> for a legacy binary file
-/// renamed to another product's extension, so the test requires one of them, the same everywhere.
+/// load with the same code as every other product: <c>FILE_CORRUPT</c>, for a legacy binary file
+/// renamed to another product's extension.
 /// </summary>
 public sealed class InputLoadingAlikeTests
 {
@@ -48,8 +47,8 @@ public sealed class InputLoadingAlikeTests
 
         string report = string.Join(Environment.NewLine, codes);
         string[] distinct = [.. codes.Select(static line => line[(line.LastIndexOf(": ", StringComparison.Ordinal) + 2)..]).Distinct(StringComparer.Ordinal)];
-        Assert.True(distinct.Length == 1 && distinct[0] is "FILE_CORRUPT" or "FORMAT_MISMATCH",
-            "A recognized document that a product cannot load is refused with one code, FILE_CORRUPT or FORMAT_MISMATCH, in every product:"
+        Assert.True(distinct.Length == 1 && distinct[0] == "FILE_CORRUPT",
+            "A recognized document that a product cannot load is refused with FILE_CORRUPT in every product:"
             + Environment.NewLine + report);
     }
 }

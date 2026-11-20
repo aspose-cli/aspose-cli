@@ -121,16 +121,6 @@ public static partial class ErrorCodes
     /// product reads: its content matches none, or its format is one the CLI only writes.
     /// </summary>
     public static readonly ErrorCode FormatUnsupported = new("FORMAT_UNSUPPORTED", ExitCode.FormatError);
-    /// <summary>
-    /// The extension names one product's format and the content looks like another's. Content
-    /// no product recognizes, or a format the CLI only writes, is <c>FORMAT_UNSUPPORTED</c>.
-    /// </summary>
-    public static readonly ErrorCode FormatMismatch = new("FORMAT_MISMATCH", ExitCode.FormatError);
-    /// <summary>
-    /// The input can be read more than one way and the caller must choose: several products
-    /// strongly recognize it, or a text file writes numbers in a form that depends on its culture.
-    /// </summary>
-    public static readonly ErrorCode FormatAmbiguous = new("FORMAT_AMBIGUOUS", ExitCode.FormatError);
     public static readonly ErrorCode FeatureUnsupported = new("FEATURE_UNSUPPORTED", ExitCode.FormatError);
 
     /// <summary>
@@ -196,8 +186,6 @@ public static partial class ErrorCodes
         OutputPublicationPartial,
         OutputBudgetExceeded,
         FormatUnsupported,
-        FormatMismatch,
-        FormatAmbiguous,
         FeatureUnsupported,
         EngineError,
         LicenseFileNotFound,

@@ -24,7 +24,7 @@ internal static class PdfConvert
         bool html = PdfFormats.IsHtmlInput(request.Input);
         using HtmlImportResources? resources = html ? new HtmlImportResources(request.Input, session.Budgets) : null;
         using LoadedPdf loaded = resources is null
-            ? session.Loader.Open(request.Input, request.Password)
+            ? session.Loader.OpenForConvert(request.Input, request.Password)
             : session.Loader.OpenHtml(request.Input, resources);
         Document document = loaded.Document;
         PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);

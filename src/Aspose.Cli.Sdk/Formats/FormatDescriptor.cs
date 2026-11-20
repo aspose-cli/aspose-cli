@@ -12,21 +12,17 @@ public enum FormatUse
 
     /// <summary>The format can be produced by a render command.</summary>
     Render = 4,
-}
 
-/// <summary>How a format participates in generic file routing.</summary>
-public enum RouteOwnership
-{
-    /// <summary>The format is available only through an explicit product command.</summary>
-    Explicit = 0,
-
-    /// <summary>The product is the default generic-routing owner.</summary>
-    Default = 1,
+    /// <summary>
+    /// The format is accepted as an input document by the convert command only; every other
+    /// command that opens a document refuses it.
+    /// </summary>
+    ConvertInput = 8,
 }
 
 /// <summary>
-/// One immutable format declaration from which routing and public capability
-/// metadata are derived.
+/// One immutable format declaration, from which a product's format lists, its <c>--to</c>
+/// values and the formats document of <c>schema</c> are derived.
 /// </summary>
 public sealed record FormatDescriptor
 {
@@ -36,35 +32,8 @@ public sealed record FormatDescriptor
     public static FormatDescriptor Declare(
         string id,
         FormatUse uses,
-        bool defaultOwner,
         params string[] extensions) =>
-        new(id, uses, extensions)
-        {
-            Ownership = defaultOwner
-                ? RouteOwnership.Default
-                : RouteOwnership.Explicit,
-        };
-
-    /// <summary>
-    /// Creates a declaration whose input formats own their generic routes by default.
-    /// </summary>
-    public static FormatDescriptor Routed(
-        string id,
-        FormatUse uses,
-        params string[] extensions) =>
-        Declare(id, uses, uses.HasFlag(FormatUse.Input), extensions);
-
-    /// <summary>Creates an input format with explicit routing ownership.</summary>
-    internal static FormatDescriptor Input(
-        string id,
-        int inputOrder,
-        RouteOwnership ownership,
-        params string[] extensions) =>
-        new(id, FormatUse.Input, extensions)
-        {
-            Ownership = ownership,
-            InputOrder = inputOrder,
-        };
+        new(id, uses, extensions);
 
     /// <summary>Creates one unconditional format declaration.</summary>
     /// <param name="id">Stable lower-case format identifier.</param>
@@ -93,24 +62,6 @@ public sealed record FormatDescriptor
     /// input format is read under any of them.
     /// </summary>
     public IReadOnlyList<string> Extensions { get; init; }
-
-    /// <summary>
-    /// Extensions among <see cref="Extensions"/> that never claim a generic route, because
-    /// another product's format owns them, as plain text owns <c>.txt</c> while delimited text
-    /// may be named <c>data.txt</c>. The product's own commands still read and write them.
-    /// </summary>
-    public IReadOnlyList<string> UnroutedExtensions { get; init; } = [];
-
-    /// <summary>
-    /// Extensions among <see cref="Extensions"/> that many unrelated kinds of file share, as
-    /// <c>.xml</c> is. Content no product recognizes under such an extension is unrecognized,
-    /// not a damaged document of this format.
-    /// </summary>
-    public IReadOnlyList<string> SharedExtensions { get; init; } = [];
-
-    /// <summary>The extensions this format claims for generic routing.</summary>
-    internal IEnumerable<string> RoutedExtensions =>
-        Extensions.Except(UnroutedExtensions, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Accepted command-line aliases in addition to the stable id.</summary>
     public IReadOnlyList<string> Aliases { get; init; } = [];
@@ -166,9 +117,6 @@ public sealed record FormatDescriptor
         Path.GetExtension(path) is { Length: > 1 } extension
         && Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Generic-routing ownership for input extensions.</summary>
-    public RouteOwnership Ownership { get; init; } = RouteOwnership.Explicit;
-
     /// <summary>
     /// Rank among advertised input formats; formats of one rank keep declaration order. A product
     /// sets it only when its input formats are listed in another order than they are declared.
@@ -181,28 +129,6 @@ public sealed record FormatDescriptor
     /// <summary>Rank among advertised render formats, as <see cref="InputOrder"/> is for input.</summary>
     public int RenderOrder { get; init; }
 
-    /// <summary>
-    /// Optional content recognizer for ambiguous or renamed inputs; a test seam for routing
-    /// time-outs and cancellation, since products declare <see cref="Recognition"/> rules.
-    /// </summary>
-    internal IFileRecognizer? Recognizer { get; init; }
-
-    /// <summary>
-    /// Product-owned declarative recognition rules for this default input
-    /// format. The SDK evaluates the immutable rules within the shared probe
-    /// budget without knowing the format's semantics.
-    /// </summary>
-    public FileFormatRecognition? Recognition { get; init; }
-
-}
-
-internal static class StandardFileRouteOperations
-{
-    internal static readonly IReadOnlyList<string> All =
-        ["open"];
-
-    internal static bool Contains(string operation) =>
-        All.Contains(operation, StringComparer.Ordinal);
 }
 
 /// <summary>Deterministic projections over a product's format descriptors.</summary>
@@ -259,13 +185,6 @@ public static class FormatDescriptorExtensions
         ArgumentNullException.ThrowIfNull(path);
         return Array.AsReadOnly(descriptors.Where(format => format.Names(path)).ToArray());
     }
-
-    /// <summary>
-    /// The formats of <see cref="NamedBy"/> that also claim the file name for generic routing:
-    /// those for which the extension it carries is not one of their <see cref="FormatDescriptor.UnroutedExtensions"/>.
-    /// </summary>
-    public static IReadOnlyList<FormatDescriptor> Claiming(this IEnumerable<FormatDescriptor> descriptors, string path) =>
-        [.. descriptors.NamedBy(path).Where(format => format.RoutedExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))];
 
     private static IEnumerable<FormatDescriptor> Ordered(
         IEnumerable<FormatDescriptor> descriptors,

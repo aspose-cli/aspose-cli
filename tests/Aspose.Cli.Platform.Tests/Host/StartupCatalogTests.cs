@@ -90,7 +90,7 @@ public sealed class StartupCatalogTests
                     SdkVersion = "1.0.0",
                 },
             })
-            .Formats([FormatDescriptor.Input("alpha", 0, RouteOwnership.Explicit, ".alpha")])
+            .Formats([FormatDescriptor.Declare("alpha", FormatUse.Input, ".alpha")])
             .Diagnostics([diagnostic])
             .Json(new Aspose.Cli.Sdk.Serialization.ProductJsonDefinition("alpha", new UnwritableSchemaSource()))
             .WithCommand<IStartupSession, StartupResult>()

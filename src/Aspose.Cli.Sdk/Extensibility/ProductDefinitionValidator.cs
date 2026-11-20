@@ -296,16 +296,6 @@ internal sealed class ProductDefinitionValidator
             {
                 _ = ProductCatalog.NormalizeExtension(extension);
             }
-            if (format.UnroutedExtensions.Any(extension => !format.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase)))
-            {
-                throw new InvalidOperationException(
-                    $"Product '{definition.Manifest.Id}' format '{format.Id}' leaves an extension unrouted that it does not declare.");
-            }
-            if (format.SharedExtensions.Any(extension => !format.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase)))
-            {
-                throw new InvalidOperationException(
-                    $"Product '{definition.Manifest.Id}' format '{format.Id}' marks an extension shared that it does not declare.");
-            }
             if (format.Aliases.Any(string.IsNullOrWhiteSpace)
                 || format.Aliases.Distinct(StringComparer.OrdinalIgnoreCase).Count()
                     != format.Aliases.Count)
@@ -313,24 +303,6 @@ internal sealed class ProductDefinitionValidator
                 throw new InvalidOperationException(
                     $"Product '{definition.Manifest.Id}' format '{format.Id}' declares invalid or duplicate aliases.");
             }
-        }
-
-        if (definition.Formats.Count > 0
-            && definition.Files.DefaultOwnerExtensions.Count > 0
-            && definition.Files.Recognizer is null)
-        {
-            throw new InvalidOperationException(
-                $"Product '{definition.Manifest.Id}' claims generic routes without a bounded content recognizer.");
-        }
-        if (definition.Formats.Count > 0
-            && definition.Files.DefaultOwnerExtensions.Count > 0
-            && definition.Files.Recognizer is { } recognizer
-            && !recognizer.Descriptor.CooperativeCancellation)
-        {
-            throw new InvalidOperationException(
-                $"Product '{definition.Manifest.Id}' generic recognizer "
-                + $"'{recognizer.Descriptor.Strategy}' is not approved for cooperative in-process cancellation. "
-                + "Keep the format explicit-only.");
         }
     }
 

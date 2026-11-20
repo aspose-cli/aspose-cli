@@ -82,7 +82,7 @@ internal static class IsolationCases
 
     /// <summary>The formats each product opens: the formats it reads and those its create sources read.</summary>
     public static IEnumerable<(CliProduct Product, string Format)> Formats(CliCatalog catalog) =>
-        catalog.Products.SelectMany(product => product.LoadFormats
+        catalog.Products.SelectMany(product => product.ReadFormats
             .Concat(catalog.Commands.Where(command => command.Product == product.Id && command.Verb == "create")
                 .SelectMany(static command => command.Options.Where(static option => option.InputKind == "file"))
                 .SelectMany(option => SourceFormats.GetValueOrDefault(option.Name) ?? []))
@@ -100,7 +100,7 @@ internal static class IsolationCases
                 continue;
             }
             var commands = new List<(CliCommand Command, string? Source, bool ProductOption)>();
-            bool reads = product.LoadFormats.Contains(format, StringComparer.Ordinal);
+            bool reads = product.ReadFormats.Contains(format, StringComparer.Ordinal);
             // A format only convert opens (ConvertOnlyInputs) is opened by convert alone.
             bool convertOnly = ConvertOnlyInputs.Options(product.Id, "sample." + IsolationDocuments.Extension(format)) is not null;
             foreach (CliCommand command in catalog.Commands.Where(static command => command.Arguments.Any(static argument => argument.Required && argument.InputKind == "file")))

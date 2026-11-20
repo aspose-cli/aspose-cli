@@ -11,7 +11,6 @@
     <AsposeProductAssemblyName>Aspose.Cli.Product.Cells</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/cells</AsposeProductResourceNamespace>
     <AsposeProductDisplayOrder>1</AsposeProductDisplayOrder>
-    <AsposeProductDefaultCandidate>true</AsposeProductDefaultCandidate>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Aspose.Cli.Product.Pdf'">
     <AsposeProductId>pdf</AsposeProductId>
@@ -24,7 +23,6 @@
     <AsposeProductAssemblyName>Aspose.Cli.Product.Pdf</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/pdf</AsposeProductResourceNamespace>
     <AsposeProductDisplayOrder>2</AsposeProductDisplayOrder>
-    <AsposeProductDefaultCandidate>false</AsposeProductDefaultCandidate>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Aspose.Cli.Product.Slides'">
     <AsposeProductId>slides</AsposeProductId>
@@ -37,7 +35,6 @@
     <AsposeProductAssemblyName>Aspose.Cli.Product.Slides</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/slides</AsposeProductResourceNamespace>
     <AsposeProductDisplayOrder>3</AsposeProductDisplayOrder>
-    <AsposeProductDefaultCandidate>false</AsposeProductDefaultCandidate>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Aspose.Cli.Product.Words'">
     <AsposeProductId>words</AsposeProductId>
@@ -50,11 +47,10 @@
     <AsposeProductAssemblyName>Aspose.Cli.Product.Words</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/words</AsposeProductResourceNamespace>
     <AsposeProductDisplayOrder>4</AsposeProductDisplayOrder>
-    <AsposeProductDefaultCandidate>false</AsposeProductDefaultCandidate>
   </PropertyGroup>
   <PropertyGroup>
-    <GeneratedProductsLfSha256>436021FC9122D054F19AECAE9F09FB3572923A5CC5F17473EE0EBB1D3639CDBD</GeneratedProductsLfSha256>
-    <GeneratedProductsCrLfSha256>C161438B61B3925AD3D3D12252F1CC0F8964FB87E11183A1C0BD2B0153904B8E</GeneratedProductsCrLfSha256>
+    <GeneratedProductsLfSha256>787BC77245B2402FCCDB687A4D4D0904940BDA6D08A91DF622A6F67AA8635EE6</GeneratedProductsLfSha256>
+    <GeneratedProductsCrLfSha256>91064DE18B7E3069E52577A042A5A1FC6A2310B425F782D87424185A2C923A04</GeneratedProductsCrLfSha256>
     <GeneratedDistributionLfSha256>69E30A91A7FD0CF4E5F2184F09DB8EC3A37AB19E8665659AAA9F800656C9BC2C</GeneratedDistributionLfSha256>
     <GeneratedDistributionCrLfSha256>2D44512421B4FDE7D4160B564A094BA2E5CF39F2E2305C59772980226D44F7F8</GeneratedDistributionCrLfSha256>
   </PropertyGroup>

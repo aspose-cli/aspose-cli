@@ -48,17 +48,8 @@
       "flatopc",
       "rtf",
       "wordml",
-      "html",
-      "mhtml",
       "odt",
-      "ott",
-      "txt",
-      "md",
-      "pdf",
-      "epub",
-      "mobi",
-      "azw3",
-      "chm"
+      "ott"
     ],
     "convertFormats": [
       "doc",
@@ -1604,7 +1595,7 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
+            "convert-input",
             "convert"
           ]
         },
@@ -1615,7 +1606,7 @@
           ],
           "aliases": [],
           "uses": [
-            "input"
+            "convert-input"
           ]
         },
         {
@@ -1691,7 +1682,7 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
+            "convert-input",
             "convert"
           ]
         },
@@ -1714,7 +1705,7 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
+            "convert-input",
             "convert"
           ]
         },
@@ -1748,7 +1739,7 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
+            "convert-input",
             "convert"
           ]
         },
@@ -1759,7 +1750,7 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
+            "convert-input",
             "convert"
           ]
         },
@@ -1770,7 +1761,7 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
+            "convert-input",
             "convert"
           ]
         },
@@ -1823,7 +1814,7 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
+            "convert-input",
             "convert"
           ]
         },
@@ -1875,7 +1866,7 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
+            "convert-input",
             "convert"
           ]
         },

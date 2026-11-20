@@ -39,8 +39,7 @@ public sealed class ProductBuildMetadataGenerator : IIncrementalGenerator
             Value(options, "AsposeProductEngineName"),
             Value(options, "AsposeProductSdkPackageId"),
             Value(options, "AsposeProductSdkVersion"),
-            Value(options, "AsposeProductDisplayOrder"),
-            Value(options, "AsposeProductDefaultCandidate"));
+            Value(options, "AsposeProductDisplayOrder"));
     }
 
     private static void Emit(
@@ -78,7 +77,6 @@ public sealed class ProductBuildMetadataGenerator : IIncrementalGenerator
                 internal const string SdkPackageId = {{Literal(product.SdkPackageId)}};
                 internal const string SdkVersion = {{Literal(product.SdkVersion)}};
                 internal const int DisplayOrder = {{int.Parse(product.DisplayOrder, System.Globalization.CultureInfo.InvariantCulture)}};
-                internal const bool IsDefaultCandidate = {{(product.DefaultCandidate == "true" ? "true" : "false")}};
             }
             """;
         context.AddSource(
@@ -102,8 +100,7 @@ public sealed class ProductBuildMetadataGenerator : IIncrementalGenerator
         string engineName,
         string sdkPackageId,
         string sdkVersion,
-        string displayOrder,
-        string defaultCandidate)
+        string displayOrder)
     {
         public string Id { get; } = id;
 
@@ -119,8 +116,6 @@ public sealed class ProductBuildMetadataGenerator : IIncrementalGenerator
 
         public string DisplayOrder { get; } = displayOrder;
 
-        public string DefaultCandidate { get; } = defaultCandidate;
-
         public IEnumerable<(string Name, string Value)> RequiredProperties()
         {
             yield return ("AsposeProductNamespace", Namespace);
@@ -129,7 +124,6 @@ public sealed class ProductBuildMetadataGenerator : IIncrementalGenerator
             yield return ("AsposeProductSdkVersion", SdkVersion);
             yield return ("AsposeProductDisplayOrder", int.TryParse(DisplayOrder, System.Globalization.NumberStyles.None,
                 System.Globalization.CultureInfo.InvariantCulture, out _) ? DisplayOrder : string.Empty);
-            yield return ("AsposeProductDefaultCandidate", DefaultCandidate is "true" or "false" ? DefaultCandidate : string.Empty);
         }
     }
 }

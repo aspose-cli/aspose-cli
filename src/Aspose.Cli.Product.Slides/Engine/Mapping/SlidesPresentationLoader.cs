@@ -50,7 +50,7 @@ internal sealed class SlidesPresentationLoader
 
     /// <summary>Opens a user input, such as a template, with the password <paramref name="password"/> gives.</summary>
     public LoadedPresentation Open(string path, PasswordSource password, EngineWarningLog warnings) =>
-        InputOpening.Open(_outputs, _resourceBudgets, path, () => OpenCore(path, password, warnings));
+        InputOpening.Open(_outputs, _resourceBudgets, SlidesFormats.Definitions, path, () => OpenCore(path, password, warnings));
 
     /// <summary>Opens an output this invocation just saved, to read it back; its size is bounded by publication.</summary>
     internal LoadedPresentation ReopenTable(string path, Secret? password, EngineWarningLog warnings) =>

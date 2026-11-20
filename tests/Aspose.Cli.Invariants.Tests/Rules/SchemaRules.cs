@@ -87,7 +87,7 @@ internal static partial class ContractRules
     {
         // Format ids and check codes keep their own spelling (C-R17's exceptions).
         HashSet<string> exempt = new(
-            catalog.Products.SelectMany(static product => product.LoadFormats.Concat(product.ConvertFormats).Concat(product.RenderFormats))
+            catalog.Products.SelectMany(static product => product.ReadFormats.Concat(product.ConvertFormats).Concat(product.RenderFormats))
                 .Concat(catalog.Diagnostics.Keys),
             StringComparer.Ordinal);
         foreach (SchemaSubject subject in NamedByUs(catalog))

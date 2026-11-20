@@ -26,9 +26,6 @@ internal static class SdkMetadataNames
     internal const string StandardOptions = CommandingNamespace + ".StandardOptions";
     internal const string FormatDescriptor = "Aspose.Cli.Sdk.Formats.FormatDescriptor";
     internal const string FormatDescriptorExtensions = "Aspose.Cli.Sdk.Formats.FormatDescriptorExtensions";
-    internal const string FileFormatRecognition = "Aspose.Cli.Sdk.Formats.FileFormatRecognition";
-    internal const string FileProbePattern = "Aspose.Cli.Sdk.Formats.FileProbePattern";
-    internal const string RouteOwnership = "Aspose.Cli.Sdk.Formats.RouteOwnership";
     internal const string ResourceBudget = ContractsNamespace + ".ResourceBudget";
     internal const string ErrorCode = "Aspose.Cli.Sdk.Errors.ErrorCode";
     internal const string DiagnosticDescriptor = "Aspose.Cli.Sdk.Diagnostics.DiagnosticDescriptor";

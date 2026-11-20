@@ -1,6 +1,5 @@
 {
   "schemaVersion": 1,
-  "defaultProduct": "cells",
   "products": [
     {
       "id": "cells",

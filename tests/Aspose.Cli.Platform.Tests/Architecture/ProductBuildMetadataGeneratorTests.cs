@@ -20,7 +20,6 @@ public sealed class ProductBuildMetadataGeneratorTests
             ["build_property.AsposeProductSdkPackageId"] = "Aspose.Sample",
             ["build_property.AsposeProductSdkVersion"] = "26.8.0",
             ["build_property.AsposeProductDisplayOrder"] = "2",
-            ["build_property.AsposeProductDefaultCandidate"] = "true",
         });
 
         Assert.DoesNotContain(
@@ -42,7 +41,6 @@ public sealed class ProductBuildMetadataGeneratorTests
             generated,
             StringComparison.Ordinal);
         Assert.Contains("DisplayOrder = 2;", generated, StringComparison.Ordinal);
-        Assert.Contains("IsDefaultCandidate = true;", generated, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -56,7 +54,6 @@ public sealed class ProductBuildMetadataGeneratorTests
             ["build_property.AsposeProductEngineName"] = "Sample.SourceEngine",
             ["build_property.AsposeProductSdkVersion"] = "1.2.3",
             ["build_property.AsposeProductDisplayOrder"] = "1",
-            ["build_property.AsposeProductDefaultCandidate"] = "false",
         });
 
         Assert.DoesNotContain(

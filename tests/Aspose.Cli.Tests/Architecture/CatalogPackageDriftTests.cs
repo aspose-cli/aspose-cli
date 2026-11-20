@@ -54,7 +54,7 @@ public sealed class CatalogPackageDriftTests : IDisposable
             """);
         Write("src/Aspose.Cli.Product.Alpha/AlphaModule.cs",
             "// Id = ProductBuildMetadata.ProductId DisplayName = ProductBuildMetadata.DisplayName ProductBuildMetadata.EngineName ProductBuildMetadata.SdkVersion "
-            + "DisplayOrder = ProductBuildMetadata.DisplayOrder IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate");
+            + "DisplayOrder = ProductBuildMetadata.DisplayOrder");
         Write("tests/Aspose.Cli.Product.Alpha.Tests/Aspose.Cli.Product.Alpha.Tests.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\" />");
         return "src/Aspose.Cli.Product.Alpha/Aspose.Cli.Product.Alpha.csproj";
     }

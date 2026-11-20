@@ -192,10 +192,9 @@ public sealed class CommonSchemaContractTests
                 })
             .Formats(
             [
-                FormatDescriptor.Input(
+                FormatDescriptor.Declare(
                     "test",
-                    0,
-                    RouteOwnership.Explicit,
+                    FormatUse.Input,
                     ".test"),
             ])
             .Diagnostics([])

@@ -342,8 +342,8 @@ public sealed class ProductMenuTests : IDisposable
     {
         public static readonly FormatDescriptor[] Writes =
         [
-            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, false, ".test") with { Protectable = true },
-            FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, false, ".test"),
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, ".test") with { Protectable = true },
+            FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, ".test"),
         ];
 
         public static CommandDefinition<ProtectRequest, TextResult> Create() => new(
