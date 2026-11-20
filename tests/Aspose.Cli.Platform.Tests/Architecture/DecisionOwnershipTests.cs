@@ -127,14 +127,12 @@ public sealed partial class DecisionOwnershipTests
     /// <summary>
     /// Whether an output keeps the input's password, takes the <c>--encrypt</c> one or carries
     /// none is decided by the SDK's <c>OutputProtection</c>; a product engine only carries the
-    /// decision out. PDF keeps its own owner (<c>PdfOutputEncryption</c>): owner-only files,
-    /// permissions and operations that encrypt or decrypt are PDF's alone.
+    /// decision out; the PDF actions <c>encrypt</c> and <c>decrypt</c> hand theirs to it.
     /// </summary>
     [Fact]
     public void D1_ProductEngines_DecideNoOutputPasswordThemselves()
     {
         string[] violations = [.. ProductFiles("Engine")
-            .Where(static file => file.Product != "Pdf")
             .SelectMany(file => file.Root.DescendantNodes()
                 .Where(static node => node switch
                 {

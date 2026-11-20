@@ -86,16 +86,13 @@ internal sealed class Invocation
     /// <summary>
     /// The options that no declaration requires but that a command of a verb needs to run, each
     /// with the file it reads (null for a value rule of <see cref="Fill"/>): a convert without
-    /// --out names the format it writes, a compare names the redline it writes, and a create from a source reads the first of these it
-    /// has. Each must name an option some command has (<see cref="ImpliedRulesMatchTheCatalog"/>),
+    /// --out names the format it writes and a compare names the redline it writes. Each must name an option some command has (<see cref="ImpliedRulesMatchTheCatalog"/>),
     /// so a renamed option fails rather than leaving its commands without it.
     /// </summary>
     internal static readonly (string Verb, string Option, string? File, string? Fixture)[] ImpliedByVerb =
     [
         ("convert", "--to", null, null),
         ("compare", "--out", null, null),
-        ("create", "--from-markdown", "source.md", "markdown"),
-        ("create", "--from-text", "source.txt", "text"),
     ];
 
     /// <summary>
@@ -103,8 +100,7 @@ internal sealed class Invocation
     /// an operations document (input kind <c>json-source</c>), and the environment variable of the
     /// password of a required file input (<c>--certificate</c> and its
     /// <c>--certificate-password-env</c>) unless the case passes the password another way
-    /// (<paramref name="omit"/>). By verb: <see cref="ImpliedByVerb"/>, where a create takes only
-    /// its first source.
+    /// (<paramref name="omit"/>). By verb: <see cref="ImpliedByVerb"/>.
     /// </summary>
     private static bool IsImplied(CliCommand command, CliOption option, string? omit)
     {
@@ -199,6 +195,10 @@ internal sealed class Invocation
                 return;
             case "--date-time":
                 Add(option.Name, "2026-01-01T00:00:00");
+                return;
+            case "--page":
+                // The first page, which every PDF fixture has.
+                Add(option.Name, "1");
                 return;
         }
         if (option.AllowedValues.Contains("pages"))

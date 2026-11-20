@@ -22,9 +22,18 @@ internal static partial class ContractRules
     /// <summary>The fields of each product's operations, read from its ops schema.</summary>
     private sealed class OperationFields(CliCatalog catalog)
     {
-        /// <summary>The products whose operations include <paramref name="op"/>, or only <paramref name="product"/> when it is given.</summary>
+        /// <summary>
+        /// The products whose operations include <paramref name="op"/>, or only <paramref name="product"/>
+        /// when it is given; an object table's action is named <c>do.&lt;name&gt;</c>, its definition.
+        /// </summary>
         public CliProduct[] Owners(string? product, string op) =>
-            [.. catalog.Products.Where(candidate => (product is null || candidate.Id == product) && candidate.Ops.Contains(op, StringComparer.Ordinal))];
+            [.. catalog.Products.Where(candidate => (product is null || candidate.Id == product)
+                && (op.StartsWith("do.", StringComparison.Ordinal)
+                    ? PublishedSchema.IsObjectTableProduct(catalog, candidate.Id) && PublishedSchema.Definitions(SchemaId(candidate)).Contains(op, StringComparer.Ordinal)
+                    : candidate.Ops.Contains(op, StringComparer.Ordinal)))];
+
+        /// <summary>The id of a product's operation schema: its op vocabulary's, or its object table's.</summary>
+        private static string SchemaId(CliProduct product) => product.OpsSchemaId ?? $"v2/{product.Id}/ops";
 
         /// <summary>
         /// The field names at <paramref name="path"/> inside the operation, the keys of the objects
@@ -33,7 +42,7 @@ internal static partial class ContractRules
         /// </summary>
         public HashSet<string>? At(CliProduct product, string op, IReadOnlyList<string> path)
         {
-            string id = product.OpsSchemaId!;
+            string id = SchemaId(product);
             List<(string Id, JsonObject Node)> nodes = [(id, PublishedSchema.Definition(id, op))];
             foreach (string key in path)
             {
@@ -154,7 +163,7 @@ internal static partial class ContractRules
         HashSet<string>?[] known = [.. owners.Select(owner => fields.At(owner, op, path))];
         foreach (WrittenMember member in written.Members)
         {
-            if ((path.Count == 0 && member.Key == "op") || member.Key.Contains(Hole, StringComparison.Ordinal))
+            if ((path.Count == 0 && member.Key is "op" or "do") || member.Key.Contains(Hole, StringComparison.Ordinal))
             {
                 continue;
             }
@@ -183,7 +192,8 @@ internal static partial class ContractRules
     /// <summary>One JSON object a text writes: its members, and its <c>op</c> when it names one.</summary>
     private sealed record WrittenObject(List<WrittenMember> Members)
     {
-        public string? Op => Members.FirstOrDefault(static member => member.Key == "op")?.Value;
+        public string? Op => Members.FirstOrDefault(static member => member.Key == "op")?.Value
+            ?? (Members.FirstOrDefault(static member => member.Key == "do")?.Value is { } action ? $"do.{action}" : null);
     }
 
     /// <summary>One member of a written object: its key, its string value, and the objects its value holds at any depth of arrays.</summary>

@@ -26,13 +26,15 @@ public sealed class PdfModule : IProductModule
             AvailableEngines = ["aspose"],
     };
 
+    /// <summary>Loads the PDF object table, which names engine types: the commands call it only when they run.</summary>
+    internal static Aspose.Cli.Sdk.Tables.DocumentTable Table() => Engine.Mapping.PdfTable.Definition;
+
     public ProductDefinition Define() =>
         Aspose.Cli.Sdk.Extensibility.Product.Define<PdfSession>(Manifest)
             .Formats(PdfFormats.Definitions)
             .Diagnostics(PdfDiagnostics.All)
             .Json(ProductJsonContext.Definition)
-            .Describe("PDF automation with page, security and fixed-layout semantics.", Help)
-            .Command(InspectCommand.Create, PdfInfo.Run)
+            .Describe("Read, edit, convert and render PDF documents through the Aspose.PDF object model.", Help)
             .Command(ReadCommand.Create, PdfRead.Run)
             .Command(SearchCommand.Create, PdfSearch.Run)
             .Command(ConvertCommand.Create, PdfConvert.Run)
@@ -49,14 +51,11 @@ public sealed class PdfModule : IProductModule
 
     private static CommandHelp Help() => new(
         [
-            "pdf inspect report.pdf --sample --detail permissions --detail forms --detail signatures",
-            "pdf read report.pdf --pages 1-5 --content layout --output-format json",
-            "pdf edit report.pdf --ops ops.json --out reviewed.pdf",
-            "pdf sign reviewed.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --out approved.pdf",
+            "pdf read report.pdf",
+            "pdf read report.pdf --at page/1/text",
+            "pdf edit form.pdf --ops ops.json --out filled.pdf",
         ],
         [
-            CommandHelpLink.Docs(Manifest, "editing", "fixed-layout operations and safe mutation"),
-            CommandHelpLink.Docs(Manifest, "verification", "read-back, rendering and PDF/A evidence"),
-            CommandHelpLink.Schema<PdfOp>("the operation JSON schema"),
+            new("aspose-cli schema v2/pdf/ops --operation directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

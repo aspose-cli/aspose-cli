@@ -6,10 +6,10 @@ internal static class SplitCommand
 {
     public static CommandDefinition<PdfSplitRequest, PdfSplitResult> Create()
     {
-        var split = new SplitOptions([SplitBy.Pages, SplitBy.Bookmarks], groups: true);
+        var split = new SplitOptions([SplitBy.Pages], groups: true);
         return new(
             "split",
-            "Split a PDF into an atomic output set.",
+            "Split a PDF by page ranges, each part a new document with Pages.Add of its pages; every part is written or none.",
             new CommandTraits
             {
                 Input = PdfInputs.Document,
@@ -30,11 +30,10 @@ internal static class SplitCommand
             [
                 "pdf split report.pdf --by pages --every 2 --out-dir parts",
                 "pdf split report.pdf --by pages --groups 1-3 --groups 4-6 --out-dir parts",
-                "pdf split report.pdf --by bookmarks --out-dir chapters",
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "assemble-review-report", "dividing and assembling PDFs"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
             ],
         };
     }

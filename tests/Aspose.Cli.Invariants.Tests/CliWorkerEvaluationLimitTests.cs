@@ -60,8 +60,9 @@ public sealed class CliWorkerEvaluationLimitTests
     {
         Assert.SkipUnless(CliWorkers.Enabled, $"{CliWorkers.CountVariable}=0 runs every command as a child process.");
         using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("long.txt"), string.Join('\n', Enumerable.Range(1, 600).Select(static line => $"Line {line} of a long text")));
-        Assert.Equal(0, workspace.Run("pdf", "create", "long.pdf", "--from-text", "long.txt").ExitCode);
+        File.WriteAllText(workspace.File("long.html"), "<html><body>"
+            + string.Concat(Enumerable.Range(1, 8).Select(static page => $"<p style=\"page-break-after:always\">Page {page}</p>")) + "</body></html>");
+        Assert.Equal(0, workspace.Run("pdf", "convert", "long.html", "--out", "long.pdf").ExitCode);
         Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx").ExitCode);
         var lane = new Lane(workspace);
         // Evaluation mode reads only the first pages of a PDF, which a render of a later page needs.

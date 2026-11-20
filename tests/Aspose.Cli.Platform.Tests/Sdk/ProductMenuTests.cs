@@ -66,15 +66,12 @@ public sealed class ProductMenuTests : IDisposable
         Command product = Menu().Build().CreateCommand(_hosts.Run);
 
         Assert.Equal(("menu", "A product in a menu."), (product.Name, product.Description));
-        Assert.Equal(["inspect", "read", "search", "edit"], product.Subcommands.Select(static command => command.Name));
+        Assert.Equal(["inspect", "read", "search"], product.Subcommands.Select(static command => command.Name));
         Assert.True(product.TryGetHelpMetadata(out CommandHelpMetadata? help));
         Assert.Equal(["aspose-cli menu inspect doc.test"], help!.Examples);
         Assert.Equal(["aspose-cli docs menu/editing"], help.LearnMore.Select(static link => link.Command));
         Assert.True(product.Subcommands[0].TryGetHelpMetadata(out CommandHelpMetadata? info));
         Assert.Equal(["aspose-cli menu inspect doc.test --font-dir fonts"], info!.Examples);
-        Assert.Equal(
-            ["--ops", "--strict", "--out", "--overwrite", "--in-place", "--dry-run"],
-            product.Subcommands[3].Options.Select(static option => option.Name).Take(6));
     }
 
     [Fact]
@@ -123,24 +120,6 @@ public sealed class ProductMenuTests : IDisposable
     }
 
     [Fact]
-    public void Operations_ComeFromTheEditDefinitionsUnderTheirCommandNames()
-    {
-        ProductDefinition definition = ExtProduct.Define<TestSession>(Manifest)
-            .Describe("A product in a menu.")
-            .Command(InspectCommand.Create, TestHandlers.Info)
-            .Command(EditCommand.Create, TestHandlers.Edit)
-            .Complete()
-            .Build();
-
-        Assert.Equal(["edit"], definition.Operations.Select(static command => command.Descriptor.Command));
-        Assert.All(definition.Operations, static command =>
-        {
-            Assert.Equal(TestOp.Catalog.Names, command.Descriptor.Ops);
-            Assert.Equal(TestOp.Catalog.MaximumOperationCount, command.Descriptor.MaximumOperationCount);
-        });
-    }
-
-    [Fact]
     public void Build_RequiresADescriptionForAMenu()
     {
         ProductDefinitionBuilder<TestSession> builder = ExtProduct.Define<TestSession>(Manifest)
@@ -148,20 +127,6 @@ public sealed class ProductMenuTests : IDisposable
             .Complete();
 
         Assert.Contains("Describe", Assert.Throws<InvalidOperationException>(builder.Build).Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Edit_ChecksUsageBeforeReadingTheOperationsThenBindsTheBatch()
-    {
-        Command product = Menu().Build().CreateCommand(_hosts.Run);
-
-        CliException strict = RunFailing(product, "edit", "doc.test", "--ops", "missing.json", "--strict");
-        EditedResult edited = Assert.IsType<EditedResult>(
-            Run(product, "edit", "doc.test", "--ops", """{"ops":[{"op":"set","value":7}]}""", "--dry-run"));
-
-        Assert.Equal(ErrorCodes.OptionInvalid, strict.Code);
-        Assert.Equal("--strict", strict.Details!["option"]!.GetValue<string>());
-        Assert.Equal((1, true), (edited.Operations, edited.DryRun));
     }
 
     [Fact]
@@ -240,7 +205,6 @@ public sealed class ProductMenuTests : IDisposable
             .Command(InspectCommand.Create, TestHandlers.Info)
             .Command(ReadCommand.Create, TestHandlers.Info)
             .Command(SearchCommand.Create, TestHandlers.Search)
-            .Command(EditCommand.Create, TestHandlers.Edit)
             .Complete();
 
     private ResultEnvelope Run(Command product, params string[] arguments)
@@ -286,8 +250,6 @@ public sealed class ProductMenuTests : IDisposable
 
     public sealed record CompareRequest(string Input, string Other);
 
-    public sealed record EditRequest(int Operations, bool DryRun);
-
     public sealed record ProtectRequest(string? Password);
 
 #pragma warning disable APCLI003 // Test results, not product JSON roots.
@@ -295,7 +257,6 @@ public sealed class ProductMenuTests : IDisposable
 
     public sealed record FoundResult() : TestResultEnvelope("found");
 
-    public sealed record EditedResult(int Operations, bool DryRun) : TestResultEnvelope("edited");
 #pragma warning restore APCLI003
 
     private static class TestHandlers
@@ -310,9 +271,6 @@ public sealed class ProductMenuTests : IDisposable
 
         public static TextResult Compare(TestSession session, CompareRequest request) =>
             throw CliErrors.PasswordRequired(request.Other);
-
-        public static EditedResult Edit(TestSession session, EditRequest request) =>
-            new(request.Operations, request.DryRun);
 
         public static TextResult Protect(TestSession session, ProtectRequest request) => new(request.Password ?? string.Empty);
     }
@@ -379,32 +337,6 @@ public sealed class ProductMenuTests : IDisposable
             },
             [],
             static (_, standard) => new CompareRequest(standard.Input, standard.Other));
-    }
-
-    private static class EditCommand
-    {
-        public static CommandDefinition<EditRequest, EditedResult> Create()
-        {
-            var strict = new Option<bool>("--strict") { Description = "Refuse every operation document file." };
-            var edit = new BoundedEditCommand<TestOp, TestBatch>(new BoundedEditDefinition<TestOp, TestBatch>
-            {
-                Contracts = TestContracts.Json,
-                Writes = [FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, false, ".test")],
-            });
-            return EditDefinition.Create<TestOp, TestBatch, EditRequest, EditedResult>(
-                edit,
-                "Edits the document.",
-                new CommandTraits { Input = Document },
-                [strict],
-                static (_, batch, _) => new EditRequest(batch.Batch.Ops.Count, batch.Options.DryRun),
-                checkUsage: parse =>
-                {
-                    if (parse.GetValue(strict))
-                    {
-                        throw CliErrors.OptionInvalid("--strict", "refuses every operation document");
-                    }
-                });
-        }
     }
 
     /// <summary>An edit whose output extension names a protectable and an unprotectable format.</summary>

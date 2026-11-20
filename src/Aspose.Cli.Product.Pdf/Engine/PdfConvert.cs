@@ -1,314 +1,107 @@
-using Aspose.Cli.Sdk.Formats;
+using System.Text;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Devices;
-using static Aspose.Cli.Product.Pdf.Engine.PdfAssembly;
-using static Aspose.Cli.Product.Pdf.Engine.PdfPages;
+using Aspose.Pdf.Text;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Converts selected PDF pages to a supported format: <c>pdf convert</c>.</summary>
+/// <summary>
+/// <c>pdf convert</c>: a PDF, or an HTML page the engine imports, saved in another format with the
+/// engine's call for it: Document.Save with the format's save options; for PDF/A,
+/// Document.Convert(log, format, convertErrorAction) and then Document.Save; for TIFF the engine's
+/// TiffDevice; for text the engine's TextAbsorber over every page.
+/// </summary>
 internal static class PdfConvert
 {
     internal static PdfConvertResult Run(PdfSession session, PdfConvertRequest request)
     {
-        string filePath = request.Input;
         LicenseState state = session.Outputs.License;
-        using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
-        IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
-            ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
-        List<Warning> warnings = [];
+        bool html = PdfFormats.IsHtmlInput(request.Input);
+        using HtmlImportResources? resources = html ? new HtmlImportResources(request.Input, session.Budgets) : null;
+        using LoadedPdf loaded = resources is null
+            ? session.Loader.Open(request.Input, request.Password)
+            : session.Loader.OpenHtml(request.Input, resources);
+        Document document = loaded.Document;
         PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);
-        // Read before a conversion deletes the pages --pages did not select.
-        IReadOnlyList<string> filled = target.LeavesFormValues ? PdfForms.Filled(loaded.Document, pages) : [];
-        IReadOnlyList<PdfConvertOutput> outputs = target.Write switch
+        string? log = null;
+        bool? converted = null;
+        void Write(string temp)
         {
-            PdfEngineWrite.Tiff => [new(ConvertTiff(session, loaded.Document, pages, request))],
-            PdfEngineWrite.Text => [new(ConvertText(session, loaded.Document, pages, request))],
-            PdfEngineWrite.Archive => [new(ConvertPdfa(session, loaded.Document, pages, request, warnings))],
-            PdfEngineWrite.Document => [new(ConvertDocument(session, loaded.Document, pages, request, warnings))],
-            _ => throw new InvalidOperationException($"'{target.Id}' is not a PDF convert format."),
-        };
+            switch (target.Write)
+            {
+                case PdfEngineWrite.Archive:
+                    using (var stream = new MemoryStream())
+                    {
+                        converted = document.Convert(stream, target.Archive!.Value, ErrorAction(request.ConvertErrorAction!));
+                        log = Encoding.UTF8.GetString(stream.ToArray());
+                    }
 
-        if (filled.Count > 0)
-        {
-            warnings.Add(FormValuesLeftOut(request.Output.Format.Id, filled));
+                    document.Save(temp);
+                    break;
+                case PdfEngineWrite.Tiff:
+                    Tiff(session, document, request, temp);
+                    break;
+                case PdfEngineWrite.Text:
+                    var absorber = new TextAbsorber();
+                    document.Pages.Accept(absorber);
+                    File.WriteAllText(temp, absorber.Text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                    break;
+                default:
+                    if (target.Options is { } options)
+                    {
+                        document.Save(temp, options(request.Pages?.Resolve(document.Pages.Count)));
+                    }
+                    else
+                    {
+                        document.Save(temp, target.Save!.Value);
+                    }
+                    break;
+            }
+
+            resources?.ThrowIfFailed();
         }
 
-        if (target.Lossy)
-        {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"PDF conversion to {request.Output.Format.Id} may not preserve every layout or interactive feature."));
-        }
-
+        // A format whose save writes files beside the output, such as Markdown's pictures, is published with them as one set.
+        IReadOnlyList<OutputInfo> outputs = request.Output.Format.CompanionFiles
+            ? session.Outputs.Write(request.Output, document, encrypted: false, Write)
+            : [FileObjects.Output(
+                session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, document, Write,
+                    rendering: target.Write is PdfEngineWrite.Tiff or PdfEngineWrite.Text),
+                request.Output.Format,
+                encrypted: false)];
         return new PdfConvertResult
         {
-            Input = PdfInfoProjection.Source(filePath, loaded),
-            Outputs = outputs,
+            Input = FileObjects.Input(request.Input, html ? "html" : loaded.FormatId, loaded.Protection.Encrypted),
+            Outputs = [.. outputs.Select(static output => new PdfConvertOutput(output))],
             Pages = request.Pages?.Text,
+            Converted = converted,
+            ConversionLog = log,
             License = EnvelopeParts.License(state),
-            Warnings = warnings.Count == 0 ? null : warnings,
+            Warnings = resources?.Warnings is { Count: > 0 } warnings ? warnings : null,
         };
     }
 
-    /// <summary>
-    /// The warning that an output of page text alone, such as text or Markdown, leaves out the
-    /// values of the filled fields on the converted pages, which a flattened copy of an AcroForm
-    /// writes as page text, and the command that reads them. The Markdown export of that copy may
-    /// write a value twice (PDF-MD-FIELD-REPEATS in KNOWN-ISSUES.md).
-    /// </summary>
-    private static Warning FormValuesLeftOut(string format, IReadOnlyList<string> filled) =>
-        ContentLoss.Warning([ContentKind.FormValues],
-            $"The {format} output leaves out the values of {filled.Count} filled form field{(filled.Count == 1 ? "" : "s")}: {PdfForms.Listed(filled)}.",
-            location: filled.Count == 1 ? PdfInfoProjection.Address("field", filled[0]) : null);
-
-    /// <summary>
-    /// Converts the opened document itself, which this command never saves back, so the
-    /// document properties reach formats that carry them.
-    /// </summary>
-    private static OutputInfo ConvertDocument(
-        PdfSession session,
-        Document document,
-        IReadOnlyList<int> pages,
-        PdfConvertRequest request,
-        List<Warning> warnings)
+    /// <summary>TiffDevice.Process over the pages --pages gives, or every page, at the default resolution.</summary>
+    private static void Tiff(PdfSession session, Document document, PdfConvertRequest request, string path)
     {
-        if (UnselectedNavigation(DeleteUnselected(document, pages)) is { } navigation)
+        IReadOnlyList<int> pages = request.Pages?.Resolve(document.Pages.Count) ?? [.. Enumerable.Range(1, document.Pages.Count)];
+        foreach (int number in pages)
         {
-            warnings.Add(navigation);
+            PdfRaster.EnsurePageFits(session.Budgets, document.Pages[number], RenderPixelGuard.DefaultDpi);
         }
 
-        ReadEveryPage(document);
-        PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);
-        SaveFormat format = PdfEngineFormats.Save(target.Id);
-        int removed = 0;
-        PublishedFile written = session.Outputs.Write(
-            request.Output.Path,
-            request.Output.Format,
-            request.Output.Overwrite,
-            document,
-            temp =>
-            {
-                if (target.LeavesPictures)
-                {
-                    removed = PdfMarkdownText.Save(document, temp);
-                }
-                else if (target.Options is { } options)
-                {
-                    document.Save(temp, options(document));
-                }
-                else
-                {
-                    document.Save(temp, format);
-                }
-            });
-        // The pictures are counted as 'pdf extract --what images' writes them; the export also
-        // links the pictures drawn inline, and none in a table cell.
-        int? pictures = target.LeavesPictures ? PdfExtract.PictureCount(document, Enumerable.Range(1, document.Pages.Count)) : 0;
-        if (pictures > 0 || removed > 0)
-        {
-            warnings.Add(ContentLoss.Warning([ContentKind.Pictures],
-                $"The {target.Id} output leaves out the pictures the converted pages show, "
-                    + (pictures is { } count ? $"{count} of them stored as image objects" : "whose image objects the engine cannot read") + "; it holds their text."));
-        }
-
-        return FileObjects.Output(written, request.Output.Format, encrypted: false);
+        using FileStream stream = File.Create(path);
+        new TiffDevice(new Resolution(RenderPixelGuard.DefaultDpi), new TiffSettings()).Process(document, pages[0], pages[^1], stream);
     }
 
-    /// <summary>
-    /// Reads every page a document export keeps. Aspose.PDF in evaluation mode exports only the
-    /// pages it shows to most document formats, without a sign, while its Markdown export, like
-    /// any read of a later page, throws: reading the pages first stops every document export at
-    /// the same evaluation limit, which the SDK reports, rather than writing the first pages as if
-    /// they were the document.
-    /// </summary>
-    private static void ReadEveryPage(Document document)
-    {
-        for (int number = 1; number <= document.Pages.Count; number++)
-        {
-            _ = document.Pages[number];
-        }
-    }
-
-    /// <summary>
-    /// Deletes the pages --pages did not select from the opened document, and counts the
-    /// navigation that led to them. None of what leads to a selected page stops leading there, so
-    /// nothing is <see cref="PdfNavigationLoss.Stranded"/>: a deletion renumbers bookmarks and named
-    /// destinations, a link through a name follows it, and a link read before leads to the page it
-    /// read (<see cref="PdfNavigationLoss.Capture"/>).
-    /// </summary>
-    private static PdfNavigationLoss DeleteUnselected(Document document, IReadOnlyList<int> pages)
-    {
-        int[] excluded = Enumerable.Range(1, document.Pages.Count).Except(pages).ToArray();
-        if (excluded.Length == 0)
-        {
-            return new PdfNavigationLoss(default, default);
-        }
-
-        var links = new PdfLinkPages();
-        IReadOnlyList<PdfNavigationLoss.Entry> before = PdfNavigationLoss.Capture(document, links);
-        Page[] selected = [.. pages.Select(number => document.Pages[number])];
-        document.Pages.Delete(excluded);
-        return PdfNavigationLoss.Between(before, PdfNavigationLoss.Capture(document, links), selected.Contains);
-    }
-
-    private static Warning? UnselectedNavigation(PdfNavigationLoss loss) => loss.RemovedWarning(
-        "lead to pages that --pages did not select");
-
-    private static OutputInfo ConvertText(PdfSession session, Document source, IReadOnlyList<int> pages, PdfConvertRequest request)
-    {
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, source, temp =>
-            File.WriteAllText(temp, DocumentText(pages.Select(number => source.Pages[number]))), rendering: true, pages: pages);
-        return FileObjects.Output(written, request.Output.Format, encrypted: false);
-    }
-
-    /// <summary>
-    /// Converts the opened document itself, which this command never saves back, so the
-    /// outline, attachments, metadata and page labels reach the archive. The engine
-    /// removes what the profile does not allow, and each removed attachment or bookmark is
-    /// reported on its own.
-    /// </summary>
-    private static OutputInfo ConvertPdfa(
-        PdfSession session,
-        Document opened,
-        IReadOnlyList<int> pages,
-        PdfConvertRequest request,
-        List<Warning> warnings)
-    {
-        string profile = request.Output.Format.Id;
-        PdfEngineFormat target = PdfEngineFormats.Of(profile);
-        PdfFormat format = target.Archive
-            ?? throw new InvalidOperationException($"'{profile}' is not a PDF/A profile.");
-
-        // Navigation is counted around the page deletion alone; a bookmark the conversion
-        // removes is reported with the outline below.
-        PdfNavigationLoss degraded = DeleteUnselected(opened, pages);
-        Document document = opened;
-
-        // PDF/A forbids encryption; the engine cannot convert an encrypted document.
-        if (document.IsEncrypted)
-        {
-            document.Decrypt();
-        }
-
-        string[] attachments = AttachmentNames(document);
-        FileSpecification[] untyped = document.EmbeddedFiles
-            .Where(static file => string.IsNullOrEmpty(file.MIMEType))
-            .ToArray();
-        int bookmarks = PdfOutlineAddresses.CountOutline(document.Outlines);
-        int changed = 0;
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, document, temp =>
-        {
-            using var log = new MemoryStream();
-            PdfComplianceLog.EnsureConverted(
-                document.Convert(log, format, ConvertErrorAction.Delete), log, profile);
-            // The identification it writes and the attachments, reported below, are not counted.
-            changed = PdfComplianceLog.Parse(log)
-                .Count(static problem => problem.Section is not ("Metadata" or "EmbeddedFiles"));
-            // Only PDF/A-3 keeps attachments that are not PDF documents.
-            if (format == PdfFormat.PDF_A_3B)
-            {
-                LabelUntypedAttachments(document, untyped);
-            }
-
-            document.Save(temp);
-            using LoadedPdf saved = session.Loader.OpenPublishedCandidate(temp, password: null);
-            using var validation = new MemoryStream();
-            PdfComplianceLog.EnsureConformant(
-                saved.Document.Validate(validation, format), validation, profile, target.AppearanceClause, page => ButtonFields(saved.Document, page));
-        });
-
-        foreach (string removed in attachments.Except(AttachmentNames(document), StringComparer.Ordinal))
-        {
-            warnings.Add(ContentLoss.Warning([ContentKind.Attachments],
-                $"Attachment '{removed}' was removed: {target.AttachmentRule ?? $"the engine could not make it conform to {profile}"}.",
-                location: PdfInfoProjection.Address("attachment", removed)));
-        }
-
-        int lostBookmarks = bookmarks - PdfOutlineAddresses.CountOutline(document.Outlines);
-        if (lostBookmarks > 0)
-        {
-            warnings.Add(ContentLoss.Warning([ContentKind.Bookmarks],
-                $"{lostBookmarks} bookmark(s) were removed by the conversion to {profile}.",
-                location: "bookmark/all"));
-        }
-
-        if (UnselectedNavigation(degraded) is { } navigation)
-        {
-            warnings.Add(navigation);
-        }
-
-        if (changed > 0)
-        {
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Conversion to {profile} changed {changed} item(s) the profile does not allow, such as fonts that were not embedded, transparency, actions or prohibited annotation entries."));
-        }
-
-        return FileObjects.Output(written, request.Output.Format, encrypted: false);
-    }
-
-    /// <summary>
-    /// The full names of the check boxes and radio groups on a page whose normal appearance is
-    /// one stream rather than one per state, which the profile's appearance clause rejects; the form lists a radio
-    /// group as its buttons. The SDK names an appearance per state <c>N.&lt;state&gt;</c>.
-    /// </summary>
-    private static IEnumerable<string> ButtonFields(Document document, int page) => document.Form.Fields
-        .Where(field => field is (Aspose.Pdf.Forms.CheckboxField or Aspose.Pdf.Forms.RadioButtonField or Aspose.Pdf.Forms.RadioButtonOptionField)
-            && field.PageIndex == page
-            && (PdfForms.RadioGroup(field) ?? field).Appearance.Keys.Contains("N"))
-        .Select(static field => field.FullName);
-
-    /// <summary>
-    /// The conversion labels every attachment that had no media type <c>application/pdf</c>
-    /// (PDF-PDFA-ATTACHMENT-TYPE); one that is not a PDF is labelled
-    /// <c>application/octet-stream</c>, the type of unidentified data, instead.
-    /// </summary>
-    private static void LabelUntypedAttachments(Document document, IReadOnlyCollection<FileSpecification> untyped)
-    {
-        foreach (FileSpecification file in document.EmbeddedFiles)
-        {
-            if (untyped.Contains(file) && !StartsAsPdf(file))
-            {
-                file.MIMEType = "application/octet-stream";
-            }
-        }
-    }
-
-    private static bool StartsAsPdf(FileSpecification file)
-    {
-        Stream? contents = file.Contents;
-        if (contents is null)
-        {
-            return false;
-        }
-
-        if (contents.CanSeek)
-        {
-            contents.Position = 0;
-        }
-
-        return ContainerSignatures.HasPdfHeader(ContainerSignatures.ReadPrefix(contents));
-    }
-
-    private static OutputInfo ConvertTiff(
-        PdfSession session,
-        Document source,
-        IReadOnlyList<int> pages,
-        PdfConvertRequest request)
-    {
-        foreach (int pageNumber in pages)
-        {
-            PdfRaster.EnsurePageFits(session.Budgets, source.Pages[pageNumber], RenderPixelGuard.DefaultDpi);
-        }
-
-        using Document selected = Select(source, pages);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, selected, temp =>
-        {
-            using FileStream stream = File.Create(temp);
-            var device = new TiffDevice(new Resolution(RenderPixelGuard.DefaultDpi), new TiffSettings());
-            device.Process(selected, 1, selected.Pages.Count, stream);
-        }, rendering: true);
-        return FileObjects.Output(written, request.Output.Format, encrypted: false);
-    }
+    /// <summary>The member of the engine's ConvertErrorAction that <paramref name="name"/> names.</summary>
+    private static ConvertErrorAction ErrorAction(string name) =>
+        Enum.GetNames<ConvertErrorAction>().Contains(name, StringComparer.Ordinal)
+            ? Enum.Parse<ConvertErrorAction>(name)
+            : throw CliErrors.OptionInvalid("--convert-error-action", $"'{name}' is no member of ConvertErrorAction; it is one of: {string.Join(", ", Enum.GetNames<ConvertErrorAction>())}");
 }

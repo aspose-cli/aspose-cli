@@ -54,7 +54,7 @@ public sealed class PdfAttachmentNamingTests
     }
 
     [Fact]
-    public void Attachments_AreNumberedInNameOrder()
+    public void Attachments_AreNumberedInTheEnginesOrder()
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.File("report.pdf");
@@ -67,9 +67,9 @@ public sealed class PdfAttachmentNamingTests
             What = PdfExtractKinds.Attachments,
         });
 
-        Assert.Equal(["attachment-0001.txt", "attachment-0002.csv"], result.Outputs.Select(static item => Path.GetFileName(item.Path)));
-        Assert.Equal(["first", "second"], result.Outputs.Select(static item => File.ReadAllText(item.Path)));
-        Assert.Equal(["a.txt", "b.csv"], result.Outputs.Select(static item => item.Name));
+        Assert.Equal(["attachment-0001.csv", "attachment-0002.txt"], result.Outputs.Select(static item => Path.GetFileName(item.Path)));
+        Assert.Equal(["second", "first"], result.Outputs.Select(static item => File.ReadAllText(item.Path)));
+        Assert.Equal(["b.csv", "a.txt"], result.Outputs.Select(static item => item.Name));
     }
 
     [Fact]

@@ -5,7 +5,6 @@ namespace Aspose.Cli.Generated;
 
 /// <summary>Source-generated serialization metadata for PDF contracts.</summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true)]
-[JsonSerializable(typeof(Product.Pdf.Contracts.PdfInspectResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfReadResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfConvertResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfRenderResult))]
@@ -17,7 +16,6 @@ namespace Aspose.Cli.Generated;
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfSearchResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfValidateResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfSignResult))]
-[JsonSerializable(typeof(Product.Pdf.Contracts.PdfOpsBatch))]
 internal sealed partial class ProductJsonContext : JsonSerializerContext
 {
     internal static ProductJsonDefinition Definition => DefinitionHolder.Value;

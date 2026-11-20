@@ -7,7 +7,7 @@ public sealed record PdfSplitRequest
 {
     /// <summary>The PDF to open.</summary>
     public required string Input { get; init; }
-    /// <summary>How the PDF is divided: by pages, in runs or explicit groups, or at bookmarks.</summary>
+    /// <summary>How the PDF is divided by pages: in runs or explicit groups.</summary>
     public required SplitPlan Plan { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }

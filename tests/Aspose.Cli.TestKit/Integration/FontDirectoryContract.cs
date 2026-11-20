@@ -37,9 +37,9 @@ public static class FontDirectoryContract
     public static bool EmbedsFixture(TempWorkspace workspace, string pdf)
     {
         ArgumentNullException.ThrowIfNull(workspace);
-        JsonNode result = Succeed(workspace.Run(["pdf", "inspect", pdf, "--detail", "fonts", "--output-format", "json"]));
-        return result["fonts"]!.AsArray().Any(static font =>
-            IsFixture(font!["name"]!.GetValue<string>()) && font["embedded"]!.GetValue<bool>());
+        JsonNode result = Succeed(workspace.Run(["pdf", "read", pdf, "--kind", "font", "--max-objects", "10000", "--output-format", "json"]));
+        return result["objects"]!.AsArray().Any(static font =>
+            IsFixture(font!["props"]!["fontName"]!.GetValue<string>()) && font["props"]!["isEmbedded"]!.GetValue<bool>());
     }
 
     /// <summary>A result on stdout: complete (0), or partial (8).</summary>

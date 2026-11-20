@@ -38,13 +38,12 @@ public sealed class CreateInputsContractTests : IDisposable
     [Theory]
     [InlineData("slides create deck.pptx --template brand.pptx", "--template:brand.pptx:pptx")]
     [InlineData("words create doc.docx --template brand.docx", "--template:brand.docx:docx")]
-    [InlineData("pdf create doc.pdf --from-images b.png --from-images a.png", "--from-images:b.png:png", "--from-images:a.png:png")]
-    [InlineData("pdf create doc.pdf --from-markdown outline.md", "--from-markdown:outline.md:md")]
-    [InlineData("pdf create doc.pdf --from-text notes.txt", "--from-text:notes.txt:txt")]
+    [InlineData("pdf create doc.pdf --template brand.pdf", "--template:brand.pdf:pdf")]
     public void CreateFromFiles_ReportsEachFileWithItsOptionInCommandLineOrder(string commandLine, params string[] expected)
     {
         Require(_workspace.Run("slides", "create", "brand.pptx"));
         Require(_workspace.Run("words", "create", "brand.docx"));
+        Require(_workspace.Run("pdf", "create", "brand.pdf"));
 
         JsonArray inputs = Inputs(commandLine);
 

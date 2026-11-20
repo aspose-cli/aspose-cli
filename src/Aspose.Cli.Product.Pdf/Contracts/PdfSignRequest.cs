@@ -2,26 +2,42 @@ using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
-/// <summary>Options for applying one PKCS#7 PDF signature.</summary>
+/// <summary>One <c>pdf sign</c>: the parameters of PdfFileSignature.Sign, as the caller states them.</summary>
 public sealed record PdfSignRequest
 {
     /// <summary>The PDF to open.</summary>
     public required string Input { get; init; }
+
+    /// <summary>The PKCS #12 file of the signing certificate.</summary>
     public required string CertificatePath { get; init; }
+
+    /// <summary>The password the PKCS #12 file opens with.</summary>
     public required Secret CertificatePassword { get; init; }
+
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
-    public Secret? Password { get; init; }
-    public int Page { get; init; } = 1;
-    public bool Visible { get; init; }
-    public PdfSignatureRect? Rect { get; init; }
-    public string? Reason { get; init; }
-    public string? Location { get; init; }
-    public string? Contact { get; init; }
-}
 
-/// <summary>
-/// A visible-signature rectangle in PDF points from the top-left corner of the visible, rotated
-/// page box, as <c>redact_area</c> and <c>pdf render --grid</c> measure.
-/// </summary>
-public sealed record PdfSignatureRect(double X, double Y, double Width, double Height);
+    /// <summary>The password the PDF opens with.</summary>
+    public Secret? Password { get; init; }
+
+    /// <summary>The page of the signature, from 1.</summary>
+    public required int Page { get; init; }
+
+    /// <summary>Whether the signature has an appearance on the page.</summary>
+    public required bool Visible { get; init; }
+
+    /// <summary>The signature's rectangle, the engine's System.Drawing.Rectangle; null for an invisible one.</summary>
+    public System.Drawing.Rectangle? Rect { get; init; }
+
+    /// <summary>PKCS7.Reason.</summary>
+    public string? Reason { get; init; }
+
+    /// <summary>PKCS7.Location.</summary>
+    public string? Location { get; init; }
+
+    /// <summary>PKCS7.ContactInfo.</summary>
+    public string? Contact { get; init; }
+
+    /// <summary>SignatureCustomAppearance.FontFamilyName, or null for the engine's default appearance.</summary>
+    public string? Font { get; init; }
+}

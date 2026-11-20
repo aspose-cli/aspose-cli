@@ -1,39 +1,30 @@
 using System.Diagnostics;
+using System.Text;
+using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Validates a PDF against one PDF/A profile: <c>pdf validate</c>.</summary>
+/// <summary><c>pdf validate</c>: Document.Validate(log, format), its return value and its log as the engine wrote it.</summary>
 internal static class PdfValidate
 {
-    /// <summary>The most validation issues one result lists.</summary>
-    private const int ListedIssues = 100;
-
     internal static PdfValidateResult Run(PdfSession session, PdfValidateRequest request)
     {
-        string filePath = request.Input;
         PdfFormat format = PdfEngineFormats.Archive(request.Profile.ToLowerInvariant())
             ?? throw new UnreachableException($"--profile {request.Profile} reached the engine, which ValidateCommand refuses.");
         LicenseState state = session.Outputs.License;
-        using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
+        using LoadedPdf loaded = session.Loader.Open(request.Input, request.Password);
         using var log = new MemoryStream();
         bool valid = loaded.Document.Validate(log, format);
-        IReadOnlyList<PdfComplianceProblem> problems = PdfComplianceLog.Parse(log);
         return new PdfValidateResult
         {
-            Input = PdfInfoProjection.Source(filePath, loaded),
+            Input = FileObjects.Input(request.Input, loaded.FormatId, loaded.Protection.Encrypted),
             Profile = request.Profile.ToLowerInvariant(),
             Valid = valid,
-            Issues = problems.Take(ListedIssues).Select(static problem => problem.ToIssue()).ToArray(),
+            Log = Encoding.UTF8.GetString(log.ToArray()),
             License = EnvelopeParts.License(state),
-            Warnings = problems.Count > ListedIssues
-                ? [EnvelopeParts.ListTruncated(
-                    "issues",
-                    ListedIssues,
-                    problems.Count)]
-                : null,
         };
     }
 }

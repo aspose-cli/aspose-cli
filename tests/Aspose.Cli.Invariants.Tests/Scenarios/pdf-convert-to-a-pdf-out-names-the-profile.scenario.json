@@ -1,34 +1,81 @@
 {
-  "name": "pdf convert writes PDF/A to a .pdf --out only when --to names the profile, and a mistyped .pfd lists every profile",
+  "name": "pdf convert writes PDF to a .pdf --out and PDF/A only when --to names the profile, and a mistyped .pfd lists every profile",
   "files": {
-    "input.pdf": { "fixture": "pdf.pdf" }
+    "input.pdf": {
+      "fixture": "pdf.pdf"
+    }
   },
   "steps": [
     {
-      "args": ["pdf", "convert", "input.pdf", "--out", "archive.pdf"],
+      "args": [
+        "pdf",
+        "convert",
+        "input.pdf",
+        "--out",
+        "archive.pdf"
+      ],
       "expect": {
-        "exitCode": 2,
-        "error": "USAGE_ERROR",
+        "exitCode": 0,
         "json": [
-          { "path": "error.message", "contains": "pdfa-1b, pdfa-2b and pdfa-3b" }
+          {
+            "path": "outputs[0].format",
+            "equals": "pdf"
+          }
         ],
-        "files": { "absent": ["archive.pdf"], "unchanged": ["input.pdf"], "nothingWritten": true }
+        "files": {
+          "present": [
+            "archive.pdf"
+          ],
+          "unchanged": [
+            "input.pdf"
+          ]
+        }
       }
     },
     {
-      "args": ["pdf", "render", "input.pdf", "--out", "archive.pfd"],
+      "args": [
+        "pdf",
+        "render",
+        "input.pdf",
+        "--out",
+        "archive.pfd"
+      ],
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
-        "files": { "absent": ["archive.pfd", "archive.pdf"], "nothingWritten": true }
+        "files": {
+          "absent": [
+            "archive.pfd"
+          ],
+          "nothingWritten": true
+        }
       }
     },
     {
-      "args": ["pdf", "convert", "input.pdf", "--to", "pdfa-3b", "--out", "archive.pdf"],
+      "args": [
+        "pdf",
+        "convert",
+        "input.pdf",
+        "--to",
+        "pdfa-3b",
+        "--convert-error-action",
+        "Delete",
+        "--out",
+        "archive-3b.pdf"
+      ],
       "expect": {
         "exitCode": 0,
-        "json": [{ "path": "outputs[0].format", "equals": "pdfa-3b" }],
-        "files": { "present": ["archive.pdf"] }
+        "json": [
+          {
+            "path": "outputs[0].format",
+            "equals": "pdfa-3b"
+          }
+        ],
+        "files": {
+          "present": [
+            "archive-3b.pdf"
+          ]
+        }
       }
     }
   ]

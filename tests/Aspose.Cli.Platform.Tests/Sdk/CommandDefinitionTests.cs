@@ -606,21 +606,6 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.Equal(fonts, Assert.Single(invocation.FontDirectories.Directories));
     }
 
-    [Fact]
-    public void MaxCharactersOption_SharesTheDefaultAndTheRange()
-    {
-        var option = new MaxCharactersOption("Characters.");
-        var command = new Command("read");
-        foreach (Option symbol in option.Options)
-        {
-            command.Options.Add(symbol);
-        }
-
-        Assert.Equal(MaxCharactersOption.DefaultCharacters, option.Read(command.Parse([])));
-        Assert.Equal(ErrorCodes.OptionInvalid, Assert.Throws<CliException>(
-            () => option.Read(command.Parse([MaxCharactersOption.Name, "0"]))).Code);
-    }
-
     private Command Create(CommandTraits traits, Func<ParseResult, StandardInvocation, TestResult> bind) =>
         Create("run", "Runs.", traits, [Mode()], bind);
 

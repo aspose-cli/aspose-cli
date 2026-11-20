@@ -13,24 +13,6 @@ internal static partial class ContractRules
     private static readonly Regex NameWords = new("[A-Z]?[a-z0-9]+|[A-Z]+(?![a-z])", RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// The op verbs of C-R19, in the order the rule lists them: an op name is one of them, an
-    /// underscore and a noun.
-    /// </summary>
-    private static readonly string[] OpVerbs =
-    [
-        "insert", "add", "set", "import", "copy", "move", "rename", "sort", "resize", "format", "define", "refresh",
-        "delete", "clear", "replace", "redact", "protect", "unprotect", "encrypt", "decrypt", "merge", "unmerge",
-        "group", "ungroup", "freeze", "unfreeze", "accept", "reject", "flatten", "optimize", "rotate", "crop",
-        "repeat", "mail_merge",
-    ];
-
-    /// <summary>Domain verbs of the table that name a whole op on their own, without a further noun.</summary>
-    private static readonly HashSet<string> WholeOpVerbs = new(StringComparer.Ordinal) { "mail_merge" };
-
-    private static readonly Regex OpName = new(
-        "^(" + string.Join("|", OpVerbs) + ")_[a-z0-9_]+$", RegexOptions.CultureInvariant);
-
-    /// <summary>
     /// The integer fields C-R18 reads as a document position, ordinal or level, which count from 1:
     /// pages, slides, blocks, sections, rows and table columns, a sheet's or chart's position or
     /// index, outline and list levels, the 1-based anchors and range ends that address one of them,
@@ -71,8 +53,6 @@ internal static partial class ContractRules
     /// </summary>
     private static readonly Dictionary<(string Schema, string Path), string> RealNoneChoices = new()
     {
-        [("v2/pdf/ops", "pdfPageLabelRange.numberStyle")] = "a page-label range of style none labels its pages with the prefix alone, a numbering style of its own",
-        [("v2/pdf/inspect-result", "pdfPageLabelInfo.numberStyle")] = "reads back the page-label style none that set_page_labels writes",
         [("v2/cells/ops", "set_page_setup.printComments")] = "omitting printComments leaves the setting as it is, so only none takes back a sheet-end",
         [("v2/cells/inspect-result", "cellsPageSetupInfo.printComments.anyOf[0]")] = "reads back the printComments none that set_page_setup writes",
     };
@@ -153,18 +133,6 @@ internal static partial class ContractRules
                 yield break;
             }
             yield return $"{path}: minimum {minimum ?? "absent"}, not 1";
-        }
-    }
-
-    private static IEnumerable<InvariantCase> R19Names(CliCatalog catalog)
-    {
-        foreach (CliProduct product in PublishedSchema.OpsProducts(catalog))
-        {
-            foreach (string op in product.Ops)
-            {
-                yield return Check("C-R19", PublishedSchema.OpSubject(product, op).Name, () =>
-                    OpName.IsMatch(op) || WholeOpVerbs.Contains(op) ? [] : [$"op {op} is not <verb>_<noun> with a verb of the rule's table"]);
-            }
         }
     }
 
@@ -472,40 +440,6 @@ internal static partial class ContractRules
 
     private static readonly Regex ObjectShape = new(@"object\{(?<fields>[^{}]*)\}", RegexOptions.CultureInvariant);
 
-    private static IEnumerable<InvariantCase> R29(CliCatalog catalog)
-    {
-        foreach (CliProduct product in PublishedSchema.OpsProducts(catalog))
-        {
-            CliCommand? edit = catalog.Commands.FirstOrDefault(command => command.Words == $"{product.Id} edit");
-            yield return Check("C-R29", $"{product.Id} edit", () => Verification(product.Id, edit));
-        }
-
-        static IEnumerable<string> Verification(string product, CliCommand? edit)
-        {
-            if (edit is null || !edit.Has("--verify"))
-            {
-                yield return $"{product} edit has no --verify";
-            }
-            string id = $"v2/{product}/edit-result";
-            if (PublishedSchema.Document(id)["properties"]?["verification"] is not JsonObject declared)
-            {
-                yield return $"{id} declares no verification";
-                yield break;
-            }
-            (_, JsonObject verification) = PublishedSchema.Resolve(id, declared);
-            string[] required = PublishedSchema.Required(verification);
-            string[] missing = [.. new[] { "ok", "issues", "checkedOps" }.Where(name => !required.Contains(name))];
-            if (missing.Length > 0)
-            {
-                yield return $"{id} verification does not require {string.Join(", ", missing)}";
-            }
-            if (verification["additionalProperties"]?.ToJsonString() != "false")
-            {
-                yield return $"{id} verification does not declare its product fields";
-            }
-        }
-    }
-
     /// <summary>
     /// Each edit result lists its outcomes as the SDK's operation outcome. That outcome is one SDK
     /// record, <c>BoundedOperationOutcome</c>, whose error is the error envelope's own type, so
@@ -686,10 +620,10 @@ internal static partial class ContractRules
     private static readonly Dictionary<(string Schema, string Path), UnitChoice> UnitsARunChooses = new()
     {
         [("v2/pdf/extract-result", "outputs")] = new("pdf extract", "--what", ["page", "name"],
-            "pdf extract names each image or table by the page it comes from and each attachment by the name the document gives it, never used as its file name; the text and the form data name neither; --what chooses which (security fixes S9, 2026-10-21)")
+            "pdf extract names each image or table by the page it comes from and each attachment by the name the document gives it, never used as its file name; the form data names neither; --what chooses which (security fixes S9, 2026-10-21)")
         {
             Fixture = "pdf.media",
-            Unitless = ["text", "forms"],
+            Unitless = ["forms"],
             Arguments = new Dictionary<string, string[]>(StringComparer.Ordinal) { ["forms"] = ["--form-format", "json"] },
         },
     };

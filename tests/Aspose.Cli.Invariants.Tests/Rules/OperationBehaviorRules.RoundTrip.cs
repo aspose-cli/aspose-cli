@@ -44,12 +44,6 @@ internal static partial class ContractRules
     /// </summary>
     internal static IReadOnlyDictionary<string, RoundTripExemption> RoundTripExempt { get; } = new Dictionary<string, RoundTripExemption>(StringComparer.Ordinal)
     {
-        ["pdf add_attachment"] = new(RoundTripPart.SameValue, AddsAgain),
-        ["pdf add_bookmark"] = new(Both, Adds),
-        ["pdf add_hyperlink"] = new(RoundTripPart.SameValue, AddsAgain),
-        ["pdf encrypt_document"] = new(RoundTripPart.SameValue, "Encrypting again re-keys the file under passwords no read reports, so the read state written back still changes the output and counts 1."),
-        ["pdf insert_page"] = new(Both, Adds),
-        ["pdf set_page_labels ranges.startPage"] = new(RoundTripPart.OneChange, "The fixture has one page, so a range cannot start on another."),
     };
 
     /// <summary>
@@ -62,13 +56,6 @@ internal static partial class ContractRules
     {
     };
 
-    private const RoundTripPart Both = RoundTripPart.SameValue | RoundTripPart.OneChange;
-
-    private const string Adds = "Adds an object each time: written again, with the values read or one changed, it adds another instead of rewriting the first.";
-
-    private const string Unique = "Adds an object under a name the document holds once: written again, it is refused.";
-
-    private const string AddsAgain = "Adds an object each time: written again with the values read, it adds another; with one value changed, the new object alone differs, as it should.";
     // rule-exemptions: end
 
     // ----- C-R39: the state a read reports round-trips through the operation that writes it -----

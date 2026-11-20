@@ -7,7 +7,7 @@ using Aspose.Cli.Sdk.IO.Output;
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 /// <summary>
-/// Extracts images, attachments, text, tables or form data into a directory;
+/// Extracts images, attachments, tables or form data into a directory;
 /// <c>--form-format</c> chooses the format of the form data.
 /// </summary>
 internal static class ExtractCommand
@@ -16,7 +16,7 @@ internal static class ExtractCommand
     {
         var what = new Option<string>("--what") { Required = true, Description = "What to extract; forms writes the form data to one file." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PdfExtractKinds.All]);
-        var pages = new PartRangeOption("page", "every page", onlyWith: "--what images, text or tables");
+        var pages = new PartRangeOption("page", "every page", onlyWith: "--what images or tables");
         var formFormat = new Option<string?>("--form-format")
         {
             Description = "Form data format; required with --what forms, and only with it.",
@@ -25,7 +25,7 @@ internal static class ExtractCommand
         var bom = new BomOption("each table's CSV", onlyWith: "--what tables");
         return new(
             "extract",
-            "Extract bounded PDF assets, text, tables or form data.",
+            "Extract a PDF's images, attachments, tables or form data into a directory with the engine's calls for them; the page text is read with 'aspose-cli pdf read --kind text'.",
             new CommandTraits
             {
                 Input = PdfInputs.Document,
@@ -84,7 +84,6 @@ internal static class ExtractCommand
             Links =
             [
                 CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
-                CommandHelpLink.Docs(PdfModule.Manifest, "forms-security", "form data export and import"),
             ],
         };
     }

@@ -45,10 +45,10 @@ public sealed class SlidesConvertCliTests : IDisposable
         Deck(notes: "Zq9x");
 
         Run("slides", "convert", "deck.pptx", "--out", "deck.pdf");
-        CliResult read = _workspace.Run("pdf", "read", "deck.pdf", "--output-format", "json");
+        CliResult read = _workspace.Run("pdf", "read", "deck.pdf", "--kind", "text", "--output-format", "json");
 
         Assert.True(read.ExitCode is 0 or 8, read.StdErr);
-        Assert.Equal(4, Run("pdf", "inspect", "deck.pdf")["pdf"]!["pageCount"]!.GetValue<int>());
+        Assert.Equal(4, Run("pdf", "read", "deck.pdf")["inventory"]!["read"]!["pages"]!.GetValue<int>());
         Assert.Contains("First", read.StdOut, StringComparison.Ordinal);
         Assert.DoesNotContain("Zq9x", read.StdOut, StringComparison.Ordinal);
     }

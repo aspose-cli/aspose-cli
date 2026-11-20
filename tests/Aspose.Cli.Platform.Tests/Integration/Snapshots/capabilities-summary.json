@@ -76,13 +76,15 @@
     {
       "id": "pdf",
       "name": "PDF",
-      "description": "PDF automation with page, security and fixed-layout semantics.",
+      "description": "Read, edit, convert and render PDF documents through the Aspose.PDF object model.",
       "engine": "aspose",
       "engineVersion": "<build>",
       "loadFormats": [
-        "pdf"
+        "pdf",
+        "html"
       ],
       "convertFormats": [
+        "pdf",
         "docx",
         "xlsx",
         "pptx",
@@ -104,31 +106,27 @@
       "commands": [
         {
           "command": "convert",
-          "description": "Convert selected PDF pages to a supported format."
+          "description": "Convert a PDF, or an HTML page the engine imports, to another format with the engine's call for it. An html output is one file: it holds its images, fonts and styles itself."
         },
         {
           "command": "create",
-          "description": "Create a PDF from exactly one source family."
+          "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format."
         },
         {
           "command": "edit",
-          "description": "Apply one validated, atomic PDF operation batch."
+          "description": "Apply a batch of set, add, delete and do operations to a PDF; nothing is written when one fails."
         },
         {
           "command": "extract",
-          "description": "Extract bounded PDF assets, text, tables or form data."
-        },
-        {
-          "command": "inspect",
-          "description": "Show PDF structure, security state and properties."
+          "description": "Extract a PDF's images, attachments, tables or form data into a directory with the engine's calls for them; the page text is read with 'aspose-cli pdf read --kind text'."
         },
         {
           "command": "merge",
-          "description": "Merge PDF inputs in order."
+          "description": "Merge PDF inputs in order with the engine's PdfFileEditor.Concatenate."
         },
         {
           "command": "read",
-          "description": "Read a bounded page-text window."
+          "description": "Read a PDF's objects, each with every row of the object table, and its inventory."
         },
         {
           "command": "render",
@@ -136,56 +134,22 @@
         },
         {
           "command": "search",
-          "description": "Search PDF text and return page rectangles."
+          "description": "Search the text of a PDF's pages with the engine's TextFragmentAbsorber; each hit names the page's text and gives the engine's rectangle of the match."
         },
         {
           "command": "sign",
-          "description": "Apply a PKCS#7 signature and verify the saved signature field."
+          "description": "Sign a PDF with a PKCS#7 signature through PdfFileSignature.Sign, and read the new signature back from the saved file."
         },
         {
           "command": "split",
-          "description": "Split a PDF into an atomic output set."
+          "description": "Split a PDF by page ranges, each part a new document with Pages.Add of its pages; every part is written or none."
         },
         {
           "command": "validate",
-          "description": "Validate a PDF against a PDF/A profile."
+          "description": "Validate a PDF against a PDF/A profile with Document.Validate; the result holds its return value and its log."
         }
       ],
-      "operations": [
-        {
-          "command": "edit",
-          "ops": [
-            "add_attachment",
-            "add_bookmark",
-            "add_footer_text",
-            "add_header_text",
-            "add_hyperlink",
-            "add_page_numbers",
-            "add_stamp_image",
-            "add_watermark_image",
-            "add_watermark_text",
-            "clear_properties",
-            "crop_pages",
-            "decrypt_document",
-            "delete_attachment",
-            "delete_bookmarks",
-            "delete_pages",
-            "encrypt_document",
-            "flatten_forms",
-            "import_pages",
-            "insert_page",
-            "move_pages",
-            "optimize_document",
-            "redact_area",
-            "redact_text",
-            "rotate_pages",
-            "set_form_field",
-            "set_page_labels",
-            "set_page_size",
-            "set_properties"
-          ]
-        }
-      ]
+      "operations": []
     },
     {
       "id": "slides",

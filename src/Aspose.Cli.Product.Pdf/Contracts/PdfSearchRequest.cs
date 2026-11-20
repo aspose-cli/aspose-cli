@@ -1,13 +1,6 @@
-using Aspose.Cli.Sdk.Text;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
-public sealed record PdfSearchRequest
-{
-    /// <summary>The PDF to open.</summary>
-    public required string Input { get; init; }
-    public required SearchQuery Query { get; init; }
-    public PageRange? Pages { get; init; }
-    public Secret? Password { get; init; }
-
-}
+/// <summary>One <c>pdf search</c>: the document and the search.</summary>
+public sealed record PdfSearchRequest : TableSearchRequest;

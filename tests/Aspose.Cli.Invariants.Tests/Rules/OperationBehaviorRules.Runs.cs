@@ -211,6 +211,12 @@ internal static partial class OperationRuns
         RuleRun single = workspace.Json([.. args]);
         Learn(command, single);
         results.Add(Labeled(command.Words, Normalize(single, file)));
+        // The kinds a table's read lists only when --kind names them are read by name as well.
+        if (single.Document?["window"]?["notListedUnlessNamed"] is JsonArray { Count: > 0 } named && command.Has("--kind"))
+        {
+            RuleRun kinds = workspace.Json([.. args, .. named.SelectMany(static kind => new[] { "--kind", kind!.GetValue<string>() })]);
+            results.Add(Labeled($"{command.Words} --kind", Normalize(kinds, file)));
+        }
         return (results, [.. Sheets(single.Document)]);
     }
 

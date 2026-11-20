@@ -12,39 +12,6 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
     public void Dispose() => _workspace.Dispose();
 
-    /// <summary>Every unknown field of one operation is reported at once.</summary>
-    [Theory]
-    [InlineData("pdf", "a.pdf", """{"op":"add_page_numbers","txet":"{n}","placment":"bottom-center"}""")]
-    public void SeveralUnknownFieldsOfOneOperation_AreListedTogether(string product, string file, string operation)
-    {
-        File.WriteAllText(_workspace.File(file), "not a document");
-        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
-
-        CliResult result = _workspace.Run(product, "edit", file, "--ops", "ops.json", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        JsonArray errors = error["details"]!["errors"]!.AsArray();
-        Assert.Equal(2, errors.Count);
-        Assert.All(errors, item => Assert.Equal("op-0001", item!["id"]!.GetValue<string>()));
-        Assert.StartsWith("2 problems make one operation invalid", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-    }
-
-    /// <summary>An unknown op names the entry by the op it wrote.</summary>
-    [Fact]
-    public void UnknownOperation_StatesTheOpItWrote()
-    {
-        File.WriteAllText(_workspace.File("a.pdf"), "not a document");
-        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"add_image_stamp","image":"x.png"}]}""");
-
-        CliResult result = _workspace.Run("pdf", "edit", "a.pdf", "--ops", "ops.json", "--output-format", "json");
-
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal("op-0001", error["details"]!["id"]!.GetValue<string>());
-        Assert.Equal("add_image_stamp", error["details"]!["op"]!.GetValue<string>());
-    }
-
     /// <summary>A <c>--to</c> format the command does not write but a command beside it does points to that command.</summary>
     [Theory]
     [InlineData("cells convert a.xlsx --to png")]

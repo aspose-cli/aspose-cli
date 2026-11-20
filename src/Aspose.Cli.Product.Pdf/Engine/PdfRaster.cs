@@ -2,7 +2,6 @@ using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Pdf;
 using Aspose.Pdf.Devices;
-using static Aspose.Cli.Product.Pdf.Engine.PdfAssembly;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -10,9 +9,8 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 internal static class PdfRaster
 {
     /// <summary>
-    /// Writes one page as an image. Every page raster passes the shared pixel guard here,
-    /// before the engine allocates the bitmap. A <paramref name="grid"/> is drawn on the raster,
-    /// never into the document.
+    /// Writes one page as an image: the engine's page device for a bitmap, or the page alone saved
+    /// as SVG. Every page raster passes the shared pixel guard here, before the engine allocates the bitmap.
     /// </summary>
     internal static void RenderPage(
         ResourceBudgetLedger budgets,
@@ -20,8 +18,7 @@ internal static class PdfRaster
         int pageNumber,
         string format,
         int dpi,
-        Stream stream,
-        PdfRenderGrid? grid = null)
+        Stream stream)
     {
         Page page = document.Pages[pageNumber];
         PdfEngineFormat image = PdfEngineFormats.Of(format);
@@ -35,25 +32,14 @@ internal static class PdfRaster
             EnsurePageFits(budgets, page, dpi);
         }
 
-        if (grid is not null)
-        {
-            using var raster = new MemoryStream();
-            new PngDevice(new Resolution(dpi)).Process(page, raster);
-            raster.Position = 0;
-            Rectangle box = page.GetPageRect(considerRotation: true);
-            PdfRasterEncoding encoding = image.Encoded
-                ?? throw new InvalidOperationException($"'{format}' is not a bitmap page image.");
-            PdfGridOverlay.Draw(raster, grid, box.Width, box.Height, dpi, encoding, stream);
-            return;
-        }
-
         if (image.Device is { } device)
         {
             device(new Resolution(dpi)).Process(page, stream);
             return;
         }
 
-        using Document selected = Select(document, [pageNumber]);
+        using var selected = new Document();
+        selected.Pages.Add(page);
         selected.Save(stream, PdfEngineFormats.Save(format));
     }
 

@@ -322,7 +322,8 @@ internal static partial class ContractRules
         Invocation invocation = Invocation.For(command, omit);
         if (omit == "--to")
         {
-            invocation.Add("--to", "pdf");
+            // PDF, or for a PDF input, whose own PDF output is the whole document, TIFF, a page per image.
+            invocation.Add("--to", command.Product == "pdf" ? "tiff" : "pdf");
         }
         else if (omit == "--by")
         {
@@ -331,7 +332,7 @@ internal static partial class ContractRules
         else if (omit == "--what")
         {
             IReadOnlyList<string> parts = command.Option("--what")!.AllowedValues;
-            invocation.Add("--what", parts.Count == 0 || parts.Contains("text") ? "text" : parts[0]);
+            invocation.Add("--what", parts.Count == 0 || parts.Contains("text") ? "text" : parts.Contains("images") ? "images" : parts[0]);
         }
         return invocation.Add(option, value);
     }
@@ -364,7 +365,7 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The streams of a successful run of each product's <c>inspect</c>: a success writes its
+    /// The streams of a successful run of each product's <c>read</c>: a success writes its
     /// result to stdout, and with a license and no warning leaves stderr empty, and a licensed
     /// result carries no license block (C-R33). A failure is the <c>error-envelope</c> check of
     /// every scenario. Warnings belong to the result on stdout, so evaluation runs, which may
@@ -404,31 +405,25 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>The commands whose streams C-R23 and C-R37 judge: each product's <c>inspect</c>.</summary>
+    /// <summary>The commands whose streams C-R23 and C-R37 judge: each product's <c>read</c>.</summary>
     private static IEnumerable<(string Shard, CliCommand Command)> R23Samples(CliCatalog catalog)
     {
         foreach (string product in ScenarioFixtures.Products)
         {
-            if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product} inspect") is { } inspect)
+            if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product} read") is { } read)
             {
-                yield return (product, inspect);
+                yield return (product, read);
             }
         }
     }
 
     /// <summary>
-    /// A command that completes with a result that fails its check exits 8: a PDF that is not
-    /// PDF/A (<c>pdf validate</c>). And Ctrl+C cancels a command with exit 130 and leaves no
+    /// Ctrl+C cancels a command with exit 130 and leaves no
     /// staged output behind; that case runs a helper process with a console of its own, so it is
     /// slow.
     /// </summary>
     private static IEnumerable<InvariantCase> R24Run(CliCatalog catalog)
     {
-        if (catalog.Commands.FirstOrDefault(static command => command.Words == "pdf validate") is { } validate)
-        {
-            yield return InvariantCases.Case("C-R24", $"{validate} of a PDF that is not PDF/A", "pdf", slow: false, Invocation.For(validate),
-                new ScenarioExpectation { ExitCode = [8], Json = [new JsonAssertion { Path = "valid", Value = false }] });
-        }
         if (catalog.Commands.FirstOrDefault(static command => command.Words == "words convert") is { } convert)
         {
             // Markdown that takes words convert several seconds to load; Ctrl+C comes after

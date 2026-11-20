@@ -18,15 +18,15 @@ public sealed class PdfFontDirectoryTests
         using var source = new TempDirectory();
         CreateDocument(fixture, workspace.File("fixture.pdf"), FontFixtures.WriteUniqueFont(source.Path));
         FontFixtures.WriteUniqueFont(workspace.File("fonts"));
-        string watermark = $$"""{"ops":[{"op":"add_watermark_text","text":"Draft","font":"{{FontFixtures.UniqueFamily}}"}]}""";
+        string watermark = $$$"""{"ops":[{"do":"stamp_text","args":{"page":"page/1","value":"Draft","textState.font":"{{{FontFixtures.UniqueFamily}}}"}}]}""";
 
-        CliResult ambientConvert = workspace.Run("pdf", "convert", "fixture.pdf", "--to", "pdfa-2b", "--out", "ambient-a.pdf", "--output-format", "json");
-        CliResult fontsConvert = workspace.Run("pdf", "convert", "fixture.pdf", "--to", "pdfa-2b", "--out", "fonts-a.pdf", "--font-dir", "fonts", "--output-format", "json");
+        CliResult ambientConvert = workspace.Run("pdf", "convert", "fixture.pdf", "--to", "pdfa-2b", "--convert-error-action", "Delete", "--out", "ambient-a.pdf", "--output-format", "json");
+        CliResult fontsConvert = workspace.Run("pdf", "convert", "fixture.pdf", "--to", "pdfa-2b", "--convert-error-action", "Delete", "--out", "fonts-a.pdf", "--font-dir", "fonts", "--output-format", "json");
         CliResult ambientEdit = workspace.Run("pdf", "edit", "fixture.pdf", "--ops", watermark, "--out", "ambient-edit.pdf", "--output-format", "json");
         CliResult fontsEdit = workspace.Run("pdf", "edit", "fixture.pdf", "--ops", watermark, "--out", "fonts-edit.pdf", "--font-dir", "fonts", "--output-format", "json");
 
-        Assert.NotEqual(0, ambientConvert.ExitCode);
-        Assert.Contains("AsposeCLIFixtureSans", ambientConvert.StdErr, StringComparison.Ordinal);
+        Assert.True(ambientConvert.ExitCode == 0, ambientConvert.StdErr);
+        Assert.False(FontDirectoryContract.EmbedsFixture(workspace, "ambient-a.pdf"));
         Assert.True(fontsConvert.ExitCode == 0, fontsConvert.StdErr);
         Assert.True(FontDirectoryContract.EmbedsFixture(workspace, "fonts-a.pdf"));
         Assert.NotEqual(0, ambientEdit.ExitCode);
@@ -36,7 +36,7 @@ public sealed class PdfFontDirectoryTests
 
     [Category(TestCategory.Slow)]
     [Fact]
-    public void Cli_CreateFromHtmlLaysOutWithTheFontDirectory()
+    public void Cli_ConvertFromHtmlLaysOutWithTheFontDirectory()
     {
         using var fixture = new PdfEngineFixture();
         using var workspace = new TempWorkspace();
@@ -45,7 +45,7 @@ public sealed class PdfFontDirectoryTests
             $"<html><body><p style=\"font-family:'{FontFixtures.UniqueFamily}'\">Brand text.</p></body></html>");
 
         FontDirectoryContract.VerifyPdfOutput(
-            workspace, "create", output => ["pdf", "create", output, "--from-html", "brand.html"]);
+            workspace, "convert", output => ["pdf", "convert", "brand.html", "--out", output]);
     }
 
     /// <summary>A page whose text uses the fixture font without embedding it.</summary>

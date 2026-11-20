@@ -20,7 +20,7 @@ public sealed class OutputIsInputContractTests
     {
         ["file"] = (["cells", "convert", "book.xlsx", "--to", "xlsx", "--out", "./BOOK.xlsx"], "--out"),
         ["required file over product inputs"] = (["pdf", "merge", "doc.pdf", "other.pdf", "--out", "./OTHER.pdf"], "--out"),
-        ["file named by a product option"] = (["pdf", "sign", "doc.pdf", "--certificate", "cert.pdf", "--certificate-password-env", "CERT_PASSWORD", "--out", "./CERT.pdf"], "--out"),
+        ["file named by a product option"] = (["pdf", "sign", "doc.pdf", "--page", "1", "--certificate", "cert.pdf", "--certificate-password-env", "CERT_PASSWORD", "--out", "./CERT.pdf"], "--out"),
         ["created file"] = (["words", "create", "./DOC.docx", "--template", "doc.docx", "--overwrite"], "file"),
         ["mutation"] = (["cells", "edit", "book.xlsx", "--ops", """{"ops":[{"do":"calculate"}]}""", "--out", "./BOOK.xlsx"], "--out"),
     };

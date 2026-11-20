@@ -1,42 +1,22 @@
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class SearchCommand
 {
-    public static CommandDefinition<PdfSearchRequest, PdfSearchResult> Create()
-    {
-        var search = new SearchOptions();
-        var pages = new PartRangeOption("page", "every page");
-        return new(
-            "search",
-            "Search PDF text and return page rectangles.",
+    public static CommandDefinition<PdfSearchRequest, PdfSearchResult> Create() =>
+        TableCommands.Search<PdfSearchRequest, PdfSearchResult>(
+            "Search the text of a PDF's pages with the engine's TextFragmentAbsorber; each hit names the page's text and gives the engine's rectangle of the match.",
             new CommandTraits { Input = PdfInputs.Document },
-            [.. search.Options, .. pages.Options],
-            (parse, standard) =>
-            {
-                SearchQuery query = search.Read(parse);
-                return new PdfSearchRequest
-                {
-                    Input = standard.Input,
-                    Query = query,
-                    Pages = pages.ReadRange(parse),
-                    Password = standard.InputPassword,
-                };
-            })
-        {
-            Finish = static (_, request, result, _) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
-            Examples =
+            static search => new PdfSearchRequest { Input = search.Input, Password = search.Password, Query = search.Query },
+            static (request, result) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
+            examples:
             [
-                "pdf search report.pdf --pattern invoice --output-format json",
-                "pdf search report.pdf --pattern \"total: [0-9]+\" --regex --pages 2-4",
+                "pdf search report.pdf --pattern Contoso",
+                "pdf search report.pdf --pattern \"[0-9]{18}\" --regex",
             ],
-            Links =
+            links:
             [
                 CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
-                new("aspose-cli docs reading", "reading every product within bounded windows"),
-            ],
-        };
-    }
+            ]);
 }

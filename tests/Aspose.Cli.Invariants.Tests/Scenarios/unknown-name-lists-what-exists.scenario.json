@@ -38,7 +38,7 @@
         "schema",
         "v2/pdf/ops",
         "--operation",
-        "rotate_page"
+        "fild"
       ],
       "expect": {
         "exitCode": 2,
@@ -46,7 +46,7 @@
         "json": [
           {
             "path": "error.details.available",
-            "contains": "rotate_pages"
+            "contains": "field"
           }
         ]
       }

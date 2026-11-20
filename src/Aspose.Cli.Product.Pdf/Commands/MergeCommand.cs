@@ -12,22 +12,16 @@ internal static class MergeCommand
             Description = "Two or more PDF inputs in merge order.",
             Arity = ArgumentArity.OneOrMore,
         }.WithInput(InputKind.File);
-        var bookmarks = new Option<string>("--bookmarks")
-        {
-            DefaultValueFactory = _ => "preserve",
-            Description = "Whether the merged PDF keeps the bookmarks of its inputs.",
-        }.WithInput(InputKind.None);
-        bookmarks.AcceptOnlyFromAmong("preserve", "drop");
         return new(
             "merge",
-            "Merge PDF inputs in order.",
+            "Merge PDF inputs in order with the engine's PdfFileEditor.Concatenate.",
             new CommandTraits
             {
                 PasswordSubject = "all input PDFs",
                 Output = OutputTarget.File("Merged PDF output path.", PdfFormats.Document, required: true),
                 Encrypt = PdfInputs.EncryptedPdf,
             },
-            [inputs, bookmarks],
+            [inputs],
             (parse, standard) =>
             {
                 string[] inputPaths = standard.InputFiles(inputs);
@@ -35,7 +29,6 @@ internal static class MergeCommand
                 {
                     InputPaths = inputPaths,
                     Output = standard.Output,
-                    PreserveBookmarks = parse.GetRequiredValue(bookmarks) == "preserve",
                     Password = standard.InputPassword,
                     EncryptPassword = standard.EncryptPassword(),
                 };
@@ -44,11 +37,11 @@ internal static class MergeCommand
             Examples =
             [
                 "pdf merge cover.pdf report.pdf --out combined.pdf",
-                "pdf merge part1.pdf part2.pdf part3.pdf --bookmarks drop --out combined.pdf",
+                "pdf merge a.pdf b.pdf c.pdf --out combined.pdf --overwrite",
             ],
             Links =
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "assemble-review-report", "building a PDF from several sources"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
             ],
         };
     }

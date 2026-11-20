@@ -47,10 +47,10 @@ public sealed class DirectoryOutputContractTests
 
     private static readonly Dictionary<string, (string[][] Create, string[] Publish)> Cases = new(StringComparer.Ordinal)
     {
-        ["pdf split"] = ([["pdf", "create", "input.pdf", "--from-text", "content.txt"]],
+        ["pdf split"] = ([["pdf", "convert", "content.html", "--out", "input.pdf"]],
             ["pdf", "split", "input.pdf", "--by", "pages", "--out-dir", "parts"]),
-        ["pdf extract"] = ([["pdf", "create", "input.pdf", "--from-text", "content.txt"]],
-            ["pdf", "extract", "input.pdf", "--what", "text", "--out-dir", "parts"]),
+        ["pdf extract"] = ([["pdf", "convert", "content.html", "--out", "input.pdf"]],
+            ["pdf", "extract", "input.pdf", "--what", "forms", "--form-format", "json", "--out-dir", "parts"]),
         ["words extract"] = (WordsWithTwoPictures,
             ["words", "extract", "input.docx", "--what", "images", "--out-dir", "parts"]),
         ["slides extract"] = (SlidesWithTwoPictures,
@@ -74,7 +74,7 @@ public sealed class DirectoryOutputContractTests
     public void AnExistingFileIsReplacedOnlyWithOverwrite(string command)
     {
         using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("content.txt"), "Directory output fixture");
+        File.WriteAllText(workspace.File("content.html"), "<html><body><p>Directory output fixture</p></body></html>");
         File.WriteAllText(workspace.File("content.md"), "# Directory output fixture\n\n- One point\n");
         (string[][] create, string[] publish) = Cases[command];
         Create(workspace, create);
@@ -111,8 +111,8 @@ public sealed class DirectoryOutputContractTests
     public void ADirectoryNamedLikeAFile_IsRefused(string commandLine, string option, string directory)
     {
         using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("content.txt"), "Directory output fixture");
-        CliResult created = workspace.Run("pdf", "create", "input.pdf", "--from-text", "content.txt", "--output-format", "json");
+        File.WriteAllText(workspace.File("content.html"), "<html><body><p>Directory output fixture</p></body></html>");
+        CliResult created = workspace.Run("pdf", "convert", "content.html", "--out", "input.pdf", "--output-format", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
 
         CliResult result = workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
@@ -130,8 +130,8 @@ public sealed class DirectoryOutputContractTests
     public void ADirectoryNameWithADotNamingNoFormat_IsAccepted(string commandLine)
     {
         using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("content.txt"), "Directory output fixture");
-        CliResult created = workspace.Run("pdf", "create", "input.pdf", "--from-text", "content.txt", "--output-format", "json");
+        File.WriteAllText(workspace.File("content.html"), "<html><body><p>Directory output fixture</p></body></html>");
+        CliResult created = workspace.Run("pdf", "convert", "content.html", "--out", "input.pdf", "--output-format", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
 
         CliResult result = workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);

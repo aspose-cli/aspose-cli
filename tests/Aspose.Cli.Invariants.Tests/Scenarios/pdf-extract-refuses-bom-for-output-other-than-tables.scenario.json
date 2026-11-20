@@ -12,7 +12,7 @@
         "extract",
         "source.pdf",
         "--what",
-        "text",
+        "images",
         "--bom",
         "--out-dir",
         "files"

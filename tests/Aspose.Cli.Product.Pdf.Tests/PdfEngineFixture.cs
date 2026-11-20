@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.TestKit;
 using Aspose.Cli.Sdk.Licensing;
@@ -32,26 +31,44 @@ public sealed class PdfEngineFixture : IDisposable
     internal static Engine.Mapping.PdfDocumentLoader Loader(Aspose.Cli.Sdk.IO.Budgets.ResourceBudgetLedger budgets) =>
         new(budgets, new OutputPipeline<Document>(EvaluationLimits.Gate(LicenseState.Licensed), new PdfEvaluationProfile(), new SafeFileWriter(budgets)));
 
-    /// <summary>
-    /// Runs one handler as a command does: on its own session, whose write pipeline adds its
-    /// evaluation disclosure to the result.
-    /// </summary>
-    internal TResult Disclosed<TResult>(Func<PdfSession, TResult> call)
-        where TResult : ResultEnvelope
-    {
-        PdfSession session = Session;
-        return (TResult)session.Outputs.Disclose(call(session));
-    }
-
     public LicenseState LicenseState => Gate.EnsureApplied();
 
     public TempDirectory Temp { get; } = new();
 
     public string File(string fileName) => Temp.File(fileName);
 
-    /// <summary>The form and its fields, as <c>pdf inspect --detail forms</c> reports them.</summary>
-    public PdfFormInfo Forms(string path) =>
-        PdfInfo.Run(Session, new PdfInspectRequest { Input = path, Details = [PdfInspectDetails.Forms] }).Forms!;
+    /// <summary>
+    /// Skips a test that calls the engine in this process without a license, before the test opens
+    /// a document: evaluation mode gives the first four objects of a collection only.
+    /// </summary>
+    public static void RequireLicense() => TestLicense.Require(EvaluationChanges);
+
+    private const string EvaluationChanges =
+        "Aspose.PDF evaluation mode gives only the first four objects of any collection and stamps every page it saves, which the in-process engine suite compares against.";
+
+    /// <summary>A request of <c>pdf edit</c> over a parsed operation document.</summary>
+    internal static PdfEditRequest Edit(string input, string output, string ops, Aspose.Cli.Sdk.Contracts.Secret? password = null, Aspose.Cli.Sdk.Contracts.Secret? encrypt = null) => new()
+    {
+        Input = input,
+        Batch = Aspose.Cli.Sdk.Tables.TableBatch.Parse(ops, PdfTable.Definition, new Inputs()),
+        Output = TestOutput.At(output),
+        Password = password,
+        EncryptPassword = encrypt,
+    };
+
+    /// <summary>The files and secrets of a batch, as the command line reads them.</summary>
+    internal sealed class Inputs : Aspose.Cli.Sdk.Tables.ITableInputs
+    {
+        public string ResolvePath(string path) => Path.GetFullPath(path);
+
+        public byte[] ReadImage(string path) => System.IO.File.ReadAllBytes(path);
+
+
+        public byte[] ReadFile(string path) => System.IO.File.ReadAllBytes(path);
+
+        public Aspose.Cli.Sdk.Contracts.Secret? ReadSecret(string variable) =>
+            Environment.GetEnvironmentVariable(variable) is { Length: > 0 } value ? new Aspose.Cli.Sdk.Contracts.Secret(value) : null;
+    }
 
     public string CreateDocument(string fileName = "document.pdf", int pages = 2)
     {
@@ -64,6 +81,70 @@ public sealed class PdfEngineFixture : IDisposable
         }
 
         document.Save(path);
+        return path;
+    }
+
+    /// <summary>
+    /// A PDF with one object of every kind of the table: six pages (the third rotated), a nested
+    /// outline, text, check box, radio group, combo and list fields, a signature field, a field
+    /// with two widgets, links of four actions, text, highlight, free text and file attachment
+    /// annotations, two attachments of one name, page labels, custom document information, XMP
+    /// entries and a layer.
+    /// </summary>
+    public string CreateRich(string fileName = "rich.pdf")
+    {
+        string path = File(fileName);
+        using var d = new Document();
+        for (int i = 1; i <= 6; i++)
+        {
+            d.Pages.Add().Paragraphs.Add(new TextFragment($"Page {i} marker PAGE-{i}"));
+        }
+
+        d.Pages[3].Rotate = Rotation.on90;
+        var a = new OutlineItemCollection(d.Outlines) { Title = "A", Destination = new Aspose.Pdf.Annotations.GoToAction(d.Pages[1]) };
+        var a1 = new OutlineItemCollection(d.Outlines) { Title = "A.1", Destination = new Aspose.Pdf.Annotations.GoToAction(d.Pages[2]) };
+        a1.Add(new OutlineItemCollection(d.Outlines) { Title = "A.1.a", Destination = new Aspose.Pdf.Annotations.GoToAction(d.Pages[3]) });
+        a.Add(a1);
+        d.Outlines.Add(a);
+        d.Outlines.Add(new OutlineItemCollection(d.Outlines) { Title = "B", Destination = new Aspose.Pdf.Annotations.GoToAction(d.Pages[4]) });
+        Page first = d.Pages[1];
+        d.Form.Add(new Aspose.Pdf.Forms.TextBoxField(first, new Rectangle(50, 700, 250, 720)) { PartialName = "name", Value = "Ann" }, 1);
+        d.Form.Add(new Aspose.Pdf.Forms.CheckboxField(first, new Rectangle(50, 660, 70, 680)) { PartialName = "ok", Checked = true }, 1);
+        var radio = new Aspose.Pdf.Forms.RadioButtonField(first) { PartialName = "color" };
+        radio.AddOption("red", new Rectangle(50, 620, 65, 635));
+        radio.AddOption("green", new Rectangle(80, 620, 95, 635));
+        d.Form.Add(radio, 1);
+        var combo = new Aspose.Pdf.Forms.ComboBoxField(first, new Rectangle(50, 580, 200, 600)) { PartialName = "size" };
+        combo.AddOption("S");
+        combo.AddOption("M");
+        d.Form.Add(combo, 1);
+        var list = new Aspose.Pdf.Forms.ListBoxField(first, new Rectangle(50, 500, 200, 570)) { PartialName = "fruit" };
+        list.AddOption("apple");
+        list.AddOption("pear");
+        d.Form.Add(list, 1);
+        d.Form.Add(new Aspose.Pdf.Forms.SignatureField(d.Pages[2], new Rectangle(50, 100, 250, 150)) { PartialName = "sig1" }, 2);
+        var total = new Aspose.Pdf.Forms.TextBoxField(first, new Rectangle(300, 700, 450, 720)) { PartialName = "total", Value = "42" };
+        d.Form.Add(total, 1);
+        d.Form.AddFieldAppearance(total, 2, new Rectangle(300, 700, 450, 720));
+        Page second = d.Pages[2];
+        second.Annotations.Add(new Aspose.Pdf.Annotations.LinkAnnotation(second, new Rectangle(50, 400, 200, 420)) { Action = new Aspose.Pdf.Annotations.GoToURIAction("https://example.com/") });
+        second.Annotations.Add(new Aspose.Pdf.Annotations.LinkAnnotation(second, new Rectangle(50, 370, 200, 390)) { Action = new Aspose.Pdf.Annotations.GoToAction(d.Pages[5]) });
+        second.Annotations.Add(new Aspose.Pdf.Annotations.LinkAnnotation(second, new Rectangle(50, 340, 200, 360)) { Action = new Aspose.Pdf.Annotations.GoToRemoteAction("other.pdf", 2) });
+        second.Annotations.Add(new Aspose.Pdf.Annotations.TextAnnotation(second, new Rectangle(300, 400, 320, 420)) { Title = "Rev", Contents = "note text", Subject = "s" });
+        second.Annotations.Add(new Aspose.Pdf.Annotations.HighlightAnnotation(second, new Rectangle(300, 300, 400, 320)) { Contents = "hl" });
+        second.Annotations.Add(new Aspose.Pdf.Annotations.FileAttachmentAnnotation(second, new Rectangle(300, 200, 320, 220),
+            new FileSpecification(new MemoryStream([1, 2, 3]), "annot.bin", "in annot")));
+        d.EmbeddedFiles.Add(new FileSpecification(new MemoryStream("AB"u8.ToArray()), "a.txt", "first a"));
+        d.EmbeddedFiles.Add(new FileSpecification(new MemoryStream("C"u8.ToArray()), "b.txt", "b"));
+        d.EmbeddedFiles.Add(new FileSpecification(new MemoryStream("D"u8.ToArray()), "a.txt", "second a"));
+        d.PageLabels.UpdateLabel(0, new PageLabel { NumberingStyle = NumberingStyle.NumeralsRomanLowercase });
+        d.PageLabels.UpdateLabel(2, new PageLabel { NumberingStyle = NumberingStyle.NumeralsArabic, Prefix = "A-", StartingValue = 1 });
+        d.Info.Title = "Rich";
+        d.Info.Author = "Probe";
+        d.Info["Custom"] = "cv";
+        d.Metadata["xmp:CreatorTool"] = new XmpValue("Probe tool");
+        d.Pages[4].Layers = [new Layer("oc1", "Layer one")];
+        d.Save(path);
         return path;
     }
 
@@ -157,25 +238,6 @@ public sealed class PdfEngineFixture : IDisposable
 
         pdf.Append($"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R{(info is int number ? $" /Info {number} 0 R" : string.Empty)} >>\nstartxref\n{xref}\n%%EOF\n");
         System.IO.File.WriteAllBytes(path, Encoding.ASCII.GetBytes(pdf.ToString()));
-    }
-
-    /// <summary>
-    /// The darkest red level in <paramref name="bitmap"/>, a render of <paramref name="page"/> at
-    /// <paramref name="scale"/> pixels per point, of the band where the underscores of the text
-    /// in <paramref name="box"/> are drawn.
-    /// </summary>
-    public static int DarkestUnderscorePixel(SkiaSharp.SKBitmap bitmap, Page page, Rectangle box, double scale)
-    {
-        int darkest = 255;
-        for (int x = (int)((box.LLX + 1) * scale); x < (int)((box.URX - 1) * scale); x++)
-        {
-            for (int y = (int)((page.Rect.Height - box.URY) * scale); y < Math.Min(bitmap.Height, (int)((page.Rect.Height - box.LLY + 3) * scale)); y++)
-            {
-                darkest = Math.Min(darkest, bitmap.GetPixel(x, y).Red);
-            }
-        }
-
-        return darkest;
     }
 
     public string CreateCertificate(string password, string fileName = "signing.pfx")

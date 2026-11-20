@@ -16,6 +16,7 @@ internal static partial class ContractRules
     {
         ["<id>"] = "4294967295",
         ["<index>"] = "9999",
+        ["<ordinal>"] = "9999",
         ["<guid>"] = "00000000-0000-0000-0000-000000000000",
         ["<name>"] = "NoSuch",
         ["<cell>"] = "XFD1048576",
@@ -29,6 +30,7 @@ internal static partial class ContractRules
     {
         ["<id>"] = @"\d+",
         ["<index>"] = @"\d+",
+        ["<ordinal>"] = @"\d+",
         ["<guid>"] = @"[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}",
         ["<name>"] = "[A-Za-z][A-Za-z0-9._-]*",
         ["<cell>"] = "[A-Z]{1,3}[0-9]+",
@@ -216,12 +218,16 @@ internal static partial class ContractRules
         return $"(?:.+/)?{Regex.Escape(segment)}/[^/]+";
     }
 
-    /// <summary>A value a row's schema accepts: its first enum value, else one of its first type that is not null.</summary>
+    /// <summary>A value a row's schema accepts: its first enum value or example, else one of its first type that is not null.</summary>
     private static JsonNode? SchemaValue(JsonNode schema)
     {
         if (schema["enum"] is JsonArray { Count: > 0 } values)
         {
             return values[0]?.DeepClone();
+        }
+        if (schema["examples"] is JsonArray { Count: > 0 } examples)
+        {
+            return examples[0]?.DeepClone();
         }
         string? type = schema["type"] switch
         {

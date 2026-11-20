@@ -1,66 +1,33 @@
-using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class ReadCommand
 {
-    public static CommandDefinition<PdfReadRequest, PdfReadResult> Create()
-    {
-        var pages = new PartRangeOption("page", "every page");
-        var content = new Option<string>("--content")
-        {
-            Description = "How each page is returned: in reading order, or with the spacing of the page kept.",
-            DefaultValueFactory = _ => PdfReadContents.Text,
-        }.WithInput(InputKind.None);
-        content.AcceptOnlyFromAmong([.. PdfReadContents.All]);
-        var maxChars = new MaxCharactersOption("the text of the returned pages");
-        return new(
-            "read",
-            "Read a bounded page-text window.",
+    public static CommandDefinition<PdfReadRequest, PdfReadResult> Create() =>
+        TableCommands.Read<PdfReadRequest, PdfReadResult>(
+            PdfModule.Table,
+            "Read a PDF's objects, each with every row of the object table, and its inventory.",
             new CommandTraits { Input = PdfInputs.Document },
-            [.. pages.Options, content, .. maxChars.Options],
-            (parse, standard) =>
+            static read => new PdfReadRequest
             {
-                int characters = maxChars.Read(parse);
-                return new PdfReadRequest
-                {
-                    Input = standard.Input,
-                    Pages = pages.ReadRange(parse),
-                    Content = parse.GetValue(content) ?? PdfReadContents.Text,
-                    MaxCharacters = characters,
-                    Password = standard.InputPassword,
-                };
-            })
-        {
-            Finish = (_, request, result, _) =>
-                result with { Window = result.Window with { Next = Next(pages.Name, request, result) } },
-            Examples =
+                Input = read.Input,
+                Password = read.Password,
+                At = read.At,
+                From = read.From,
+                Kinds = read.Kinds,
+                MaxObjects = read.MaxObjects,
+            },
+            examples:
             [
-                "pdf read report.pdf --pages 1-5 --output-format json",
-                "pdf read report.pdf --pages 3 --content layout --max-chars 5000",
+                "pdf read report.pdf",
+                "pdf read report.pdf --kind field",
+                "pdf read report.pdf --at page/1/text",
+                "pdf read report.pdf --kind text --max-objects 20",
             ],
-            Links =
+            links:
             [
-                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
-                new("aspose-cli docs reading", "reading every product within bounded windows"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "addresses, windows and the inventory"),
             ],
-        };
-    }
-
-    /// <summary>The option values of the read that resumes where this one stopped, or null when it covered the selection.</summary>
-    private static IReadOnlyDictionary<string, string>? Next(string pagesOption, PdfReadRequest request, PdfReadResult result)
-    {
-        if (!result.Window.Truncated)
-        {
-            return null;
-        }
-
-        IReadOnlyList<int> selection = request.Pages?.Resolve(result.PageCount)
-            ?? Enumerable.Range(1, result.PageCount).ToArray();
-        return ReadContinuation.After(
-                selection,
-                [.. result.Pages.Select(static page => new ReadPart(page.Page, page.ContentTruncated))],
-                request.MaxCharacters)?.Next(pagesOption);
-    }
+            listedWhenNamed: PdfKinds.ListedWhenNamed);
 }

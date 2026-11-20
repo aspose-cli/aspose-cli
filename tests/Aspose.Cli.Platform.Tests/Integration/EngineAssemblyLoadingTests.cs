@@ -126,7 +126,7 @@ public sealed class EngineAssemblyLoadingTests : IDisposable
 
     /// <summary>A command that opens a document loads its engine, and the hook reports it.</summary>
     [Theory]
-    [InlineData("Aspose.PDF", new[] { "pdf", "create", "control.pdf", "--from-text", "control.txt" })]
+    [InlineData("Aspose.PDF", new[] { "pdf", "create", "control.pdf" })]
     [InlineData("Aspose.Cells", new[] { "cells", "create", "control.xlsx" })]
     [InlineData("Aspose.Words", new[] { "words", "create", "control.docx" })]
     [InlineData("Aspose.Slides", new[] { "slides", "create", "control.pptx" })]

@@ -37,17 +37,6 @@ public sealed class TextInputEncodingCliTests
         Assert.False(File.Exists(workspace.File("out.xlsx")));
     }
 
-    [Theory]
-    [InlineData("pdf", "out.pdf", "--from-text", "text.txt", "Hello ")]
-    public void TextFileAfterAMark_ThatIsNotUtf8_IsRefusedBeforeAnythingIsWritten(string product, string output, string option, string file, string text)
-    {
-        using var workspace = Workspace();
-        File.WriteAllBytes(workspace.File(file), [.. Mark, .. Encoding.UTF8.GetBytes(text), .. NotUtf8, 0x0A]);
-
-        Refused(workspace.Run(product, "create", output, option, file, "--output-format", "json"), "text-file-decode");
-        Assert.False(File.Exists(workspace.File(output)));
-    }
-
     /// <summary>An ops document after a UTF-8 or UTF-16 byte order mark is read as its text, without the mark.</summary>
     [Theory]
     [InlineData("utf-8", false)]

@@ -6,18 +6,6 @@ namespace Aspose.Cli.Product.Pdf.Contracts;
 /// </summary>
 public static class PdfOptionNames
 {
-    /// <summary>The images a new PDF is made of.</summary>
-    public const string FromImages = "--from-images";
-
-    /// <summary>The opt-in to the network resources of an HTML input.</summary>
-    public const string AllowNetworkResources = "--allow-network-resources";
-
-    /// <summary>The page margins of a new PDF.</summary>
-    public const string Margins = "--margins";
-
-    /// <summary>The coordinate grid of a rendered page.</summary>
-    public const string Grid = "--grid";
-
     /// <summary>The rectangle of a visible signature.</summary>
     public const string Rect = "--rect";
 

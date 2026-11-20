@@ -89,7 +89,7 @@ public sealed class UsageMistakeTests : IDisposable
     [InlineData("cells read b.xlsx --at sheet/Sheet1 sheet/Sheet2", "--at", "--at takes one value; 'sheet/Sheet2' is one too many.")]
     [InlineData("cells read b.xlsx --at sheet/Sheet1 sheet/Sheet1", "--at", "--at takes one value; 'sheet/Sheet1' is one too many.")]
     [InlineData("pdf search c.pdf --pattern total due", "--pattern", "--pattern takes one value; 'due' is one too many.")]
-    [InlineData("pdf create new.pdf --from-images a.png b.png", "--from-images", "--from-images takes one value each time it is given; 'b.png' is left over.")]
+    [InlineData("pdf read c.pdf --kind page field", "--kind", "--kind takes one value each time it is given; 'field' is left over.")]
     public void AnOptionGivenAnExtraValue_SaysHowManyItTakesAndNamesTheExtra(string commandLine, string option, string message)
     {
         JsonNode error = Refused(commandLine, "USAGE_ERROR");
@@ -154,9 +154,7 @@ public sealed class UsageMistakeTests : IDisposable
     [Fact]
     public void ACreate_WrittenAsItShouldBe_StillRuns()
     {
-        File.WriteAllText(_workspace.File("in.md"), "# Title\n\nBody\n");
-
-        Assert.Equal(0, _workspace.Run("pdf", "create", "new.pdf", "--from-markdown", "in.md", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("pdf", "create", "new.pdf", "--output-format", "json").ExitCode);
         Assert.True(File.Exists(_workspace.File("new.pdf")));
     }
 

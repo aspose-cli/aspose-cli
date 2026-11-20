@@ -22,7 +22,6 @@ public sealed class InputAdmissionTests
     {
         using var workspace = new TempWorkspace();
         string work = Directory.CreateDirectory(workspace.File("work with spaces")).FullName;
-        File.WriteAllText(Path.Combine(work, "source.txt"), "Audit");
         const string name = "output.pdf";
         string output = Path.Combine(work, name);
         byte[] original = new byte[4096];
@@ -31,7 +30,7 @@ public sealed class InputAdmissionTests
         string[] command =
         [
             "--workdir", work, "--max-input-bytes=64",
-            "pdf", "create", "--from-text", "source.txt", name, "--output-format", "json",
+            "pdf", "create", name, "--output-format", "json",
         ];
 
         CliResult refused = workspace.Run(command);
@@ -44,7 +43,7 @@ public sealed class InputAdmissionTests
         Assert.True(new FileInfo(output).Length > 64);
 
         CliResult tooLarge = workspace.Run(
-            "--workdir", work, "pdf", "inspect", name,
+            "--workdir", work, "pdf", "read", name,
             "--max-input-bytes", "64", "--output-format", "json");
         Assert.Equal(3, tooLarge.ExitCode);
         Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(tooLarge.StdErr)!["error"]!["code"]!.GetValue<string>());
@@ -54,13 +53,13 @@ public sealed class InputAdmissionTests
     }
 
     [Theory]
-    [InlineData("pdf", "pdf", "--from-text")]
+    [InlineData("pdf", "pdf", "--template")]
     [InlineData("slides", "pptx", "--template")]
     [InlineData("words", "docx", "--template")]
     public void Create_AdmitsSourceOptionsBeforeTheOutput(string product, string extension, string sourceOption)
     {
         using var workspace = new TempWorkspace();
-        string source = workspace.File(product switch { "slides" => "source.pptx", "words" => "source.docx", _ => "source.txt" });
+        string source = workspace.File(product switch { "slides" => "source.pptx", "words" => "source.docx", _ => "source.pdf" });
         File.WriteAllText(source, new string('x', 128));
         string output = workspace.File("untouched." + extension);
 

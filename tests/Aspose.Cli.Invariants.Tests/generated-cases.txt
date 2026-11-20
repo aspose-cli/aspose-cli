@@ -52,7 +52,6 @@ C-R06 | pdf convert
 C-R06 | pdf create
 C-R06 | pdf edit
 C-R06 | pdf extract
-C-R06 | pdf inspect
 C-R06 | pdf merge
 C-R06 | pdf read
 C-R06 | pdf render
@@ -93,7 +92,6 @@ C-R08 | pdf convert
 C-R08 | pdf create
 C-R08 | pdf edit
 C-R08 | pdf extract
-C-R08 | pdf inspect
 C-R08 | pdf merge
 C-R08 | pdf read
 C-R08 | pdf render
@@ -118,7 +116,6 @@ C-R08 | words extract
 C-R08 | words read
 C-R08 | words render
 C-R08 | words search
-C-R09 | --allow-network-resources
 C-R09 | --auto-numbering-detection
 C-R09 | --bom
 C-R09 | --case-sensitive
@@ -143,11 +140,9 @@ C-R09 | --overwrite
 C-R09 | --password-stdin
 C-R09 | --regex
 C-R09 | --right-password-stdin
-C-R09 | --sample
 C-R09 | --summary
 C-R09 | --user
 C-R09 | --verbose
-C-R09 | --verify
 C-R09 | --visible
 C-R10 | cells convert --encrypt-stdin with --password-stdin
 C-R10 | cells convert declared
@@ -166,7 +161,6 @@ C-R10 | pdf edit --encrypt-stdin with --password-stdin
 C-R10 | pdf edit --ops with --password-stdin
 C-R10 | pdf edit declared
 C-R10 | pdf extract declared
-C-R10 | pdf inspect declared
 C-R10 | pdf merge --encrypt-stdin with --password-stdin
 C-R10 | pdf merge declared
 C-R10 | pdf read declared
@@ -212,7 +206,6 @@ C-R11 | license remove declared
 C-R11 | pdf convert --dry-run
 C-R11 | pdf create --dry-run
 C-R11 | pdf create declared
-C-R11 | pdf edit --dry-run
 C-R11 | pdf extract --dry-run
 C-R11 | pdf merge --dry-run
 C-R11 | pdf render --dry-run
@@ -274,7 +267,6 @@ C-R14 | cells edit --out -
 C-R14 | cells render --out -
 C-R14 | pdf convert --out -
 C-R14 | pdf edit --out -
-C-R14 | pdf inspect -- -input.pdf
 C-R14 | pdf merge --out -
 C-R14 | pdf render --out -
 C-R14 | pdf sign --out -
@@ -289,11 +281,9 @@ C-R15 | cells read --max-objects 1
 C-R15 | cells read declared
 C-R15 | cells search --max-hits 1
 C-R15 | cells search declared
-C-R15 | pdf read --max-chars 1
-C-R15 | pdf read --pages 1- --max-chars 1
+C-R15 | pdf read --max-objects 1
 C-R15 | pdf read declared
 C-R15 | pdf search --max-hits 1
-C-R15 | pdf search --pages 1- --max-hits 1
 C-R15 | pdf search declared
 C-R15 | slides read --max-objects 1
 C-R15 | slides read declared
@@ -309,16 +299,9 @@ C-R16 | pdf convert --pages all
 C-R16 | pdf extract --pages 1-x
 C-R16 | pdf extract --pages 99
 C-R16 | pdf extract --pages all
-C-R16 | pdf op add_page_numbers with a malformed selection
-C-R16 | pdf read --pages 1-x
-C-R16 | pdf read --pages 99
-C-R16 | pdf read --pages all
 C-R16 | pdf render --pages 1-x
 C-R16 | pdf render --pages 99
 C-R16 | pdf render --pages all
-C-R16 | pdf search --pages 1-x
-C-R16 | pdf search --pages 99
-C-R16 | pdf search --pages all
 C-R16 | pdf split --pages 1-x
 C-R16 | pdf split --pages 99
 C-R16 | pdf split --pages all
@@ -345,11 +328,7 @@ C-R17 | license install values
 C-R17 | license remove values
 C-R17 | license status values
 C-R17 | pdf convert values
-C-R17 | pdf create values
 C-R17 | pdf extract values
-C-R17 | pdf inspect values
-C-R17 | pdf merge values
-C-R17 | pdf read values
 C-R17 | pdf render values
 C-R17 | pdf split values
 C-R17 | pdf validate values
@@ -395,45 +374,7 @@ C-R17 | v2/pdf/convert-result
 C-R17 | v2/pdf/create-result
 C-R17 | v2/pdf/edit-result
 C-R17 | v2/pdf/extract-result
-C-R17 | v2/pdf/inspect-result
 C-R17 | v2/pdf/merge-result
-C-R17 | v2/pdf/ops
-C-R17 | v2/pdf/ops#add_attachment
-C-R17 | v2/pdf/ops#add_bookmark
-C-R17 | v2/pdf/ops#add_footer_text
-C-R17 | v2/pdf/ops#add_header_text
-C-R17 | v2/pdf/ops#add_hyperlink
-C-R17 | v2/pdf/ops#add_page_numbers
-C-R17 | v2/pdf/ops#add_stamp_image
-C-R17 | v2/pdf/ops#add_watermark_image
-C-R17 | v2/pdf/ops#add_watermark_text
-C-R17 | v2/pdf/ops#clear_properties
-C-R17 | v2/pdf/ops#color
-C-R17 | v2/pdf/ops#crop_pages
-C-R17 | v2/pdf/ops#decrypt_document
-C-R17 | v2/pdf/ops#delete_attachment
-C-R17 | v2/pdf/ops#delete_bookmarks
-C-R17 | v2/pdf/ops#delete_pages
-C-R17 | v2/pdf/ops#encrypt_document
-C-R17 | v2/pdf/ops#flatten_forms
-C-R17 | v2/pdf/ops#id
-C-R17 | v2/pdf/ops#import_pages
-C-R17 | v2/pdf/ops#insert_page
-C-R17 | v2/pdf/ops#move_pages
-C-R17 | v2/pdf/ops#optimize_document
-C-R17 | v2/pdf/ops#pageSizeInput
-C-R17 | v2/pdf/ops#pages
-C-R17 | v2/pdf/ops#pdfPageLabelRange
-C-R17 | v2/pdf/ops#pdfPermissionsInput
-C-R17 | v2/pdf/ops#pdfRectInput
-C-R17 | v2/pdf/ops#redact_area
-C-R17 | v2/pdf/ops#redact_text
-C-R17 | v2/pdf/ops#rotate_pages
-C-R17 | v2/pdf/ops#set_form_field
-C-R17 | v2/pdf/ops#set_page_labels
-C-R17 | v2/pdf/ops#set_page_size
-C-R17 | v2/pdf/ops#set_properties
-C-R17 | v2/pdf/ops#webLink
 C-R17 | v2/pdf/read-result
 C-R17 | v2/pdf/render-result
 C-R17 | v2/pdf/search-result
@@ -496,45 +437,7 @@ C-R18 | v2/pdf/convert-result
 C-R18 | v2/pdf/create-result
 C-R18 | v2/pdf/edit-result
 C-R18 | v2/pdf/extract-result
-C-R18 | v2/pdf/inspect-result
 C-R18 | v2/pdf/merge-result
-C-R18 | v2/pdf/ops
-C-R18 | v2/pdf/ops#add_attachment
-C-R18 | v2/pdf/ops#add_bookmark
-C-R18 | v2/pdf/ops#add_footer_text
-C-R18 | v2/pdf/ops#add_header_text
-C-R18 | v2/pdf/ops#add_hyperlink
-C-R18 | v2/pdf/ops#add_page_numbers
-C-R18 | v2/pdf/ops#add_stamp_image
-C-R18 | v2/pdf/ops#add_watermark_image
-C-R18 | v2/pdf/ops#add_watermark_text
-C-R18 | v2/pdf/ops#clear_properties
-C-R18 | v2/pdf/ops#color
-C-R18 | v2/pdf/ops#crop_pages
-C-R18 | v2/pdf/ops#decrypt_document
-C-R18 | v2/pdf/ops#delete_attachment
-C-R18 | v2/pdf/ops#delete_bookmarks
-C-R18 | v2/pdf/ops#delete_pages
-C-R18 | v2/pdf/ops#encrypt_document
-C-R18 | v2/pdf/ops#flatten_forms
-C-R18 | v2/pdf/ops#id
-C-R18 | v2/pdf/ops#import_pages
-C-R18 | v2/pdf/ops#insert_page
-C-R18 | v2/pdf/ops#move_pages
-C-R18 | v2/pdf/ops#optimize_document
-C-R18 | v2/pdf/ops#pageSizeInput
-C-R18 | v2/pdf/ops#pages
-C-R18 | v2/pdf/ops#pdfPageLabelRange
-C-R18 | v2/pdf/ops#pdfPermissionsInput
-C-R18 | v2/pdf/ops#pdfRectInput
-C-R18 | v2/pdf/ops#redact_area
-C-R18 | v2/pdf/ops#redact_text
-C-R18 | v2/pdf/ops#rotate_pages
-C-R18 | v2/pdf/ops#set_form_field
-C-R18 | v2/pdf/ops#set_page_labels
-C-R18 | v2/pdf/ops#set_page_size
-C-R18 | v2/pdf/ops#set_properties
-C-R18 | v2/pdf/ops#webLink
 C-R18 | v2/pdf/read-result
 C-R18 | v2/pdf/render-result
 C-R18 | v2/pdf/search-result
@@ -556,47 +459,6 @@ C-R18 | v2/words/extract-result
 C-R18 | v2/words/read-result
 C-R18 | v2/words/render-result
 C-R18 | v2/words/search-result
-C-R19 | pdf add_attachment applied twice
-C-R19 | pdf add_bookmark applied twice
-C-R19 | pdf add_footer_text applied twice
-C-R19 | pdf add_header_text applied twice
-C-R19 | pdf add_hyperlink applied twice
-C-R19 | pdf add_page_numbers applied twice
-C-R19 | pdf add_stamp_image applied twice
-C-R19 | pdf add_watermark_image applied twice
-C-R19 | pdf add_watermark_text applied twice
-C-R19 | pdf set_form_field applied twice
-C-R19 | pdf set_page_labels applied twice
-C-R19 | pdf set_page_size applied twice
-C-R19 | pdf set_properties applied twice
-C-R19 | v2/pdf/ops#add_attachment
-C-R19 | v2/pdf/ops#add_bookmark
-C-R19 | v2/pdf/ops#add_footer_text
-C-R19 | v2/pdf/ops#add_header_text
-C-R19 | v2/pdf/ops#add_hyperlink
-C-R19 | v2/pdf/ops#add_page_numbers
-C-R19 | v2/pdf/ops#add_stamp_image
-C-R19 | v2/pdf/ops#add_watermark_image
-C-R19 | v2/pdf/ops#add_watermark_text
-C-R19 | v2/pdf/ops#clear_properties
-C-R19 | v2/pdf/ops#crop_pages
-C-R19 | v2/pdf/ops#decrypt_document
-C-R19 | v2/pdf/ops#delete_attachment
-C-R19 | v2/pdf/ops#delete_bookmarks
-C-R19 | v2/pdf/ops#delete_pages
-C-R19 | v2/pdf/ops#encrypt_document
-C-R19 | v2/pdf/ops#flatten_forms
-C-R19 | v2/pdf/ops#import_pages
-C-R19 | v2/pdf/ops#insert_page
-C-R19 | v2/pdf/ops#move_pages
-C-R19 | v2/pdf/ops#optimize_document
-C-R19 | v2/pdf/ops#redact_area
-C-R19 | v2/pdf/ops#redact_text
-C-R19 | v2/pdf/ops#rotate_pages
-C-R19 | v2/pdf/ops#set_form_field
-C-R19 | v2/pdf/ops#set_page_labels
-C-R19 | v2/pdf/ops#set_page_size
-C-R19 | v2/pdf/ops#set_properties
 C-R20 | v2/cells/convert-result fixednames
 C-R20 | v2/cells/convert-result spelling
 C-R20 | v2/cells/convert-result variants
@@ -877,265 +739,87 @@ C-R20 | v2/pdf/edit-result variants
 C-R20 | v2/pdf/extract-result fixednames
 C-R20 | v2/pdf/extract-result spelling
 C-R20 | v2/pdf/extract-result variants
-C-R20 | v2/pdf/inspect-result fixednames
-C-R20 | v2/pdf/inspect-result spelling
-C-R20 | v2/pdf/inspect-result variants
 C-R20 | v2/pdf/merge-result fixednames
 C-R20 | v2/pdf/merge-result spelling
 C-R20 | v2/pdf/merge-result variants
-C-R20 | v2/pdf/ops field alignment
-C-R20 | v2/pdf/ops field annotate
-C-R20 | v2/pdf/ops field assemble
-C-R20 | v2/pdf/ops field at
-C-R20 | v2/pdf/ops field author
-C-R20 | v2/pdf/ops field bookmarks
-C-R20 | v2/pdf/ops field box
-C-R20 | v2/pdf/ops field caseSensitive
-C-R20 | v2/pdf/ops field color
-C-R20 | v2/pdf/ops field compressStreams
-C-R20 | v2/pdf/ops field copy
-C-R20 | v2/pdf/ops field custom
-C-R20 | v2/pdf/ops field description
-C-R20 | v2/pdf/ops field documentInfo
-C-R20 | v2/pdf/ops field downsampleImagesDpi
-C-R20 | v2/pdf/ops field extractAccessibility
-C-R20 | v2/pdf/ops field fields
-C-R20 | v2/pdf/ops field fillColor
-C-R20 | v2/pdf/ops field fillForms
-C-R20 | v2/pdf/ops field find
-C-R20 | v2/pdf/ops field font
-C-R20 | v2/pdf/ops field fontSize
-C-R20 | v2/pdf/ops field height
-C-R20 | v2/pdf/ops field imageQuality
-C-R20 | v2/pdf/ops field keywords
-C-R20 | v2/pdf/ops field layer
-C-R20 | v2/pdf/ops field mimeType
-C-R20 | v2/pdf/ops field modify
-C-R20 | v2/pdf/ops field name
-C-R20 | v2/pdf/ops field numberStyle
-C-R20 | v2/pdf/ops field opacity
-C-R20 | v2/pdf/ops field ownerPasswordEnv
-C-R20 | v2/pdf/ops field page
-C-R20 | v2/pdf/ops field pageSize
-C-R20 | v2/pdf/ops field pages
-C-R20 | v2/pdf/ops field parent
-C-R20 | v2/pdf/ops field path
-C-R20 | v2/pdf/ops field permissions
-C-R20 | v2/pdf/ops field placement
-C-R20 | v2/pdf/ops field prefix
-C-R20 | v2/pdf/ops field preset
-C-R20 | v2/pdf/ops field print
-C-R20 | v2/pdf/ops field printHighResolution
-C-R20 | v2/pdf/ops field ranges
-C-R20 | v2/pdf/ops field rect
-C-R20 | v2/pdf/ops field regex
-C-R20 | v2/pdf/ops field removeUnusedObjects
-C-R20 | v2/pdf/ops field rotation
-C-R20 | v2/pdf/ops field scaleContent
-C-R20 | v2/pdf/ops field scalePercent
-C-R20 | v2/pdf/ops field sourcePasswordEnv
-C-R20 | v2/pdf/ops field start
-C-R20 | v2/pdf/ops field startPage
-C-R20 | v2/pdf/ops field subject
-C-R20 | v2/pdf/ops field text
-C-R20 | v2/pdf/ops field title
-C-R20 | v2/pdf/ops field to
-C-R20 | v2/pdf/ops field unembedFonts
-C-R20 | v2/pdf/ops field url
-C-R20 | v2/pdf/ops field userPasswordEnv
-C-R20 | v2/pdf/ops field value
-C-R20 | v2/pdf/ops field width
-C-R20 | v2/pdf/ops field x
-C-R20 | v2/pdf/ops field xmp
-C-R20 | v2/pdf/ops field y
-C-R20 | v2/pdf/ops fixednames
 C-R20 | v2/pdf/ops ranges
 C-R20 | v2/pdf/ops secrets
-C-R20 | v2/pdf/ops spelling
-C-R20 | v2/pdf/ops variants
-C-R20 | v2/pdf/ops#add_attachment fixednames
-C-R20 | v2/pdf/ops#add_attachment ranges
-C-R20 | v2/pdf/ops#add_attachment secrets
-C-R20 | v2/pdf/ops#add_attachment spelling
-C-R20 | v2/pdf/ops#add_attachment variants
-C-R20 | v2/pdf/ops#add_bookmark fixednames
-C-R20 | v2/pdf/ops#add_bookmark ranges
-C-R20 | v2/pdf/ops#add_bookmark secrets
-C-R20 | v2/pdf/ops#add_bookmark spelling
-C-R20 | v2/pdf/ops#add_bookmark variants
-C-R20 | v2/pdf/ops#add_footer_text fixednames
-C-R20 | v2/pdf/ops#add_footer_text ranges
-C-R20 | v2/pdf/ops#add_footer_text secrets
-C-R20 | v2/pdf/ops#add_footer_text spelling
-C-R20 | v2/pdf/ops#add_footer_text variants
-C-R20 | v2/pdf/ops#add_header_text fixednames
-C-R20 | v2/pdf/ops#add_header_text ranges
-C-R20 | v2/pdf/ops#add_header_text secrets
-C-R20 | v2/pdf/ops#add_header_text spelling
-C-R20 | v2/pdf/ops#add_header_text variants
-C-R20 | v2/pdf/ops#add_hyperlink fixednames
-C-R20 | v2/pdf/ops#add_hyperlink ranges
-C-R20 | v2/pdf/ops#add_hyperlink secrets
-C-R20 | v2/pdf/ops#add_hyperlink spelling
-C-R20 | v2/pdf/ops#add_hyperlink variants
-C-R20 | v2/pdf/ops#add_page_numbers fixednames
-C-R20 | v2/pdf/ops#add_page_numbers ranges
-C-R20 | v2/pdf/ops#add_page_numbers secrets
-C-R20 | v2/pdf/ops#add_page_numbers spelling
-C-R20 | v2/pdf/ops#add_page_numbers variants
-C-R20 | v2/pdf/ops#add_stamp_image fixednames
-C-R20 | v2/pdf/ops#add_stamp_image ranges
-C-R20 | v2/pdf/ops#add_stamp_image secrets
-C-R20 | v2/pdf/ops#add_stamp_image spelling
-C-R20 | v2/pdf/ops#add_stamp_image variants
-C-R20 | v2/pdf/ops#add_watermark_image fixednames
-C-R20 | v2/pdf/ops#add_watermark_image ranges
-C-R20 | v2/pdf/ops#add_watermark_image secrets
-C-R20 | v2/pdf/ops#add_watermark_image spelling
-C-R20 | v2/pdf/ops#add_watermark_image variants
-C-R20 | v2/pdf/ops#add_watermark_text fixednames
-C-R20 | v2/pdf/ops#add_watermark_text ranges
-C-R20 | v2/pdf/ops#add_watermark_text secrets
-C-R20 | v2/pdf/ops#add_watermark_text spelling
-C-R20 | v2/pdf/ops#add_watermark_text units
-C-R20 | v2/pdf/ops#add_watermark_text variants
-C-R20 | v2/pdf/ops#clear_properties fixednames
-C-R20 | v2/pdf/ops#clear_properties ranges
-C-R20 | v2/pdf/ops#clear_properties secrets
-C-R20 | v2/pdf/ops#clear_properties spelling
-C-R20 | v2/pdf/ops#clear_properties variants
-C-R20 | v2/pdf/ops#color fixednames
-C-R20 | v2/pdf/ops#color ranges
-C-R20 | v2/pdf/ops#color secrets
-C-R20 | v2/pdf/ops#color spelling
-C-R20 | v2/pdf/ops#color variants
-C-R20 | v2/pdf/ops#crop_pages fixednames
-C-R20 | v2/pdf/ops#crop_pages ranges
-C-R20 | v2/pdf/ops#crop_pages secrets
-C-R20 | v2/pdf/ops#crop_pages spelling
-C-R20 | v2/pdf/ops#crop_pages variants
-C-R20 | v2/pdf/ops#decrypt_document fixednames
-C-R20 | v2/pdf/ops#decrypt_document ranges
-C-R20 | v2/pdf/ops#decrypt_document secrets
-C-R20 | v2/pdf/ops#decrypt_document spelling
-C-R20 | v2/pdf/ops#decrypt_document variants
-C-R20 | v2/pdf/ops#delete_attachment fixednames
-C-R20 | v2/pdf/ops#delete_attachment ranges
-C-R20 | v2/pdf/ops#delete_attachment secrets
-C-R20 | v2/pdf/ops#delete_attachment spelling
-C-R20 | v2/pdf/ops#delete_attachment variants
-C-R20 | v2/pdf/ops#delete_bookmarks fixednames
-C-R20 | v2/pdf/ops#delete_bookmarks ranges
-C-R20 | v2/pdf/ops#delete_bookmarks secrets
-C-R20 | v2/pdf/ops#delete_bookmarks spelling
-C-R20 | v2/pdf/ops#delete_bookmarks variants
-C-R20 | v2/pdf/ops#delete_pages fixednames
-C-R20 | v2/pdf/ops#delete_pages ranges
-C-R20 | v2/pdf/ops#delete_pages secrets
-C-R20 | v2/pdf/ops#delete_pages spelling
-C-R20 | v2/pdf/ops#delete_pages variants
-C-R20 | v2/pdf/ops#encrypt_document fixednames
-C-R20 | v2/pdf/ops#encrypt_document ranges
-C-R20 | v2/pdf/ops#encrypt_document secrets
-C-R20 | v2/pdf/ops#encrypt_document spelling
-C-R20 | v2/pdf/ops#encrypt_document variants
-C-R20 | v2/pdf/ops#flatten_forms fixednames
-C-R20 | v2/pdf/ops#flatten_forms ranges
-C-R20 | v2/pdf/ops#flatten_forms secrets
-C-R20 | v2/pdf/ops#flatten_forms spelling
-C-R20 | v2/pdf/ops#flatten_forms variants
-C-R20 | v2/pdf/ops#id fixednames
-C-R20 | v2/pdf/ops#id ranges
-C-R20 | v2/pdf/ops#id secrets
-C-R20 | v2/pdf/ops#id spelling
-C-R20 | v2/pdf/ops#id variants
-C-R20 | v2/pdf/ops#import_pages fixednames
-C-R20 | v2/pdf/ops#import_pages ranges
-C-R20 | v2/pdf/ops#import_pages secrets
-C-R20 | v2/pdf/ops#import_pages spelling
-C-R20 | v2/pdf/ops#import_pages variants
-C-R20 | v2/pdf/ops#insert_page fixednames
-C-R20 | v2/pdf/ops#insert_page ranges
-C-R20 | v2/pdf/ops#insert_page secrets
-C-R20 | v2/pdf/ops#insert_page spelling
-C-R20 | v2/pdf/ops#insert_page variants
-C-R20 | v2/pdf/ops#move_pages fixednames
-C-R20 | v2/pdf/ops#move_pages ranges
-C-R20 | v2/pdf/ops#move_pages secrets
-C-R20 | v2/pdf/ops#move_pages spelling
-C-R20 | v2/pdf/ops#move_pages variants
-C-R20 | v2/pdf/ops#optimize_document fixednames
-C-R20 | v2/pdf/ops#optimize_document ranges
-C-R20 | v2/pdf/ops#optimize_document secrets
-C-R20 | v2/pdf/ops#optimize_document spelling
-C-R20 | v2/pdf/ops#optimize_document units
-C-R20 | v2/pdf/ops#optimize_document variants
-C-R20 | v2/pdf/ops#pageSizeInput fixednames
-C-R20 | v2/pdf/ops#pageSizeInput ranges
-C-R20 | v2/pdf/ops#pageSizeInput secrets
-C-R20 | v2/pdf/ops#pageSizeInput spelling
-C-R20 | v2/pdf/ops#pageSizeInput variants
-C-R20 | v2/pdf/ops#pages fixednames
-C-R20 | v2/pdf/ops#pages ranges
-C-R20 | v2/pdf/ops#pages secrets
-C-R20 | v2/pdf/ops#pages spelling
-C-R20 | v2/pdf/ops#pages variants
-C-R20 | v2/pdf/ops#pdfPageLabelRange fixednames
-C-R20 | v2/pdf/ops#pdfPageLabelRange ranges
-C-R20 | v2/pdf/ops#pdfPageLabelRange secrets
-C-R20 | v2/pdf/ops#pdfPageLabelRange spelling
-C-R20 | v2/pdf/ops#pdfPageLabelRange variants
-C-R20 | v2/pdf/ops#pdfPermissionsInput fixednames
-C-R20 | v2/pdf/ops#pdfPermissionsInput ranges
-C-R20 | v2/pdf/ops#pdfPermissionsInput secrets
-C-R20 | v2/pdf/ops#pdfPermissionsInput spelling
-C-R20 | v2/pdf/ops#pdfPermissionsInput variants
-C-R20 | v2/pdf/ops#pdfRectInput fixednames
-C-R20 | v2/pdf/ops#pdfRectInput ranges
-C-R20 | v2/pdf/ops#pdfRectInput secrets
-C-R20 | v2/pdf/ops#pdfRectInput spelling
-C-R20 | v2/pdf/ops#pdfRectInput units
-C-R20 | v2/pdf/ops#pdfRectInput variants
-C-R20 | v2/pdf/ops#redact_area fixednames
-C-R20 | v2/pdf/ops#redact_area ranges
-C-R20 | v2/pdf/ops#redact_area secrets
-C-R20 | v2/pdf/ops#redact_area spelling
-C-R20 | v2/pdf/ops#redact_area variants
-C-R20 | v2/pdf/ops#redact_text fixednames
-C-R20 | v2/pdf/ops#redact_text ranges
-C-R20 | v2/pdf/ops#redact_text secrets
-C-R20 | v2/pdf/ops#redact_text spelling
-C-R20 | v2/pdf/ops#redact_text variants
-C-R20 | v2/pdf/ops#rotate_pages fixednames
-C-R20 | v2/pdf/ops#rotate_pages ranges
-C-R20 | v2/pdf/ops#rotate_pages secrets
-C-R20 | v2/pdf/ops#rotate_pages spelling
-C-R20 | v2/pdf/ops#rotate_pages variants
-C-R20 | v2/pdf/ops#set_form_field fixednames
-C-R20 | v2/pdf/ops#set_form_field ranges
-C-R20 | v2/pdf/ops#set_form_field secrets
-C-R20 | v2/pdf/ops#set_form_field spelling
-C-R20 | v2/pdf/ops#set_form_field variants
-C-R20 | v2/pdf/ops#set_page_labels fixednames
-C-R20 | v2/pdf/ops#set_page_labels ranges
-C-R20 | v2/pdf/ops#set_page_labels secrets
-C-R20 | v2/pdf/ops#set_page_labels spelling
-C-R20 | v2/pdf/ops#set_page_labels variants
-C-R20 | v2/pdf/ops#set_page_size fixednames
-C-R20 | v2/pdf/ops#set_page_size ranges
-C-R20 | v2/pdf/ops#set_page_size secrets
-C-R20 | v2/pdf/ops#set_page_size spelling
-C-R20 | v2/pdf/ops#set_page_size variants
-C-R20 | v2/pdf/ops#set_properties fixednames
-C-R20 | v2/pdf/ops#set_properties ranges
-C-R20 | v2/pdf/ops#set_properties secrets
-C-R20 | v2/pdf/ops#set_properties spelling
-C-R20 | v2/pdf/ops#set_properties variants
-C-R20 | v2/pdf/ops#webLink fixednames
-C-R20 | v2/pdf/ops#webLink ranges
-C-R20 | v2/pdf/ops#webLink secrets
-C-R20 | v2/pdf/ops#webLink spelling
-C-R20 | v2/pdf/ops#webLink variants
+C-R20 | v2/pdf/ops#add ranges
+C-R20 | v2/pdf/ops#add secrets
+C-R20 | v2/pdf/ops#add.attachment ranges
+C-R20 | v2/pdf/ops#add.attachment secrets
+C-R20 | v2/pdf/ops#add.bookmark ranges
+C-R20 | v2/pdf/ops#add.bookmark secrets
+C-R20 | v2/pdf/ops#add.info ranges
+C-R20 | v2/pdf/ops#add.info secrets
+C-R20 | v2/pdf/ops#add.link ranges
+C-R20 | v2/pdf/ops#add.link secrets
+C-R20 | v2/pdf/ops#add.page ranges
+C-R20 | v2/pdf/ops#add.page secrets
+C-R20 | v2/pdf/ops#add.pageLabel ranges
+C-R20 | v2/pdf/ops#add.pageLabel secrets
+C-R20 | v2/pdf/ops#address ranges
+C-R20 | v2/pdf/ops#address secrets
+C-R20 | v2/pdf/ops#annotation ranges
+C-R20 | v2/pdf/ops#annotation secrets
+C-R20 | v2/pdf/ops#area ranges
+C-R20 | v2/pdf/ops#area secrets
+C-R20 | v2/pdf/ops#attachment ranges
+C-R20 | v2/pdf/ops#attachment secrets
+C-R20 | v2/pdf/ops#bookmark ranges
+C-R20 | v2/pdf/ops#bookmark secrets
+C-R20 | v2/pdf/ops#delete ranges
+C-R20 | v2/pdf/ops#delete secrets
+C-R20 | v2/pdf/ops#do ranges
+C-R20 | v2/pdf/ops#do secrets
+C-R20 | v2/pdf/ops#do.clear_info ranges
+C-R20 | v2/pdf/ops#do.clear_info secrets
+C-R20 | v2/pdf/ops#do.clear_xmp ranges
+C-R20 | v2/pdf/ops#do.clear_xmp secrets
+C-R20 | v2/pdf/ops#do.decrypt ranges
+C-R20 | v2/pdf/ops#do.decrypt secrets
+C-R20 | v2/pdf/ops#do.encrypt ranges
+C-R20 | v2/pdf/ops#do.encrypt secrets
+C-R20 | v2/pdf/ops#do.flatten_field ranges
+C-R20 | v2/pdf/ops#do.flatten_field secrets
+C-R20 | v2/pdf/ops#do.flatten_form ranges
+C-R20 | v2/pdf/ops#do.flatten_form secrets
+C-R20 | v2/pdf/ops#do.import_pages ranges
+C-R20 | v2/pdf/ops#do.import_pages secrets
+C-R20 | v2/pdf/ops#do.optimize ranges
+C-R20 | v2/pdf/ops#do.optimize secrets
+C-R20 | v2/pdf/ops#do.redact_area ranges
+C-R20 | v2/pdf/ops#do.redact_area secrets
+C-R20 | v2/pdf/ops#do.resize_page ranges
+C-R20 | v2/pdf/ops#do.resize_page secrets
+C-R20 | v2/pdf/ops#do.stamp_image ranges
+C-R20 | v2/pdf/ops#do.stamp_image secrets
+C-R20 | v2/pdf/ops#do.stamp_text ranges
+C-R20 | v2/pdf/ops#do.stamp_text secrets
+C-R20 | v2/pdf/ops#document ranges
+C-R20 | v2/pdf/ops#document secrets
+C-R20 | v2/pdf/ops#field ranges
+C-R20 | v2/pdf/ops#field secrets
+C-R20 | v2/pdf/ops#font ranges
+C-R20 | v2/pdf/ops#font secrets
+C-R20 | v2/pdf/ops#info ranges
+C-R20 | v2/pdf/ops#info secrets
+C-R20 | v2/pdf/ops#layer ranges
+C-R20 | v2/pdf/ops#layer secrets
+C-R20 | v2/pdf/ops#move ranges
+C-R20 | v2/pdf/ops#move secrets
+C-R20 | v2/pdf/ops#page ranges
+C-R20 | v2/pdf/ops#page secrets
+C-R20 | v2/pdf/ops#pageLabel ranges
+C-R20 | v2/pdf/ops#pageLabel secrets
+C-R20 | v2/pdf/ops#set ranges
+C-R20 | v2/pdf/ops#set secrets
+C-R20 | v2/pdf/ops#taggedContent ranges
+C-R20 | v2/pdf/ops#taggedContent secrets
+C-R20 | v2/pdf/ops#text ranges
+C-R20 | v2/pdf/ops#text secrets
+C-R20 | v2/pdf/ops#xmp ranges
+C-R20 | v2/pdf/ops#xmp secrets
 C-R20 | v2/pdf/read-result fixednames
 C-R20 | v2/pdf/read-result spelling
 C-R20 | v2/pdf/read-result variants
@@ -1427,77 +1111,14 @@ C-R20 | v2/words/render-result variants
 C-R20 | v2/words/search-result fixednames
 C-R20 | v2/words/search-result spelling
 C-R20 | v2/words/search-result variants
-C-R21 | pdf add_attachment reads back
-C-R21 | pdf add_bookmark reads back
-C-R21 | pdf add_hyperlink reads back
-C-R21 | pdf encrypt_document reads back
-C-R21 | pdf insert_page reads back
-C-R21 | pdf rotate_pages reads back
-C-R21 | pdf set_form_field reads back
-C-R21 | pdf set_page_labels reads back
-C-R21 | pdf set_page_size reads back
-C-R21 | pdf set_properties reads back
-C-R21 | v2/pdf/ops#add_attachment
-C-R21 | v2/pdf/ops#add_attachment unclassified
-C-R21 | v2/pdf/ops#add_bookmark
-C-R21 | v2/pdf/ops#add_bookmark unclassified
-C-R21 | v2/pdf/ops#add_footer_text
-C-R21 | v2/pdf/ops#add_footer_text unclassified
-C-R21 | v2/pdf/ops#add_header_text
-C-R21 | v2/pdf/ops#add_header_text unclassified
-C-R21 | v2/pdf/ops#add_hyperlink
-C-R21 | v2/pdf/ops#add_hyperlink unclassified
-C-R21 | v2/pdf/ops#add_page_numbers
-C-R21 | v2/pdf/ops#add_page_numbers unclassified
-C-R21 | v2/pdf/ops#add_stamp_image
-C-R21 | v2/pdf/ops#add_stamp_image unclassified
-C-R21 | v2/pdf/ops#add_watermark_image
-C-R21 | v2/pdf/ops#add_watermark_image unclassified
-C-R21 | v2/pdf/ops#add_watermark_text
-C-R21 | v2/pdf/ops#add_watermark_text unclassified
-C-R21 | v2/pdf/ops#clear_properties
-C-R21 | v2/pdf/ops#clear_properties unclassified
-C-R21 | v2/pdf/ops#crop_pages
-C-R21 | v2/pdf/ops#crop_pages unclassified
-C-R21 | v2/pdf/ops#decrypt_document
-C-R21 | v2/pdf/ops#decrypt_document unclassified
-C-R21 | v2/pdf/ops#delete_attachment
-C-R21 | v2/pdf/ops#delete_attachment unclassified
-C-R21 | v2/pdf/ops#delete_bookmarks
-C-R21 | v2/pdf/ops#delete_bookmarks unclassified
-C-R21 | v2/pdf/ops#delete_pages
-C-R21 | v2/pdf/ops#delete_pages unclassified
-C-R21 | v2/pdf/ops#encrypt_document
-C-R21 | v2/pdf/ops#encrypt_document unclassified
-C-R21 | v2/pdf/ops#flatten_forms
-C-R21 | v2/pdf/ops#flatten_forms unclassified
-C-R21 | v2/pdf/ops#import_pages
-C-R21 | v2/pdf/ops#import_pages unclassified
-C-R21 | v2/pdf/ops#insert_page
-C-R21 | v2/pdf/ops#insert_page unclassified
-C-R21 | v2/pdf/ops#move_pages
-C-R21 | v2/pdf/ops#move_pages unclassified
-C-R21 | v2/pdf/ops#optimize_document
-C-R21 | v2/pdf/ops#optimize_document unclassified
-C-R21 | v2/pdf/ops#redact_area
-C-R21 | v2/pdf/ops#redact_area unclassified
-C-R21 | v2/pdf/ops#redact_text
-C-R21 | v2/pdf/ops#redact_text unclassified
-C-R21 | v2/pdf/ops#rotate_pages
-C-R21 | v2/pdf/ops#rotate_pages unclassified
-C-R21 | v2/pdf/ops#set_form_field
-C-R21 | v2/pdf/ops#set_form_field unclassified
-C-R21 | v2/pdf/ops#set_page_labels
-C-R21 | v2/pdf/ops#set_page_labels unclassified
-C-R21 | v2/pdf/ops#set_page_size
-C-R21 | v2/pdf/ops#set_page_size unclassified
-C-R21 | v2/pdf/ops#set_properties
-C-R21 | v2/pdf/ops#set_properties unclassified
 C-R22 | cells edit --ops with a bare array
 C-R22 | pdf edit --ops with a bare array
 C-R22 | slides edit --ops with a bare array
 C-R22 | words edit --ops with a bare array
-C-R23 | pdf inspect succeeds in JSON mode
+C-R23 | cells read succeeds in JSON mode
+C-R23 | pdf read succeeds in JSON mode
+C-R23 | slides read succeeds in JSON mode
+C-R23 | words read succeeds in JSON mode
 C-R24 | common exit codes follow their category
 C-R24 | input file errors exit 3
 C-R24 | internal errors exit 1
@@ -1506,8 +1127,6 @@ C-R24 | no error exits 8
 C-R24 | one exit code per code
 C-R24 | ops and target errors exit 4
 C-R24 | output errors exit 5
-C-R24 | pdf exit codes follow their category
-C-R24 | pdf validate of a PDF that is not PDF/A
 C-R24 | timeouts exit 9
 C-R24 | unsupported format or content errors exit 6
 C-R24 | usage and option value errors exit 2
@@ -1531,11 +1150,8 @@ C-R25 | pdf invalid option value error details
 C-R25 | pdf missing argument error details
 C-R25 | pdf missing input error details
 C-R25 | pdf missing target error details
-C-R25 | pdf several invalid operations error details
 C-R25 | pdf unknown command error details
 C-R25 | pdf unknown created extension error details
-C-R25 | pdf unknown field error details
-C-R25 | pdf unknown op error details
 C-R25 | pdf unknown option error details
 C-R25 | pdf unknown output extension error details
 C-R25 | pdf unwritable output error details
@@ -1573,11 +1189,6 @@ C-R26 | docs topic editing as eidting
 C-R26 | pdf command convert as cnovert
 C-R26 | pdf convert --out extension .docx as .docxx
 C-R26 | pdf convert --to docx as docxx
-C-R26 | pdf inspect --detail attachments as attachmentss
-C-R26 | pdf inspect option --detail as --dteail
-C-R26 | pdf op add_attachment as add_attachmentt
-C-R26 | pdf op add_attachment field path as pathh
-C-R26 | pdf op add_page_numbers placement top-left as tpo-left
 C-R26 | slides command convert as cnovert
 C-R26 | slides convert --out extension .gif as .giff
 C-R26 | slides convert --to gif as giff
@@ -1585,55 +1196,19 @@ C-R26 | words command compare as cmopare
 C-R26 | words convert --out extension .azw3 as .azw33
 C-R26 | words convert --to azw3 as azw33
 C-R27 | common warning codes
-C-R27 | pdf warning codes
 C-R27 | warning envelope shape
 C-R28 | codes declared once
 C-R28 | common code names
 C-R28 | common not-found details
 C-R28 | evaluation codes
-C-R28 | pdf code names
-C-R28 | pdf not-found details
-C-R29 | pdf edit
 C-R30 | cells operations have samples
-C-R30 | pdf add_attachment
-C-R30 | pdf add_bookmark
-C-R30 | pdf add_footer_text
-C-R30 | pdf add_header_text
-C-R30 | pdf add_hyperlink
-C-R30 | pdf add_page_numbers
-C-R30 | pdf add_stamp_image
-C-R30 | pdf add_watermark_image
-C-R30 | pdf add_watermark_text
-C-R30 | pdf applied[] has no index
-C-R30 | pdf clear_properties
-C-R30 | pdf crop_pages
-C-R30 | pdf decrypt_document
-C-R30 | pdf delete_attachment
-C-R30 | pdf delete_bookmarks
-C-R30 | pdf delete_pages
-C-R30 | pdf encrypt_document
-C-R30 | pdf flatten_forms on a document without forms
-C-R30 | pdf import_pages
-C-R30 | pdf insert_page
-C-R30 | pdf move_pages
 C-R30 | pdf operations have samples
-C-R30 | pdf optimize_document
-C-R30 | pdf redact_area
-C-R30 | pdf redact_text
-C-R30 | pdf rotate_pages
-C-R30 | pdf set_form_field
-C-R30 | pdf set_page_labels
-C-R30 | pdf set_page_size
-C-R30 | pdf set_properties
-C-R30 | pdf targets read <unit>/<address>
 C-R30 | slides operations have samples
-C-R30 | v2/pdf/edit-result applied
 C-R30 | words operations have samples
 C-R31 | cells edit paths
 C-R31 | cells render paths
 C-R31 | pdf edit paths
 C-R31 | pdf extract units
-C-R31 | pdf inspect paths
 C-R31 | pdf render paths
 C-R31 | slides edit paths
 C-R31 | slides render paths
@@ -1713,8 +1288,6 @@ C-R31 | v2/pdf/edit-result fields
 C-R31 | v2/pdf/edit-result outputs
 C-R31 | v2/pdf/extract-result fields
 C-R31 | v2/pdf/extract-result outputs
-C-R31 | v2/pdf/inspect-result fields
-C-R31 | v2/pdf/inspect-result outputs
 C-R31 | v2/pdf/merge-result fields
 C-R31 | v2/pdf/merge-result outputs
 C-R31 | v2/pdf/read-result fields
@@ -1891,86 +1464,9 @@ C-R33 | v2/pdf/edit-result none
 C-R33 | v2/pdf/extract-result envelope
 C-R33 | v2/pdf/extract-result names
 C-R33 | v2/pdf/extract-result none
-C-R33 | v2/pdf/inspect-result envelope
-C-R33 | v2/pdf/inspect-result names
-C-R33 | v2/pdf/inspect-result none
 C-R33 | v2/pdf/merge-result envelope
 C-R33 | v2/pdf/merge-result names
 C-R33 | v2/pdf/merge-result none
-C-R33 | v2/pdf/ops names
-C-R33 | v2/pdf/ops none
-C-R33 | v2/pdf/ops#add_attachment names
-C-R33 | v2/pdf/ops#add_attachment none
-C-R33 | v2/pdf/ops#add_bookmark names
-C-R33 | v2/pdf/ops#add_bookmark none
-C-R33 | v2/pdf/ops#add_footer_text names
-C-R33 | v2/pdf/ops#add_footer_text none
-C-R33 | v2/pdf/ops#add_header_text names
-C-R33 | v2/pdf/ops#add_header_text none
-C-R33 | v2/pdf/ops#add_hyperlink names
-C-R33 | v2/pdf/ops#add_hyperlink none
-C-R33 | v2/pdf/ops#add_page_numbers names
-C-R33 | v2/pdf/ops#add_page_numbers none
-C-R33 | v2/pdf/ops#add_stamp_image names
-C-R33 | v2/pdf/ops#add_stamp_image none
-C-R33 | v2/pdf/ops#add_watermark_image names
-C-R33 | v2/pdf/ops#add_watermark_image none
-C-R33 | v2/pdf/ops#add_watermark_text names
-C-R33 | v2/pdf/ops#add_watermark_text none
-C-R33 | v2/pdf/ops#clear_properties names
-C-R33 | v2/pdf/ops#clear_properties none
-C-R33 | v2/pdf/ops#color names
-C-R33 | v2/pdf/ops#color none
-C-R33 | v2/pdf/ops#crop_pages names
-C-R33 | v2/pdf/ops#crop_pages none
-C-R33 | v2/pdf/ops#decrypt_document names
-C-R33 | v2/pdf/ops#decrypt_document none
-C-R33 | v2/pdf/ops#delete_attachment names
-C-R33 | v2/pdf/ops#delete_attachment none
-C-R33 | v2/pdf/ops#delete_bookmarks names
-C-R33 | v2/pdf/ops#delete_bookmarks none
-C-R33 | v2/pdf/ops#delete_pages names
-C-R33 | v2/pdf/ops#delete_pages none
-C-R33 | v2/pdf/ops#encrypt_document names
-C-R33 | v2/pdf/ops#encrypt_document none
-C-R33 | v2/pdf/ops#flatten_forms names
-C-R33 | v2/pdf/ops#flatten_forms none
-C-R33 | v2/pdf/ops#id names
-C-R33 | v2/pdf/ops#id none
-C-R33 | v2/pdf/ops#import_pages names
-C-R33 | v2/pdf/ops#import_pages none
-C-R33 | v2/pdf/ops#insert_page names
-C-R33 | v2/pdf/ops#insert_page none
-C-R33 | v2/pdf/ops#move_pages names
-C-R33 | v2/pdf/ops#move_pages none
-C-R33 | v2/pdf/ops#optimize_document names
-C-R33 | v2/pdf/ops#optimize_document none
-C-R33 | v2/pdf/ops#pageSizeInput names
-C-R33 | v2/pdf/ops#pageSizeInput none
-C-R33 | v2/pdf/ops#pages names
-C-R33 | v2/pdf/ops#pages none
-C-R33 | v2/pdf/ops#pdfPageLabelRange names
-C-R33 | v2/pdf/ops#pdfPageLabelRange none
-C-R33 | v2/pdf/ops#pdfPermissionsInput names
-C-R33 | v2/pdf/ops#pdfPermissionsInput none
-C-R33 | v2/pdf/ops#pdfRectInput names
-C-R33 | v2/pdf/ops#pdfRectInput none
-C-R33 | v2/pdf/ops#redact_area names
-C-R33 | v2/pdf/ops#redact_area none
-C-R33 | v2/pdf/ops#redact_text names
-C-R33 | v2/pdf/ops#redact_text none
-C-R33 | v2/pdf/ops#rotate_pages names
-C-R33 | v2/pdf/ops#rotate_pages none
-C-R33 | v2/pdf/ops#set_form_field names
-C-R33 | v2/pdf/ops#set_form_field none
-C-R33 | v2/pdf/ops#set_page_labels names
-C-R33 | v2/pdf/ops#set_page_labels none
-C-R33 | v2/pdf/ops#set_page_size names
-C-R33 | v2/pdf/ops#set_page_size none
-C-R33 | v2/pdf/ops#set_properties names
-C-R33 | v2/pdf/ops#set_properties none
-C-R33 | v2/pdf/ops#webLink names
-C-R33 | v2/pdf/ops#webLink none
 C-R33 | v2/pdf/read-result envelope
 C-R33 | v2/pdf/read-result names
 C-R33 | v2/pdf/read-result none
@@ -2051,7 +1547,6 @@ C-R34 | pdf convert
 C-R34 | pdf create
 C-R34 | pdf edit
 C-R34 | pdf extract
-C-R34 | pdf inspect
 C-R34 | pdf merge
 C-R34 | pdf read
 C-R34 | pdf render
@@ -2102,7 +1597,6 @@ C-R35 | pdf convert --help
 C-R35 | pdf create --help
 C-R35 | pdf edit --help
 C-R35 | pdf extract --help
-C-R35 | pdf inspect --help
 C-R35 | pdf merge --help
 C-R35 | pdf read --help
 C-R35 | pdf render --help
@@ -2143,7 +1637,10 @@ C-R36 | slides render --to
 C-R36 | words convert --to
 C-R36 | words formats
 C-R36 | words render --to
-C-R37 | pdf inspect --verbose in json mode
+C-R37 | cells read --verbose in json mode
+C-R37 | pdf read --verbose in json mode
+C-R37 | slides read --verbose in json mode
+C-R37 | words read --verbose in json mode
 C-R38 | KNOWN-ISSUES.md
 C-R38 | README.md
 C-R38 | src reading
@@ -2170,17 +1667,7 @@ C-R38 | src/Aspose.Cli.Sdk.Analyzers
 C-R38 | src/Aspose.Cli.Sdk.Analyzers bare commands
 C-R38 | written mistakes
 C-R39 | cells round-trip exemptions
-C-R39 | pdf add_attachment round trip
-C-R39 | pdf add_bookmark round trip
-C-R39 | pdf add_hyperlink round trip
-C-R39 | pdf encrypt_document round trip
-C-R39 | pdf insert_page round trip
-C-R39 | pdf rotate_pages round trip
 C-R39 | pdf round-trip exemptions
-C-R39 | pdf set_form_field round trip
-C-R39 | pdf set_page_labels round trip
-C-R39 | pdf set_page_size round trip
-C-R39 | pdf set_properties round trip
 C-R39 | slides round-trip exemptions
 C-R39 | words round-trip exemptions
 C-R40 | convert file shape
@@ -2192,16 +1679,6 @@ C-R40 | read file shape
 C-R40 | render file shape
 C-R40 | search file shape
 C-R42 | cells edit xlsx -> .xlsx
-C-R42 | pdf convert pdf -> docx
-C-R42 | pdf convert pdf -> epub
-C-R42 | pdf convert pdf -> html
-C-R42 | pdf convert pdf -> md
-C-R42 | pdf convert pdf -> pdfa-1b
-C-R42 | pdf convert pdf -> pdfa-2b
-C-R42 | pdf convert pdf -> pdfa-3b
-C-R42 | pdf convert pdf -> pptx
-C-R42 | pdf convert pdf -> txt
-C-R42 | pdf convert pdf -> xlsx
 C-R42 | pdf edit pdf -> .pdf
 C-R42 | slides edit pptx -> .pptx
 C-R42 | words edit docx -> .docx
@@ -2219,6 +1696,13 @@ C-R44 | cells set sheet at a missing address
 C-R44 | cells set sparklineGroup at a missing address
 C-R44 | cells set table at a missing address
 C-R44 | cells set validation at a missing address
+C-R44 | pdf set annotation at a missing address
+C-R44 | pdf set attachment at a missing address
+C-R44 | pdf set bookmark at a missing address
+C-R44 | pdf set field at a missing address
+C-R44 | pdf set info at a missing address
+C-R44 | pdf set page at a missing address
+C-R44 | pdf set pageLabel at a missing address
 C-R44 | slides set axis at a missing address
 C-R44 | slides set category at a missing address
 C-R44 | slides set cell at a missing address
@@ -2253,7 +1737,6 @@ corrupt-input | cells search
 corrupt-input | pdf convert
 corrupt-input | pdf edit
 corrupt-input | pdf extract
-corrupt-input | pdf inspect
 corrupt-input | pdf merge
 corrupt-input | pdf read
 corrupt-input | pdf render
@@ -2274,11 +1757,6 @@ corrupt-input | words extract
 corrupt-input | words read
 corrupt-input | words render
 corrupt-input | words search
-dry-run | pdf edit --dry-run
-dry-run | pdf edit --dry-run --in-place
-dry-run | pdf edit --dry-run --out out.pdf
-dry-run | pdf edit --in-place
-dry-run | pdf edit --out out.pdf
 evaluation-disclosed | cells convert
 evaluation-disclosed | cells create
 evaluation-disclosed | cells edit
@@ -2308,14 +1786,10 @@ invalid-enum | license install --product cellss
 invalid-enum | license remove --product cellss
 invalid-enum | license status --product cellss
 invalid-enum | pdf convert --to docxx
-invalid-enum | pdf create --page-size a33
 invalid-enum | pdf extract --form-format fdff
 invalid-enum | pdf extract --what attachmentss
-invalid-enum | pdf inspect --detail attachmentss
-invalid-enum | pdf merge --bookmarks dropp
-invalid-enum | pdf read --content lyaout
 invalid-enum | pdf render --to jpegg
-invalid-enum | pdf split --by bookmarkss
+invalid-enum | pdf split --by pagess
 invalid-enum | pdf validate --profile pfda-1b
 invalid-enum | skill install --host calude-code
 invalid-enum | slides convert --to giff
@@ -2332,7 +1806,6 @@ missing-input | cells search
 missing-input | pdf convert
 missing-input | pdf edit
 missing-input | pdf extract
-missing-input | pdf inspect
 missing-input | pdf merge
 missing-input | pdf read
 missing-input | pdf render
@@ -2391,10 +1864,12 @@ output-reopens | cells convert xltx -> xlsx
 output-reopens | cells render xlsx -> jpeg
 output-reopens | cells render xlsx -> png
 output-reopens | cells render xlsx -> svg
+output-reopens | pdf convert html -> pdf
 output-reopens | pdf convert pdf -> docx
 output-reopens | pdf convert pdf -> epub
 output-reopens | pdf convert pdf -> html
 output-reopens | pdf convert pdf -> md
+output-reopens | pdf convert pdf -> pdf
 output-reopens | pdf convert pdf -> pdfa-1b
 output-reopens | pdf convert pdf -> pdfa-2b
 output-reopens | pdf convert pdf -> pdfa-3b
@@ -2491,16 +1966,6 @@ output-reopens | words render docx -> png
 output-reopens | words render docx -> svg
 read-only | cells read
 read-only | cells search
-read-only | pdf inspect
-read-only | pdf inspect --detail attachments
-read-only | pdf inspect --detail fonts
-read-only | pdf inspect --detail forms
-read-only | pdf inspect --detail layers
-read-only | pdf inspect --detail links
-read-only | pdf inspect --detail outline
-read-only | pdf inspect --detail permissions
-read-only | pdf inspect --detail properties
-read-only | pdf inspect --detail signatures
 read-only | pdf read
 read-only | pdf search
 read-only | pdf validate
@@ -2593,19 +2058,13 @@ secret-hidden | pdf edit --password-env
 secret-hidden | pdf edit --password-env with a wrong password
 secret-hidden | pdf edit --password-stdin
 secret-hidden | pdf edit --password-stdin with a wrong password
-secret-hidden | pdf edit encrypt_document
+secret-hidden | pdf edit encrypt
 secret-hidden | pdf extract --password
 secret-hidden | pdf extract --password with a wrong password
 secret-hidden | pdf extract --password-env
 secret-hidden | pdf extract --password-env with a wrong password
 secret-hidden | pdf extract --password-stdin
 secret-hidden | pdf extract --password-stdin with a wrong password
-secret-hidden | pdf inspect --password
-secret-hidden | pdf inspect --password with a wrong password
-secret-hidden | pdf inspect --password-env
-secret-hidden | pdf inspect --password-env with a wrong password
-secret-hidden | pdf inspect --password-stdin
-secret-hidden | pdf inspect --password-stdin with a wrong password
 secret-hidden | pdf merge --encrypt
 secret-hidden | pdf merge --encrypt-env
 secret-hidden | pdf merge --encrypt-stdin
@@ -2776,7 +2235,6 @@ unknown-command | pdf convert as cnovert
 unknown-command | pdf create as cerate
 unknown-command | pdf edit as editt
 unknown-command | pdf extract as etxract
-unknown-command | pdf inspect as isnpect
 unknown-command | pdf merge as mergee
 unknown-command | pdf read as readd
 unknown-command | pdf render as rneder
@@ -2805,61 +2263,6 @@ unknown-command | words extract as etxract
 unknown-command | words read as readd
 unknown-command | words render as rneder
 unknown-command | words search as saerch
-unknown-field | pdf add_attachment.path as pathh
-unknown-field | pdf add_bookmark.title as titlee
-unknown-field | pdf add_footer_text.pages as pagess
-unknown-field | pdf add_header_text.pages as pagess
-unknown-field | pdf add_hyperlink.page as pagee
-unknown-field | pdf add_page_numbers.pages as pagess
-unknown-field | pdf add_stamp_image.page as pagee
-unknown-field | pdf add_watermark_image.pages as pagess
-unknown-field | pdf add_watermark_text.pages as pagess
-unknown-field | pdf clear_properties.xmp as xmpp
-unknown-field | pdf crop_pages.pages as pagess
-unknown-field | pdf delete_attachment.name as namee
-unknown-field | pdf delete_bookmarks.bookmarks as bookmarkss
-unknown-field | pdf delete_pages.pages as pagess
-unknown-field | pdf encrypt_document.userPasswordEnv as uesrPasswordEnv
-unknown-field | pdf flatten_forms.fields as feilds
-unknown-field | pdf import_pages.path as pathh
-unknown-field | pdf insert_page.at as att
-unknown-field | pdf move_pages.pages as pagess
-unknown-field | pdf optimize_document.downsampleImagesDpi as dwonsampleImagesDpi
-unknown-field | pdf redact_area.page as pagee
-unknown-field | pdf redact_text.find as findd
-unknown-field | pdf rotate_pages.pages as pagess
-unknown-field | pdf set_form_field.name as namee
-unknown-field | pdf set_page_labels.ranges as rnages
-unknown-field | pdf set_page_size.pages as pagess
-unknown-field | pdf set_properties.title as titlee
-unknown-op | pdf add_attachment as add_attachmentt
-unknown-op | pdf add_bookmark as add_bookmarkk
-unknown-op | pdf add_footer_text as add_footer_textt
-unknown-op | pdf add_header_text as add_header_textt
-unknown-op | pdf add_hyperlink as add_hyperlinkk
-unknown-op | pdf add_page_numbers as add_page_numberss
-unknown-op | pdf add_stamp_image as add_stamp_imagee
-unknown-op | pdf add_watermark_image as add_watermark_imagee
-unknown-op | pdf add_watermark_text as add_watermark_textt
-unknown-op | pdf clear_properties as celar_properties
-unknown-op | pdf crop_pages as corp_pages
-unknown-op | pdf decrypt_document as dcerypt_document
-unknown-op | pdf delete_attachment as dleete_attachment
-unknown-op | pdf delete_bookmarks as dleete_bookmarks
-unknown-op | pdf delete_pages as dleete_pages
-unknown-op | pdf encrypt_document as ecnrypt_document
-unknown-op | pdf flatten_forms as faltten_forms
-unknown-op | pdf import_pages as ipmort_pages
-unknown-op | pdf insert_page as isnert_page
-unknown-op | pdf move_pages as mvoe_pages
-unknown-op | pdf optimize_document as otpimize_document
-unknown-op | pdf redact_area as rdeact_area
-unknown-op | pdf redact_text as rdeact_text
-unknown-op | pdf rotate_pages as rtoate_pages
-unknown-op | pdf set_form_field as ste_form_field
-unknown-op | pdf set_page_labels as ste_page_labels
-unknown-op | pdf set_page_size as ste_page_size
-unknown-op | pdf set_properties as ste_properties
 unknown-option | aspose-cli --help as --helpp
 unknown-option | aspose-cli --license as --lciense
 unknown-option | aspose-cli --license-mode as --lciense-mode
@@ -2937,6 +2340,7 @@ unknown-option | license install --product as --porduct
 unknown-option | license remove --dry-run as --dyr-run
 unknown-option | license remove --product as --porduct
 unknown-option | license status --product as --porduct
+unknown-option | pdf convert --convert-error-action as --cnovert-error-action
 unknown-option | pdf convert --dry-run as --dyr-run
 unknown-option | pdf convert --font-dir as --fnot-dir
 unknown-option | pdf convert --out as --outt
@@ -2946,20 +2350,12 @@ unknown-option | pdf convert --password as --psasword
 unknown-option | pdf convert --password-env as --psasword-env
 unknown-option | pdf convert --password-stdin as --psasword-stdin
 unknown-option | pdf convert --to as --too
-unknown-option | pdf create --allow-network-resources as --allow-network-resourcess
 unknown-option | pdf create --dry-run as --dyr-run
 unknown-option | pdf create --encrypt as --ecnrypt
 unknown-option | pdf create --encrypt-env as --ecnrypt-env
 unknown-option | pdf create --encrypt-stdin as --ecnrypt-stdin
-unknown-option | pdf create --font-dir as --fnot-dir
-unknown-option | pdf create --from-html as --form-html
-unknown-option | pdf create --from-images as --form-images
-unknown-option | pdf create --from-markdown as --form-markdown
-unknown-option | pdf create --from-text as --form-text
-unknown-option | pdf create --margins as --mragins
 unknown-option | pdf create --overwrite as --oevrwrite
-unknown-option | pdf create --page-size as --pgae-size
-unknown-option | pdf edit --dry-run as --dyr-run
+unknown-option | pdf create --template as --tmeplate
 unknown-option | pdf edit --encrypt as --ecnrypt
 unknown-option | pdf edit --encrypt-env as --ecnrypt-env
 unknown-option | pdf edit --encrypt-stdin as --ecnrypt-stdin
@@ -2971,7 +2367,6 @@ unknown-option | pdf edit --overwrite as --oevrwrite
 unknown-option | pdf edit --password as --psasword
 unknown-option | pdf edit --password-env as --psasword-env
 unknown-option | pdf edit --password-stdin as --psasword-stdin
-unknown-option | pdf edit --verify as --vreify
 unknown-option | pdf extract --bom as --bomm
 unknown-option | pdf extract --dry-run as --dyr-run
 unknown-option | pdf extract --form-format as --from-format
@@ -2982,12 +2377,6 @@ unknown-option | pdf extract --password as --psasword
 unknown-option | pdf extract --password-env as --psasword-env
 unknown-option | pdf extract --password-stdin as --psasword-stdin
 unknown-option | pdf extract --what as --whatt
-unknown-option | pdf inspect --detail as --dteail
-unknown-option | pdf inspect --password as --psasword
-unknown-option | pdf inspect --password-env as --psasword-env
-unknown-option | pdf inspect --password-stdin as --psasword-stdin
-unknown-option | pdf inspect --sample as --smaple
-unknown-option | pdf merge --bookmarks as --bookmarkss
 unknown-option | pdf merge --dry-run as --dyr-run
 unknown-option | pdf merge --encrypt as --ecnrypt
 unknown-option | pdf merge --encrypt-env as --ecnrypt-env
@@ -2997,16 +2386,16 @@ unknown-option | pdf merge --overwrite as --oevrwrite
 unknown-option | pdf merge --password as --psasword
 unknown-option | pdf merge --password-env as --psasword-env
 unknown-option | pdf merge --password-stdin as --psasword-stdin
-unknown-option | pdf read --content as --cnotent
-unknown-option | pdf read --max-chars as --mxa-chars
-unknown-option | pdf read --pages as --pagess
+unknown-option | pdf read --at as --att
+unknown-option | pdf read --from as --fromm
+unknown-option | pdf read --kind as --kindd
+unknown-option | pdf read --max-objects as --mxa-objects
 unknown-option | pdf read --password as --psasword
 unknown-option | pdf read --password-env as --psasword-env
 unknown-option | pdf read --password-stdin as --psasword-stdin
 unknown-option | pdf render --dpi as --dpii
 unknown-option | pdf render --dry-run as --dyr-run
 unknown-option | pdf render --font-dir as --fnot-dir
-unknown-option | pdf render --grid as --gridd
 unknown-option | pdf render --out as --outt
 unknown-option | pdf render --overwrite as --oevrwrite
 unknown-option | pdf render --pages as --pagess
@@ -3016,7 +2405,6 @@ unknown-option | pdf render --password-stdin as --psasword-stdin
 unknown-option | pdf render --to as --too
 unknown-option | pdf search --case-sensitive as --csae-sensitive
 unknown-option | pdf search --max-hits as --mxa-hits
-unknown-option | pdf search --pages as --pagess
 unknown-option | pdf search --password as --psasword
 unknown-option | pdf search --password-env as --psasword-env
 unknown-option | pdf search --password-stdin as --psasword-stdin
@@ -3028,6 +2416,7 @@ unknown-option | pdf sign --certificate-password-env as --cretificate-password-e
 unknown-option | pdf sign --certificate-password-stdin as --cretificate-password-stdin
 unknown-option | pdf sign --contact as --cnotact
 unknown-option | pdf sign --dry-run as --dyr-run
+unknown-option | pdf sign --font as --fontt
 unknown-option | pdf sign --font-dir as --fnot-dir
 unknown-option | pdf sign --location as --lcoation
 unknown-option | pdf sign --out as --outt
@@ -3234,12 +2623,13 @@ unwritable-output | cells convert --to xps --out out.ppt
 unwritable-output | cells create out.ppt
 unwritable-output | cells edit --out out.ppt
 unwritable-output | cells render --to jpeg --out out.ppt
-unwritable-output | pdf convert --to docx --out out.doc
-unwritable-output | pdf convert --to docx --out out.ppt
 unwritable-output | pdf convert --to docx --out out.xltx
 unwritable-output | pdf convert --to epub --out out.xltx
 unwritable-output | pdf convert --to html --out out.xltx
 unwritable-output | pdf convert --to md --out out.xltx
+unwritable-output | pdf convert --to pdf --out out.doc
+unwritable-output | pdf convert --to pdf --out out.ppt
+unwritable-output | pdf convert --to pdf --out out.xltx
 unwritable-output | pdf convert --to pdfa-1b --out out.xltx
 unwritable-output | pdf convert --to pdfa-2b --out out.xltx
 unwritable-output | pdf convert --to pdfa-3b --out out.xltx

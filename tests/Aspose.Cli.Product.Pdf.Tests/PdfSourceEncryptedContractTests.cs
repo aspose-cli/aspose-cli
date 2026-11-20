@@ -19,7 +19,7 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
 
     public void Dispose() => _workspace.Dispose();
 
-    // Fourteen licensed CLI runs and the load of every published schema: about 10 s even at once.
+    // Twelve licensed CLI runs and the load of every published schema: about 10 s even at once.
     [Category(TestCategory.Slow)]
     [LicensedFact]
     public void SourceEncrypted_IsTruthfulAndAcceptedByEveryResultSchema()
@@ -30,11 +30,11 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
             [UserPassword] = "open-sesame",
             [OwnerPassword] = "owner-sesame",
         };
-        File.WriteAllText(_workspace.File("text.txt"), "Encrypted source.\n");
+        File.WriteAllText(_workspace.File("page.html"), "<html><body><p>Encrypted source.</p></body></html>");
         File.WriteAllText(
             _workspace.File("encrypt.json"),
-            $$"""{"ops":[{"op":"encrypt_document","userPasswordEnv":"{{UserPassword}}","ownerPasswordEnv":"{{OwnerPassword}}"}]}""");
-        _workspace.Run("pdf", "create", "plain.pdf", "--from-text", "text.txt", "--license", license, "--output-format", "json").Succeeded();
+            $$$"""{"ops":[{"do":"encrypt","args":{"userPasswordEnv":"{{{UserPassword}}}","ownerPasswordEnv":"{{{OwnerPassword}}}","permissions":[],"cryptoAlgorithm":"AESx256"}}]}""");
+        _workspace.Run("pdf", "convert", "page.html", "--out", "plain.pdf", "--license", license, "--output-format", "json").Succeeded();
         _workspace.RunWithEnv(passwords, "pdf", "edit", "plain.pdf", "--ops", "encrypt.json", "--out", "locked.pdf", "--license", license, "--output-format", "json").Succeeded();
 
         (string Name, bool Encrypted, CliResult Result)[] runs =
@@ -52,8 +52,7 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
         var problems = new List<string>();
         foreach ((string name, bool encrypted, CliResult result) in runs)
         {
-            // A validation that finds the file not conforming completes with exit 8.
-            if (result.ExitCode != 0 && !(result.ExitCode == 8 && name.StartsWith("pdf validate ", StringComparison.Ordinal)))
+            if (result.ExitCode != 0)
             {
                 problems.Add($"{name} failed: {result.StdErr}");
                 continue;
@@ -67,12 +66,11 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
 
     private static string[][] Commands(string file) =>
     [
-        ["pdf", "inspect", file],
         ["pdf", "read", file],
         ["pdf", "search", file, "--pattern", "Encrypted"],
         ["pdf", "render", file, "--out", $"{file}.png", "--overwrite"],
         ["pdf", "validate", file, "--profile", "pdfa-1b"],
-        ["pdf", "extract", file, "--what", "text", "--out-dir", $"{file}-text"],
+        ["pdf", "extract", file, "--what", "images", "--out-dir", $"{file}-images"],
     ];
 
     private static void Check(string name, JsonObject result, bool encrypted, List<string> problems)

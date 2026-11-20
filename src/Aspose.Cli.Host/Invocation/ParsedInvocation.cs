@@ -134,7 +134,7 @@ internal sealed class ParsedInvocation
         }
 
         // The parser does not check a list for a value it takes for a name it knows there, such
-        // as --verbose written where the value of --content belongs; the same table of names picks
+        // as --verbose written where the value of --kind belongs; the same table of names picks
         // those values here, and no other value is touched. Beside --help nothing is checked,
         // as the parser checks nothing there.
         HashSet<string> names = KnownNames();
@@ -333,7 +333,7 @@ internal sealed class ParsedInvocation
     /// <summary>
     /// <paramref name="error"/> when it refuses a value given to an option or argument, rather
     /// than a missing value or more values than it takes: a value outside its list, such as a
-    /// mistyped <c>--detail</c>, whose problem replaces the parser's message, which lists the
+    /// mistyped <c>--what</c>, whose problem replaces the parser's message, which lists the
     /// values on lines of their own; a number that does not parse; or a value a validator
     /// refused. Null for any other error.
     /// </summary>
@@ -424,7 +424,7 @@ internal sealed class ParsedInvocation
     /// The option <paramref name="leftOver"/> follows with the value it already holds, as
     /// <c>due</c> follows <c>--pattern total</c>, directly or after other tokens left over like it: it
     /// is one value too many for that option. It may be a secret when that option holds one or
-    /// the value it follows names a secret option, as <c>--password</c> given to <c>--content</c>
+    /// the value it follows names a secret option, as <c>--password</c> given to <c>--kind</c>
     /// does. Null for a token that follows no option's value.
     /// </summary>
     private (Option Option, bool Secret)? OptionWithValueBefore(string leftOver)

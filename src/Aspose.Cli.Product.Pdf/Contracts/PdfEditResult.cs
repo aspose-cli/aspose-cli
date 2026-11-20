@@ -2,49 +2,28 @@ using System.Text.Json.Serialization;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
-/// <summary>Result of one <c>pdf edit</c> batch.</summary>
-public sealed record PdfEditResult() : EngineResultEnvelope("edit-result"), IPartialOutcome
+/// <summary>
+/// Result of <c>pdf edit</c>: what each operation left, read from the saved document after it
+/// was opened again, and the inventory counts that changed.
+/// </summary>
+public sealed record PdfEditResult() : EngineResultEnvelope("edit-result")
 {
-    /// <summary>The PDF edited.</summary>
+    /// <summary>The edited document.</summary>
     [JsonPropertyOrder(-50)]
     public required InputInfo Input { get; init; }
 
-    /// <summary>
-    /// The PDF written; absent for a dry run, which writes nothing, and when the output still held
-    /// the text of a redact_text, which is then not written.
-    /// </summary>
-    [JsonPropertyOrder(-49)]
-    public OutputInfo? Output { get; init; }
+    /// <summary>The written document.</summary>
+    public required OutputInfo Output { get; init; }
 
-    /// <summary>Whether the batch was only checked and applied in memory (<c>--dry-run</c>).</summary>
-    public required bool DryRun { get; init; }
+    /// <summary>What each operation left, in batch order: the object at its address in the saved file, or what its action returned; last, since it grows with the batch.</summary>
+    [JsonPropertyOrder(1000)]
+    public required IReadOnlyList<TableOpReport> Ops { get; init; }
 
-    /// <summary>What the dry run checked, in a fixed order; omitted when the edit was written.</summary>
-    [MinItems(1), UniqueItems, AllowedValues(typeof(DryRunChecks))]
-    public IReadOnlyList<string>? Checked { get; init; }
+    /// <summary>The inventory counts that changed, each as [before, after]; the keys are those read reports in inventory.</summary>
+    [JsonPropertyOrder(850)]
+    public required IReadOnlyDictionary<string, IReadOnlyList<long>> Counts { get; init; }
 
-    /// <summary>The outcome of each operation, in batch order.</summary>
-    public required IReadOnlyList<BoundedOperationOutcome> Applied { get; init; }
-
-    /// <summary>The 1-based pages the operations changed; absent when they changed none.</summary>
-    [Minimum(1)]
-    public IReadOnlyList<int>? PagesTouched { get; init; }
-
-    /// <summary>
-    /// Present with <c>--verify</c>: the staged output read back against the effect of each form,
-    /// redaction, bookmark, property, attachment and page operation, with an issue for each
-    /// warning that leaves the output incomplete. Also present, not ok, when
-    /// the output still held the text of a redact_text, with an issue for each place it was found.
-    /// </summary>
-    public PdfEditVerification? Verification { get; init; }
-
-    /// <summary>Whether the read-back found a difference.</summary>
-    [JsonIgnore]
-    public bool HasFailures => Verification is { Ok: false };
+    /// <summary>The warnings Aspose.PDF reported while it loaded, saved and reopened the document, as it reported them; omitted when there were none.</summary>
+    [JsonPropertyOrder(860)]
+    public IReadOnlyList<EngineWarning>? EngineWarnings { get; init; }
 }
-
-/// <summary>
-/// What <c>--verify</c> read back from the staged output: the effect of each form, redaction,
-/// bookmark, metadata, attachment and page operation.
-/// </summary>
-public sealed record PdfEditVerification : EditVerification;

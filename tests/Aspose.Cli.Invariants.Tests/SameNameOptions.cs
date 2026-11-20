@@ -70,6 +70,9 @@ internal static class SameNameOptions
         new("--ops", OptionAspect.Required,
             "C-R07: Words edit has no other source of operations, so its --ops is required.",
             "words edit"),
+        new("--ops", OptionAspect.Required,
+            "C-R07: PDF edit has no other source of operations, so its --ops is required.",
+            "pdf edit"),
     ];
     // rule-exemptions: end
 
