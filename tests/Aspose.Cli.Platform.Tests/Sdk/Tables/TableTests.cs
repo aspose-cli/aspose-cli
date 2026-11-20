@@ -276,6 +276,9 @@ public sealed class TableTests
 
         public byte[] ReadImage(string path) => [];
 
+
+        public byte[] ReadFile(string path) => [];
+
         public Secret? ReadSecret(string variable) => Secrets.TryGetValue(variable, out string? value) ? new Secret(value) : null;
     }
 

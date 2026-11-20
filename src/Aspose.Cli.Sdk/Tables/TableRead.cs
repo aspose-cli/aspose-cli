@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Output;
@@ -208,6 +209,17 @@ public static class TableRead
                     }
                 }
             }
+
+            foreach ((ObjectKind _, string row, Func<object, TextSearch, IEnumerable<TableMatch>> search) in table.EngineSearches.Where(engine => engine.Kind == kind))
+            {
+                foreach (TableMatch match in AddressResolver.Engine(table, address, () => EngineMatches(search, item, request.Query.Text)))
+                {
+                    if (!hits.Offer(() => new TableHit { At = address, Row = row, Text = match.Text, Rect = match.Rect }))
+                    {
+                        goto Done;
+                    }
+                }
+            }
         }
 
     Done:
@@ -377,4 +389,20 @@ public static class TableRead
     /// <summary>Checks an address an option gives, before any document is opened.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> naming the option.</exception>
     public static void CheckAddress(DocumentTable table, string text, string option) => _ = Parse(table, text, option);
+
+    /// <summary>
+    /// The matches of an engine's search. The regular expression it runs is the CLI's, with the
+    /// CLI's time budget, so running out of that time is the CLI's regex timeout, not the engine's error.
+    /// </summary>
+    private static TableMatch[] EngineMatches(Func<object, TextSearch, IEnumerable<TableMatch>> search, object item, TextSearch query)
+    {
+        try
+        {
+            return [.. search(item, query)];
+        }
+        catch (RegexMatchTimeoutException exception)
+        {
+            throw CliErrors.RegexTimeout(exception);
+        }
+    }
 }

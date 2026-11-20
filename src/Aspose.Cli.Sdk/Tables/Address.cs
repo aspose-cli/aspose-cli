@@ -43,7 +43,7 @@ internal sealed partial record TableAddress(string Text, ObjectKind Kind, IReadO
             return new TableAddress(text, table.Root, []);
         }
 
-        string[] tokens = text.Split('/');
+        string[] tokens = Split(text);
         var steps = new List<AddressStep>();
         ObjectKind current = table.Root;
         int position = 0;
@@ -95,10 +95,59 @@ internal sealed partial record TableAddress(string Text, ObjectKind Kind, IReadO
         return new TableAddress(text, current, steps);
     }
 
+    /// <summary>
+    /// A key part as an address writes it: a <c>/</c> in it is written <c>\/</c> and a <c>\</c>
+    /// is written <c>\\</c>, so a name the engine allows any character in has an address.
+    /// </summary>
+    public static string Escape(string part)
+    {
+        ArgumentNullException.ThrowIfNull(part);
+        return part.Contains('/', StringComparison.Ordinal) || part.Contains('\\', StringComparison.Ordinal)
+            ? part.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("/", "\\/", StringComparison.Ordinal)
+            : part;
+    }
+
+    /// <summary>
+    /// The segments and key parts of an address: split at each <c>/</c> that is not written
+    /// <c>\/</c>, with <c>\/</c> and <c>\\</c> read back as <c>/</c> and <c>\</c>; any other
+    /// <c>\</c> is kept as it is.
+    /// </summary>
+    private static string[] Split(string text)
+    {
+        if (!text.Contains('\\', StringComparison.Ordinal))
+        {
+            return text.Split('/');
+        }
+
+        var tokens = new List<string>();
+        var token = new System.Text.StringBuilder();
+        for (int position = 0; position < text.Length; position++)
+        {
+            char current = text[position];
+            if (current == '\\' && position + 1 < text.Length && text[position + 1] is '/' or '\\')
+            {
+                token.Append(text[++position]);
+            }
+            else if (current == '/')
+            {
+                tokens.Add(token.ToString());
+                token.Clear();
+            }
+            else
+            {
+                token.Append(current);
+            }
+        }
+
+        tokens.Add(token.ToString());
+        return [.. tokens];
+    }
+
     /// <summary>Whether <paramref name="token"/> has the form of <paramref name="part"/>; what it names is the engine's to say.</summary>
     internal static bool Matches(KeyPart part, string token) => part switch
     {
         KeyPart.Index => int.TryParse(token, NumberStyles.None, CultureInfo.InvariantCulture, out _),
+        KeyPart.Ordinal => int.TryParse(token, NumberStyles.None, CultureInfo.InvariantCulture, out int ordinal) && ordinal >= 1,
         KeyPart.Id or KeyPart.Number => uint.TryParse(token, NumberStyles.None, CultureInfo.InvariantCulture, out _),
         KeyPart.Guid => System.Guid.TryParseExact(token, "D", out _),
         KeyPart.Text => token.Length > 0,
@@ -113,6 +162,7 @@ internal sealed partial record TableAddress(string Text, ObjectKind Kind, IReadO
     internal static string Describe(KeyPart part) => part switch
     {
         KeyPart.Index => "a position from 0",
+        KeyPart.Ordinal => "a position from 1",
         KeyPart.Id => "an id",
         KeyPart.Number => "a whole number",
         KeyPart.Guid => "a GUID",

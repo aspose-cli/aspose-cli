@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Tables;
 
@@ -192,6 +193,11 @@ public sealed class TableAction<TDocument>
     public required Func<TDocument, Arguments, TableActionContext<TDocument>, ActionResult> Run { get; init; }
 }
 
+/// <summary>One match the engine's own search call found in a text row.</summary>
+/// <param name="Text">The matched text, as the engine gives it.</param>
+/// <param name="Rect">The engine's rectangle of the match as the engine writes it, or null.</param>
+public sealed record TableMatch(string Text, string? Rect);
+
 /// <summary>One kind of content the inventory counts.</summary>
 /// <param name="Key">The inventory key, such as <c>slides</c>.</param>
 /// <param name="Description">What is counted.</param>
@@ -305,6 +311,18 @@ public sealed class DocumentTable<TDocument> : DocumentTable
         AddAction(new ActionEntry(action.Name, action.Description, action.Arguments, (document, arguments, context) => action.Run((TDocument)document, arguments, (TableActionContext<TDocument>)context)));
     }
 
+    /// <summary>
+    /// Declares that a search looks in the text row <paramref name="row"/> of <paramref name="kind"/>
+    /// through the engine's own search call, which gives each match's text and the engine's
+    /// rectangle rather than an offset in the row's text.
+    /// </summary>
+    public void SearchesWith<T>(ObjectKind<T> kind, string row, Func<T, TextSearch, IEnumerable<TableMatch>> search)
+        where T : class
+    {
+        ArgumentNullException.ThrowIfNull(search);
+        AddEngineSearch(kind, row, (item, query) => search((T)item, query));
+    }
+
     /// <summary>Declares the inventory: the kinds of content it counts and how they are counted.</summary>
     public void Inventory(IReadOnlyList<InventoryKind> kinds, Func<TDocument, IReadOnlyDictionary<string, long>> count)
     {
@@ -321,6 +339,7 @@ public abstract class DocumentTable
     private readonly List<AdderEntry> _adders = [];
     private readonly List<ActionEntry> _actions = [];
     private readonly List<(ObjectKind Kind, string Row)> _text = [];
+    private readonly List<(ObjectKind Kind, string Row, Func<object, TextSearch, IEnumerable<TableMatch>> Search)> _engineSearches = [];
     private readonly Dictionary<ObjectKind, Func<object, object, int>> _orders = [];
     private IReadOnlyList<InventoryKind> _inventoryKinds = [];
     private Func<object, IReadOnlyDictionary<string, long>> _count = static _ => new Dictionary<string, long>();
@@ -351,6 +370,9 @@ public abstract class DocumentTable
 
     internal IReadOnlyList<(ObjectKind Kind, string Row)> TextRows => _text;
 
+    /// <summary>The text rows a search looks in through the engine's own search call.</summary>
+    internal IReadOnlyList<(ObjectKind Kind, string Row, Func<object, TextSearch, IEnumerable<TableMatch>> Search)> EngineSearches => _engineSearches;
+
     /// <summary>The position of a child among its parent's children, for a parent kind whose children are listed together; null for any other.</summary>
     internal Func<object, object, int>? OrderOf(ObjectKind parent) => _orders.GetValueOrDefault(parent);
 
@@ -360,13 +382,23 @@ public abstract class DocumentTable
     /// <summary>Declares a text row a search looks in.</summary>
     public void SearchesText(ObjectKind kind, string row)
     {
+        CheckTextRow(kind, row);
+        _text.Add((kind, row));
+    }
+
+    private protected void AddEngineSearch(ObjectKind kind, string row, Func<object, TextSearch, IEnumerable<TableMatch>> search)
+    {
+        CheckTextRow(kind, row);
+        _engineSearches.Add((kind, row, search));
+    }
+
+    private static void CheckTextRow(ObjectKind kind, string row)
+    {
         ArgumentNullException.ThrowIfNull(kind);
         if (!kind.Rows.Any(candidate => candidate.Name == row && candidate.Kind == ValueKinds.Text))
         {
             throw new ArgumentException($"Kind '{kind.Name}' has no text row '{row}'.", nameof(row));
         }
-
-        _text.Add((kind, row));
     }
 
     /// <summary>Counts the content of a document, by inventory key.</summary>

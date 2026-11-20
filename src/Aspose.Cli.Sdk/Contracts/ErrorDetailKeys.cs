@@ -49,6 +49,7 @@ public static class ErrorDetailKeys
         ("index", "The position of the failing operation in an object table batch's ops, from 0."),
         ("limit", "The budget's limit, in unit."),
         ("list", "The result field holding a list that was capped, such as outline."),
+        ("notSupplied", "The resources a document names that the CLI's resource loader supplied no bytes for, each as {reference, reason}: the reference as the document writes it and why nothing was supplied, such as a network address."),
         ("offset", "The byte offset of the problem in an input."),
         ("op", "The op name of the failing operation."),
         ("operation", "The product feature the error is about."),

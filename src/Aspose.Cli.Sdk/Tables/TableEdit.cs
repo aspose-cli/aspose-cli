@@ -80,7 +80,7 @@ public static class TableEdit
         var warnings = new EngineWarningLog();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(request.Input);
         IOpenedDocument<TDocument> opened = documents.Open(request.Input, request.Password, warnings);
-        var context = new TableActionContext<TDocument>(documents, warnings);
+        var context = new TableActionContext<TDocument>(documents, warnings, request.EncryptPassword is not null);
         bool closed = false;
         try
         {
@@ -89,7 +89,8 @@ public static class TableEdit
 
             IReadOnlyDictionary<string, long> before = table.Count(opened.Document);
             IReadOnlyList<Applied> applied = Apply(table, opened.Document, request.Batch, context);
-            OutputProtection protection = OutputProtection.For(output.Format, request.EncryptPassword, opened.Protection, request.Password);
+            // An action that encrypted or decrypted the document decides the output's protection.
+            OutputProtection protection = context.Protection ?? OutputProtection.For(output.Format, request.EncryptPassword, opened.Protection, request.Password);
             IReadOnlyList<Warning> written = [];
             EditPublication<Report> publication = outputs.PublishEdit(
                 output,

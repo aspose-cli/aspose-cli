@@ -80,6 +80,9 @@ public enum TableInput
     /// <summary>The bytes of a local image file, which the SDK checks is an intact image.</summary>
     Image,
 
+    /// <summary>The bytes of a local file, read through the command's input admission and budgets.</summary>
+    FileBytes,
+
     /// <summary>The value of the environment variable the value names, a secret such as a password.</summary>
     Secret,
 }
@@ -192,6 +195,18 @@ public static class ValueKinds
         static value => JsonValue.Create(value),
         static value => value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } path ? path : throw Expected("a file path", value),
         TableInput.File);
+
+    /// <summary>
+    /// The path of a local file whose bytes an operation takes, relative to the directory the
+    /// command runs in; the edit reads the file under the command's input budget before it opens
+    /// the document, and passes its bytes on.
+    /// </summary>
+    public static ValueKind<object> FileBytes { get; } = new(
+        "file-bytes", "The path of a local file whose content the operation takes, relative to the directory the command runs in.",
+        static () => new JsonObject { ["type"] = "string", ["minLength"] = 1 },
+        static value => value is string path ? JsonValue.Create(path) : null,
+        static value => value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } path ? path : throw Expected("a file path", value),
+        TableInput.FileBytes);
 
     /// <summary>
     /// The path of a local image file, relative to the directory the command runs in; the edit reads

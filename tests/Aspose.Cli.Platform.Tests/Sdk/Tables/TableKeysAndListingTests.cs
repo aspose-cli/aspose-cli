@@ -212,6 +212,9 @@ public sealed class TableKeysAndListingTests
 
         public byte[] ReadImage(string path) => [];
 
+
+        public byte[] ReadFile(string path) => [];
+
         public Secret? ReadSecret(string variable) => null;
     }
 
