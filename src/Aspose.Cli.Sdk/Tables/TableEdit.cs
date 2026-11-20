@@ -243,7 +243,8 @@ public static class TableEdit
             throw TableErrors.NotTheParent(op.Index, parentAddress, parentKind.Name, op.Adder.Name, op.Adder.Target.Name, takes);
         }
 
-        object created = op.Adder.Create(parent, op.Arguments);
+        // The objects the arguments address, such as the sibling a new object goes before, are found first.
+        object created = op.Adder.Create(parent, op.Arguments.Resolve(table, document));
         at = AddressResolver.Below(table, parentAddress, op.Adder.Placement, parent, created);
         Write(created, op.Adder.Placement.Kind, op.Props, at, op.Index, ref row);
         at = Settled(table, document, op.Adder.Placement, parentAddress, parent, created, at);

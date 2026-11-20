@@ -8,7 +8,7 @@ namespace Aspose.Cli.Sdk.Tables;
 /// </summary>
 public sealed class Argument
 {
-    private Argument(string name, ValueKind kind, string description, bool required, ObjectKind? addresses = null, bool resolvedByTheCall = false)
+    private Argument(string name, ValueKind kind, string description, bool required, IReadOnlyList<ObjectKind>? addresses = null, bool resolvedByTheCall = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(kind);
@@ -21,8 +21,8 @@ public sealed class Argument
         ResolvedByTheCall = resolvedByTheCall;
     }
 
-    /// <summary>The kind of the object the argument's address names, or null for an argument that is no address.</summary>
-    public ObjectKind? Addresses { get; }
+    /// <summary>The kinds of object the argument's address may name, or null for an argument that is no address.</summary>
+    public IReadOnlyList<ObjectKind>? Addresses { get; }
 
     /// <summary>
     /// Whether the call itself finds the object, in another document it opens, through
@@ -38,7 +38,23 @@ public sealed class Argument
     /// gives the engine object, <see cref="Arguments.AddressOf"/> its address.
     /// </summary>
     public static Argument Address(string name, ObjectKind kind, string description, bool required = true) =>
-        new(name, ValueKinds.AddressText, description, required, kind ?? throw new ArgumentNullException(nameof(kind)));
+        new(name, ValueKinds.AddressText, description, required, [kind ?? throw new ArgumentNullException(nameof(kind))]);
+
+    /// <summary>
+    /// A parameter whose value is the address of an object of any of <paramref name="kinds"/>, such
+    /// as the sibling a new object is inserted before, which may be a paragraph or a table; it is
+    /// found in the edited document before the call, as a one-kind address is.
+    /// </summary>
+    public static Argument Address(string name, IReadOnlyList<ObjectKind> kinds, string description, bool required = true)
+    {
+        ArgumentNullException.ThrowIfNull(kinds);
+        if (kinds.Count == 0 || kinds.Any(static kind => kind is null))
+        {
+            throw new ArgumentException("An address argument names at least one kind, and no null one.", nameof(kinds));
+        }
+
+        return new(name, ValueKinds.AddressText, description, required, kinds);
+    }
 
     /// <summary>
     /// A parameter whose value is the address of an object of <paramref name="kind"/> that the call
@@ -46,7 +62,7 @@ public sealed class Argument
     /// another workbook it opens.
     /// </summary>
     public static Argument AddressFoundByTheCall(string name, ObjectKind kind, string description, bool required = true) =>
-        new(name, ValueKinds.AddressText, description, required, kind ?? throw new ArgumentNullException(nameof(kind)), resolvedByTheCall: true);
+        new(name, ValueKinds.AddressText, description, required, [kind ?? throw new ArgumentNullException(nameof(kind))], resolvedByTheCall: true);
 
     /// <summary>The parameter's name.</summary>
     public string Name { get; }
@@ -268,6 +284,20 @@ public sealed class DocumentTable<TDocument> : DocumentTable
             (owner, arguments) => adder.Create((TParent)owner, arguments)));
     }
 
+    /// <summary>
+    /// Declares that the objects of every kind placed below <paramref name="parent"/> are listed
+    /// together, in the order <paramref name="position"/> gives each in its parent, such as a
+    /// paragraph's and a table's position among a story's child nodes; without it, read lists one
+    /// placement's objects after another's.
+    /// </summary>
+    public void Orders<TParent>(ObjectKind<TParent> parent, Func<TParent, object, int> position)
+        where TParent : class
+    {
+        ArgumentNullException.ThrowIfNull(parent);
+        ArgumentNullException.ThrowIfNull(position);
+        AddOrder(parent, (owner, child) => position((TParent)owner, child));
+    }
+
     /// <summary>Declares an action.</summary>
     public void Action(TableAction<TDocument> action)
     {
@@ -291,6 +321,7 @@ public abstract class DocumentTable
     private readonly List<AdderEntry> _adders = [];
     private readonly List<ActionEntry> _actions = [];
     private readonly List<(ObjectKind Kind, string Row)> _text = [];
+    private readonly Dictionary<ObjectKind, Func<object, object, int>> _orders = [];
     private IReadOnlyList<InventoryKind> _inventoryKinds = [];
     private Func<object, IReadOnlyDictionary<string, long>> _count = static _ => new Dictionary<string, long>();
 
@@ -319,6 +350,9 @@ public abstract class DocumentTable
     internal IReadOnlyList<InventoryKind> InventoryKinds => _inventoryKinds;
 
     internal IReadOnlyList<(ObjectKind Kind, string Row)> TextRows => _text;
+
+    /// <summary>The position of a child among its parent's children, for a parent kind whose children are listed together; null for any other.</summary>
+    internal Func<object, object, int>? OrderOf(ObjectKind parent) => _orders.GetValueOrDefault(parent);
 
     /// <summary>Every kind, the root's first, in the order they were placed.</summary>
     internal IReadOnlyList<ObjectKind> Kinds => [Root, .. _placements.Select(static placement => placement.Kind).Distinct()];
@@ -364,6 +398,14 @@ public abstract class DocumentTable
         }
 
         _aliases.Add(alias);
+    }
+
+    private protected void AddOrder(ObjectKind parent, Func<object, object, int> position)
+    {
+        if (!_orders.TryAdd(parent, position))
+        {
+            throw new ArgumentException($"Kind '{parent.Name}' declares the order of its children twice.", nameof(parent));
+        }
     }
 
     private protected void AddAdder(AdderEntry adder)

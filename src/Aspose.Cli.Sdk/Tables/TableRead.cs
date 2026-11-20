@@ -230,17 +230,29 @@ public static class TableRead
         DocumentTable table, object item, ObjectKind kind, string address, Func<Placement, bool>? descend = null)
     {
         yield return (item, kind, address);
-        foreach (Placement placement in table.Placements.Where(candidate => candidate.Parent == kind && (descend is null || descend(candidate))))
+        foreach ((Placement placement, object child) in Children(table, item, kind, address, descend))
         {
-            foreach (object child in AddressResolver.Engine(table, address, () => placement.List(item).ToArray()))
+            string below = AddressResolver.Below(table, address, placement, item, child);
+            foreach ((object, ObjectKind, string) found in Walk(table, child, placement.Kind, below, descend))
             {
-                string below = AddressResolver.Below(table, address, placement, item, child);
-                foreach ((object, ObjectKind, string) found in Walk(table, child, placement.Kind, below, descend))
-                {
-                    yield return found;
-                }
+                yield return found;
             }
         }
+    }
+
+    /// <summary>
+    /// The children of an object: one placement's after another's, or all together in the order the
+    /// table declares for the object's kind.
+    /// </summary>
+    private static IEnumerable<(Placement Placement, object Child)> Children(
+        DocumentTable table, object item, ObjectKind kind, string address, Func<Placement, bool>? descend)
+    {
+        (Placement Placement, object Child)[] children = [.. table.Placements
+            .Where(candidate => candidate.Parent == kind && (descend is null || descend(candidate)))
+            .SelectMany(placement => AddressResolver.Engine(table, address, () => placement.List(item).ToArray()).Select(child => (placement, child)))];
+        return table.OrderOf(kind) is { } position
+            ? AddressResolver.Engine(table, address, () => children.OrderBy(found => position(item, found.Child)).ToArray())
+            : children;
     }
 
     /// <summary>
@@ -252,18 +264,42 @@ public static class TableRead
         DocumentTable table, Located root, IReadOnlyCollection<string> named)
     {
         var kinds = new HashSet<string>(named, StringComparer.Ordinal);
+        HashSet<ObjectKind> reaching = [.. table.Placements.Select(static placement => placement.Kind).Distinct().Where(kind => Reaches(table, kind, kinds))];
         Func<Placement, bool> descend = kinds.Count == 0
             ? static placement => !placement.ListedWhenNamed
-            : placement => Reaches(table, placement.Kind, kinds, depth: 0);
+            : placement => reaching.Contains(placement.Kind);
         (object Item, ObjectKind Kind, string Address)[] selected =
             [.. Walk(table, root.Item, root.Kind, root.Address, descend).Where(found => kinds.Count == 0 || kinds.Contains(found.Kind.Name))];
         return (selected, kinds.Count == 0 ? ListedWhenNamedBelow(table, root.Kind) : []);
     }
 
-    /// <summary>Whether <paramref name="kind"/> or a kind placed anywhere below it is one of <paramref name="named"/>.</summary>
-    private static bool Reaches(DocumentTable table, ObjectKind kind, IReadOnlySet<string> named, int depth) =>
-        named.Contains(kind.Name)
-        || depth < 32 && table.Placements.Any(placement => placement.Parent == kind && Reaches(table, placement.Kind, named, depth + 1));
+    /// <summary>
+    /// Whether <paramref name="kind"/> or a kind placed anywhere below it is one of
+    /// <paramref name="named"/>: each kind is visited once, so a kind that holds itself, directly
+    /// or through others, ends the search.
+    /// </summary>
+    private static bool Reaches(DocumentTable table, ObjectKind kind, IReadOnlySet<string> named)
+    {
+        var seen = new HashSet<ObjectKind> { kind };
+        var pending = new Queue<ObjectKind>([kind]);
+        while (pending.TryDequeue(out ObjectKind? current))
+        {
+            if (named.Contains(current.Name))
+            {
+                return true;
+            }
+
+            foreach (Placement placement in table.Placements.Where(candidate => candidate.Parent == current))
+            {
+                if (seen.Add(placement.Kind))
+                {
+                    pending.Enqueue(placement.Kind);
+                }
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>The kinds listed only when named that sit anywhere below <paramref name="kind"/>, in the table's order.</summary>
     private static IReadOnlyList<string> ListedWhenNamedBelow(DocumentTable table, ObjectKind kind)

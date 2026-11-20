@@ -374,7 +374,7 @@ public sealed class TableBatch
                 {
                     Argument argument = declared.First(candidate => candidate.Name == member.Name);
                     object? value = Decode(index, $"args.{member.Name}", argument.Kind, member.Value, null);
-                    values[member.Name] = argument.Addresses is { } kind ? AddressArgument(index, $"args.{member.Name}", (string)value!, kind, argument.ResolvedByTheCall) : value;
+                    values[member.Name] = argument.Addresses is { } kinds ? AddressArgument(index, $"args.{member.Name}", (string)value!, kinds, argument.ResolvedByTheCall) : value;
                 }
             }
 
@@ -387,7 +387,7 @@ public sealed class TableBatch
         }
 
         /// <summary>An address argument checked against the table: its segments and keys, and the kind it names.</summary>
-        private Arguments.AddressValue AddressArgument(int index, string field, string text, ObjectKind kind, bool resolvedByTheCall)
+        private Arguments.AddressValue AddressArgument(int index, string field, string text, IReadOnlyList<ObjectKind> kinds, bool resolvedByTheCall)
         {
             TableAddress address;
             try
@@ -399,9 +399,10 @@ public sealed class TableBatch
                 throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, field, $"{field}: {invalid.Message}", text);
             }
 
-            return address.Kind == kind
+            return kinds.Contains(address.Kind)
                 ? new Arguments.AddressValue(address, resolvedByTheCall)
-                : throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, field, $"{field} names a {address.Kind.Name}; it takes the address of a {kind.Name}", text);
+                : throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, field,
+                    $"{field} names a {address.Kind.Name}; it takes the address of a {string.Join(" or a ", kinds.Select(static kind => kind.Name))}", text);
         }
 
         private object? Decode(int index, string field, ValueKind kind, JsonElement value, string? at)

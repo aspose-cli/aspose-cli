@@ -78,6 +78,23 @@ public sealed class TableKeysAndListingTests
         Assert.Empty(named);
     }
 
+    /// <summary>
+    /// A read that names a kind walks only the placements that lead to it, and finds them in a
+    /// table whose kinds hold each other, as a block holds blocks: each kind is visited once, so a
+    /// kind no placement below leads to is found in one pass, not one per path.
+    /// </summary>
+    [Fact]
+    public async Task Read_OfAKindInATableWhoseKindsHoldEachOther_EndsAndListsIt()
+    {
+        var root = new Located(new Nest(), null, null, Nesting.Table.Root, "nest", null);
+
+        Task<string[]> marks = Task.Run(() => TableRead.Select(Nesting.Table, root, ["mark"]).Selected.Select(static found => found.Address).ToArray(), TestContext.Current.CancellationToken);
+        Task finished = await Task.WhenAny(marks, Task.Delay(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken));
+
+        Assert.True(finished == marks, "The read of a kind in a table whose kinds hold each other did not end.");
+        Assert.Equal(["mark/0"], await marks);
+    }
+
     [Fact]
     public void Parse_RefusesAnAddressArgumentOfAnotherKind()
     {
@@ -168,6 +185,23 @@ public sealed class TableKeysAndListingTests
         Assert.Equal(["sheet/<name>"], document["$defs"]!["do.clear"]!["properties"]!["args"]!["properties"]!["sheet"]!["x-addresses"]!.AsArray().Select(static form => form!.GetValue<string>()));
     }
 
+    /// <summary>
+    /// An add made under several kinds of parent is one definition and one branch of the add
+    /// shape, so an operation that makes it matches that branch alone, and its description says
+    /// each parent in a sentence of its own.
+    /// </summary>
+    [Fact]
+    public void Schema_ListsAnAddMadeUnderSeveralParentsOnce()
+    {
+        JsonNode document = JsonNode.Parse(TableSchema.Of("nest", Nesting.Table).Document)!;
+
+        string[] branches = [.. document["$defs"]!["add"]!["oneOf"]!.AsArray().Select(static branch => branch!["$ref"]!.GetValue<string>())];
+
+        Assert.Equal(["#/$defs/add.a"], branches);
+        Assert.Equal("Adds a a to a nest: Makes an a. Adds a a to a a: Makes an a. Adds a a to a b: Makes an a.",
+            document["$defs"]!["add.a"]!["description"]!.GetValue<string>());
+    }
+
     private static TableActionContext<Book> Context() => new(null!, new EngineWarningLog());
 
     private static TableBatch Parse(string json) => TableBatch.Parse(json, Grid.Table, new NoInputs());
@@ -179,6 +213,60 @@ public sealed class TableKeysAndListingTests
         public byte[] ReadImage(string path) => [];
 
         public Secret? ReadSecret(string variable) => null;
+    }
+
+    private sealed class Nest;
+
+    /// <summary>A table of two kinds that each hold both, as paragraphs and tables hold each other, and a kind held only by the root.</summary>
+    private static class Nesting
+    {
+        private static readonly ObjectKind<Nest> NestKind = new("nest", "The root.");
+
+        private static readonly ObjectKind<Nest> MarkKind = new("mark", "A mark the root holds.");
+
+        public static DocumentTable<Nest> Table { get; } = Build();
+
+        private static DocumentTable<Nest> Build()
+        {
+            var table = new DocumentTable<Nest>(NestKind);
+            ObjectKind<Nest>[] holders = [new("a", "A kind that holds a and b."), new("b", "A kind that holds a and b.")];
+            foreach (ObjectKind<Nest> holder in holders)
+            {
+                table.Place(NestKind, holder, Locator(holder.Name));
+                foreach (ObjectKind<Nest> parent in holders)
+                {
+                    table.Place(parent, holder, Locator(holder.Name));
+                }
+            }
+            foreach (ObjectKind<Nest> parent in new[] { NestKind }.Concat(holders))
+            {
+                table.Adds(parent, holders[0], new Adder<Nest, Nest>
+                {
+                    Name = "a",
+                    Description = "Makes an a",
+                    Arguments = [],
+                    Create = static (nest, _) => nest,
+                });
+            }
+            table.Place(NestKind, MarkKind, new Locator<Nest, Nest>
+            {
+                Segment = "mark",
+                Key = [KeyPart.Index],
+                Find = static (nest, key) => key.Index() == 0 ? nest : null,
+                List = static nest => [nest],
+                KeyOf = static (_, _) => Key.Of(0),
+            });
+            return table;
+        }
+
+        private static Locator<Nest, Nest> Locator(string segment) => new()
+        {
+            Segment = segment,
+            Key = [KeyPart.Index],
+            Find = static (_, _) => null,
+            List = static _ => [],
+            KeyOf = static (_, _) => Key.Of(0),
+        };
     }
 
     private sealed class Book
