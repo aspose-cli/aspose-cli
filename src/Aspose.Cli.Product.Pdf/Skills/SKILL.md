@@ -1,128 +1,156 @@
 ---
 name: aspose-cli-pdf
-description: Inspect, assemble, edit, fill, redact, secure, sign, convert, validate and render PDF documents with the local Aspose CLI. Edits are atomic batches that reopen their output before publishing.
+description: Read, edit, fill, stamp, redact, encrypt, sign, merge, split, convert, validate and render PDF documents with the local Aspose CLI. Edits are batches of set, add, delete and do operations on the Aspose.PDF object model, each read back from the saved file.
 ---
 
 # Aspose PDF
 
-Use `aspose-cli pdf` for fixed-layout PDF work. The shared rules (session start,
-reading windows, operation batches, secrets, licensing, errors)
-are in `aspose-cli docs overview`; this Skill adds only what is specific to PDF.
-`aspose-cli capabilities pdf` lists the commands, formats, operations and codes,
-and `aspose-cli schema v2/pdf/<id>` describes each result and the operations.
+`aspose-cli pdf` reads and edits PDF through Aspose.PDF; `edit` writes PDF. An HTML page is read
+only by `convert`, which imports it; Markdown is read by no PDF command (`words convert` reads it).
+The shared rules (session start, secrets, licensing, errors) are in the Platform Skill.
 
-For an editable word-processing document, use `aspose-cli words convert input.pdf --to docx`
-and the Words Skill: it rebuilds flowing paragraphs and warns `LOSSY_CONVERSION`,
-since headers and footers are guessed and pages may be added. `pdf convert --to docx`
-keeps each line in a positioned frame that is hard to edit, and a Words command
-that saves that docx embeds its fonts in full and grows it by megabytes.
+**Positions are the engine's, and they count from 1**: `page/1` is the first page, as are
+`annotation/1`, `font/1`, `bookmark/1` and `attachment/1`. Only a page label counts from 0: it is
+keyed by the engine's page index, so `pageLabel/0` starts at `page/1`. Rectangles are the engine's
+`Rectangle`, written `LLX,LLY,URX,URY` in points, from the page's lower-left corner before any
+rotation.
 
-Pages are 1-based physical positions. Rectangles are points (72 per inch) with a
-top-left origin against the visible, rotated page box.
+| Command | What it does |
+|---|---|
+| `pdf read` | Objects of the document, or of one subtree, with every row of the object table, and the document's inventory |
+| `pdf search` | Matches the engine's `TextFragmentAbsorber` finds in the pages' text, each with the page's text address and the match's rectangle |
+| `pdf edit` | One batch of operations; nothing is written when one fails |
+| `pdf convert` | The engine's save to DOCX, XLSX, PPTX, HTML, EPUB, Markdown, XPS, text, TIFF, PDF or PDF/A; an HTML page to PDF |
+| `pdf render` | The engine's image of each page |
+| `pdf merge`, `pdf split` | `PdfFileEditor.Concatenate` of inputs; parts of page ranges, each `Pages.Add` of its pages into a new document |
+| `pdf sign` | `PdfFileSignature.Sign` with the page, rectangle and texts you state |
+| `pdf validate` | `Document.Validate` against a PDF/A profile: its return value and its log |
+| `pdf extract` | Images, attachments, tables (CSV) or form data, one file each |
+| `pdf create` | The engine's new document, which has no page, or a copy of `--template` |
 
-## Workflow
+## The object table
 
-1. Clarify audience, viewing or print context, compliance target and scope.
-2. Inspect structure and security, then read only the pages you need:
+`aspose-cli schema v2/pdf/ops --operation directory` lists the vocabulary in one short JSON
+document: each kind with its address forms, the rows a set writes (`rows`) and the rows that are
+read only (`readOnlyRows`), and whether it can be deleted; each add with the kinds it adds to and
+its parameters; each action with its parameters. One entry in full, with each row's type and the
+engine member it names: `--operation field`, `--operation add.page`, `--operation do.stamp_text`.
+A row names one engine member; setting it sets that member only, and whatever else the engine
+changes with it is the engine's doing.
 
-   ```powershell
-   aspose-cli pdf inspect input.pdf --sample --detail properties --detail permissions --detail forms --detail signatures --detail attachments --detail outline --detail fonts --output-format json
-   aspose-cli pdf read input.pdf --pages 1-5 --content layout --output-format json
-   ```
+| Address | Object |
+|---|---|
+| `document` | The document: version, encryption, the document information's title, author and dates |
+| `page/1` | A page: rotation, media box, crop box |
+| `page/1/text`, `page/1/area/150,700,258,713.2` | A page's text; the text in a rectangle of it |
+| `page/1/annotation/2`, `page/1/font/1`, `page/1/layer/oc1` | An annotation of any type, links and form widgets included; a font of the page; a layer by its id |
+| `bookmark/1`, `bookmark/1/bookmark/2` | A bookmark and its children |
+| `field/applicant`, `field/form.person.name` | A form field by its full name, a hierarchical one's with its dots; a radio group is one field |
+| `attachment/1`, `pageLabel/0`, `info/Department`, `xmp/dc:title` | An embedded file; a page label by page index; a custom information entry; an XMP entry |
+| `taggedContent` | The structure tree, read only by `--at` |
 
-3. Put all related changes in one `pdf edit` batch with `--verify`
-   ([editing](references/editing.md)):
+In a name with a `/`, write `\/` (and `\\` for a `\`): `info/dept\/team`.
 
-   ```powershell
-   aspose-cli pdf edit input.pdf --ops ops.json --out output.pdf --verify --output-format json
-   ```
+## Reading
 
-4. Convert to PDF/A, then validate the file you deliver; a later edit can break
-   the conformance the conversion checked ([standards](references/pdf-standards.md)).
-5. Sign only the final, verified file with `pdf sign`
-   ([forms and security](references/forms-security.md)).
-6. Verify before delivery ([verification](references/verification.md)), then
-   follow the checklist in `aspose-cli docs verification`.
+```powershell
+aspose-cli pdf read form.pdf
+aspose-cli pdf read form.pdf --kind field
+aspose-cli pdf read report.pdf --at page/3/text
+aspose-cli pdf read report.pdf --kind text --max-objects 20
+aspose-cli pdf search form.pdf --pattern "110101199003074518"
+```
 
-## Creating PDFs
+- Each object comes with its `at` address, its `kind` and its `props`.
+- A read without `--kind` lists the document, attachments, page labels, information and XMP
+  entries; pages, page text, annotations, fonts, layers, bookmarks and fields are listed only when
+  `--kind` names them, which `window.notListedUnlessNamed` says. `inventory.read.pages` is the
+  page count.
+- A page's text is `TextAbsorber.Text` with the engine's defaults; `--kind text` reads every
+  page's. A form field's value is no page text: read it at `field/…`.
+- A form field's controls on the pages are annotations of type `Widget`, with `fullName` naming
+  the field; their rows are the control's own (rectangle, color). The value is the field's.
+- When `window.truncated` is true, run the same command with `--from` set to `window.next.from`.
 
-`pdf create` reads its one source as the option names it, whatever the file's
-extension: `--from-markdown` lays out Markdown, a `#` line as a heading;
-`--from-text` lays out plain text line by line, `#` and all; `--from-html` takes
-HTML, whose `<title>` becomes the PDF title and whose form controls become
-fields ([forms](references/forms-security.md)). A PDF made from HTML or Markdown
-has no author or subject until a `set_properties` edit sets them. Its link to a
-place in the page leads there only when the place is marked `<a name="part"></a>`;
-`NAVIGATION_DEGRADED` counts the links to an element `id` or a local file, which
-lead nowhere.
+## Editing
 
-A Markdown table has no borders or cell padding, and a column without alignment
-centers its header over left-aligned cells; write `---:` for a number column. For
-borders, write HTML with a CSS `border` and use `--from-html`.
+```json
+{"ops": [
+  {"set": "field/applicant", "props": {"value": "Li Lei"}},
+  {"set": "field/approved", "props": {"checked": true}},
+  {"delete": "page/2"},
+  {"do": "stamp_text", "args": {"page": "page/1", "value": "- 1 -", "horizontalAlignment": "Center", "verticalAlignment": "Bottom"}},
+  {"do": "redact_area", "args": {"page": "page/1", "rect": "150,700,258,713.2"}}
+]}
+```
 
-`--from-images` puts each image on its own page, without distortion
-([images](references/pdf-standards.md)); `IMAGE_RESOLUTION_LOW` names a page
-whose image shows blurred.
+```powershell
+aspose-cli pdf edit form.pdf --ops ops.json --out form.edited.pdf
+```
 
-## Sources that can reach the network
+- Operations run in order, each on what the ones before it left: after `delete page/2`, the old
+  `page/3` is `page/2`. When one fails, nothing is written, and the error names it:
+  `details.index` and `details.at`.
+- The result has one entry per operation, read from the saved file after it was opened again:
+  `at` and `now`; an action gives `returned` and the `at` it names. `counts` lists the inventory
+  counts that changed. A position in `at` is read after the whole batch.
+- Every argument of an add or an action is the engine call's parameter of that name; the ones not
+  given are not passed, so the engine's defaults hold (a stamp: no alignment, margins 0,
+  Helvetica 10, black).
 
-HTML and SVG inputs reach no network: the CLI blocks each request and lists it in
-`REMOTE_RESOURCES_BLOCKED`. Markdown is refused with `FEATURE_UNSUPPORTED` when it
-references a network address or a file outside its own directory. Copy
-resources into the input's folder or a folder below it, reference them by relative path, and run
-`pdf create --from-markdown` from the Markdown file's directory.
-[Troubleshooting](references/troubleshooting.md) lists each case and its remedy,
-including `--allow-network-resources` for trusted HTML.
+Tasks, as the table does them:
+
+- Fill a form: `set field/<name>` with `value`; a check box takes `checked` or one of its
+  `allowedStates` as `value`, a radio group one of its `options`' names. The engine takes any
+  text as a value.
+- Reorder pages: there is no move. Copy the page where it should go, then delete the original:
+  `{"add": "page", "args": {"pageNumber": 1, "page": "page/4"}}`, then `{"delete": "page/5"}`. A
+  link that led to the deleted page then leads nowhere; bookmarks follow the engine's renumbering.
+- Page numbers, headers, watermarks: one `stamp_text` per page, with the text you want on it.
+- Redact text: `pdf search` gives each match's `rect`; one `redact_area` per rectangle. Its
+  read-back is the text the engine still finds there; search the output again to see what is
+  left. On a rotated page the engine's rectangle is in the unrotated page's space.
+- Encrypt: the `encrypt` action with the passwords' environment variables, the `Permissions` it
+  grants and the `CryptoAlgorithm`; `decrypt` removes it. `--encrypt` puts one password on the
+  output instead; it cannot be given with these actions.
+- Pages of another PDF: `import_pages` with its `file` and page numbers.
+
+## Converting and other commands
+
+```powershell
+aspose-cli pdf convert report.pdf --out report.docx
+aspose-cli pdf convert page.html --out page.pdf
+aspose-cli pdf convert report.pdf --to pdfa-2b --convert-error-action Delete --out archive.pdf
+aspose-cli pdf render report.pdf --pages 1-2 --out page.png
+aspose-cli pdf merge cover.pdf body.pdf --out report.pdf
+aspose-cli pdf split report.pdf --by pages --groups 1-3 --groups 4-6 --out-dir parts
+aspose-cli pdf sign contract.pdf --page 1 --certificate signer.pfx --certificate-password-env PFX_PASSWORD --visible --rect 36,36,180,60
+```
+
+- An HTML page reads only the files beneath its folder; a network address is blocked and listed
+  in `warnings`. The engine fails the import of a page whose `@font-face` font or `<object>` data
+  is on the network or outside the folder; the error's `details.notSupplied` lists each reference
+  that got nothing, with why.
+- `--pages` applies to html and tiff outputs, whose save selects pages; other outputs hold the
+  whole document.
+- A Markdown output links each picture as a file the engine writes beside it; `outputs` lists
+  them after the `.md`.
+- A PDF/A output is `Document.Convert` with the `--convert-error-action` you state, then a save;
+  the result holds what it returned (`converted`) and its log. `validate` gives the engine's
+  `valid` and log; read them yourself.
+- `sign --rect` is the engine's `System.Drawing.Rectangle`: `x,y,width,height` in whole points,
+  `x,y` the lower-left corner.
 
 ## Evaluation mode
 
-The shared rules are in `aspose-cli docs licensing`. Without a PDF license,
-Aspose.PDF reads only the first 4 pages of a document. `inspect` of a longer PDF
-warns `EVALUATION_INPUT_TRUNCATED` and still lists every bookmark and attachment
-and counts every form field; `--detail forms` leaves out the `page` of a field on
-a later page. Any other command that needs a later page fails with
-`EVALUATION_LIMIT` (exit 7, `details.limit` 4) before writing anything, `render`
-of every page included: limit it with `--pages 1-4`, keep the inputs of a `merge`
-to 4 pages in total, or tell the user a PDF license is needed. A `convert` of a
-longer PDF to a document format fails even with `--pages`. A licensed command
-whose output keeps a saved notice on its first 4 pages warns
-`EVALUATION_INPUT_MARKED`.
+Without a PDF license the result says `"license": {"mode": "evaluation"}`. The engine then gives
+only the first four objects of any collection: read lists four pages while `pages` counts all
+of them, and an address past the fourth, such as `page/5`, is the engine's error. It prints a line
+of notice on every page it saves and adds XMP entries to the file.
 
-## Common mistakes
+## More
 
-- Reading `--pages` past the end fails with `PAGE_NOT_FOUND`: take the count
-  from `pdf inspect`, or use an open range such as `--pages 3-`.
-- Expecting headings to be bookmarks: `pdf split --by bookmarks` refuses a
-  document without them; add one per part with `add_bookmark` first.
-- Converting to a `.pdf` `--out` without `--to`: name the profile, such as
-  `--to pdfa-2b`, then require `valid: true` from `pdf validate`.
-- Encrypting with `pdf convert`: it refuses `--encrypt-env`. Encrypt with
-  `pdf edit`, and encrypt a copy of a PDF/A file, never the archive itself.
-- Trusting the black box: confirm a redaction with `pdf search`, which reads
-  page text alone: when it warns `FORM_VALUES_NOT_IN_TEXT`, read the fields it
-  names with `pdf inspect --detail forms`. Act on `OP_NO_EFFECT`,
-  `REDACTION_TEXT_MOVED` and `REDACTION_NEARBY_TEXT_REMOVED`
-  ([redaction](references/editing.md)).
-- Guessing rectangles: take them from a `pdf search` hit's `rect`, a field's
-  `rect` or a `pdf render --grid` image.
-- Numbering pages before inserting or deleting them: `add_page_numbers` takes
-  `{N}` from the page count when it runs.
-- Editing after signing or PDF/A conversion: edits can invalidate signatures
-  (`SIGNATURE_INVALIDATED`) and conformance; convert and sign last.
-- Passing on `extract --what forms --form-format json` as field data: its names
-  differ from the inspect result's; read values with `pdf inspect --detail forms`.
-
-## References
-
-- [Editing](references/editing.md): operations by task, targets and ordering,
-  navigation after page moves, redaction and scanned pages
-- [Forms, encryption and signing](references/forms-security.md): filling fields,
-  HTML form controls, passwords and permissions, signatures
-- [PDF/A and conversion](references/pdf-standards.md): profiles, validation,
-  images to PDF, other formats and table extraction
-- [Verification](references/verification.md): what `--verify` reads back,
-  content, navigation and appearance checks
-- [Troubleshooting](references/troubleshooting.md): refused network sources,
-  permissions the engine does not enforce
-
-Example: [assemble a review-ready report](examples/assemble-review-report/README.md).
+- [Engine behavior](references/engine-behavior.md): what the engine does with pages, forms,
+  annotations, redaction and conversions, which the CLI passes on unchanged.
+- [Fill and stamp a report](examples/fill-and-stamp/README.md): HTML pages converted, merged,
+  their form filled and their pages stamped.

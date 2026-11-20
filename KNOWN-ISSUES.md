@@ -380,6 +380,69 @@ Reproductions: [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/Cells
 
 Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs).
 
+### PDF-HTML-EMPTY-FONT
+
+- **Defect:** the HTML importer throws `EndOfStreamException` when
+  `HtmlLoadOptions.CustomLoaderOfExternalResources` supplies no bytes for a font an `@font-face`
+  rule names; with no bytes for a picture it imports the page without the picture.
+- **CLI behavior:** `pdf convert` of such a page, whose font is on the network or outside the
+  page's folder, fails as the engine fails, `FEATURE_UNSUPPORTED` naming the engine's
+  exception, and writes nothing; `details.notSupplied` lists the references the loader supplied
+  nothing for.
+- **Workaround:** keep the font beside the page, or take the `@font-face` rule out.
+
+### PDF-HTML-EMPTY-OBJECT
+
+- **Defect:** the HTML importer throws `NullReferenceException` when
+  `HtmlLoadOptions.CustomLoaderOfExternalResources` supplies no bytes for the data of an
+  `<object>` element; with no bytes for a picture it imports the page without the picture.
+- **CLI behavior:** `pdf convert` of such a page, whose object data is on the network or outside
+  the page's folder, fails as the engine fails, `FEATURE_UNSUPPORTED` naming the engine's
+  exception, and writes nothing; `details.notSupplied` lists the references the loader supplied
+  nothing for.
+- **Workaround:** keep the object's file beside the page, or use `<img>` for a picture.
+
+### PDF-ATTACHMENT-KEYS-EMPTY
+
+- **Defect:** `Document.EmbeddedFiles.Keys` throws an exception of the engine's own, whose name is
+  obfuscated, on a document without attachments; `Count` and the enumeration give none.
+- **CLI behavior:** an attachment is addressed by its position, `attachment/1`, from the
+  enumeration, which needs no key; deleting one reads `Keys`, which then holds it.
+
+### PDF-ATTACHMENT-DESCRIPTION-NOT-SAVED
+
+- **Defect:** setting `FileSpecification.Description` on an attachment the engine read from a
+  file, `Document.EmbeddedFiles[i]`, is not saved: the saved file keeps the old description, while
+  `MIMEType` set the same way is saved.
+- **CLI behavior:** none: the `description` row of an attachment reads back what the saved file
+  holds.
+
+### PDF-EVALUATION-COLLECTIONS
+
+- **Defect:** in evaluation mode `PageCollection.Count` gives every page while its enumerator gives
+  the first four only, and copying the collection (`CopyTo`, as a `ToArray` does) fills the rest
+  with null; reading the annotations of a later page, or a later element of any collection, throws
+  `IndexOutOfRangeException` ("At most 4 elements (for any collection) can be viewed in
+  evaluation mode").
+- **CLI behavior:** read lists what the enumerators give and the inventory counts `pages` with
+  `Count`, so without a license a document of six pages counts 6 and lists 4; an address past the
+  fourth, such as `page/5`, is the engine's error, `ENGINE_ERROR`.
+
+### PDF-PAGE-COPY-OWN-WIDGETS
+
+- **Defect:** copying a page that holds form fields within its own document
+  (`Pages.Insert(1, Pages[1])`) and saving it leaves the form's field count as it was, and the
+  saved copy holds twice the widget annotations the original does.
+- **CLI behavior:** none: `add page` with a `page` of the same document copies it as the engine
+  does; `pdf read --kind annotation` and `--kind field` show the result.
+
+### PDF-IMAGES-READ-WRITES
+
+- **Defect:** reading `Page.Resources.Images` creates an empty `/XObject` dictionary in the page's
+  resources of a page that has none, which a save then writes.
+- **CLI behavior:** none visible: no read of the table reads a page's images, so an edit saves
+  what the engine alone saves for the same change.
+
 ### PDF-HTML-EGRESS
 
 - **Defect:** the HTML importer requests http(s) stylesheets and images, and runs script, before
@@ -389,21 +452,12 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   directory.
 - **CLI behavior:** the process's network gate, which every command passes before it runs, blocks
   each http, https, ftp and file request the engine makes, so the request fails inside the process
-  and the result lists its address in `REMOTE_RESOURCES_BLOCKED`. An SVG image, which the engine
-  also reads through file and share paths the gate cannot see, reaches it with only the
-  references inside itself, and the removed ones are listed there too. Markdown is refused with
-  `FEATURE_UNSUPPORTED` unless every file it references is an ordinary file beneath its directory;
-  only those files pass the gate. For trusted HTML,
-  `pdf create --from-html --allow-network-resources` opens http and https for that command alone
-  and lists every fetched address in `NETWORK_RESOURCES_REQUESTED`; ftp and file stay blocked.
-  The importers run the page script of HTML and Markdown input, which has no
-  `XMLHttpRequest`; script in an SVG file the page loads was not seen to run. The CLI does not
-  scan for script: what a script adds to the page, such as a frame, an object, an image or a
-  stylesheet, is loaded through the same gate and loader, so it reaches no network address and
-  no file outside the input's directory (`PdfScriptReachTests`). An SVG image the CLI hands the
-  engine itself (`--from-images`, image stamps and watermarks) has its script removed with its
-  references.
-- **Workaround:** keep resources beside the input and reference them by relative path, or
+  and the result lists its address in `REMOTE_RESOURCES_BLOCKED`. `pdf convert` of an HTML page
+  supplies through the loader only the ordinary files beneath the page's folder. No PDF command
+  reads Markdown (`words convert` does), and an image the CLI hands the engine is no SVG. The
+  importer runs the page's script, which has no `XMLHttpRequest`; what a script adds to the page
+  is loaded through the same gate and loader (`PdfScriptReachTests`).
+- **Workaround:** keep resources beside the HTML page and reference them by relative path, or
   convert HTML with `aspose-cli words convert`, which makes no network request.
 
 ### PDF-MOVE-BOOKMARK
@@ -411,15 +465,10 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 - **Defect:** destination getters read an omitted (null) coordinate as 0 and no public API writes
   one (`XYZExplicitDestination` with `NaN` writes an invalid `NaN` token), so a destination that
   named a moved page cannot always be rebuilt exactly; the SDK has no page move.
-- **CLI behavior:** `move_pages` retargets navigation to and from the moved pages exactly. An XYZ
-  left that reads 0 is rebuilt as 0, which a reader opens at much the same place as an omitted
-  left. A destination with any other coordinate that reads 0, such as an XYZ top, is left without
-  a target and counted in a `NAVIGATION_DEGRADED` with `affectsCompleteness: true`, so
-  `pdf edit --verify` exits 8.
-- **Workaround:** in the same batch, after the page operations, delete the counted bookmarks with
-  `delete_bookmarks` and add them again with `add_bookmark`, taking the pages they opened from
-  `pdf inspect --detail outline` of the input; no operation re-creates a link or a named
-  destination, so tell the user which no longer lead to their page.
+- **CLI behavior:** none: the CLI has no page move. A page copied with `add page` and its original
+  deleted keep what the engine keeps.
+- **Workaround:** after copying and deleting pages, `pdf read --kind bookmark` shows where each
+  bookmark leads; delete and add again the ones to change.
 
 ### PDF-LINK-STALE-PAGE
 
@@ -427,12 +476,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   after a page deletion in memory a link read before it still names the number its page had:
   one to a deleted page can name a page the document still holds. Bookmarks and named destinations
   read their new numbers, and the saved file leads to the right page, or to none.
-- **CLI behavior:** `pdf convert --pages` and `pdf edit`, which count the navigation a deletion
-  breaks in the document in memory (`--dry-run`) and point the links to a page `move_pages` copies
-  at the copy, take a link read before a deletion to lead to the page it led to then, and one the
-  batch pointed at a copy to lead to that copy, and to none when that page is gone. A batch
-  therefore leads each link where the same operations in separate edits do, and counts what
-  `pdf edit` reads from the output it publishes, in a dry run too.
+- **CLI behavior:** none visible: an edit reads each operation back from the saved file, where the
+  engine has resolved the page.
 
 ### PDF-REDACT-CALCULATED
 
@@ -440,12 +485,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   naming it, so the field's object, with its value and appearance, stays in the saved file. Nor can
   the order be repaired through the public API: `Form.CalculatedFields` has no getter, and setting
   it to any fields writes no order at all.
-- **CLI behavior:** `redact_area` clears the value and the appearance of each field whose every
-  widget it covers before the engine removes it, and empties the calculation order when no field
-  left has a calculate action, so neither the value nor a reference to the removed field stays.
-  When another field still calculates, the order is kept and still names the removed field's
-  object, now without a value or an appearance, but with the default value (`/DV`) the input gave
-  it, which no public API writes.
+- **CLI behavior:** none: `redact_area` is the engine's redaction alone, and the field stays in
+  the calculation order as the engine leaves it.
 
 ### PDF-REDACT-EMPTY-PARENT
 
@@ -454,20 +495,16 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   with its value; one that removes the only field under a parent in the form's hierarchy, such as
   `form.person.name` under `form.person`, leaves the parent in the form as a field of its own,
   without a value or a widget.
-- **CLI behavior:** `redact_area` deletes such a field once it covers every widget of it, and keeps
-  one with a widget it leaves, with its value; it deletes such a parent once the fields it covers
-  were every field under it, and keeps a parent that still holds another field.
+- **CLI behavior:** none: `redact_area` is the engine's redaction alone, and such a field stays as
+  the engine leaves it.
 
 ### PDF-REDACT-RADIO-BUTTONS
 
 - **Defect:** a redaction that removes some buttons of a radio group whose form was read before
   it leaves the group counting them while its options lose them, and setting the group's value
   then writes it and throws `IndexOutOfRangeException`.
-- **CLI behavior:** `redact_area` that covers the last buttons of such a group deletes it without
-  writing its value first, so the value leaves the file with the group unless the calculation
-  order keeps it (PDF-REDACT-CALCULATED). `set_form_field` on such a group later in the same
-  batch, and `redact_area` that covers its selected button but not its last, which clears its
-  value, are refused with `OPS_INVALID` before they change anything, naming the group.
+- **CLI behavior:** none: `redact_area` is the engine's redaction alone, and the group stays as
+  the engine leaves it.
 - **Workaround:** set the group's value, or redact its selected button, in an edit of its own
   after the redaction.
 
@@ -479,11 +516,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   into another document and inserted back, a page brings each of its form fields under a new
   top-level name (`ssn1` beside `ssn`, `form1.person.name` beside `form.person.name`), while the
   original field stays in the form without a widget and with its value.
-- **CLI behavior:** `move_pages` copies pages without a widget where it can: moving a run of pages
-  orders them as moving the pages it passes the other way does. Otherwise it copies pages whose
-  every field has no parent in its name and has all its widgets on them, gives each copy its
-  field's name and deletes the original. Any other move is refused with `OPS_INVALID`, naming the
-  field, before it changes anything.
+- **CLI behavior:** none: `add page` with a `page` and `import_pages` copy pages as the engine
+  does; `pdf read --kind field` shows the names the copy has.
 - **Workaround:** move the pages without form fields around the pages that hold them instead,
   which gives the same order without copying a field, and move the pages that hold one field's
   widgets together; where neither gives the order, as with fields that have parents in their names
@@ -493,8 +527,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 
 - **Defect:** `Document.Convert` to PDF/A-3B gives every attachment that has no media type the
   type `application/pdf`, whatever its content.
-- **CLI behavior:** `pdf convert --to pdfa-3b` labels such an attachment
-  `application/octet-stream` unless its content is a PDF; a declared type is kept.
+- **CLI behavior:** none: `pdf convert --to pdfa-3b` is the engine's conversion; its result holds
+  the engine's log in `conversionLog`.
 
 ### PDF-ATTACHMENT-COPY-TYPE
 
@@ -503,16 +537,16 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   contents are kept. The type is read from the file only when first asked for, and a
   specification whose `MIMEType` was not read before the add reads empty afterwards as well, so
   the type is lost unless it is read first.
-- **CLI behavior:** none visible; `pdf merge` and `pdf split` read each attachment's media type
-  before adding it and set it on the added attachment.
+- **CLI behavior:** none: `pdf merge` is `PdfFileEditor.Concatenate`; an attachment's `mimeType`
+  reads what the merged file holds.
 
 ### PDF-OUTLINE-DELETE-TITLE
 
 - **Defect:** `OutlineItemCollection.Delete()` removes bookmarks by title rather than the item
   it is called on: it removes the first bookmark with that title it finds, which may be a
   different one, and when bookmarks at different levels share the title it can remove several.
-- **CLI behavior:** none visible; `delete_bookmarks` gives each selected bookmark a unique title
-  before deleting it, so exactly the selected bookmarks and their children are removed.
+- **CLI behavior:** none visible: deleting a bookmark removes that item from its parent with
+  `Remove`, never by title.
 
 ### PDF-NAMES-WITHOUT-DESTS
 
@@ -520,9 +554,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   (`NamedDestinations[name]`) throw `NullReferenceException` when the catalog's name tree has no
   `Dests` entry, for example a tree that holds only attachments, such as the one a merged document
   gets with the attachments of its inputs.
-- **CLI behavior:** none visible; such a document is read as having no named destinations, and a
-  name is looked up only when it is listed, so `pdf edit`, `pdf merge`, `pdf split` and
-  `pdf convert --to pdfa-*` accept it.
+- **CLI behavior:** none visible: the inventory counts destinations through
+  `Document.Destinations`, and no command reads `NamedDestinations`.
 
 ### PDF-NAMES-BESIDE-DESTS
 
@@ -530,26 +563,25 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   (`Names` → `Dests`), `Document.NamedDestinations` reads only the dictionary: a name only the
   tree holds is not listed and its lookup returns null, so a link or bookmark that leads through
   it reads as leading to no page, while a reader follows the tree. The saved file keeps both.
-- **CLI behavior:** `pdf inspect --detail links` and `--detail outline` show such a link or
-  bookmark without a page, and since it read so before an edit as well, the edit's
-  `NAVIGATION_DEGRADED` does not count it, even when the edit deletes or moves the page the tree
-  leads it to.
+- **CLI behavior:** a link's or bookmark's `destinationPage` reads as the engine resolves it: null
+  for such a name.
 
 ### PDF-TAGGED-CONTENT-WRITES
 
 - **Defect:** reading `Document.TaggedContent` rewrites the loaded document: it sets an empty
   title to `Tagged PDF`, creates XMP metadata dated now that declares PDF/UA (`pdfuaid:part` 1)
   and drops the PDF/A identification, so `IsPdfaCompliant` turns false.
-- **CLI behavior:** none visible; `pdf inspect` reads the structure tree after every other
-  property and never saves the inspected document.
+- **CLI behavior:** the structure tree is a kind of its own, `taggedContent`, which only `pdf read
+  --at taggedContent` reads, on a document nothing saves. The engine changes the title and format
+  of that read's document in memory the moment it is read, so no other row is read after it.
 
 ### PDF-IMPORT-INFO-PLACEHOLDER
 
 - **Defect:** the HTML and Markdown importers set the document title, author and subject to
   `Aspose`, whatever the source states; the HTML `title` element is ignored.
-- **CLI behavior:** `pdf create --from-html` takes the title from the HTML `title` element and
-  `--from-markdown` leaves it empty; both leave the author and subject empty.
-- **Workaround:** set the other fields with a `set_properties` edit.
+- **CLI behavior:** none: `pdf convert` of an HTML page writes what the engine writes; `pdf edit`
+  sets `info.title`, `info.author` and `info.subject`.
+- **Workaround:** set those rows of `document` with `pdf edit`.
 
 ### PDF-IMPORT-LINK-ADDRESSES
 
@@ -560,9 +592,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   address there too. A link to an element `id` (`href="#part"`) gets neither a destination nor an
   action; one to an `<a name="part">` anchor leads to its page. The importers write no other
   action or file specification for a link.
-- **CLI behavior:** `pdf create --from-html` and `--from-markdown` take each `file:` address out
-  of a link's text and URI action: a link to a local file loses its action, and
-  `NAVIGATION_DEGRADED` counts the links that lead nowhere. Web and mail links are kept.
+- **CLI behavior:** none: the output holds the `file:` addresses the engine writes, the folder of
+  the HTML page among them.
 - **Workaround:** mark each place a link leads to with `<a name="part"></a>`, and give a link to
   another document its https address.
 
@@ -573,9 +604,7 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   none, and radio groups always itself (such as `field_#0`, `field_1` and `radio`), and it drops
   their `value` attributes: a check box is checked with `Yes` and radio buttons
   take the values `Item0`, `Item1` and so on. `HtmlLoadOptions` has no option to keep them.
-- **CLI behavior:** `pdf create --from-html` warns `LOSSY_CONVERSION` with these names, saying
-  which come from an `id` attribute and which are generated;
-  `pdf inspect --detail forms` gives each field's `page` and `rect`.
+- **CLI behavior:** none: `pdf read --kind field` gives the names the engine chose.
 - **Workaround:** match each generated field to the label beside it by its `rect` before filling.
 
 ### PDF-HTML-FORM-INPUTS
@@ -583,18 +612,16 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 - **Defect:** the HTML importer drops inputs of type `email`, `tel`, `url`, `time`,
   `datetime-local`, `month`, `week`, `color`, `range`, `file`, `image` and `hidden`: they become
   no form field, and the value of a hidden input is lost.
-- **CLI behavior:** `pdf create --from-html` counts such `<input>` tags in the HTML and names
-  their types in its `LOSSY_CONVERSION` warning.
+- **CLI behavior:** none: the PDF holds the fields the engine made.
 - **Workaround:** give text-like inputs `type="text"`; place the picture of an image input with
-  `add_stamp_image`.
+  `stamp_image`.
 
 ### PDF-HTML-CHECKBOX-BOX
 
 - **Defect:** the HTML importer gives a check box neither a border nor a border colour, so its
   appearances draw no box: an unchecked box shows nothing and a checked one only its check
   mark. Radio buttons get a black border.
-- **CLI behavior:** `pdf create --from-html` gives such a check box a black one-point border, so
-  the engine draws its box.
+- **CLI behavior:** none: the check box is drawn as the engine imports it.
 
 ### PDF-PDFA-RADIO-APPEARANCE
 
@@ -603,10 +630,9 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   validation of the saved file then fails the clause on annotation appearances, 6.3.3 in PDF/A-2
   and PDF/A-3 and 6.5.3 in PDF/A-1 (the appearance of a button field must be a subdictionary of
   states).
-- **CLI behavior:** `pdf convert --to pdfa-*` validates the file it converted and fails with
-  `PDFA_CONVERSION_FAILED` when it does not conform; for appearance problems `details.fields` names
-  the button fields on those pages that have one appearance for all their states.
-- **Workaround:** flatten the named fields (`flatten_forms`) before converting.
+- **CLI behavior:** none: the result of `pdf convert --to pdfa-*` holds the engine's return value
+  and log; `pdf validate` gives the engine's verdict on the output.
+- **Workaround:** flatten the named fields (`flatten_field`, `flatten_form`) before converting.
 
 ### PDF-PDFA-LOG-REPEATS
 
@@ -614,8 +640,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   of the object it concerns, and marks it convertible (`Convertable="True"`) on only one of
   those entries: a font that is not embedded is reported as both fixable and not on the same
   page, although converting to the profile embeds it.
-- **CLI behavior:** none visible: `pdf validate` and the PDF/A conversion errors list each
-  problem once, as convertible when any of its entries says so.
+- **CLI behavior:** none: `pdf validate` and `pdf convert --to pdfa-*` give the engine's log as it
+  wrote it.
 
 ### PDF-TEXT-GAP-SPACE
 
@@ -625,10 +651,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   such a gap between East Asian text and digits or Latin letters (automatic spacing), so
   `2026年10月31日` in a Word-made PDF extracts as `2026年 10月 31日` (two spaces in the plain
   mode) and a search for it finds nothing.
-- **CLI behavior:** literal patterns of `pdf search` and `redact_text`, and the `redact_text`
-  verification, also match with up to two spaces, never a line break, wherever an East Asian
-  character meets one that is not, such as a digit or Latin letter. A `redact_text` operation
-  that still matches nothing is named in an `OP_NO_EFFECT` warning.
+- **CLI behavior:** none: `pdf search` matches what `TextFragmentAbsorber` finds; a page's `text`
+  reads the space.
 - **Workaround:** in a regular expression, allow the gaps with ` *`.
 
 ### PDF-ATTACHMENT-NAME-OPENS-FILE
@@ -636,8 +660,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
 - **Defect:** the `FileSpecification.Name` setter opens the file its value names, relative to
   the process working directory, for reading and writing. It throws when that file is open
   elsewhere, for example as the stream the specification was built from.
-- **CLI behavior:** none visible; `add_attachment` names the attachment through the
-  `FileSpecification` constructor and never sets `Name`, so the working directory is not read.
+- **CLI behavior:** none visible: `add attachment` names the file through the constructor, and an
+  attachment's `name` row is read only.
 
 ### PDF-REDACT-TEXT-SHIFT
 
@@ -647,16 +671,9 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   of a line that way. `PdfAnnotationEditor.RedactArea` and replacing the text with an empty
   string move the runs the same way, and setting `TextFragment.Position` to put them back
   draws other runs of the line over each other.
-- **CLI behavior:** `redact_text` removes the matches of a page from the last to the first, so
-  each still lies where the search found it. `redact_text` and `redact_area` compare where the
-  runs of each redacted page start before and after, and a `REDACTION_TEXT_MOVED` warning names
-  the operations and pages on which a run moved left. Only runs that keep their whole text are
-  followed, so the rest of a run the redaction cut can move without a warning: no warning does
-  not prove that nothing moved. The moved text is still in the file but no longer visible.
-- **Workaround:** redact the source document and create the PDF again. With only the PDF, the
-  values can all be removed, with `redact_text` or with `redact_area` on search rectangles
-  without a margin, the areas of a line from right to left, but the text that follows them on
-  their lines stays hidden under the cover.
+- **CLI behavior:** none: each `redact_area` is the engine's redaction alone.
+- **Workaround:** redact a line's matches from the right to the left, or search again between two
+  redactions.
 
 ### PDF-ENCRYPTED-INFO-TEXT
 
@@ -664,23 +681,17 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   set in a session whose save encrypts the file is written with only the low byte of each
   character, so text beyond Latin-1, such as `采购申请`, reads back garbled. Entries read from the
   file and entries written to a file saved without encryption are kept.
-- **CLI behavior:** when the output's document information holds text beyond Latin-1 (past
-  U+00FF), a PDF command given `--encrypt-env`, and a `pdf edit` batch with both
-  `set_properties` and `encrypt_document`, save the document without encryption, reopen it and
-  encrypt that copy. On an encrypted input, `set_properties` with such text that neither a later
-  `encrypt_document` nor `--encrypt-env` follows is refused with `OPS_INVALID`, because the CLI
-  does not know all the input's passwords to encrypt a copy.
-- **Workaround:** add `encrypt_document` after `set_properties` in the same batch, or pass
-  `--encrypt-env`; or add `decrypt_document` before `set_properties` to save the output without
-  encryption.
+- **CLI behavior:** none: an encrypted output's document information is written as the engine
+  writes it.
+- **Workaround:** keep the document information in Latin-1 while the document is encrypted, or
+  `decrypt` it before such text is set.
 
 ### PDF-INFO-KEY-BEYOND-LATIN1
 
 - **Defect:** a document information entry whose name has a character beyond Latin-1, such as
   `项目编号`, is saved under a name written from each character's code as if it were one byte,
   so the name reads back garbled while its value is kept. Names within Latin-1 are kept.
-- **CLI behavior:** `set_properties` refuses a `custom` name with a character beyond Latin-1 with
-  `OPS_INVALID`; the value of an entry may hold any text.
+- **CLI behavior:** none: `add info` passes the key to the engine as given.
 - **Workaround:** name the entry in Latin-1, such as ASCII letters, and put the text in its value.
 
 ### PDF-SIGN-FULL-FONT
@@ -689,9 +700,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   draws in, visible or not: Arial (about 560 KB) by default, a complete CJK font such as SimSun
   (about 10 MB) for a reason, location, contact or signer name in Chinese. Helvetica, which is not
   embedded, keeps printable ASCII without a font; any other character embeds a whole font again.
-- **CLI behavior:** `pdf sign` draws an appearance whose texts are all printable ASCII in
-  Helvetica, except in a PDF/A document, which needs embedded fonts; other signatures keep the
-  engine's font, grow the file by its size and warn `SIGNATURE_FONT_EMBEDDED` with the growth.
+- **CLI behavior:** none: `pdf sign` passes the texts and the `--font` given, and the engine
+  embeds what it embeds.
 - **Workaround:** keep `--reason`, `--location` and `--contact` in ASCII, and use a certificate
   whose subject name is ASCII.
 
@@ -703,12 +713,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   Japanese text, such as `批准`, gives a Japanese font, MS Gothic, which leaves out a simplified
   Chinese name such as `张伟`. Naming a Chinese font, such as SimSun, through
   `SignatureCustomAppearance.FontFamilyName` shows the name.
-- **CLI behavior:** `pdf sign --visible` draws a signer name with East Asian characters (U+2E80
-  and above) in SimSun or, failing that, Microsoft YaHei when `--reason`, `--location` and
-  `--contact` have none; with neither font installed the name is left out and the result warns
-  `SIGNATURE_TEXT_CLIPPED`. When one of them has East Asian text the engine's choice stands, so
-  a Chinese name can still be left out without a warning, as with `批准` in MS Gothic. A Korean
-  signer name is left out in SimSun, also without a warning.
+- **CLI behavior:** none: `pdf sign --font` names the appearance's font family; without it the
+  engine picks one.
 - **Workaround:** give `--reason` in simplified Chinese, such as `采购申请`, or sign with a
   certificate whose subject name is in Latin letters.
 
@@ -735,9 +741,7 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   the page's unrotated space from its lower-left corner, but on a page rotated by 90 or 270
   degrees it first swaps the rectangle's x with y and its width with height; on a page rotated by
   180 degrees it does not swap them.
-- **CLI behavior:** `pdf sign --rect` measures from the top-left corner of the visible page, and
-  the CLI swaps the rectangle back before it signs a page rotated by 90 or 270 degrees, so the
-  signature lies where `--rect` names on every rotation.
+- **CLI behavior:** none: `pdf sign --rect` is the engine's rectangle, passed as given.
 
 ### PDF-TEXT-RECT-ROTATED-CROP
 
@@ -745,26 +749,21 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   space of the visible, rotated page, but not from that page's lower-left corner: at 90 degrees
   its x is offset by the crop box's bottom, at 270 degrees its y by the crop box's left, at 180
   degrees neither, and upright both, as the page's own space has them.
-- **CLI behavior:** none visible: `pdf search` takes each offset back out, so a match's `rect`
-  is measured from the top-left corner of the visible page on every rotation and passes to
-  `redact_area` as it is.
+- **CLI behavior:** none: a `pdf search` hit's `rect` is the engine's rectangle as it gives it.
 
 ### PDF-REDACT-ROTATED
 
 - **Defect:** on a rotated page, `RedactionAnnotation.Redact()` draws its cover where its
   rectangle lies in the page's unrotated space but removes the text it finds there in the
   rotated page's space, so text under the cover stays in the file.
-- **CLI behavior:** none visible: `redact_text` and `redact_area` clear the page's rotation while
-  they redact and set it again after.
+- **CLI behavior:** none: `redact_area` redacts the page as it is.
 
 ### PDF-TEXT-SEARCH-WRAPS-CONTENT
 
 - **Defect:** searching a page's text with `TextFragmentAbsorber` changes the page it only
   reads: on a page that carries a stamp, it wraps the page's content in one more saved graphics
   state (`q` … `Q`), which draws nothing different.
-- **CLI behavior:** none visible: an edit compares a page's content without its saved graphics
-  states, so a `redact_text` that matched nothing reports 0 with `OP_NO_EFFECT`, and one that
-  matched counts only the pages it removed text from.
+- **CLI behavior:** none visible: `pdf search` runs on a document it never saves.
 
 ### PDF-DOCX-EMBED-FONTS
 
@@ -784,24 +783,19 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   that no reader opens: Aspose.PDF reads it back with neither encryption nor text, and other
   readers report a corrupt object stream, with the password or without. Decrypting first and
   encrypting after the optimization writes a sound file.
-- **CLI behavior:** `optimize_document` with `compressStreams` (its default) on an encrypted
-  document is refused before anything is written.
-- **Workaround:** set `"compressStreams": false`, or put `decrypt_document` before
-  `optimize_document` and `encrypt_document` after it (or pass `--encrypt-env`).
+- **CLI behavior:** none: `optimize` with `compressObjects` on an encrypted document writes what
+  the engine writes.
+- **Workaround:** optimize before `encrypt`, or leave `compressObjects` unset on an encrypted
+  document.
 
 ### PDF-FORM-RECURSION-CRASH
 
 - **Defect:** reading the text of a page (`TextAbsorber`) whose Form XObject draws itself
   recurses until the stack overflows, which ends the process at once with exit code `0xC00000FD`
   and no exception that code could catch. Rendering the same page with `PngDevice` completes.
-- **CLI behavior:** a command that reads the text of such a page ends the same way, and so does
-  every command whose evaluation-notice check reaches it: licensed or not, that check reads the
-  text of up to four pages of every document a PDF command writes or renders. `pdf read`,
-  `pdf edit`, `pdf convert` and `pdf render` are among them. The command exits with
-  `0xC00000FD`, with nothing on stdout and the runtime's `Stack overflow.` and stack trace on
-  stderr. An output published before the check stays, as `pdf render`'s image does; one only
-  staged, as the outputs of `pdf edit` and `pdf convert` are, is not published, but its
-  `.aspose-publication-*` staging stays in the output's directory.
+- **CLI behavior:** a command that reads the text of such a page, such as `pdf read --kind text`
+  or `pdf search`, ends the same way: exit `0xC00000FD`, nothing on stdout and the runtime's
+  `Stack overflow.` and stack trace on stderr.
 
 ### PDF-MD-FIELD-REPEATS
 
@@ -822,10 +816,8 @@ Reproductions: [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownI
   Console.WriteLine(abs.Text);              // ZEBRA42 once
   ```
 
-- **CLI behavior:** none: `pdf convert --to md` of such a form after `flatten_forms` writes each
-  value twice, and `--to txt` once.
+- **CLI behavior:** none: `pdf convert --to md` writes the engine's export.
 - **Workaround:** to search or count the values, convert the flattened file to `txt`.
-
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 Reproductions: [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs),

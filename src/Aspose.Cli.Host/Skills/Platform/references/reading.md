@@ -15,21 +15,18 @@ diffed.
 
 | Rung | Command | Answers |
 |------|---------|---------|
-| 1. Structure | `<product> inspect` | Counts, names, ids, properties; `--detail` adds the sections you name and, where offered, `--sample` a bounded sample |
-| 2. Window | `<product> read` | The content of a selected range, pages, slides or blocks |
-| 3. Search | `<product> search` | Where a pattern occurs |
-| 4. Look | `<product> render` | What data cannot show: layout, clipping, overlap, charts |
+| 1. Objects | `<product> read` | The objects of the document with every row of each and the inventory's counts; `--kind` names the kinds to list, `--at` one object and what it holds |
+| 2. Search | `<product> search` | Where a pattern occurs, by the address of the object and the row |
+| 3. Look | `<product> render` | What data cannot show: layout, clipping, overlap, charts |
 
-Take addresses (sheet names, page, slide and block numbers) from rung 1
-before reading rung 2; a read reports the finer ones, such as shape ids.
-Every `read` takes `--content` for how much of each unit it returns, and
-`cells search` takes it for what to search. Each product overview names its
-inspect details and read depths; `--help` lists each command's selection and
-budget options with their defaults.
+Each object comes with its `at` address, which an edit names it by. A kind a
+read lists only when `--kind` names it is listed in
+`window.notListedUnlessNamed`. Each product overview names its kinds;
+`--help` lists each command's selection and budget options with their
+defaults.
 
-Fields a read returns use the edit vocabulary: a value read under a name is
-written back by the operation field of the same name
-(`aspose-cli docs editing`).
+A row a read returns is the name an edit sets it by: a value read under a
+name is written back by a `set` of the same name (`aspose-cli docs editing`).
 
 ## Windows
 
@@ -37,7 +34,7 @@ Every bounded read and search reports `window` after its payload
 (`aspose-cli schema v2/common/result-window`):
 
 ```json
-"window": {"unit": "block", "returned": 2, "total": 6, "truncated": true, "next": {"blocks": "3-6", "max-chars": "20000"}}
+"window": {"unit": "object", "returned": 2, "total": 6, "truncated": true, "next": {"from": "sheet/Sheet1/cell/B2"}}
 ```
 
 - `truncated` true means units remain or the last one was cut short; treat
@@ -55,15 +52,15 @@ with `next` keeps each result small.
 
 `<product> search` returns at most its `--max-hits` budget of hits in
 document order. A truncated search's `window.next` holds only a `skip` past
-the hits already returned. Each hit is one match: its `text` is the
-matched text itself, and its `context` is the text around it, at most 40
-characters on each side, on one line, with an ellipsis where it is cut. In
-Cells a hit is one cell, holding the first match in that cell.
+the hits already returned. Each hit is one match: `at` and `row` name the
+object and the row it was found in, `text` is the matched text itself, and
+`offset` and `length` place it in the row's text, or, where the engine's own
+search found it, as in a PDF page's text, `rect` is the rectangle the engine
+gives.
 
 ## Capped lists
 
-A list inside a result, such as an `inspect --detail` list or a comparison's
-samples, can be capped. A `LIST_TRUNCATED` warning in `warnings` then says so.
+A list inside a result can be capped. A `LIST_TRUNCATED` warning in `warnings` then says so.
 Treat a capped list as incomplete evidence.
 
 ## Rendering

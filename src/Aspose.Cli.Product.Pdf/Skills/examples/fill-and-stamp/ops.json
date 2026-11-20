@@ -1,0 +1,8 @@
+{"ops": [
+  {"set": "field/ReportTitle", "props": {"value": "Quarterly Review"}},
+  {"set": "field/PreparedFor", "props": {"value": "Executive Committee"}},
+  {"do": "stamp_text", "args": {"page": "page/1", "value": "Page 1 of 2", "horizontalAlignment": "Center", "verticalAlignment": "Bottom", "bottomMargin": 20}},
+  {"do": "stamp_text", "args": {"page": "page/2", "value": "Page 2 of 2", "horizontalAlignment": "Center", "verticalAlignment": "Bottom", "bottomMargin": 20}},
+  {"do": "stamp_text", "args": {"page": "page/1", "value": "DRAFT", "horizontalAlignment": "Center", "verticalAlignment": "Center", "rotateAngle": 45, "opacity": 0.25, "textState.fontSize": 48}},
+  {"do": "stamp_text", "args": {"page": "page/2", "value": "DRAFT", "horizontalAlignment": "Center", "verticalAlignment": "Center", "rotateAngle": 45, "opacity": 0.25, "textState.fontSize": 48}}
+]}

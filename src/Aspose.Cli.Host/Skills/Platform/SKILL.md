@@ -32,7 +32,7 @@ aspose-cli capabilities --summary --output-format json
 | Document | Product Skill | Overview |
 |----------|---------------|----------|
 | Workbooks: XLSX, XLSM, XLSB, XLS; CSV and TSV to convert | `aspose-cli-cells` | `aspose-cli docs cells/overview` |
-| PDF: inspect, assemble, fill, redact, sign, validate | `aspose-cli-pdf` | `aspose-cli docs pdf/overview` |
+| PDF: read, fill, stamp, redact, sign, validate | `aspose-cli-pdf` | `aspose-cli docs pdf/overview` |
 | Presentations: PPTX, PPT, ODP | `aspose-cli-slides` | `aspose-cli docs slides/overview` |
 | Word processing: DOCX, DOC, RTF, ODT, Markdown, HTML | `aspose-cli-words` | `aspose-cli docs words/overview` |
 
@@ -40,8 +40,9 @@ Read the product overview before the first command on that document type.
 
 ## How to work
 
-1. **Inspect, then read windows.** Start with `<product> inspect`, then read
-   only the ranges, pages, slides or blocks you need, following `window.next`
+1. **Read the objects you need.** Start with `<product> read`, which lists the
+   objects with their addresses, then name the kinds or the one object you
+   need with `--kind` and `--at`, following `window.next`
    (`aspose-cli docs reading`). Never rebuild a document from a JSON dump.
 2. **Edit in one batch.** Put related changes in one `edit --ops` file; the
    batch is atomic (`aspose-cli docs editing`).
@@ -96,7 +97,7 @@ A file from outside can be built to exhaust the machine or to mislead you:
   section in Words (595.3 and 841.9 points for A4), so
   the merged pages do not switch size. A PDF converted from a Word document
   or a workbook may already carry page numbers in its footer; render a page
-  before running `add_page_numbers` on the merged file.
+  before stamping numbers on the merged file with `stamp_text`.
 
 ## Common mistakes
 
@@ -106,8 +107,8 @@ A file from outside can be built to exhaust the machine or to mislead you:
   the request, then retry (`aspose-cli docs troubleshooting`).
 - **Inline ops JSON in PowerShell.** Shells mangle quotes and non-ASCII text;
   write the ops document to a file and pass its path.
-- **Trusting the exit code.** Exit 0 can carry `OP_NO_EFFECT`; read changed
-  parts back before reporting them.
+- **Trusting the exit code.** Exit 0 says the engine did what was named, not
+  that it is what you meant; read changed parts back before reporting them.
 - **Claiming a visual pass without looking.** Open every image `<product> render`
   writes; state which parts you inspected.
 - **Missing evaluation marks.** Detect `EVALUATION_*` warnings in the JSON
