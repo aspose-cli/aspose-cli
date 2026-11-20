@@ -84,6 +84,17 @@ public abstract record OutputProtection
         public override Secret? Password => InputPassword;
     }
 
+    /// <summary>
+    /// The output keeps the encryption an operation of the edit gave the document, such as an
+    /// action that encrypts it; it opens with <paramref name="OpenPassword"/>, or without one
+    /// when that is null.
+    /// </summary>
+    public sealed record SetByTheDocument(Secret? OpenPassword) : OutputProtection
+    {
+        /// <inheritdoc />
+        public override Secret? Password => OpenPassword;
+    }
+
     private sealed record Unprotected : OutputProtection
     {
         public override Secret? Password => null;

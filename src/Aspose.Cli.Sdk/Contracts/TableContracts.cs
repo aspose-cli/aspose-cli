@@ -78,16 +78,22 @@ public sealed record TableHit
     /// <summary>The text row that holds the match, such as text.</summary>
     public required string Row { get; init; }
 
-    /// <summary>Where the match starts in the row's text, counted in UTF-16 code units from 0.</summary>
+    /// <summary>Where the match starts in the row's text, counted in UTF-16 code units from 0; omitted for a match the engine's own search found, which gives no offset.</summary>
     [Minimum(0)]
-    public required int Offset { get; init; }
+    public int? Offset { get; init; }
 
-    /// <summary>The match's length in UTF-16 code units.</summary>
+    /// <summary>The match's length in UTF-16 code units; omitted with offset.</summary>
     [Minimum(0)]
-    public required int Length { get; init; }
+    public int? Length { get; init; }
 
-    /// <summary>The matched text, as the row holds it.</summary>
+    /// <summary>The matched text, as the row holds it, or as the engine's own search gives it.</summary>
     public required string Text { get; init; }
+
+    /// <summary>
+    /// The rectangle the engine's own search gives for the match, as the engine writes it, such as a
+    /// PDF text fragment's Rectangle, LLX,LLY,URX,URY in points; omitted for any other match.
+    /// </summary>
+    public string? Rect { get; init; }
 }
 
 /// <summary>

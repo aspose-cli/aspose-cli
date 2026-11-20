@@ -431,7 +431,12 @@ public sealed class TableBatch
 
             string resolved = inputs.ResolvePath(named);
             _files.Add(resolved);
-            return kind.Input == TableInput.Image ? inputs.ReadImage(resolved) : resolved;
+            return kind.Input switch
+            {
+                TableInput.Image => inputs.ReadImage(resolved),
+                TableInput.FileBytes => inputs.ReadFile(resolved),
+                _ => resolved,
+            };
         }
     }
 }

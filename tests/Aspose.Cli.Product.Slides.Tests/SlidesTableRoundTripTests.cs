@@ -330,6 +330,9 @@ public sealed class SlidesTableRoundTripTests
 
         public byte[] ReadImage(string path) => File.ReadAllBytes(path);
 
+
+        public byte[] ReadFile(string path) => File.ReadAllBytes(path);
+
         public Secret? ReadSecret(string variable) => null;
     }
 }

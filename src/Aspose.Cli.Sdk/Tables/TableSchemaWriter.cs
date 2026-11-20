@@ -74,7 +74,9 @@ internal static class TableSchemaWriter
                 ["minLength"] = 1,
                 ["description"] = $"An object's address: '{table.Root.Name}' for the document itself, otherwise segments and keys from the document down, "
                     + "such as each kind's x-addresses shows. read gives every object's address."
-                    + (Recursive(table).Count == 0 ? string.Empty : " A form that starts with {kind} continues an address of an object of that kind, one of the kind's own forms."),
+                    + (Recursive(table).Count == 0 ? string.Empty : " A form that starts with {kind} continues an address of an object of that kind, one of the kind's own forms.")
+                    + (UsesOrdinals(table) ? " <ordinal> is a position from 1, as the engine's collection counts it; <index> is a position from 0." : string.Empty)
+                    + (UsesText(table) ? @" In a key that is a name, a / is written \/ and a \ is written \\." : string.Empty),
             },
             ["set"] = Shape("Sets rows of the object at an address, in the order written; each row sets one engine member.",
                 ("set", With(Ref("address"), "The address of the object whose rows are set.")),
@@ -351,6 +353,7 @@ internal static class TableSchemaWriter
     private static string Part(KeyPart part) => part switch
     {
         KeyPart.Index => "<index>",
+        KeyPart.Ordinal => "<ordinal>",
         KeyPart.Id => "<id>",
         KeyPart.Number => "<number>",
         KeyPart.Guid => "<guid>",
@@ -360,6 +363,15 @@ internal static class TableSchemaWriter
         KeyPart.ColumnName => "<column>",
         _ => "<name>",
     };
+
+    /// <summary>Whether a key of the table is a position from 1.</summary>
+    private static bool UsesOrdinals(DocumentTable table) =>
+        table.Placements.Any(static placement => placement.Key.Contains(KeyPart.Ordinal));
+
+    /// <summary>Whether a key of the table is a name with any characters, which may hold a / or a \.</summary>
+    private static bool UsesText(DocumentTable table) =>
+        table.Placements.Any(static placement => placement.Key.Contains(KeyPart.Text))
+        || table.Aliases.Any(static alias => alias.Key.Contains(KeyPart.Text));
 
     /// <summary>Whether read lists objects of <paramref name="kind"/> only when --kind names it.</summary>
     private static bool ListedWhenNamed(DocumentTable table, ObjectKind kind) =>

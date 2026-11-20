@@ -105,6 +105,9 @@ public sealed class WordsFixture : IDisposable
 
         public byte[] ReadImage(string path) => System.IO.File.ReadAllBytes(path);
 
+
+        public byte[] ReadFile(string path) => System.IO.File.ReadAllBytes(path);
+
         public Secret? ReadSecret(string variable) => Environment.GetEnvironmentVariable(variable) is { Length: > 0 } value ? new Secret(value) : null;
     }
 

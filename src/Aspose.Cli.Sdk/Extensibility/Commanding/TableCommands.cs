@@ -122,6 +122,8 @@ public static class TableCommands
 
         public byte[] ReadImage(string path) => ImageInput.ReadSelfContained(standard.Inputs, path);
 
+        public byte[] ReadFile(string path) => standard.Inputs.ReadAllBytes(path);
+
         public Secret? ReadSecret(string variable) =>
             standard.ReadEnvironment(variable) is { Length: > 0 } value ? new Secret(value) : null;
     }

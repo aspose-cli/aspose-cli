@@ -165,6 +165,9 @@ public enum KeyPart
 
     /// <summary>A column's name in A1 notation, such as the <c>B</c> of <c>B5</c>.</summary>
     ColumnName,
+
+    /// <summary>A position from 1, for an engine collection that counts from 1, such as a PDF's pages.</summary>
+    Ordinal,
 }
 
 /// <summary>
@@ -205,6 +208,9 @@ public sealed class Key : IEquatable<Key>
     /// <summary>The part at <paramref name="position"/> as a whole number.</summary>
     public int Index(int position = 0) => int.Parse(Parts[position], NumberStyles.None, CultureInfo.InvariantCulture);
 
+    /// <summary>The part at <paramref name="position"/> as a position from 1.</summary>
+    public int Ordinal(int position = 0) => int.Parse(Parts[position], NumberStyles.None, CultureInfo.InvariantCulture);
+
     /// <summary>The part at <paramref name="position"/> as an engine id.</summary>
     public uint Id(int position = 0) => uint.Parse(Parts[position], NumberStyles.None, CultureInfo.InvariantCulture);
 
@@ -229,8 +235,8 @@ public sealed class Key : IEquatable<Key>
     /// <inheritdoc />
     public override int GetHashCode() => string.Join('/', Parts).GetHashCode(StringComparison.Ordinal);
 
-    /// <inheritdoc />
-    public override string ToString() => string.Join('/', Parts);
+    /// <summary>The key as an address writes it: its parts joined by <c>/</c>, each written with <see cref="TableAddress.Escape"/>.</summary>
+    public override string ToString() => string.Join('/', Parts.Select(TableAddress.Escape));
 }
 
 /// <summary>

@@ -20,6 +20,9 @@ internal static class TestBatch
 
         public byte[] ReadImage(string path) => File.ReadAllBytes(path);
 
+
+        public byte[] ReadFile(string path) => File.ReadAllBytes(path);
+
         public Secret? ReadSecret(string variable) =>
             secrets is not null && secrets.TryGetValue(variable, out string? value) ? new Secret(value) : null;
     }

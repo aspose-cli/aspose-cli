@@ -61,6 +61,9 @@ public interface ITableInputs
     /// <summary>Reads an image file, resolved, and refuses it unless it is an intact image.</summary>
     byte[] ReadImage(string path);
 
+    /// <summary>Reads a file, resolved, through the command's input admission and budgets.</summary>
+    byte[] ReadFile(string path);
+
     /// <summary>The secret an environment variable holds, or null when it is unset or empty.</summary>
     Secret? ReadSecret(string variable);
 }
@@ -77,10 +80,33 @@ public sealed class TableActionContext<TDocument>
     private readonly EngineWarningLog _warnings;
     private readonly List<IOpenedDocument<TDocument>> _opened = [];
 
-    internal TableActionContext(ITableDocuments<TDocument> documents, EngineWarningLog warnings)
+    private readonly bool _encryptRequested;
+
+    internal TableActionContext(ITableDocuments<TDocument> documents, EngineWarningLog warnings, bool encryptRequested = false)
     {
         _documents = documents;
         _warnings = warnings;
+        _encryptRequested = encryptRequested;
+    }
+
+    /// <summary>The protection an action gave the output, or null when no action changed it.</summary>
+    internal OutputProtection? Protection { get; private set; }
+
+    /// <summary>
+    /// Records the protection the document now carries after an action encrypted or decrypted it:
+    /// the edit saves, reopens and reports the output with it, instead of the protection the
+    /// input and <c>--encrypt</c> give.
+    /// </summary>
+    /// <exception cref="Errors.CliException"><c>OPS_INVALID</c> when the edit was also given <c>--encrypt</c>.</exception>
+    public void SetOutputProtection(OutputProtection protection)
+    {
+        ArgumentNullException.ThrowIfNull(protection);
+        if (_encryptRequested)
+        {
+            throw TableErrors.InvalidArguments("--encrypt sets the output's encryption, and this action sets it too; give one of them");
+        }
+
+        Protection = protection;
     }
 
     /// <summary>Opens another document as a user input; it is closed when the edit ends.</summary>
