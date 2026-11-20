@@ -15,8 +15,7 @@ For an editable word-processing document, use `aspose-cli words convert input.pd
 and the Words Skill: it rebuilds flowing paragraphs and warns `LOSSY_CONVERSION`,
 since headers and footers are guessed and pages may be added. `pdf convert --to docx`
 keeps each line in a positioned frame that is hard to edit, and a Words command
-that saves that docx embeds its fonts in full, grows it by megabytes and warns
-`FONTS_EMBEDDED`.
+that saves that docx embeds its fonts in full and grows it by megabytes.
 
 Pages are 1-based physical positions. Rectangles are points (72 per inch) with a
 top-left origin against the visible, rotated page box.

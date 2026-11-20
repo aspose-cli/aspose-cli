@@ -1,0 +1,5 @@
+{"ops": [
+  {"do": "clone", "args": {"node": "section/0/body/table/0/row/1", "parent": "section/0/body/table/0", "isCloneChildren": true}},
+  {"set": "section/0/body/table/0/row/2/cell/0/paragraph/0/run/0", "props": {"text": "Build"}},
+  {"set": "section/0/body/table/0/row/2/cell/1/paragraph/0/run/0", "props": {"text": "2026-05-15"}}
+]}

@@ -1,0 +1,18 @@
+{"ops": [
+  {"set": "document", "props": {"builtInDocumentProperties.title": "Milestones"}},
+  {"add": "table", "in": "section/0/body"},
+  {"add": "row", "in": "section/0/body/table/0", "props": {"rowFormat.headingFormat": true}},
+  {"add": "cell", "in": "section/0/body/table/0/row/0", "props": {"cellFormat.width": 150}},
+  {"add": "cell", "in": "section/0/body/table/0/row/0", "props": {"cellFormat.width": 150}},
+  {"add": "paragraph", "in": "section/0/body/table/0/row/0/cell/0"},
+  {"add": "run", "in": "section/0/body/table/0/row/0/cell/0/paragraph/0", "args": {"text": "Phase"}, "props": {"font.bold": true}},
+  {"add": "paragraph", "in": "section/0/body/table/0/row/0/cell/1"},
+  {"add": "run", "in": "section/0/body/table/0/row/0/cell/1/paragraph/0", "args": {"text": "Date"}, "props": {"font.bold": true}},
+  {"add": "row", "in": "section/0/body/table/0"},
+  {"add": "cell", "in": "section/0/body/table/0/row/1", "props": {"cellFormat.width": 150}},
+  {"add": "cell", "in": "section/0/body/table/0/row/1", "props": {"cellFormat.width": 150}},
+  {"add": "paragraph", "in": "section/0/body/table/0/row/1/cell/0"},
+  {"add": "run", "in": "section/0/body/table/0/row/1/cell/0/paragraph/0", "args": {"text": "Design"}},
+  {"add": "paragraph", "in": "section/0/body/table/0/row/1/cell/1"},
+  {"add": "run", "in": "section/0/body/table/0/row/1/cell/1/paragraph/0", "args": {"text": "2026-03-01"}}
+]}
