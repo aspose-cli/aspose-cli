@@ -274,6 +274,13 @@ public partial class StandardInvocation
         }
 
         string[] ids = [.. writes.Select(static format => format.Id)];
+        if (_options.Target is null)
+        {
+            // A command without --to names its format only by the extension of its output.
+            throw CliErrors.Usage([$"Name the output: give an {StandardOptionNames.Out} whose extension names one of the formats it writes ({string.Join(", ", ids)})."],
+                parameter: StandardOptionNames.Out);
+        }
+
         throw CliErrors.Usage([$"Name the output format: give {StandardOptionNames.To} ({string.Join(", ", ids)}), "
             + $"or an {StandardOptionNames.Out} whose extension names one of them."], parameter: StandardOptionNames.To);
     }

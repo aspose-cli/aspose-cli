@@ -2209,13 +2209,7 @@
               "$ref": "#/$defs/add.paragraph"
             },
             {
-              "$ref": "#/$defs/add.paragraph"
-            },
-            {
               "$ref": "#/$defs/add.run"
-            },
-            {
-              "$ref": "#/$defs/add.paragraph"
             },
             {
               "$ref": "#/$defs/add.series"
@@ -4854,7 +4848,7 @@
         },
         "add.paragraph": {
           "type": "object",
-          "description": "Adds a paragraph to a shape: IParagraphCollection.Insert(int index, IParagraph value) with new Paragraph(), in IAutoShape.TextFrame Adds a paragraph to a notes: IParagraphCollection.Insert(int index, IParagraph value) with new Paragraph(), in INotesSlide.NotesTextFrame Adds a paragraph to a cell: IParagraphCollection.Insert(int index, IParagraph value) with new Paragraph(), in ICell.TextFrame",
+          "description": "Adds a paragraph to a shape: IParagraphCollection.Insert(int index, IParagraph value) with new Paragraph(), in IAutoShape.TextFrame. Adds a paragraph to a notes: IParagraphCollection.Insert(int index, IParagraph value) with new Paragraph(), in INotesSlide.NotesTextFrame. Adds a paragraph to a cell: IParagraphCollection.Insert(int index, IParagraph value) with new Paragraph(), in ICell.TextFrame.",
           "required": [
             "add",
             "in",

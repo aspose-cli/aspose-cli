@@ -73,7 +73,8 @@ internal static class TableSchemaWriter
                 ["type"] = "string",
                 ["minLength"] = 1,
                 ["description"] = $"An object's address: '{table.Root.Name}' for the document itself, otherwise segments and keys from the document down, "
-                    + "such as each kind's x-addresses shows. read gives every object's address.",
+                    + "such as each kind's x-addresses shows. read gives every object's address."
+                    + (Recursive(table).Count == 0 ? string.Empty : " A form that starts with {kind} continues an address of an object of that kind, one of the kind's own forms."),
             },
             ["set"] = Shape("Sets rows of the object at an address, in the order written; each row sets one engine member.",
                 ("set", With(Ref("address"), "The address of the object whose rows are set.")),
@@ -86,7 +87,8 @@ internal static class TableSchemaWriter
             ["add"] = new JsonObject
             {
                 ["description"] = "Makes one engine call that creates an object, then sets rows of the new object.",
-                ["oneOf"] = new JsonArray([.. table.Adders.Select(adder => (JsonNode)Ref($"add.{adder.Name}"))]),
+                // One branch per add name: an add made under several kinds of parent has one definition.
+                ["oneOf"] = new JsonArray([.. table.Adders.Select(static adder => adder.Name).Distinct(StringComparer.Ordinal).Select(name => (JsonNode)Ref($"add.{name}"))]),
             },
             ["delete"] = Shape("Deletes the object at an address.", ("delete", With(Ref("address"), "The address of the object to delete."))),
             ["move"] = Shape("Moves the object at an address to a position among its siblings.",
@@ -129,7 +131,9 @@ internal static class TableSchemaWriter
             definitions[$"add.{adder.Name}"] = new JsonObject
             {
                 ["type"] = "object",
-                ["description"] = string.Join(" ", adders.Select(static entry => $"Adds a {entry.Placement.Kind.Name} to a {entry.Placement.Parent.Name}: {entry.Description}")),
+                ["description"] = adders.Count() == 1
+                    ? $"Adds a {adder.Placement.Kind.Name} to a {adder.Placement.Parent.Name}: {adder.Description}"
+                    : string.Join(" ", adders.Select(static entry => $"Adds a {entry.Placement.Kind.Name} to a {entry.Placement.Parent.Name}: {entry.Description.TrimEnd('.')}.")),
                 ["required"] = required,
                 ["additionalProperties"] = false,
                 ["properties"] = properties,
@@ -273,8 +277,15 @@ internal static class TableSchemaWriter
         return definition;
     }
 
-    /// <summary>Every address form of a kind, such as <c>slide/&lt;id&gt;/shape/&lt;id&gt;</c>.</summary>
-    private static IEnumerable<string> Addresses(DocumentTable table, ObjectKind kind, int depth)
+    /// <summary>
+    /// Every address form of a kind, such as <c>slide/&lt;id&gt;/shape/&lt;id&gt;</c>. A parent kind that can
+    /// hold itself, such as a cell that holds a table, is written <c>{cell}</c> and not unrolled:
+    /// the form continues an address of that kind, one of its own forms.
+    /// </summary>
+    private static IEnumerable<string> Addresses(DocumentTable table, ObjectKind kind, int depth) =>
+        Addresses(table, kind, depth, Recursive(table));
+
+    private static IEnumerable<string> Addresses(DocumentTable table, ObjectKind kind, int depth, IReadOnlySet<ObjectKind> recursive)
     {
         if (kind == table.Root)
         {
@@ -289,7 +300,11 @@ internal static class TableSchemaWriter
         var forms = new List<string>();
         foreach (Placement placement in table.Placements.Where(candidate => candidate.Kind == kind))
         {
-            IEnumerable<string> parents = placement.Parent == table.Root ? [string.Empty] : Addresses(table, placement.Parent, depth + 1).Select(static parent => parent + "/");
+            IEnumerable<string> parents = placement.Parent == table.Root
+                ? [string.Empty]
+                : recursive.Contains(placement.Parent)
+                    ? [$"{{{placement.Parent.Name}}}/"]
+                    : Addresses(table, placement.Parent, depth + 1, recursive).Select(static parent => parent + "/");
             string own = Step(placement.Segment, placement.Key, null);
             forms.AddRange(parents.Select(parent => parent + own));
             foreach (AliasPlacement alias in table.Aliases.Where(candidate => candidate.Target == placement))
@@ -300,6 +315,34 @@ internal static class TableSchemaWriter
         }
 
         return forms;
+    }
+
+    /// <summary>The kinds that can hold themselves through the table's placements, such as a cell that holds a table of cells.</summary>
+    private static IReadOnlySet<ObjectKind> Recursive(DocumentTable table)
+    {
+        var recursive = new HashSet<ObjectKind>();
+        foreach (ObjectKind kind in table.Kinds)
+        {
+            var seen = new HashSet<ObjectKind>();
+            var pending = new Queue<ObjectKind>([kind]);
+            while (pending.TryDequeue(out ObjectKind? parent))
+            {
+                foreach (Placement placement in table.Placements.Where(candidate => candidate.Parent == parent))
+                {
+                    if (placement.Kind == kind)
+                    {
+                        recursive.Add(kind);
+                    }
+
+                    if (seen.Add(placement.Kind))
+                    {
+                        pending.Enqueue(placement.Kind);
+                    }
+                }
+            }
+        }
+
+        return recursive;
     }
 
     private static string Step(string segment, IReadOnlyList<KeyPart> key, KeyPart? optional) =>
@@ -329,9 +372,9 @@ internal static class TableSchemaWriter
         {
             JsonObject schema = argument.Kind.Schema();
             schema["description"] = argument.Description;
-            if (argument.Addresses is { } kind)
+            if (argument.Addresses is { } kinds)
             {
-                schema["x-addresses"] = new JsonArray([.. Addresses(table, kind, 0).Select(static address => (JsonNode)address)]);
+                schema["x-addresses"] = new JsonArray([.. kinds.SelectMany(kind => Addresses(table, kind, 0)).Select(static address => (JsonNode)address)]);
             }
 
             properties[argument.Name] = schema;
@@ -416,7 +459,13 @@ internal static class TableSchemaWriter
             actions[action.Name] = new JsonObject { ["args"] = Names(action.Arguments.Select(static argument => argument.Name)) };
         }
 
-        return Text(new JsonObject { ["kinds"] = kinds, ["adds"] = adds, ["actions"] = actions });
+        var directory = new JsonObject { ["kinds"] = kinds, ["adds"] = adds, ["actions"] = actions };
+        if (Recursive(table).Count > 0)
+        {
+            directory["addressForms"] = "A form that starts with {kind} continues an address of an object of that kind, one of the kind's own addresses.";
+        }
+
+        return Text(directory);
     }
 
     /// <summary>The parent an add adds to, with the engine type it needs when that is narrower than the kind's.</summary>
