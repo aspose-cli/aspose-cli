@@ -25,7 +25,6 @@ internal static class CellsCreate
             request.Output.Path,
             request.Output.Format,
             request.Output.Overwrite,
-            workbook,
             temp =>
             {
                 log.During = "save";

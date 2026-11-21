@@ -30,7 +30,7 @@ public static class CliHost
                 ParsedInvocation invocation = host.Parser.Parse(arguments);
                 invocation.EnsureValid();
                 // Every command gets here first.
-                NetworkGate.Admit(invocation.NetworkAccess);
+                NetworkGate.Admit();
                 return RunInProcess(invocation);
             });
         }

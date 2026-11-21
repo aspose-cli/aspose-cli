@@ -193,19 +193,6 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>The options that every command hides: a name some command shows is public.</summary>
-    private static IEnumerable<string> HiddenOptions(CliCatalog catalog)
-    {
-        HashSet<string> shown = [.. catalog.Commands.SelectMany(static command => command.Options).Where(static option => !option.Hidden).Select(static option => option.Name)];
-        return catalog.Commands.SelectMany(static command => command.Options)
-            .Where(option => option.Hidden && !shown.Contains(option.Name))
-            .Select(static option => option.Name)
-            .Distinct(StringComparer.Ordinal)
-            .Order(StringComparer.Ordinal);
-    }
-
-    private static Regex OptionMention(string name) => new($@"(?<![\w-]){Regex.Escape(name)}(?![\w-])", RegexOptions.CultureInvariant);
-
     /// <summary>What the reading of one project or document set found.</summary>
     private sealed record SourceFindings(string[] Names, string[] Bare, string[] Hidden, string[] Exempted, string[] Kinds);
 
@@ -286,8 +273,8 @@ internal static partial class ContractRules
             _quoted = new Regex(
                 string.Join('|', "'`\"".Select(quote => $@"{quote}(?<command>(?:{roots})(?: [^{quote}\n]*?)?){quote}")),
                 RegexOptions.CultureInvariant);
-            // Capabilities lists no hidden command; a hidden command's name starts with '__' (C-R04).
-            string[] hidden = [.. HiddenOptions(catalog).Select(Regex.Escape), "__[a-z][a-z0-9-]*"];
+            // No command is hidden; a hidden command's name would start with '__' (C-R04).
+            string[] hidden = ["__[a-z][a-z0-9-]*"];
             _hidden = new Regex($@"(?<![\w-])(?:{string.Join('|', hidden)})(?![\w-])", RegexOptions.CultureInvariant);
         }
 

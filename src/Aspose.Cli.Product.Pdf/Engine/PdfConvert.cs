@@ -68,10 +68,9 @@ internal static class PdfConvert
 
         // A format whose save writes files beside the output, such as Markdown's pictures, is published with them as one set.
         IReadOnlyList<OutputInfo> outputs = request.Output.Format.CompanionFiles
-            ? session.Outputs.Write(request.Output, document, encrypted: false, Write)
+            ? session.Outputs.Write(request.Output, encrypted: false, Write)
             : [FileObjects.Output(
-                session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, document, Write,
-                    rendering: target.Write is PdfEngineWrite.Tiff or PdfEngineWrite.Text),
+                session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, Write),
                 request.Output.Format,
                 encrypted: false)];
         return new PdfConvertResult

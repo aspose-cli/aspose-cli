@@ -4,7 +4,6 @@ using Aspose.Cli.Host.Output;
 using System.CommandLine.Parsing;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO.Input;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -51,16 +50,6 @@ internal sealed class ParsedInvocation
     public IReadOnlyList<Command> CommandPath { get; }
     public Command Command => ParseResult.CommandResult.Command;
     public string? ProductId { get; }
-
-    /// <summary>
-    /// What the invocation may reach through the <see cref="NetworkGate"/>: the web for a set
-    /// network opt-in flag, and nothing otherwise.
-    /// </summary>
-    public NetworkAccess NetworkAccess =>
-        CommandPath.SelectMany(static command => command.Options).OfType<Option<bool>>()
-            .Any(option => option.IsNetworkOptIn() && ParseResult.GetResult(option) is not null && ParseResult.GetValue(option))
-            ? NetworkAccess.Web
-            : NetworkAccess.None;
 
     /// <summary>
     /// Whether the command only groups other commands and was given none of them, such as
@@ -210,7 +199,7 @@ internal sealed class ParsedInvocation
 
     /// <summary>The names of the commands the command groups, as help lists them.</summary>
     private string[] VisibleCommands() =>
-        [.. Command.Subcommands.Where(static command => !command.Hidden).Select(static command => command.Name)];
+        [.. Command.Subcommands.Select(static command => command.Name)];
 
     /// <summary>A command of this one by its path below the root, such as <c>cells read</c>.</summary>
     private string Below(string name) => string.Join(' ', [.. CommandPath.Select(static command => command.Name), name]);
@@ -309,13 +298,12 @@ internal sealed class ParsedInvocation
             ValuesOnly: false);
     }
 
-    /// <summary>The options the command accepts: its own, the recursive ones of its parents and the root's, visible ones once each.</summary>
+    /// <summary>The options the command accepts: its own, the recursive ones of its parents and the root's, each once.</summary>
     private Option[] AcceptedOptions() =>
     [
         .. Command.Options
             .Concat(CommandPath.SelectMany(static command => command.Options.Where(static option => option.Recursive)))
             .Concat(ParseResult.RootCommandResult.Command.Options.Where(static option => option.Recursive))
-            .Where(static option => !option.Hidden)
             .DistinctBy(static option => option.Name, StringComparer.Ordinal),
     ];
 

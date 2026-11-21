@@ -3,16 +3,6 @@ using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Sdk.IO.Input;
 
-/// <summary>What the document engines of an invocation may reach through the process's network stack.</summary>
-public enum NetworkAccess
-{
-    /// <summary>Nothing: every http, https, ftp and file request is blocked.</summary>
-    None,
-
-    /// <summary>http and https, for trusted input the caller opted in for; ftp and file stay blocked.</summary>
-    Web,
-}
-
 /// <summary>
 /// The process's one exit to the network. Document engines request the resources a document
 /// names through <see cref="WebRequest"/> and <see cref="HttpClient"/>, some before or without
@@ -20,8 +10,8 @@ public enum NetworkAccess
 /// no check of the content can tell which requests an engine will make. Instead the host admits
 /// every invocation here before its command runs: the gate takes over the <c>http</c>,
 /// <c>https</c>, <c>ftp</c> and <c>file</c> request prefixes and the default proxy of
-/// <see cref="HttpClient"/> and <see cref="WebRequest"/>, so a request the invocation's access
-/// does not allow fails before it leaves the process, and the gate lists its address.
+/// <see cref="HttpClient"/> and <see cref="WebRequest"/>, so every request but a local file a
+/// resource loader permitted fails before it leaves the process, and the gate lists its address.
 /// </summary>
 public static class NetworkGate
 {
@@ -34,23 +24,17 @@ public static class NetworkGate
     private static readonly List<string> Blocked = [];
     private static readonly HashSet<string> Permitted = new(FilePaths.Comparer);
     private static readonly List<string> Withheld = [];
-    private static NetworkAccess _access;
     private static string? _inputFolder;
     private static IWebProxy? _system;
     private static bool _installed;
 
     /// <summary>
-    /// Admits an invocation: from now on the process reaches what <paramref name="access"/>
-    /// allows, and the gate lists the addresses it blocks for this invocation alone.
+    /// Admits an invocation: from now on the process reaches no network address and only the
+    /// local files a resource loader permits, and the gate lists the addresses it blocks for this
+    /// invocation alone.
     /// </summary>
-    /// <param name="access">What the invocation's engines may reach.</param>
-    public static void Admit(NetworkAccess access)
+    public static void Admit()
     {
-        if (!Enum.IsDefined(access))
-        {
-            throw new ArgumentOutOfRangeException(nameof(access));
-        }
-
         lock (Sync)
         {
             if (!_installed)
@@ -58,7 +42,6 @@ public static class NetworkGate
                 Install();
             }
 
-            _access = access;
             Blocked.Clear();
             Permitted.Clear();
             Withheld.Clear();
@@ -172,16 +155,13 @@ public static class NetworkGate
         _installed = true;
     }
 
-    private static bool Allows(string scheme) =>
-        _access == NetworkAccess.Web && (scheme == Uri.UriSchemeHttp || scheme == Uri.UriSchemeHttps);
-
     // Whether the request may pass; a blocked address is listed once.
     private static bool Pass(Uri address)
     {
         lock (Sync)
         {
             string listed = Listed(address);
-            if (Allows(address.Scheme) || (address.IsFile && Permitted.Contains(listed)))
+            if (address.IsFile && Permitted.Contains(listed))
             {
                 return true;
             }
@@ -316,13 +296,7 @@ public static class NetworkGate
         public bool IsBypassed(Uri host)
         {
             ArgumentNullException.ThrowIfNull(host);
-            bool allowed;
-            lock (Sync)
-            {
-                allowed = Allows(host.Scheme);
-            }
-
-            return allowed && (_system?.IsBypassed(host) ?? true);
+            return false;
         }
     }
 }

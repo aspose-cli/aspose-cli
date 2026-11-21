@@ -39,7 +39,7 @@ internal static class PdfSign
         using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "pdf-sign");
         // Signing saves the document with the encryption it was opened with.
         bool encrypted = loaded.Document.IsEncrypted;
-        StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Format, request.Output.Overwrite, loaded.Document, temp =>
+        StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Format, request.Output.Overwrite, temp =>
         {
             using var pkcs12 = new MemoryStream(certificate, writable: false);
             var signature = new PKCS7(pkcs12, request.CertificatePassword.Reveal())
@@ -55,7 +55,7 @@ internal static class PdfSign
 
             facade.Sign(request.Page, request.Visible, request.Rect ?? default, signature);
             facade.Save(temp);
-        }, encrypted: encrypted, saved: true);
+        }, encrypted: encrypted);
 
         // The staged candidate is the only readable copy before publication.
         IReadOnlyList<PdfSignatureInfo> signed = write.Read(candidate =>

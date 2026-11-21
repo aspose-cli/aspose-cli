@@ -29,16 +29,15 @@ public sealed class NetworkGateTests
             var ftp = new Uri($"ftp://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/resource.png");
             var file = new Uri(outside);
 
-            foreach (NetworkAccess access in new[] { NetworkAccess.None, NetworkAccess.Web })
             {
-                NetworkGate.Admit(access);
+                NetworkGate.Admit();
 
                 WebException ftpRefusal = Assert.Throws<WebException>(() => WebRequest.Create(ftp).GetResponse());
                 WebException fileRefusal = Assert.Throws<WebException>(() => WebRequest.Create(file).GetResponse());
 
                 Assert.Contains("blocked", ftpRefusal.Message, StringComparison.Ordinal);
                 Assert.Contains("blocked", fileRefusal.Message, StringComparison.Ordinal);
-                Assert.False(listener.Pending(), $"An ftp request reached the network with access {access}.");
+                Assert.False(listener.Pending(), "An ftp request reached the network.");
                 Warning warning = Assert.IsType<Warning>(NetworkGate.Warning);
                 Assert.Equal(WarningCodes.RemoteResourcesBlocked, warning.Code);
                 Assert.Contains(ftp.GetLeftPart(UriPartial.Path), warning.Message, StringComparison.Ordinal);
@@ -61,8 +60,8 @@ public sealed class NetworkGateTests
         finally
         {
             listener.Stop();
-            // The gate stays installed for the process; leave it as open as an opted-in invocation.
-            NetworkGate.Admit(NetworkAccess.Web);
+            // The gate stays installed for the process; a new admission clears what this test listed.
+            NetworkGate.Admit();
         }
     }
 
@@ -91,7 +90,7 @@ public sealed class NetworkGateTests
         ];
         try
         {
-            NetworkGate.Admit(NetworkAccess.None);
+            NetworkGate.Admit();
 
             foreach (Uri uri in hosted)
             {
@@ -107,7 +106,7 @@ public sealed class NetworkGateTests
         finally
         {
             await server.DisposeAsync();
-            NetworkGate.Admit(NetworkAccess.Web);
+            NetworkGate.Admit();
         }
     }
     /// <summary>
@@ -131,7 +130,7 @@ public sealed class NetworkGateTests
         }
         try
         {
-            NetworkGate.Admit(NetworkAccess.None);
+            NetworkGate.Admit();
             using var loader = new LocalDocumentResourceLoader(input, TestBudgets.Create());
 
             foreach (string file in new[] { below, first, second })
@@ -147,7 +146,7 @@ public sealed class NetworkGateTests
         }
         finally
         {
-            NetworkGate.Admit(NetworkAccess.Web);
+            NetworkGate.Admit();
         }
     }
 #pragma warning restore SYSLIB0014

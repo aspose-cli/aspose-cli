@@ -94,7 +94,6 @@ public static class TableEdit
             IReadOnlyList<Warning> written = [];
             EditPublication<Report> publication = outputs.PublishEdit(
                 output,
-                opened.Document,
                 precondition,
                 protection.Encrypted,
                 temp =>

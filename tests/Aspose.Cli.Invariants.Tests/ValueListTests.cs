@@ -17,13 +17,13 @@ public sealed class ValueListTests
     public void EveryOptionWithAList_RefusesASwitchGivenAsItsValue()
     {
         CliCommand root = CliCatalog.Current.Commands.Single(static command => command.Words.Length == 0);
-        string flag = root.Options.First(static option => option.Type == "boolean" && option.Recursive && !option.Hidden).Name;
+        string flag = root.Options.First(static option => option.Type == "boolean" && option.Recursive).Name;
         CliCommand[] commands = [.. CliCatalog.Current.Commands.Where(static command => command.Words.Length > 0 && command.Subcommands.Count == 0)];
         (CliCommand Command, CliOption Option)[] listed =
         [
             .. commands.SelectMany(static command => command.Options.Select(option => (command, option)))
                 .Concat(root.Options.Select(option => (commands[0], option)))
-                .Where(static pair => pair.option.AllowedValues.Count > 0 && pair.option.Type != "boolean" && !pair.option.Hidden),
+                .Where(static pair => pair.option.AllowedValues.Count > 0 && pair.option.Type != "boolean"),
         ];
         var failures = new List<string>();
         foreach ((CliCommand command, CliOption option) in listed)

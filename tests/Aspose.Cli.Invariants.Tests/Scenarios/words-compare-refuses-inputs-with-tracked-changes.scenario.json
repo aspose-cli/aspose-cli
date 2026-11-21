@@ -9,7 +9,7 @@
     { "args": ["words", "edit", "plain.docx", "--ops", "change.json", "--out", "revised.docx"], "expect": { "exitCode": 0, "json": [{ "path": "counts.revisions", "equals": [0, 2] }] } },
     {
       "args": ["words", "compare", "plain.docx", "revised.docx", "--author", "Reviewer", "--date-time", "2026-03-01T09:00:00", "--out", "redline.md"],
-      "expect": { "error": "FEATURE_UNSUPPORTED", "json": [{ "path": "error.message", "contains": "Compared documents must not have revisions" }], "files": { "absent": ["redline.md"] } }
+      "expect": { "error": "ENGINE_ERROR", "json": [{ "path": "error.message", "contains": "Compared documents must not have revisions" }], "files": { "absent": ["redline.md"] } }
     }
   ]
 }

@@ -74,46 +74,15 @@ internal static partial class ContractRules
         }
     }
 
-    // ----- C-R04: hidden commands start with __; public text never names a hidden option -------
+    // ----- C-R04: no public command name starts with _ ------------------------------------------
 
     private static IEnumerable<InvariantCase> R04(CliCatalog catalog)
     {
         IReadOnlyList<TreeCommand> tree = CommandTree.Of(catalog);
-        // Capabilities leaves the hidden commands out, so a listed command is public and its
-        // name does not take the '__' of a hidden one.
+        // Every command is public, so no name takes the '__' of a hidden one.
         foreach (TreeCommand command in tree.Where(static command => command.Verb.StartsWith('_')))
         {
             yield return Check("C-R04", command.ToString(), () => [$"{command} is public, so its name does not start with '_'."]);
-        }
-        foreach (string hidden in tree.SelectMany(static command => command.Options).Where(static option => option.Hidden)
-            .Select(static option => option.Name).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
-        {
-            Regex mention = OptionMention(hidden);
-            yield return Check("C-R04", hidden, () => PublicTexts(catalog, tree)
-                .Where(text => mention.IsMatch(text.Text))
-                .Select(text => $"{text.Where} names the hidden option {hidden}.")
-                .Distinct(StringComparer.Ordinal));
-        }
-    }
-
-    /// <summary>
-    /// The text the command documents publish for people and agents: the descriptions of the
-    /// commands and of their options and arguments, which help prints too. Schema descriptions and
-    /// Skills are outside the command documents, so this part does not read them.
-    /// </summary>
-    private static IEnumerable<(string Where, string Text)> PublicTexts(CliCatalog catalog, IReadOnlyList<TreeCommand> tree)
-    {
-        foreach ((TreeCommand command, JsonNode node) in tree.Zip(catalog.CommandNodes))
-        {
-            yield return ($"The description of {command}", node["description"]?.GetValue<string>() ?? string.Empty);
-            foreach (TreeOption option in command.Options.Where(static option => !option.Hidden))
-            {
-                yield return ($"The description of {command} {option.Name}", option.Description);
-            }
-            foreach (TreeArgument argument in command.Arguments)
-            {
-                yield return ($"The description of {command} <{argument.Name}>", argument.Description);
-            }
         }
     }
 

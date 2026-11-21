@@ -10,28 +10,17 @@ using Aspose.Cli.Sdk.Licensing;
 namespace Aspose.Cli.Sdk.Results;
 
 /// <summary>
-/// The SDK write pipeline of one product in one invocation, and the sole owner of evaluation
-/// disclosure. It resolves the product's license state once, publishes every output the product
-/// writes, and inspects each published document, once it is saved and before it is published,
-/// through the product's <see cref="IEvaluationProfile{TDocument}"/>. The command template then
-/// adds the disclosure to the result (<see cref="Disclose"/>): <c>EVALUATION_MODE</c> when evaluation
-/// mode produced an output, naming the evaluation marks it carries, and <c>EVALUATION_INPUT_MARKED</c>
-/// when a licensed output carries evaluation marks, which a licensed save never adds, so they come
-/// from its input. It is also the sole owner of the <c>ENCRYPTION_REMOVED</c> warning: a product
-/// tells it whether each document it opened is encrypted (<see cref="InputOpening"/>) and whether each
-/// copy it publishes is, and the pipeline compares the two. A command that publishes nothing,
-/// such as a read, discloses nothing.
+/// The SDK write pipeline of one product in one invocation. It resolves the product's license
+/// state once and publishes every output the product writes. It is the sole owner of the
+/// <c>ENCRYPTION_REMOVED</c> warning: a product tells it whether each document it opened is
+/// encrypted (<see cref="InputOpening"/>) and whether each copy it publishes is, and the pipeline
+/// compares the two; the command template adds the warning to the result (<see cref="Disclose"/>).
+/// A command that publishes nothing, such as a read, discloses nothing.
 /// </summary>
 public abstract class OutputPipeline : ILicenseState
 {
     private readonly ILicenseGate _licenseGate;
     private readonly object _sync = new();
-    private int _published;
-    private EvaluationMarks _kept = EvaluationMarks.None;
-    private EvaluationMarks _shown = EvaluationMarks.None;
-    private readonly List<string> _marked = [];
-    private bool _watermarked;
-    private Warning? _inputTruncated;
     private bool _encryptedInput;
     private readonly SortedSet<string> _plainCopies = new(StringComparer.Ordinal);
 
@@ -57,12 +46,9 @@ public abstract class OutputPipeline : ILicenseState
     private protected SafeFileWriter Writer { get; }
 
     /// <summary>
-    /// Starts an extraction into <paramref name="root"/>, published when the guard commits. What
-    /// the engine derives from the documents, such as their text or tables, is an output of this
-    /// invocation and disclosed as one. Files the documents embed, copied byte for byte as the
-    /// document stores them (<see cref="ExtractionContent.EmbeddedFiles"/>), are no output of the
-    /// engine and carry nothing evaluation mode adds, so they are not disclosed, and keep a byte
-    /// order mark they start with.
+    /// Starts an extraction into <paramref name="root"/>, published when the guard commits. Files
+    /// the documents embed, copied byte for byte as the document stores them
+    /// (<see cref="ExtractionContent.EmbeddedFiles"/>), keep a byte order mark they start with.
     /// </summary>
     /// <param name="root">The extraction directory, which may not exist yet.</param>
     /// <param name="overwrite">Whether an existing file in the directory may be replaced (<c>--overwrite</c>).</param>
@@ -72,7 +58,6 @@ public abstract class OutputPipeline : ILicenseState
         bool byteOrderMark = false) =>
         new(Writer.ResourceBudgets, root, overwrite)
         {
-            Committed = content == ExtractionContent.EmbeddedFiles ? null : () => Record(null),
             KeepsByteOrderMark = content == ExtractionContent.EmbeddedFiles || byteOrderMark,
         };
 
@@ -94,20 +79,16 @@ public abstract class OutputPipeline : ILicenseState
     }
 
     /// <summary>
-    /// Adds the evaluation disclosure of what this invocation published, and of an input it read
-    /// that evaluation mode cut short, and the encryption it removed, to its result, before the
-    /// result's own warnings; returns the result unchanged when there is nothing to disclose.
+    /// Adds the encryption this invocation removed (<see cref="EncryptionRemoved"/>) to its result,
+    /// before the result's own warnings; returns the result unchanged when there is nothing to
+    /// disclose or the result carries the warning already.
     /// </summary>
     public ResultEnvelope Disclose(ResultEnvelope result)
     {
         ArgumentNullException.ThrowIfNull(result);
-        // A result that carries a disclosure already, such as a review whose view manifest
-        // carried the input's truncation, is not told twice.
-        Warning[] disclosure = [.. (Disclosure() ?? []).Append(EncryptionRemoved()).OfType<Warning>().Where(warning =>
-            !(result.Warnings ?? []).Any(present => present.Code == warning.Code))];
-        return disclosure.Length == 0
+        return EncryptionRemoved() is not { } removed || (result.Warnings ?? []).Any(present => present.Code == removed.Code)
             ? result
-            : result with { Warnings = EnvelopeParts.CombineWarnings(disclosure, result.Warnings) };
+            : result with { Warnings = EnvelopeParts.CombineWarnings([removed], result.Warnings) };
     }
 
     /// <summary>
@@ -150,37 +131,6 @@ public abstract class OutputPipeline : ILicenseState
     }
 
     /// <summary>
-    /// The disclosure of what this invocation published so far, and of an input it read that
-    /// evaluation mode cut short (<see cref="OutputPipeline{TDocument}.ReadInput"/>), or null.
-    /// </summary>
-    internal IReadOnlyList<Warning>? Disclosure()
-    {
-        int published;
-        EvaluationMarks kept;
-        EvaluationMarks shown;
-        Warning? truncated;
-        string[] marked;
-        bool watermarked;
-        lock (_sync)
-        {
-            (published, kept, shown, truncated, watermarked) = (_published, _kept, _shown, _inputTruncated, _watermarked);
-            marked = [.. _marked];
-        }
-
-        // With several outputs, the marks are named with the files that carry them.
-        string subject = published > 1 && marked.Length > 0 ? EvaluationDisclosure.Outputs(marked) : "The output";
-        Warning? output = published == 0 ? null : License switch
-        {
-            LicenseState.Evaluation => EvaluationDisclosure.Output(
-                _licenseGate.Resolution.Kind == LicenseSourceKind.EvaluationRequested, kept, shown, subject, watermarked),
-            LicenseState.Licensed when kept.Any || shown.Any => EvaluationDisclosure.InputMarked(kept, shown, subject),
-            _ => null,
-        };
-        Warning[] disclosure = [.. new[] { output, truncated }.OfType<Warning>()];
-        return disclosure.Length == 0 ? null : disclosure;
-    }
-
-    /// <summary>
     /// Runs a command handler or a view call of the product, and reports an evaluation limit
     /// the engine raised in it as <c>EVALUATION_LIMIT</c>: in evaluation mode, an exception that
     /// is not already a CLI error and that the product's evaluation profile recognizes. This is
@@ -216,175 +166,13 @@ public abstract class OutputPipeline : ILicenseState
     /// <summary>The <c>EVALUATION_LIMIT</c> error for an engine exception, or null when it reports no evaluation limit.</summary>
     private protected abstract CliException? EngineEvaluationLimitOf(Exception exception);
 
-    /// <summary>Keeps the <c>EVALUATION_INPUT_TRUNCATED</c> warning, once, for <see cref="Disclose"/>.</summary>
-    private protected void RecordInputTruncated(Warning warning)
-    {
-        lock (_sync)
-        {
-            _inputTruncated ??= warning;
-        }
-    }
-
-    /// <summary>
-    /// Records one published output and, when it was inspected, its marks: those a saved copy
-    /// keeps, or those the source of a rendering carries. The files of a copy that keeps marks,
-    /// <paramref name="paths"/>, are named in the disclosure when the invocation published others.
-    /// </summary>
-    internal void Record(Inspection? inspection, IEnumerable<string>? paths = null)
-    {
-        lock (_sync)
-        {
-            _published++;
-            // An output whose format is not known to take no watermark is disclosed as watermarked.
-            _watermarked |= inspection?.Watermarked ?? true;
-            if (inspection?.Marks is { } marks)
-            {
-                if (inspection.Rendering)
-                {
-                    _shown = _shown.Union(marks);
-                }
-                else
-                {
-                    _kept = _kept.Union(marks);
-                    if (marks.Any)
-                    {
-                        _marked.AddRange((paths ?? []).Select(System.IO.Path.GetFileName).OfType<string>()
-                            .Where(name => !_marked.Contains(name, StringComparer.Ordinal)));
-                    }
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// The marks of one published document, or null when inspecting it failed and its marks are
-    /// unknown; <see cref="Rendering"/> says the output shows the document rather than keeping
-    /// a copy of it, as page images and extracted page text do; <see cref="Watermarked"/> says
-    /// evaluation mode writes its watermark into the output's format
-    /// (<see cref="IEvaluationProfile{TDocument}.WritesWatermark"/>).
-    /// </summary>
-    internal sealed record Inspection(EvaluationMarks? Marks, bool Rendering, bool Watermarked = true);
-
     /// <summary>A published file: its format id, whether that format is an image, and whether the file is encrypted.</summary>
     internal sealed record Copy(string Format, bool Image, bool Encrypted);
 }
 
-/// <summary>The evaluation warnings the write pipeline adds to a result.</summary>
-internal static class EvaluationDisclosure
-{
-    /// <summary>
-    /// <c>EVALUATION_MODE</c> for outputs evaluation mode produced, naming the marks the outputs keep
-    /// and those the rendered sources carry.
-    /// </summary>
-    /// <param name="requested">Whether the caller asked for evaluation mode.</param>
-    /// <param name="kept">The marks the outputs keep.</param>
-    /// <param name="shown">The marks the rendered sources carry.</param>
-    /// <param name="subject">The outputs that keep the marks, such as <c>The outputs 'a.1.pdf' and 'a.2.pdf'</c>.</param>
-    /// <param name="watermarked">
-    /// Whether an output is in a format evaluation mode watermarks; when none is, the warning
-    /// claims no watermark and says only that evaluation mode limits the command.
-    /// </param>
-    internal static Warning Output(bool requested, EvaluationMarks kept, EvaluationMarks shown, string subject = "The output", bool watermarked = true)
-    {
-        Warning disclosure = (requested, watermarked) switch
-        {
-            (true, true) => EnvelopeParts.RequestedEvaluationWatermark,
-            (false, true) => EnvelopeParts.EvaluationWatermark,
-            (true, false) => EnvelopeParts.RequestedEvaluationWatermark with
-            {
-                Message = "Evaluation mode, requested with --license-mode evaluation: some operations are limited.",
-            },
-            (false, false) => EnvelopeParts.EvaluationWatermark with
-            {
-                Message = "Evaluation mode: some operations are limited.",
-            },
-        };
-        string message = disclosure.Message;
-        if (kept.Any)
-        {
-            message += $" {subject} {(subject.StartsWith("The outputs", StringComparison.Ordinal) ? "carry" : "carries")} {List(kept)}.";
-        }
-
-        if (Beyond(shown, kept) is { Any: true } source)
-        {
-            message += $" The rendered source carries {List(source)}, which the output shows.";
-        }
-
-        return disclosure with { Message = message };
-    }
-
-    /// <summary>
-    /// <c>EVALUATION_INPUT_MARKED</c> for licensed outputs that keep the evaluation marks of their
-    /// input, or that render a source which carries them.
-    /// </summary>
-    /// <param name="kept">The marks the outputs keep.</param>
-    /// <param name="shown">The marks the rendered sources carry.</param>
-    /// <param name="subject">The outputs that keep the marks, as for <see cref="Output"/>.</param>
-    internal static Warning InputMarked(EvaluationMarks kept, EvaluationMarks shown, string subject = "The output")
-    {
-        var sentences = new List<string>();
-        if (kept.Any)
-        {
-            string verb = subject.StartsWith("The outputs", StringComparison.Ordinal) ? "keep" : "keeps";
-            sentences.Add($"{subject} {verb} the evaluation marks that an earlier save without a license wrote into its input: {List(kept)}.");
-        }
-
-        if (Beyond(shown, kept) is { Any: true } source)
-        {
-            sentences.Add($"The rendered source carries the evaluation marks that an earlier save without a license wrote into it, which the output shows: {List(source)}.");
-        }
-
-        sentences.Add("The license does not remove them.");
-        return new Warning(WarningCodes.EvaluationInputMarked, string.Join(" ", sentences))
-        {
-            AffectsCompleteness = kept.IsTruncated,
-        };
-    }
-
-    /// <summary>
-    /// <c>EVALUATION_INPUT_TRUNCATED</c> for a result that read an input evaluation mode cut short,
-    /// in the words of the product's evaluation profile.
-    /// </summary>
-    /// <param name="engine">The engine, which also names the license, such as <c>Aspose.Words</c>.</param>
-    /// <param name="truncation">What evaluation mode leaves out, completing "Aspose.X evaluation mode ...".</param>
-    internal static Warning InputTruncated(string engine, string truncation) => new(
-        WarningCodes.EvaluationInputTruncated,
-        $"{engine} evaluation mode {truncation}, so this result does not hold all of the input's content.")
-    {
-        // What a command covers stays complete; the warning says the content it read is not.
-    };
-
-    /// <summary>The outputs named by their files, such as <c>The output 'a.2.pdf'</c> or <c>The outputs 'a.1.pdf' and 'a.2.pdf'</c>.</summary>
-    internal static string Outputs(IReadOnlyList<string> files)
-    {
-        string[] quoted = [.. files.Select(static file => $"'{file}'")];
-        return quoted.Length == 1
-            ? $"The output {quoted[0]}"
-            : $"The outputs {string.Join(", ", quoted[..^1])} and {quoted[^1]}";
-    }
-
-    private static EvaluationMarks Beyond(EvaluationMarks shown, EvaluationMarks kept) =>
-        new([.. shown.Marks.Except(kept.Marks, StringComparer.Ordinal)], shown.IsTruncated && !kept.IsTruncated);
-
-    private static string List(EvaluationMarks marks)
-    {
-        string[] items = [.. marks.Marks, .. marks.IsTruncated
-            ? new[] { "the notice that evaluation mode cut the content short, so the content after it is missing" }
-            : []];
-        return items.Length switch
-        {
-            1 => items[0],
-            _ => string.Join(", ", items[..^1]) + " and " + items[^1],
-        };
-    }
-}
-
 /// <summary>
-/// The write pipeline of a product whose engine documents are <typeparamref name="TDocument"/>:
-/// a publication names the document it saves or renders, so the pipeline inspects it through
-/// the product's evaluation profile after the save and before the output is published.
-/// Inspection never fails a publication: when it throws, the marks are unknown, and the
-/// disclosure is the plain one.
+/// The write pipeline of a product whose engine documents are <typeparamref name="TDocument"/>,
+/// whose evaluation profile recognizes the engine's evaluation limits.
 /// </summary>
 /// <typeparam name="TDocument">The engine's document type.</typeparam>
 public sealed class OutputPipeline<TDocument> : OutputPipeline
@@ -394,7 +182,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
 
     /// <summary>Creates the pipeline of one product invocation.</summary>
     /// <param name="licenseGate">The product's license gate, which the pipeline alone applies.</param>
-    /// <param name="profile">How the product recognizes its evaluation marks.</param>
+    /// <param name="profile">How the product recognizes its engine's evaluation limits.</param>
     /// <param name="writer">The invocation's atomic file writer.</param>
     public OutputPipeline(ILicenseGate licenseGate, IEvaluationProfile<TDocument> profile, SafeFileWriter writer)
         : base(licenseGate, writer)
@@ -402,56 +190,20 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         _profile = profile ?? throw new ArgumentNullException(nameof(profile));
     }
 
-    /// <summary>
-    /// Records that the command read <paramref name="document"/>, one of its inputs, into its
-    /// result, as an inspect, a read, a search or a text extraction does. In evaluation mode,
-    /// when the product's evaluation profile finds the document cut short
-    /// (<see cref="EvaluationMarks.IsTruncated"/>), the result carries
-    /// <c>EVALUATION_INPUT_TRUNCATED</c>, which only the SDK writes; with a license it records
-    /// nothing, since a licensed load cuts nothing short.
-    /// </summary>
-    public void ReadInput(TDocument document)
-    {
-        ArgumentNullException.ThrowIfNull(document);
-        if (IsEvaluation && _profile.Inspect(document).IsTruncated)
-        {
-            RecordInputTruncated(EvaluationDisclosure.InputTruncated(_profile.Engine, _profile.Truncation));
-        }
-    }
-
     private protected override CliException? EngineEvaluationLimitOf(Exception exception) =>
         _profile.RecognizeLimit(exception) is { } limit && IsEvaluation
             ? CliErrors.EngineEvaluationLimit(_profile.Engine, limit.Allows, limit.Limit, limit.Unit, exception)
             : null;
 
-    /// <summary>
-    /// In evaluation mode, removes the marks evaluation mode added when it opened the document,
-    /// before the document becomes part of another; with a license the document carries none.
-    /// </summary>
-    public void Neutralize(TDocument document)
-    {
-        ArgumentNullException.ThrowIfNull(document);
-        if (IsEvaluation)
-        {
-            _profile.Neutralize(document);
-        }
-    }
-
-    /// <summary>
-    /// Publishes one file that <paramref name="write"/> saves from <paramref name="document"/>,
-    /// or that holds no document when it is null, such as exported form data.
-    /// </summary>
+    /// <summary>Publishes one file that <paramref name="write"/> saves.</summary>
     /// <param name="targetPath">The output file.</param>
     /// <param name="format">
-    /// The format the file is written in, as the product declares it: the profile inspects its
-    /// id, and an image is never a copy. The file's extension never decides it, since one format
-    /// has several (<c>.jpg</c> for jpeg) and one extension serves several (<c>.txt</c> for csv).
+    /// The format the file is written in, as the product declares it: an image is never a copy.
+    /// The file's extension never decides it, since one format has several (<c>.jpg</c> for jpeg)
+    /// and one extension serves several (<c>.txt</c> for csv).
     /// </param>
     /// <param name="overwrite">Whether an existing file may be replaced.</param>
-    /// <param name="document">The document the file holds or shows, or null.</param>
     /// <param name="write">Writes the staged file.</param>
-    /// <param name="rendering">Whether the file shows <paramref name="document"/>, as page images and page text do, rather than keeping a copy of it.</param>
-    /// <param name="pages">The pages (or slides) of <paramref name="document"/> a rendering shows, numbered from 1; null for all of them.</param>
     /// <param name="encrypted">
     /// Whether the written file is encrypted. A file in a document, workbook or presentation
     /// format is a copy of the documents the command opened, and an unencrypted copy of an
@@ -459,38 +211,26 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// </param>
     /// <param name="byteOrderMark">Whether the file keeps the UTF-8 byte order mark <paramref name="write"/> starts it with (<see cref="ByteOrderMarks"/>).</param>
     /// <returns>The facts of the published file.</returns>
-    public PublishedFile Write(string targetPath, FormatDescriptor format, bool overwrite, TDocument? document, Action<string> write,
-        bool rendering = false, IEnumerable<int>? pages = null, bool encrypted = false, bool byteOrderMark = false)
+    public PublishedFile Write(string targetPath, FormatDescriptor format, bool overwrite, Action<string> write,
+        bool encrypted = false, bool byteOrderMark = false)
     {
         ArgumentNullException.ThrowIfNull(format);
-        var inspector = new Inspector(_profile, document, format.Id, rendering);
-        inspector.Shows(pages);
-        PublishedFile published = Writer.Write(targetPath, overwrite, inspector.After(ByteOrderMarks.Unless(byteOrderMark, write)));
-        Record(inspector.Result, [targetPath]);
+        PublishedFile published = Writer.Write(targetPath, overwrite, ByteOrderMarks.Unless(byteOrderMark, write));
         RecordCopy(new Copy(format.Id, format.Image, encrypted));
         return published;
     }
 
     /// <summary>
-    /// Publishes <paramref name="document"/> to a resolved output, with the companion files its
-    /// format writes beside it, and describes every file published.
+    /// Publishes a resolved output, with the companion files its format writes beside it, and
+    /// describes every file published.
     /// </summary>
     /// <param name="output">The resolved output.</param>
-    /// <param name="document">The document the output holds.</param>
     /// <param name="encrypted">Whether the written output carries a password.</param>
     /// <param name="write">Writes the staged output.</param>
-    /// <param name="pages">
-    /// The pages (or slides) of <paramref name="document"/> the output shows alone, numbered from
-    /// 1, such as an export of selected slides; null when it holds all of them.
-    /// </param>
-    public IReadOnlyList<OutputInfo> Write(ResolvedOutput output, TDocument document, bool encrypted, Action<string> write,
-        IEnumerable<int>? pages = null)
+    public IReadOnlyList<OutputInfo> Write(ResolvedOutput output, bool encrypted, Action<string> write)
     {
         ArgumentNullException.ThrowIfNull(output);
-        var inspector = new Inspector(_profile, document, output.Format.Id, rendering: false);
-        inspector.Shows(pages);
-        IReadOnlyList<OutputInfo> written = Writer.Write(output, encrypted, inspector.After(ByteOrderMarks.Unless(declared: false, write)));
-        Record(inspector.Result, [output.Path]);
+        IReadOnlyList<OutputInfo> written = Writer.Write(output, encrypted, ByteOrderMarks.Unless(declared: false, write));
         RecordCopy(new Copy(output.Format.Id, output.Format.Image, encrypted));
         return written;
     }
@@ -500,7 +240,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// when the set commits.
     /// </summary>
     public OutputSet<TDocument> BeginSet(IEnumerable<string> targetDirectories, string operation) =>
-        new(this, _profile, new AtomicOutputSetWriter(Writer, targetDirectories, operation));
+        new(this, new AtomicOutputSetWriter(Writer, targetDirectories, operation));
 
     /// <summary>
     /// Publishes an edited document: stages <paramref name="output"/> with the input
@@ -510,7 +250,6 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// </summary>
     /// <typeparam name="TVerification">The product's verification of the staged output.</typeparam>
     /// <param name="output">The resolved output.</param>
-    /// <param name="document">The edited document the output holds.</param>
     /// <param name="precondition">The input the output replaces, which must not change meanwhile.</param>
     /// <param name="encrypted">Whether the written output carries a password.</param>
     /// <param name="save">Saves the staged file and checks that it opens again.</param>
@@ -523,7 +262,6 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// </param>
     public EditPublication<TVerification> PublishEdit<TVerification>(
         ResolvedOutput output,
-        TDocument document,
         FileWritePrecondition precondition,
         bool encrypted,
         Action<string> save,
@@ -540,7 +278,6 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
             output.Path,
             output.Format,
             output.Overwrite,
-            document,
             save,
             inputPrecondition: precondition,
             encrypted: encrypted,
@@ -552,196 +289,50 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
             FileObjects.Output(staged.Published, output.Format, encrypted), verification);
     }
 
-    /// <summary>
-    /// Inspects one document once, right after the first save that writes it to an output of
-    /// one format, while the product still holds it open.
-    /// </summary>
-    internal sealed class Inspector(IEvaluationProfile<TDocument> profile, TDocument? document, string format, bool rendering, bool saved = false)
-    {
-        private readonly SortedSet<int> _pages = [];
-        private bool _saved;
-        private bool _inspected;
-        private EvaluationMarks? _marks;
-
-        internal TDocument? Document => document;
-
-        internal string Format => format;
-
-        internal bool Rendering => rendering;
-
-        /// <summary>
-        /// The marks found; null when there is no document; null marks when inspecting it failed.
-        /// A rendering of selected pages is inspected over all of them once they are rendered,
-        /// while the product still holds the document open.
-        /// </summary>
-        internal Inspection? Result
-        {
-            get
-            {
-                if (document is null)
-                {
-                    return null;
-                }
-
-                if (_saved && !_inspected)
-                {
-                    Inspect(document);
-                }
-
-                return new Inspection(_marks, rendering, profile.WritesWatermark(format));
-            }
-        }
-
-        /// <summary>Adds the pages (or slides) a rendering shows, numbered from 1; none means the whole document.</summary>
-        internal void Shows(IEnumerable<int>? pages)
-        {
-            if (pages is not null)
-            {
-                _pages.UnionWith(pages);
-            }
-        }
-
-        internal Action<string> After(Action<string> write)
-        {
-            ArgumentNullException.ThrowIfNull(write);
-            return path =>
-            {
-                write(path);
-                _saved = true;
-                // An output saved through something other than the document is read from its
-                // file, when the profile reads files; the document stands in otherwise.
-                if (saved && document is not null && !_inspected && _pages.Count == 0 && InspectFile(path))
-                {
-                    return;
-                }
-
-                // A saved copy is inspected right after its save, before anything, such as a
-                // facade that closes the document, can change it.
-                if (document is not null && !_inspected && _pages.Count == 0)
-                {
-                    Inspect(document);
-                }
-            };
-        }
-
-        /// <summary>Whether the profile read the marks from the staged file.</summary>
-        private bool InspectFile(string path)
-        {
-            try
-            {
-                if (profile.InspectSaved(path, format) is { } marks)
-                {
-                    (_inspected, _marks) = (true, marks);
-                    return true;
-                }
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
-            {
-                (_inspected, _marks) = (true, null);
-                return true;
-            }
-
-            return false;
-        }
-
-        // The disclosure must never cost the user an output: an inspection that fails leaves
-        // the marks unknown, and evaluation mode is still disclosed.
-        private void Inspect(TDocument document)
-        {
-            _inspected = true;
-            try
-            {
-                _marks = _pages.Count == 0 ? profile.Inspect(document, format) : profile.Inspect(document, format, _pages);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
-            {
-                _marks = null;
-            }
-        }
-    }
 }
 
 /// <summary>
 /// A set of outputs staged together and published, refused or rolled back as a whole, through
-/// the product's <see cref="OutputPipeline{TDocument}"/>. A document staged to several outputs
-/// of one format, such as the pages of a render, is inspected once. Disposing a set that did not
-/// commit rolls it back.
+/// the product's <see cref="OutputPipeline{TDocument}"/>. Disposing a set that did not commit
+/// rolls it back.
 /// </summary>
 /// <typeparam name="TDocument">The engine's document type.</typeparam>
 public sealed class OutputSet<TDocument> : IDisposable
     where TDocument : class
 {
     private readonly OutputPipeline<TDocument> _pipeline;
-    private readonly IEvaluationProfile<TDocument> _profile;
     private readonly AtomicOutputSetWriter _transaction;
-    private readonly List<OutputPipeline<TDocument>.Inspector> _documents = [];
-    private readonly Dictionary<OutputPipeline<TDocument>.Inspector, List<string>> _paths = [];
     private readonly List<StagedOutput> _staged = [];
     private readonly List<OutputPipeline.Copy> _copies = [];
 
-    internal OutputSet(OutputPipeline<TDocument> pipeline, IEvaluationProfile<TDocument> profile, AtomicOutputSetWriter transaction)
+    internal OutputSet(OutputPipeline<TDocument> pipeline, AtomicOutputSetWriter transaction)
     {
         _pipeline = pipeline;
-        _profile = profile;
         _transaction = transaction;
     }
 
     /// <summary>Admits a directory and owns only directories this set actually creates.</summary>
     public void EnsureDirectory(string path) => _transaction.EnsureDirectory(path);
 
-    /// <summary>
-    /// Stages one output that <paramref name="write"/> saves from <paramref name="document"/>, or
-    /// that holds no document when it is null.
-    /// </summary>
+    /// <summary>Stages one output that <paramref name="write"/> saves.</summary>
     /// <param name="targetPath">The output file.</param>
-    /// <param name="format">
-    /// The format the output is written in, as the product declares it: the profile inspects its
-    /// id, never one the file's extension suggests.
-    /// </param>
+    /// <param name="format">The format the output is written in, as the product declares it, never one the file's extension suggests.</param>
     /// <param name="overwrite">Whether an existing file may be replaced.</param>
-    /// <param name="document">The document the output holds or shows, or null.</param>
     /// <param name="write">Writes the staged file.</param>
-    /// <param name="rendering">Whether the output shows <paramref name="document"/>, as a page image does, rather than keeping a copy of it.</param>
-
     /// <param name="inputPrecondition">The input the output replaces, which must not change meanwhile.</param>
     /// <param name="verify">Checks the staged file before it is published.</param>
-    /// <param name="pages">The pages (or slides) of <paramref name="document"/> a rendering shows, numbered from 1; null for all of them.</param>
     /// <param name="encrypted">
     /// Whether the written file is encrypted. A file in a document, workbook or presentation
     /// format is a copy of the documents the command opened, and an unencrypted copy of an
     /// encrypted one is disclosed; an image or a data file never is.
     /// </param>
-    /// <param name="saved">
-    /// Whether <paramref name="write"/> saves the file through something other than
-    /// <paramref name="document"/>, such as a facade that signs it, so its marks are read from the
-    /// file (<see cref="IEvaluationProfile{TDocument}.InspectSaved"/>) where the profile reads files.
-    /// </param>
     /// <param name="byteOrderMark">Whether the output keeps the UTF-8 byte order mark <paramref name="write"/> starts it with (<see cref="ByteOrderMarks"/>).</param>
-    public StagedOutput Stage(string targetPath, FormatDescriptor format, bool overwrite, TDocument? document, Action<string> write,
-        bool rendering = false, FileWritePrecondition? inputPrecondition = null,
-        Action<string>? verify = null, IEnumerable<int>? pages = null, bool encrypted = false, bool saved = false,
+    public StagedOutput Stage(string targetPath, FormatDescriptor format, bool overwrite, Action<string> write,
+        FileWritePrecondition? inputPrecondition = null, Action<string>? verify = null, bool encrypted = false,
         bool byteOrderMark = false)
     {
         ArgumentNullException.ThrowIfNull(format);
-        OutputPipeline<TDocument>.Inspector? inspector = document is null || saved ? null
-            : _documents.Find(item => ReferenceEquals(item.Document, document) && item.Rendering == rendering
-                && string.Equals(item.Format, format.Id, StringComparison.Ordinal));
-        if (document is not null && inspector is null)
-        {
-            inspector = new OutputPipeline<TDocument>.Inspector(_profile, document, format.Id, rendering, saved);
-            _documents.Add(inspector);
-        }
-
-        if (inspector is not null)
-        {
-            (_paths.TryGetValue(inspector, out List<string>? paths) ? paths : _paths[inspector] = []).Add(targetPath);
-        }
-
-        inspector?.Shows(pages);
-
-        Action<string> unmarked = ByteOrderMarks.Unless(byteOrderMark, write);
-        StagedOutput staged = _transaction.Stage(targetPath, overwrite, inputPrecondition,
-            inspector?.After(unmarked) ?? unmarked, verify);
+        StagedOutput staged = _transaction.Stage(targetPath, overwrite, inputPrecondition, ByteOrderMarks.Unless(byteOrderMark, write), verify);
         _staged.Add(staged);
         _copies.Add(new OutputPipeline.Copy(format.Id, format.Image, encrypted));
         return staged;
@@ -754,16 +345,6 @@ public sealed class OutputSet<TDocument> : IDisposable
     public IReadOnlyList<PublishedFile> Commit()
     {
         _ = _transaction.Commit();
-        foreach (OutputPipeline<TDocument>.Inspector inspector in _documents)
-        {
-            _pipeline.Record(inspector.Result, _paths.GetValueOrDefault(inspector));
-        }
-
-        for (int index = _documents.Count; index < _staged.Count; index++)
-        {
-            _pipeline.Record(null);
-        }
-
         foreach (OutputPipeline.Copy copy in _copies)
         {
             _pipeline.RecordCopy(copy);
@@ -776,7 +357,7 @@ public sealed class OutputSet<TDocument> : IDisposable
     public void Dispose() => _transaction.Dispose();
 }
 
-/// <summary>What an extraction writes, which decides whether the write pipeline discloses it.</summary>
+/// <summary>What an extraction writes, which decides whether a file keeps the byte order mark it starts with.</summary>
 public enum ExtractionContent
 {
     /// <summary>Content the engine derives from the documents, such as text, tables or comments.</summary>

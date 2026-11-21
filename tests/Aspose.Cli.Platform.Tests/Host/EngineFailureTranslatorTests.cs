@@ -19,8 +19,8 @@ public sealed class EngineFailureTranslatorTests
     {
         CliException? error = Translator.Translate(Caught(static () => Assert.Fail("engine choked")));
 
-        Assert.Equal(ErrorCodes.FeatureUnsupported, error?.Code);
-        Assert.StartsWith("Sample failed inside its document engine", error!.Message, StringComparison.Ordinal);
+        Assert.Equal(ErrorCodes.EngineError, error?.Code);
+        Assert.StartsWith("Sample: the engine threw", error!.Message, StringComparison.Ordinal);
     }
 
     [Fact]

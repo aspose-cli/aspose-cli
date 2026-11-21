@@ -32,7 +32,7 @@ internal static class PdfSplit
                 var part = new Document();
                 parts.Add(part);
                 part.Pages.Add([.. pages.Select(number => source.Pages[number])]);
-                writer.Stage(path, PdfFormats.Document[0], request.Output.Overwrite, part, staged => documents.Save(part, staged, protection), encrypted: protection.Encrypted);
+                writer.Stage(path, PdfFormats.Document[0], request.Output.Overwrite, staged => documents.Save(part, staged, protection), encrypted: protection.Encrypted);
             }
 
             IReadOnlyList<PublishedFile> files = writer.Commit();

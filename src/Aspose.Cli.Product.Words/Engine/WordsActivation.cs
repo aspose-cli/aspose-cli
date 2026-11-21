@@ -35,6 +35,4 @@ internal static class WordsActivation
 internal sealed class WordsEvaluationProfile : IEvaluationProfile<Document>
 {
     public string Engine => "Aspose.Words";
-
-    public EvaluationMarks Inspect(Document document) => EvaluationMarks.None;
 }

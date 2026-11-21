@@ -516,18 +516,12 @@ public static partial class ScenarioRunner
         {
             yield break;
         }
-        string[] other = [.. codes.Where(static code => code != EvaluationMode).Order(StringComparer.Ordinal)];
-        if (!other.SequenceEqual(only.Order(StringComparer.Ordinal)))
+        string[] warned = [.. codes.Order(StringComparer.Ordinal)];
+        if (!warned.SequenceEqual(only.Order(StringComparer.Ordinal)))
         {
-            yield return $"the warnings other than {EvaluationMode} are [{string.Join(", ", other)}], expected only [{string.Join(", ", only)}]";
-        }
-        if (codes.Count(static code => code == EvaluationMode) > 1)
-        {
-            yield return $"{EvaluationMode} is warned more than once";
+            yield return $"the warnings are [{string.Join(", ", warned)}], expected only [{string.Join(", ", only)}]";
         }
     }
-
-    private const string EvaluationMode = "EVALUATION_MODE";
 
     /// <summary>
     /// Resolves <c>a.b[0].c</c>, where <c>[name=value]</c> keeps, in their order, the items of an

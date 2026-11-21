@@ -124,8 +124,9 @@ public static partial class ErrorCodes
     public static readonly ErrorCode FeatureUnsupported = new("FEATURE_UNSUPPORTED", ExitCode.FormatError);
 
     /// <summary>
-    /// The document engine threw while the object table read a row or made the engine call an
-    /// operation named; the message and details give the engine's exception as it is.
+    /// The document engine threw: while the object table read a row or made the engine call an
+    /// operation named, or while a command converted, rendered or created a document; the message
+    /// and details give the engine's exception as it is.
     /// </summary>
     public static readonly ErrorCode EngineError = new("ENGINE_ERROR", ExitCode.FormatError);
 

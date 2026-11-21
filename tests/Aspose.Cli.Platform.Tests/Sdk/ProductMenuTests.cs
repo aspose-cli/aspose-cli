@@ -185,7 +185,7 @@ public sealed class ProductMenuTests : IDisposable
         CliException? error = EngineFailureTranslator.Create(catalog).Translate(Caught(static () => Assert.Fail("engine choked")));
 
         Assert.Equal(typeof(ProductMenuTests).Assembly, Assert.Single(catalog.Resources.Products).ResourceAssembly);
-        Assert.StartsWith("Menu failed inside its document engine", error?.Message, StringComparison.Ordinal);
+        Assert.StartsWith("Menu: the engine threw", error?.Message, StringComparison.Ordinal);
     }
 
     private static ProductDefinitionBuilder<TestSession> Menu() =>

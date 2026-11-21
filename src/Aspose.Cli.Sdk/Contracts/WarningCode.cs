@@ -14,7 +14,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 public sealed class WarningCode : IEquatable<WarningCode>
 {
     /// <summary>Declares a code.</summary>
-    /// <param name="name">Stable SCREAMING_SNAKE_CASE identifier, e.g. <c>EVALUATION_MODE</c>.</param>
+    /// <param name="name">Stable SCREAMING_SNAKE_CASE identifier, e.g. <c>ENCRYPTION_REMOVED</c>.</param>
     public WarningCode(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);

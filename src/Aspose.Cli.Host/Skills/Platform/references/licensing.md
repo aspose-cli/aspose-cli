@@ -64,26 +64,18 @@ Do not retry unchanged input.
 
 ## Evaluation mode: what you must disclose
 
-- A command that writes files in evaluation mode, such as `create`, `edit`,
-  `convert` or `render`, warns `EVALUATION_MODE`, and what it writes carries
-  evaluation watermarks or added evaluation content. The message names the
-  marks the CLI recognizes in the output. The mark is in the file you
-  deliver, so tell the user. An extraction that copies embedded files
-  as the document stores them, Slides `extract --what media`, PDF
-  `extract --what attachments` and Words `extract --what images`, writes no
-  evaluation content and does not warn.
-- `EVALUATION_INPUT_TRUNCATED` means evaluation mode kept only part of an
-  input the command read, so the result is incomplete; the message names the
-  engine and what it left out. Text a read returns can then be the engine's
-  replacement rather than what the file holds: check the file's text in
-  rendered images instead, and do not report the file as damaged.
+- A command that ran in evaluation mode says so in its result: `license.mode`
+  is `evaluation`; a licensed result has no `license`. What it writes, such as
+  the output of `create`, `edit`, `convert` or `render`, can carry evaluation
+  watermarks or added evaluation content, as the Aspose SDK writes them. The
+  mark is in the file you deliver, so tell the user.
+- In evaluation mode the engines can also read only part of a document. Text
+  a read returns can then be the engine's replacement rather than what the
+  file holds: check the file's text in rendered images instead, and do not
+  report the file as damaged.
 - `EVALUATION_LIMIT` (exit 7) means an evaluation limit stopped the command,
   and nothing was written. `details.limit` and `details.unit` give the limit.
-- With a license, `EVALUATION_INPUT_MARKED` means the output keeps evaluation
-  marks that an earlier save without a license wrote into its input; its
-  message lists them. The license does not remove them, so tell the user and
-  regenerate the deliverable from the original, unmarked inputs.
-- Detect evaluation from the JSON `warnings` array.
+- Detect evaluation from the result's `license.mode`.
 - Installing a license does not clean files already produced. Regenerate the
   deliverable from the original, unmarked inputs.
 
@@ -102,8 +94,7 @@ aspose-cli words convert report.docx --to pdf --out eval-check.pdf --license-mod
 aspose-cli license status --license-mode evaluation --output-format json
 ```
 
-The result reports the evaluation `license` and warnings as it would without
-a license, except that `EVALUATION_MODE` names the request as the cause.
+The result reports the evaluation `license` as it would without a license.
 Write to a scratch output, never over a deliverable. The option applies to one
 command and cannot be combined with `--license`; commands whose effect
 outlives the command, such as `license install`, refuse it.

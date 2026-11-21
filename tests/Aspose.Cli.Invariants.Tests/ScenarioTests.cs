@@ -168,12 +168,12 @@ public sealed class ScenarioTests
     [InlineData("warnings[code=LOSSY_CONVERSION][2]", false, null)]
     [InlineData("warnings[code=FONTS_MISSING][0]", false, null)]
     [InlineData("error.details.available[code=a]", false, null)]
-    [InlineData("warnings[code=EVALUATION_MODE]", true, """[{"code":"EVALUATION_MODE"}]""")]
+    [InlineData("warnings[code=ENCRYPTION_REMOVED]", true, """[{"code":"ENCRYPTION_REMOVED"}]""")]
     public void JsonPath_ResolvesNamesAndIndexes(string path, bool found, string? expected)
     {
         JsonNode document = JsonNode.Parse("""
             {"error":{"code":"USAGE_ERROR","details":{"available":["a","b"]}},
-             "warnings":[{"code":"EVALUATION_MODE"},{"code":"LOSSY_CONVERSION"},{"code":"LOSSY_CONVERSION","details":{"content":["pictures"]}}]}
+             "warnings":[{"code":"ENCRYPTION_REMOVED"},{"code":"LOSSY_CONVERSION"},{"code":"LOSSY_CONVERSION","details":{"content":["pictures"]}}]}
             """)!;
 
         Assert.Equal(found, ScenarioRunner.TryResolve(document, path, out JsonNode? value));
@@ -181,20 +181,17 @@ public sealed class ScenarioTests
     }
 
     /// <summary>
-    /// <c>only</c> holds with or without the one warning an evaluation run adds, and fails on
-    /// another code, one more or one fewer of the same, or that warning twice.
+    /// <c>only</c> holds for exactly the listed codes, and fails on another code, or one more or
+    /// one fewer of the same.
     /// </summary>
     [Theory]
     [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "LOSSY_CONVERSION LOSSY_CONVERSION", true)]
-    [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "EVALUATION_MODE LOSSY_CONVERSION LOSSY_CONVERSION", true)]
-    [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "EVALUATION_MODE LOSSY_CONVERSION LOSSY_CONVERSION FONTS_SUBSTITUTED", false)]
+    [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "LOSSY_CONVERSION LOSSY_CONVERSION FONTS_SUBSTITUTED", false)]
     [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "LOSSY_CONVERSION LOSSY_CONVERSION LOSSY_CONVERSION", false)]
     [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "LOSSY_CONVERSION", false)]
-    [InlineData("LOSSY_CONVERSION LOSSY_CONVERSION", "EVALUATION_MODE EVALUATION_MODE LOSSY_CONVERSION LOSSY_CONVERSION", false)]
     [InlineData("", "", true)]
-    [InlineData("", "EVALUATION_MODE", true)]
     [InlineData("", "FONTS_SUBSTITUTED", false)]
-    public void OnlyCodes_AreEveryCodeButEvaluationMode(string expected, string warned, bool holds)
+    public void OnlyCodes_AreEveryCode(string expected, string warned, bool holds)
     {
         JsonArray warnings = [.. warned.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(static code => new JsonObject { ["code"] = code })];
         var codes = new ScenarioCodes { Only = expected.Split(' ', StringSplitOptions.RemoveEmptyEntries) };

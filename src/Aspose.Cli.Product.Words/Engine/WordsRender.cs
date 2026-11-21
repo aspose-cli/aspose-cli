@@ -33,9 +33,8 @@ internal static class WordsRender
                     (long)Math.Ceiling(info.WidthInPoints / 72d * request.Dpi), (long)Math.Ceiling(info.HeightInPoints / 72d * request.Dpi), request.Dpi);
             }
 
-            StagedOutput staged = set.Stage(path, request.Output.Format, request.Output.Overwrite, document,
-                temp => document.Save(temp, WordsEngineFormats.Options(request.Output.Format.Id, pages: [page], dpi: request.Dpi)),
-                rendering: true, pages: [page]);
+            StagedOutput staged = set.Stage(path, request.Output.Format, request.Output.Overwrite,
+                temp => document.Save(temp, WordsEngineFormats.Options(request.Output.Format.Id, pages: [page], dpi: request.Dpi)));
             outputs.Add(new WordsPageOutput(FileObjects.Output(staged.Published, request.Output.Format, encrypted: false)) { Page = page });
         }
 

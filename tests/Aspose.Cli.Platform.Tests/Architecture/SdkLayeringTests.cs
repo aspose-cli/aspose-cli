@@ -49,10 +49,8 @@ public sealed class SdkLayeringTests
     /// <item>IO.Extraction: the guard and budgets of an extraction's output files.</item>
     /// <item>Rendering (font profiles and pixel budgets) and Serialization: the shared JSON
     /// contexts and converters, and the
-    /// result schemas written from the contract descriptors. Converters for the operation
-    /// vocabulary belong to Operations.</item>
-    /// <item>Operations: the operation vocabulary, its catalog and its runner; and the
-    /// services the products bind: licensing, diagnostics and fonts. They take product
+    /// result schemas written from the contract descriptors.</item>
+    /// <item>The services the products bind: licensing and diagnostics. They take product
     /// data as values, never a Product* type from Extensibility.</item>
     /// <item>Results: the write pipeline (OutputPipeline, OutputSet) and the envelope parts it fills.</item>
     /// <item>Tables: the object table (rows, kinds, addresses, adds and actions), its operation
@@ -78,7 +76,7 @@ public sealed class SdkLayeringTests
         [$"{Root}.IO.Publication"],
         [$"{Root}.IO.Extraction"],
         [$"{Root}.Rendering", $"{Root}.Serialization"],
-        [$"{Root}.Operations", $"{Root}.Licensing", $"{Root}.Diagnostics"],
+        [$"{Root}.Licensing", $"{Root}.Diagnostics"],
         [$"{Root}.Results"],
         [$"{Root}.Tables"],
         [$"{Root}.Extensibility"],

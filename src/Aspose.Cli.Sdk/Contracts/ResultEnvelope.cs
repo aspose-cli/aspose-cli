@@ -47,7 +47,7 @@ public abstract partial record ResultEnvelope
 
     /// <summary>
     /// Warnings the agent is expected to act on (for example
-    /// <c>EVALUATION_MODE</c>: tell the user about the evaluation watermark).
+    /// <c>ENCRYPTION_REMOVED</c>: tell the user the output opens without a password).
     /// Omitted when empty.
     /// </summary>
     [JsonPropertyOrder(901)]

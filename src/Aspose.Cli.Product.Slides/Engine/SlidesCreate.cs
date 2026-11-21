@@ -24,7 +24,6 @@ internal static class SlidesCreate
             request.Output.Path,
             request.Output.Format,
             request.Output.Overwrite,
-            presentation,
             temp =>
             {
                 log.During = "save";

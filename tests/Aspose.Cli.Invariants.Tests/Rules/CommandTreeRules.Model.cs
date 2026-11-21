@@ -42,9 +42,6 @@ internal sealed record TreeOption(JsonNode Node)
 
     public bool Recursive => Node["recursive"]!.GetValue<bool>();
 
-    /// <summary>A command document lists no hidden option, so a listed one is visible.</summary>
-    public bool Hidden => false;
-
     public IReadOnlyList<string> AllowedValues => CommandTree.Strings(Node["allowedValues"]);
 
     public bool Secret => Node["secret"]!.GetValue<bool>();

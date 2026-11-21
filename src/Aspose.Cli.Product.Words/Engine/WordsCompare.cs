@@ -34,7 +34,7 @@ internal static class WordsCompare
 
         compared.Compare(right.Document, request.Author, request.DateTime, options);
         OutputProtection protection = OutputProtection.For(request.Output.Format, encrypt: null, left.Protection, request.LeftPassword);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, compared, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, temp =>
         {
             log.During = "save";
             compared.Save(temp, WordsEngineFormats.Options(request.Output.Format.Id, protection.Password));

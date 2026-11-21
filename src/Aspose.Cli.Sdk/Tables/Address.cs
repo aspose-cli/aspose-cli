@@ -58,9 +58,9 @@ internal sealed partial record TableAddress(string Text, ObjectKind Kind, IReadO
             {
                 string[] segments = [.. table.Placements.Where(candidate => candidate.Parent == current).Select(static candidate => candidate.Segment)
                     .Concat(table.Aliases.Where(candidate => candidate.Target.Parent == current).Select(static candidate => candidate.Segment))];
-                string after = steps.Count == 0 ? "the start of an address" : $"'{string.Join('/', steps.Select(static step => step.Text))}', a {current.Name},";
+                string after = steps.Count == 0 ? "the start of an address" : $"'{string.Join('/', steps.Select(static step => step.Text))}', of kind {current.Name}";
                 throw new TableValueException(segments.Length == 0
-                    ? $"'{text}' goes on after {after} which has no objects below it"
+                    ? $"'{text}' goes on after {after}, which has no objects below it"
                     : $"'{segment}' in '{text}' is no segment after {after}; segments there: {string.Join(", ", segments)}");
             }
 

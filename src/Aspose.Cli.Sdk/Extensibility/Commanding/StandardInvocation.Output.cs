@@ -293,7 +293,7 @@ public partial class StandardInvocation
         _parse.CommandResult.Parent is not CommandResult parent
             ? []
             : parent.Command.Subcommands
-                .Where(command => !command.Hidden && command != _parse.CommandResult.Command)
+                .Where(command => command != _parse.CommandResult.Command)
                 .SelectMany(static command => command.Options
                     .Select(StandardOptions.TargetOf)
                     .OfType<TargetFormat>()
