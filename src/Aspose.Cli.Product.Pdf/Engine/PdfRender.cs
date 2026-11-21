@@ -21,7 +21,7 @@ internal static class PdfRender
         var staged = new List<(int Page, string Path)>();
         foreach ((int pageNumber, string path) in pages.Zip(paths))
         {
-            writer.Stage(path, request.Output.Format, request.Output.Overwrite, loaded.Document, stagedPath =>
+            writer.Stage(path, request.Output.Format, request.Output.Overwrite, stagedPath =>
             {
                 using FileStream stream = File.Create(stagedPath);
                 PdfRaster.RenderPage(
@@ -31,7 +31,7 @@ internal static class PdfRender
                     request.Output.Format.Id,
                     request.Dpi,
                     stream);
-            }, rendering: true, pages: [pageNumber]);
+            });
             staged.Add((pageNumber, path));
         }
 

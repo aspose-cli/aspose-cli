@@ -30,7 +30,6 @@ public sealed class LicenseModeTests : IDisposable
 
         JsonNode requested = Create("requested.docx");
         Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
-        Assert.Contains(requested["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE");
 
         JsonNode status = _workspace.Run(
             "license", "status", "--product", "words", "--license-mode", "evaluation", "--output-format", "json").Json();
@@ -41,7 +40,7 @@ public sealed class LicenseModeTests : IDisposable
     }
 
     [LicensedFact]
-    public void EvaluationMode_DisclosesEvaluationOutputDespiteAValidLicense()
+    public void EvaluationMode_StatesTheEvaluationLicenseModeDespiteAValidLicense()
     {
         ProjectLicense(File.ReadAllBytes(TestLicense.Path!));
 
@@ -50,10 +49,7 @@ public sealed class LicenseModeTests : IDisposable
         JsonNode requested = Create("requested.docx");
 
         Assert.Null(licensed["license"]);
-        Assert.DoesNotContain(
-            licensed["warnings"]?.AsArray() ?? [], warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE");
         Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
-        Assert.Contains(requested["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE");
     }
 
     private JsonNode Create(string output)
@@ -61,12 +57,7 @@ public sealed class LicenseModeTests : IDisposable
         CliResult result = _workspace.Run(
             ["words", "create", output, "--license-mode", "evaluation", "--output-format", "json"]);
         Assert.True(result.ExitCode == 0, result.StdErr);
-        JsonNode created = JsonNode.Parse(result.StdOut)!;
-        // The disclosure says the evaluation was asked for, not that a license is missing.
-        JsonNode warning = Assert.Single(
-            created["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE")!;
-        Assert.Contains("--license-mode evaluation", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        return created;
+        return JsonNode.Parse(result.StdOut)!;
     }
 
     private void ProjectLicense(byte[] content)

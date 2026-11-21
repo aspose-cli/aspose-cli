@@ -129,7 +129,7 @@ public sealed class InputOpeningTests
         OutputPipeline<object> pipeline = Pipeline();
 
         using Input input = InputOpening.Open(pipeline, TestBudgets.Create(), Reads, path, () => new Input(new InputProtection(encrypted)));
-        pipeline.Write(temp.File("out.txt"), new FormatDescriptor("txt", FormatUse.Convert, ".txt"), false, null, Save);
+        pipeline.Write(temp.File("out.txt"), new FormatDescriptor("txt", FormatUse.Convert, ".txt"), false, Save);
 
         Assert.False(input.Disposed);
         Assert.Equal(expected, pipeline.EncryptionRemoved()?.Code.Name);
@@ -156,7 +156,7 @@ public sealed class InputOpeningTests
 
         // The candidate does not exist on disk: admission would refuse it.
         using Input input = InputOpening.OpenPublished(() => new Input(new InputProtection(true)));
-        pipeline.Write(temp.File("out.txt"), new FormatDescriptor("txt", FormatUse.Convert, ".txt"), false, null, Save);
+        pipeline.Write(temp.File("out.txt"), new FormatDescriptor("txt", FormatUse.Convert, ".txt"), false, Save);
 
         Assert.Null(pipeline.EncryptionRemoved());
     }
@@ -179,8 +179,6 @@ public sealed class InputOpeningTests
     private sealed class NoMarks : IEvaluationProfile<object>
     {
         public string Engine => "Aspose.Test";
-
-        public EvaluationMarks Inspect(object document) => EvaluationMarks.None;
     }
 
     private sealed class LicensedGate : ILicenseGate

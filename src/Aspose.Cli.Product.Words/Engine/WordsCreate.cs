@@ -20,7 +20,7 @@ internal static class WordsCreate
         using LoadedDocument? template = request.Template is null ? null : session.Loader.Open(request.Template.Path, PasswordSource.None(), log);
         Document document = template?.Document ?? new Document();
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, new InputProtection(Encrypted: false), inputPassword: null);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, document, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, temp =>
         {
             log.During = "save";
             WordsEngineFormats.Save(document, temp, request.Output.Format.Id, protection);

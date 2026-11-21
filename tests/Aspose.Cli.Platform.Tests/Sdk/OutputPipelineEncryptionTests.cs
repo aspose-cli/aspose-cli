@@ -26,8 +26,8 @@ public sealed class OutputPipelineEncryptionTests
         pipeline.Opened(new InputProtection(false));
         pipeline.Opened(new InputProtection(true));
 
-        pipeline.Write(temp.File("out.txt"), Txt, false, null, Save);
-        pipeline.Write(temp.File("other.txt"), Txt, false, null, Save);
+        pipeline.Write(temp.File("out.txt"), Txt, false, Save);
+        pipeline.Write(temp.File("other.txt"), Txt, false, Save);
         ResultEnvelope result = pipeline.Disclose(new SkillListResult { Skills = [], Warnings = [Other] });
 
         Assert.Equal([WarningCodes.EncryptionRemoved, Other.Code], result.Warnings!.Select(static warning => warning.Code));
@@ -43,8 +43,8 @@ public sealed class OutputPipelineEncryptionTests
 
         using (OutputSet<object> set = pipeline.BeginSet([temp.Path], "test"))
         {
-            set.Stage(temp.File("part.1.pdf"), Pdf, false, null, Save, encrypted: true);
-            set.Stage(temp.File("part.2.pdf"), Pdf, false, null, Save);
+            set.Stage(temp.File("part.1.pdf"), Pdf, false, Save, encrypted: true);
+            set.Stage(temp.File("part.2.pdf"), Pdf, false, Save);
             set.Commit();
         }
 
@@ -58,7 +58,7 @@ public sealed class OutputPipelineEncryptionTests
         OutputPipeline<object> pipeline = Pipeline();
         pipeline.Opened(new InputProtection(true));
 
-        pipeline.Write(temp.File("pages.txt"), Txt, false, null, Save, rendering: true);
+        pipeline.Write(temp.File("pages.txt"), Txt, false, Save);
 
         Assert.Equal(WarningCodes.EncryptionRemoved, pipeline.EncryptionRemoved()?.Code);
     }
@@ -69,13 +69,13 @@ public sealed class OutputPipelineEncryptionTests
         using var temp = new TempDirectory();
         OutputPipeline<object> encrypted = Pipeline();
         encrypted.Opened(new InputProtection(true));
-        encrypted.Write(temp.File("kept.pdf"), Pdf, false, null, Save, encrypted: true);
-        encrypted.Write(temp.File("page.png"), Png, false, null, Save, rendering: true);
+        encrypted.Write(temp.File("kept.pdf"), Pdf, false, Save, encrypted: true);
+        encrypted.Write(temp.File("page.png"), Png, false, Save);
         // Images saved without rendering, in a render format and in a declared image format,
         // whatever the case of their extension, and an extraction of what the engine derives.
-        encrypted.Write(temp.File("sheet.png"), Png, false, null, Save);
-        encrypted.Write(temp.File("photo.JPG"), Jpeg, false, null, Save);
-        encrypted.Write(temp.File("pages.TIF"), Tiff, false, null, Save);
+        encrypted.Write(temp.File("sheet.png"), Png, false, Save);
+        encrypted.Write(temp.File("photo.JPG"), Jpeg, false, Save);
+        encrypted.Write(temp.File("pages.TIF"), Tiff, false, Save);
         using (ExtractionGuard extraction = encrypted.BeginExtraction(temp.File("extracted"), overwrite: false))
         {
             extraction.StageAllBytes("fields.json", [1]);
@@ -84,14 +84,14 @@ public sealed class OutputPipelineEncryptionTests
 
         using (OutputSet<object> set = encrypted.BeginSet([temp.Path], "test"))
         {
-            set.Stage(temp.File("page.2.png"), Png, false, null, Save, rendering: true);
-            set.Stage(temp.File("page.3.tiff"), Tiff, false, null, Save);
+            set.Stage(temp.File("page.2.png"), Png, false, Save);
+            set.Stage(temp.File("page.3.tiff"), Tiff, false, Save);
             set.Commit();
         }
 
         OutputPipeline<object> plain = Pipeline();
         plain.Opened(new InputProtection(false));
-        plain.Write(temp.File("plain.pdf"), Pdf, false, null, Save);
+        plain.Write(temp.File("plain.pdf"), Pdf, false, Save);
 
         Assert.Null(encrypted.EncryptionRemoved());
         Assert.Null(plain.EncryptionRemoved());
@@ -105,7 +105,7 @@ public sealed class OutputPipelineEncryptionTests
         pipeline.Opened(new InputProtection(true));
 
         // Only the format the product declares decides; this gif is not declared an image.
-        pipeline.Write(temp.File("slide.gif"), Gif, false, null, Save);
+        pipeline.Write(temp.File("slide.gif"), Gif, false, Save);
 
         Assert.Contains("'gif'", pipeline.EncryptionRemoved()?.Message, StringComparison.Ordinal);
     }
@@ -119,7 +119,7 @@ public sealed class OutputPipelineEncryptionTests
         using (OutputSet<object> set = pipeline.BeginSet([temp.Path], "test"))
         {
             // A set that does not commit, as a failed or dry run leaves it, publishes nothing.
-            set.Stage(temp.File("part.pdf"), Pdf, false, null, Save);
+            set.Stage(temp.File("part.pdf"), Pdf, false, Save);
         }
 
         SkillListResult result = new() { Skills = [] };
@@ -149,8 +149,6 @@ public sealed class OutputPipelineEncryptionTests
     private sealed class NoMarks : IEvaluationProfile<object>
     {
         public string Engine => "Aspose.Test";
-
-        public EvaluationMarks Inspect(object document) => EvaluationMarks.None;
     }
 
     private sealed class LicensedGate : ILicenseGate

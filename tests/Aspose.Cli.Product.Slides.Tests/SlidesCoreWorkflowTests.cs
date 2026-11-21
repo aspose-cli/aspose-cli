@@ -120,9 +120,7 @@ public sealed class SlidesCoreWorkflowTests
         Assert.True(artifact.SizeBytes > 0);
         if (fixture.LicenseState != Sdk.Licensing.LicenseState.Licensed)
         {
-            Assert.Contains(
-                result.Warnings ?? [],
-                static warning => warning.Code == WarningCodes.EvaluationMode);
+            Assert.Equal(LicenseModes.Evaluation, result.License?.Mode);
         }
     }
 }

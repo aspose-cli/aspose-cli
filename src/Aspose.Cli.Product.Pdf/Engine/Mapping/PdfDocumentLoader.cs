@@ -2,7 +2,6 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Input;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Tables;
 using Aspose.Pdf;
@@ -75,7 +74,7 @@ internal sealed class PdfDocumentLoader
                 resources.ThrowIfFailed();
                 if (resources.NotSupplied() is { } details)
                 {
-                    throw EngineErrors.EngineFailed($"PDF failed inside its document engine: {exception.Message}", exception, details);
+                    throw EngineErrors.EngineFailed("PDF", exception, details);
                 }
 
                 throw;

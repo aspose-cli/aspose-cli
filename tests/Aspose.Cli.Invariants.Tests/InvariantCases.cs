@@ -44,7 +44,6 @@ internal static class InvariantCases
     public const string Contract = "contract";
 
     /// <summary>The warning that discloses evaluation output.</summary>
-    private const string EvaluationWarning = "EVALUATION_MODE";
 
     /// <summary>The shard of the slow part of every product's format matrix.</summary>
     public const string FormatMatrix = "formats";
@@ -182,8 +181,8 @@ internal static class InvariantCases
     private static IEnumerable<InvariantCase> UnknownOptionCases(CliCommand command)
     {
         string[] names = [.. command.Options.Select(static option => option.Name.TrimStart('-'))];
-        // Each option help shows is mistyped once.
-        CliOption[] visible = [.. command.Options.Where(static option => !option.Hidden)];
+        // Each option is mistyped once.
+        CliOption[] visible = [.. command.Options];
         for (int index = 0; index < visible.Length; index++)
         {
             CliOption option = visible[index];
@@ -608,15 +607,14 @@ internal static class InvariantCases
         ];
     }
 
-    // ----- (h) every successful write discloses evaluation mode -----------------------------
+    // ----- (h) every successful write states its license mode -------------------------------
 
     /// <summary>
-    /// Every product command that writes a document, run as its smallest valid invocation: in
-    /// evaluation mode it succeeds and its result warns <see cref="EvaluationWarning"/>, so the
-    /// marks the engine saved into the output are disclosed; with a license it does not claim them.
-    /// An extract whose every <c>--what</c> copies the files a document embeds byte for byte
-    /// (<see cref="ScenarioRunner.EmbeddedFileKinds"/>) writes no engine output, which is not
-    /// disclosed (D6), so it has no case in either license mode.
+    /// Every product command that writes a document, run as its smallest valid invocation: it
+    /// succeeds, and in evaluation mode its result states <c>license.mode</c> <c>evaluation</c>;
+    /// with a license it has no <c>license</c>. An extract whose every <c>--what</c> copies the
+    /// files a document embeds byte for byte (<see cref="ScenarioRunner.EmbeddedFileKinds"/>)
+    /// writes no engine output, so it has no case in either license mode.
     /// </summary>
     private static IEnumerable<InvariantCase> EvaluationDisclosedCases(CliCommand command)
     {
@@ -653,9 +651,9 @@ internal static class InvariantCases
         yield return Case(EvaluationDisclosed, $"{command}", product, slow: false, invocation, new ScenarioExpectation
         {
             ExitCode = [0],
-            Warnings = ScenarioLicense.Licensed
-                ? new ScenarioCodes { Absent = [EvaluationWarning] }
-                : new ScenarioCodes { Present = [EvaluationWarning] },
+            Json = ScenarioLicense.Licensed
+                ? [new JsonAssertion { Path = "license", Exists = false }]
+                : [new JsonAssertion { Path = "license.mode", Value = "evaluation" }],
         });
     }
 

@@ -27,7 +27,7 @@ public sealed class OutputPipelineEditPublicationTests
         string input = Input(temp);
 
         EditPublication<Checked> publication = Pipeline().PublishEdit<Checked>(
-            InPlace(input), new object(), FileWritePrecondition.Capture(input), encrypted: false,
+            InPlace(input), FileWritePrecondition.Capture(input), encrypted: false,
             Save, verify: null, "test-edit");
 
         Assert.Equal(Edited, File.ReadAllText(input));
@@ -43,7 +43,7 @@ public sealed class OutputPipelineEditPublicationTests
         string? targetDuringVerify = null;
 
         EditPublication<Checked> publication = Pipeline().PublishEdit(
-            InPlace(input), new object(), FileWritePrecondition.Capture(input), encrypted: false,
+            InPlace(input), FileWritePrecondition.Capture(input), encrypted: false,
             Save,
             candidate =>
             {
@@ -64,7 +64,7 @@ public sealed class OutputPipelineEditPublicationTests
         string input = Input(temp);
 
         Assert.Throws<InvalidOperationException>(() => Pipeline().PublishEdit<Checked>(
-            InPlace(input), new object(), FileWritePrecondition.Capture(input), encrypted: false,
+            InPlace(input), FileWritePrecondition.Capture(input), encrypted: false,
             Save, static _ => throw new InvalidOperationException("read-back failed"), "test-edit"));
 
         Assert.Equal(Original, File.ReadAllText(input));
@@ -82,7 +82,7 @@ public sealed class OutputPipelineEditPublicationTests
         pipeline.Opened(new InputProtection(true));
 
         EditPublication<Checked> publication = pipeline.PublishEdit<Checked>(
-            InPlace(input), new object(), FileWritePrecondition.Capture(input), encrypted,
+            InPlace(input), FileWritePrecondition.Capture(input), encrypted,
             Save, verify: null, "test-edit");
 
         Assert.Equal(encrypted, publication.Output!.Encrypted);
@@ -111,8 +111,6 @@ public sealed class OutputPipelineEditPublicationTests
     private sealed class NoMarks : IEvaluationProfile<object>
     {
         public string Engine => "Aspose.Test";
-
-        public EvaluationMarks Inspect(object document) => EvaluationMarks.None;
     }
 
     private sealed class LicensedGate : ILicenseGate

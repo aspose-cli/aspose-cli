@@ -434,7 +434,7 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -617,7 +617,7 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -872,7 +872,7 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -5893,7 +5893,7 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -6140,7 +6140,7 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -6374,7 +6374,7 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"

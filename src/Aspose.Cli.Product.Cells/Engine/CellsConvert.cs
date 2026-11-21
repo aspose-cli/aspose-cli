@@ -68,7 +68,6 @@ internal static class CellsConvert
             request.Output.Path,
             request.Output.Format,
             request.Output.Overwrite,
-            workbook,
             temp =>
             {
                 log.During = "save";

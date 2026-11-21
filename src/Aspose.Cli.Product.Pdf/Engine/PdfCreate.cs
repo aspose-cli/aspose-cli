@@ -22,7 +22,7 @@ internal static class PdfCreate
         Document document = template?.Document ?? created!;
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, new InputProtection(Encrypted: false), inputPassword: null);
         var documents = new PdfDocuments(session.Loader);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, document, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, temp =>
             documents.Save(document, temp, protection), encrypted: protection.Encrypted);
         return new PdfCreateResult
         {

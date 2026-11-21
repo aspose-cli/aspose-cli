@@ -18,7 +18,7 @@ internal static class WordsConvert
         Document document = loaded.Document;
         IReadOnlyList<int>? pages = request.Pages?.Resolve(document.PageCount);
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, document, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, temp =>
         {
             log.During = "save";
             document.Save(temp, WordsEngineFormats.Options(request.Output.Format.Id, protection.Password, pages));

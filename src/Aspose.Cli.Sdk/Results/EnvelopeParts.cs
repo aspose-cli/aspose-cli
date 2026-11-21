@@ -11,19 +11,6 @@ namespace Aspose.Cli.Sdk.Results;
 public static class EnvelopeParts
 {
     /// <summary>
-    /// The evaluation-mode warning attached to every output-producing
-    /// operation that ran without a license.
-    /// </summary>
-    public static Warning EvaluationWatermark { get; } = new(WarningCodes.EvaluationMode, "Evaluation mode: the produced file contains an Aspose evaluation watermark and some operations are limited.");
-
-    /// <summary>
-    /// The evaluation-mode warning of a command that asked for evaluation mode
-    /// (<c>--license-mode evaluation</c>): the same disclosure, naming the request as its cause.
-    /// </summary>
-    public static Warning RequestedEvaluationWatermark { get; } = new(WarningCodes.EvaluationMode, "Evaluation mode, requested with --license-mode evaluation: the produced file contains an Aspose "
-            + "evaluation watermark and some operations are limited.");
-
-    /// <summary>
     /// The license block of a result: the mode when the engine ran without a license, and none
     /// when it ran licensed, since a licensed result omits it.
     /// </summary>

@@ -259,7 +259,7 @@ public sealed class PdfCliTests : IDisposable
         CliResult result = _workspace.Run("pdf", "convert", "fonts.html", "--out", "fonts.pdf", "--output-format", "json");
 
         JsonNode error = Error(result);
-        Assert.Equal("FEATURE_UNSUPPORTED", error["code"]!.GetValue<string>());
+        Assert.Equal("ENGINE_ERROR", error["code"]!.GetValue<string>());
         Assert.Equal(
             [("http://127.0.0.1:9/f.woff2", "a network address"), ("missing.png", "not found")],
             error["details"]!["notSupplied"]!.AsArray()

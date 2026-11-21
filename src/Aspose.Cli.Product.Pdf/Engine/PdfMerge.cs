@@ -35,7 +35,7 @@ internal static class PdfMerge
             bool concatenated = new PdfFileEditor().Concatenate([.. opened.Select(static loaded => loaded.Document)], merged);
             OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, new InputProtection(Encrypted: false), inputPassword: null);
             var documents = new PdfDocuments(session.Loader);
-            PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite, merged,
+            PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Format, request.Output.Overwrite,
                 path => documents.Save(merged, path, protection), encrypted: protection.Encrypted);
             return new PdfMergeResult
             {

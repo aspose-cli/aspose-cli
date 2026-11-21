@@ -37,10 +37,6 @@ internal static class CommandGrammar
         string? owner,
         ICollection<OwnedCommand> result)
     {
-        if (command.Hidden)
-        {
-            return;
-        }
         string path = parent.Length == 0
             ? command.Name
             : parent + " " + command.Name;
@@ -50,7 +46,6 @@ internal static class CommandGrammar
             Path = path,
             Description = command.Description,
             Options = command.Options
-                .Where(static option => !option.Hidden)
                 .OrderBy(static option => option.Name, StringComparer.Ordinal)
                 .Select(Describe)
                 .ToArray(),

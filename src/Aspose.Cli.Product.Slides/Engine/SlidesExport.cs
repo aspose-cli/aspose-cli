@@ -27,12 +27,12 @@ internal static class SlidesExport
         SaveFormat format = SlidesEngineFormats.SaveFormatOf(request.Output.Format.Id);
         OutputProtection protection = OutputProtection.For(request.Output.Format, request.EncryptPassword, loaded.Protection, request.Password);
         SlidesOutputProtection.Protect(presentation, protection);
-        IReadOnlyList<OutputInfo> written = session.Outputs.Write(request.Output, presentation, protection.Encrypted, temp =>
+        IReadOnlyList<OutputInfo> written = session.Outputs.Write(request.Output, protection.Encrypted, temp =>
         {
             log.During = "save";
             Save(presentation, temp, format, slides, log);
             loaded.Resources.ThrowIfFailed();
-        }, pages: slides is not null && Exports(format) ? slides : null);
+        });
         return new SlidesConvertResult
         {
             Input = Source(request.Input, loaded),
@@ -178,7 +178,7 @@ internal static class SlidesExport
         {
             ISlide slide = presentation.Slides[number - 1];
             targets.Add(number);
-            transaction.Stage(path, request.Output.Format, request.Output.Overwrite, presentation, temp =>
+            transaction.Stage(path, request.Output.Format, request.Output.Overwrite, temp =>
             {
                 if (image is not { } bitmap)
                 {
@@ -190,7 +190,7 @@ internal static class SlidesExport
                 using IImage drawn = slide.GetImage(options, scale, scale);
                 using FileStream outputStream = File.Create(temp);
                 drawn.Save(outputStream, bitmap, quality: 92);
-            }, rendering: true, pages: [number]);
+            });
         }
 
         loaded.Resources.ThrowIfFailed();

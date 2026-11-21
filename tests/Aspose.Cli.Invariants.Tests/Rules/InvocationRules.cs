@@ -417,14 +417,14 @@ internal static partial class ContractRules
             yield return R26Case(output, $"{product} command {name} as {commandTypo}", product,
                 new Invocation([product, commandTypo]));
             if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product} inspect") is { } inspect
-                && inspect.Options.FirstOrDefault(static option => !option.Hidden) is { } option)
+                && inspect.Options.FirstOrDefault() is { } option)
             {
                 string typo = "--" + InvariantCases.Typo(option.Name.TrimStart('-'), inspect.Options.Select(static candidate => candidate.Name.TrimStart('-')));
                 yield return R26Case(output, $"{inspect} option {option.Name} as {typo}", product,
                     new Invocation([.. inspect.Tokens, typo]));
             }
             if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product} inspect") is { } described
-                && described.Options.FirstOrDefault(static option => !option.Hidden && option.Type != "boolean" && option.AllowedValues.Count > 0) is { } choice)
+                && described.Options.FirstOrDefault(static option => option.Type != "boolean" && option.AllowedValues.Count > 0) is { } choice)
             {
                 string value = choice.AllowedValues[0];
                 string typo = InvariantCases.Typo(value, choice.AllowedValues);

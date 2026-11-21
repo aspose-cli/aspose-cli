@@ -26,7 +26,7 @@ internal static partial class ContractRules
             .. catalog.Commands.Where(static command => command.Words.Length > 0 && command.Subcommands.Count == 0),
         ];
         HashSet<string> global = [.. catalog.Command(string.Empty).Options.Select(static option => option.Name)];
-        string[] folded = [.. catalog.Command(string.Empty).Options.Where(static option => option.Recursive && !option.Hidden).Select(static option => option.Name)];
+        string[] folded = [.. catalog.Command(string.Empty).Options.Where(static option => option.Recursive).Select(static option => option.Name)];
         CliCommand[] groups =
         [
             .. catalog.Commands.Where(command => command.Words.Length > 0 && !leaves.Contains(command)),
@@ -37,7 +37,7 @@ internal static partial class ContractRules
             yield return Check("C-R34", command.Words, () => HelpSections(command, help.Value.Of(command)));
         }
         yield return Check("C-R34", "usage lists required options", () => help.Value.All(leaves)
-            .SelectMany(static pair => pair.Command.Options.Where(static option => option.Required && !option.Hidden)
+            .SelectMany(static pair => pair.Command.Options.Where(static option => option.Required)
                 .Where(option => !pair.Help.Usage.Contains(option.Name, StringComparison.Ordinal))
                 .Select(option => $"{pair.Command.Words}: Usage leaves out the required {option.Name}")));
         yield return Check("C-R34", "global options folded", () => help.Value.All([.. leaves, .. groups])
@@ -89,7 +89,7 @@ internal static partial class ContractRules
         {
             yield return "has no Arguments";
         }
-        foreach (CliOption option in command.Options.Where(static option => !option.Hidden))
+        foreach (CliOption option in command.Options)
         {
             if (!help.Options.Any(row => row.Names.Contains(option.Name)))
             {

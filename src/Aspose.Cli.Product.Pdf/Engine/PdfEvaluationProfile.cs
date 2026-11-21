@@ -19,8 +19,6 @@ internal sealed class PdfEvaluationProfile : IEvaluationProfile<Document>
 
     public string Engine => "Aspose.PDF";
 
-    public EvaluationMarks Inspect(Document document) => EvaluationMarks.None;
-
     public EvaluationLimitFact? RecognizeLimit(Exception exception)
     {
         for (Exception? current = exception; current is not null; current = current.InnerException)

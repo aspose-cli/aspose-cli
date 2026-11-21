@@ -77,7 +77,7 @@ public static class TableErrors
     internal static CliException NotTheParent(int index, string at, string kind, string add, string target, IReadOnlyList<string> takes) =>
         CliException.Create(
             ErrorCodes.OpsInvalid,
-            $"{Subject(index)}{at} is a {kind} that is no {target}, and the '{add}' add adds to a {kind} that is one; "
+            $"{Subject(index)}{at}, of kind {kind}, is no {target}, and the '{add}' add adds only to one that is; "
                 + (takes.Count == 0 ? "this one takes no add." : $"this one takes: {string.Join(", ", takes)}."),
             new JsonObject
             {
@@ -237,15 +237,7 @@ public static class TableErrors
     }
 
     /// <summary>The <c>ENGINE_ERROR</c> of an engine call no operation makes, such as the save of the edited document.</summary>
-    internal static CliException EngineDuring(string doing, Exception exception)
-    {
-        string type = exception.GetType().FullName ?? exception.GetType().Name;
-        return CliException.Create(
-            ErrorCodes.EngineError,
-            $"{doing}: the engine threw {type}: {exception.Message}",
-            new JsonObject { ["engineException"] = type, ["engineMessage"] = exception.Message },
-            innerException: exception);
-    }
+    internal static CliException EngineDuring(string doing, Exception exception) => EngineErrors.EngineFailed(doing, exception);
 
     /// <summary>An error an operation raised, restated with the operation's position and address.</summary>
     internal static CliException At(int index, string? at, CliException error)

@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -66,7 +65,7 @@ internal sealed class EngineFailureTranslator
 
         if (ExceptionOrigin.IsThirdParty(exception, _own))
         {
-            return EngineErrors.EngineFailed($"{product} failed inside its document engine: {exception.Message}", exception);
+            return EngineErrors.EngineFailed(product, exception);
         }
 
         if (exception is UnauthorizedAccessException

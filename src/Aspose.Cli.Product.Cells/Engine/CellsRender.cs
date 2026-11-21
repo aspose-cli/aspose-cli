@@ -72,13 +72,12 @@ internal static class CellsRender
                 EnsureRenderable(session.Budgets, render, request.Dpi);
             }
 
-            StagedOutput staged = set.Stage(paths[i], request.Output.Format, request.Output.Overwrite, workbook,
+            StagedOutput staged = set.Stage(paths[i], request.Output.Format, request.Output.Overwrite,
                 temp =>
                 {
                     render.ToImage(0, temp);
                     loaded.Resources.ThrowIfFailed();
-                },
-                rendering: true);
+                });
             outputs.Add(new CellsSheetOutput(FileObjects.Output(staged.Published, request.Output.Format, encrypted: false)) { Sheet = sheets[i].Name });
         }
 

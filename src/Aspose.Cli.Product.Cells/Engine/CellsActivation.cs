@@ -35,8 +35,6 @@ internal sealed class CellsEvaluationProfile : IEvaluationProfile<Workbook>
 
     public string Engine => "Aspose.Cells";
 
-    public EvaluationMarks Inspect(Workbook workbook) => EvaluationMarks.None;
-
     /// <summary>
     /// Evaluation mode refuses to open a file once its process has opened <see cref="OpenLimit"/>,
     /// which only a long-lived process reaches.

@@ -62,23 +62,14 @@ public sealed partial class EvaluationOwnershipTests
         ];
 
         Assert.True(declared.Length == 1,
-            $"The SDK declares {ExpectedProfileName} once, the contract through which a product recognizes its evaluation marks; found {declared.Length}.");
+            $"The SDK declares {ExpectedProfileName} once, the contract through which a product names its engine and recognizes its evaluation limits; found {declared.Length}.");
         string[] methods = [.. declared[0].Members.OfType<MethodDeclarationSyntax>().Select(static method => method.Identifier.ValueText)];
-        Assert.True(methods.Contains("Inspect", StringComparer.Ordinal),
-            $"{ExpectedProfileName} inspects a document for its evaluation marks (Inspect); it declares: {string.Join(", ", methods)}");
-        // Inspect's marks, or the profile itself, say whether evaluation mode truncated the document.
-        Assert.True(OwnershipSourceFiles.Sdk.Any(static file => file.Root.DescendantNodes()
-                .Any(static node => node switch
-                {
-                    PropertyDeclarationSyntax property => property.Identifier.ValueText == "IsTruncated",
-                    ParameterSyntax { Parent.Parent: RecordDeclarationSyntax } parameter => parameter.Identifier.ValueText == "IsTruncated",
-                    _ => false,
-                })),
-            "The SDK's evaluation marks say whether evaluation mode truncated the document (IsTruncated).");
+        Assert.True(methods.Contains("RecognizeLimit", StringComparer.Ordinal),
+            $"{ExpectedProfileName} recognizes the engine's evaluation limits (RecognizeLimit); it declares: {string.Join(", ", methods)}");
     }
 
     [Fact]
-    public void D6_EveryProduct_RecognizesItsMarksThroughTheEvaluationProfile()
+    public void D6_EveryProduct_ImplementsTheEvaluationProfile()
     {
         string[] products = [.. OwnershipSourceFiles.ProductIds];
         string[] implementing =
@@ -199,31 +190,8 @@ public sealed partial class EvaluationOwnershipTests
             + Environment.NewLine + string.Join(Environment.NewLine, sdkTranslations));
     }
 
-    /// <summary>
-    /// <c>EVALUATION_INPUT_TRUNCATED</c> is written by the SDK alone, from the product's evaluation
-    /// profile, for an input the command read; no product or host code names the code.
-    /// </summary>
-    [Fact]
-    public void D6_OnlyTheSdkWritesTheInputTruncationWarning()
-    {
-        IEnumerable<string> violations = OwnershipSourceFiles.All
-            .Where(static file => !file.IsUnder(OwnershipSourceFiles.SdkRoot))
-            .SelectMany(file => file.Root.DescendantNodes()
-                .OfType<MemberAccessExpressionSyntax>()
-                .Where(static access => access.Name.Identifier.ValueText == InputTruncatedCode
-                    && access.Expression.ToString().EndsWith("WarningCodes", StringComparison.Ordinal))
-                .Select(access => file.At(access, access.ToString())));
-
-        OwnershipSourceFiles.AssertNone(violations,
-            "EVALUATION_INPUT_TRUNCATED is the SDK's to write for an input a command read (OutputPipeline.ReadInput); "
-            + "no product or host code builds it:");
-    }
-
     /// <summary>The SDK factory name of the <c>EVALUATION_LIMIT</c> error.</summary>
     private const string EvaluationLimitFactory = "EvaluationLimit";
-
-    /// <summary>The SDK warning code member of <c>EVALUATION_INPUT_TRUNCATED</c>.</summary>
-    private const string InputTruncatedCode = "EvaluationInputTruncated";
 
     private static string? BaseName(TypeSyntax type) => type switch
     {
@@ -234,7 +202,7 @@ public sealed partial class EvaluationOwnershipTests
         _ => null,
     };
 
-    /// <summary>An evaluation code, such as <c>EVALUATION_MODE</c> or <c>EVALUATION_LIMIT</c>.</summary>
+    /// <summary>An evaluation code, such as <c>EVALUATION_LIMIT</c>.</summary>
     [GeneratedRegex("^EVAL(UATION)?_[A-Z0-9_]+$")]
     private static partial Regex EvaluationCode();
 }

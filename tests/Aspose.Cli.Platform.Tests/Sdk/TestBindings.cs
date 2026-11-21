@@ -63,8 +63,6 @@ internal static class TestBindings
     private sealed class NoEvaluationMarks : IEvaluationProfile<object>
     {
         public string Engine => "Aspose.Test";
-
-        public EvaluationMarks Inspect(object document) => EvaluationMarks.None;
     }
 
     private sealed class AvailableFonts : IFontEnvironment

@@ -123,9 +123,6 @@ public sealed class ExtractionGuard : IDisposable
         catch { Dispose(); throw; }
     }
 
-    /// <summary>Runs after the extraction is published; the write pipeline records the publication.</summary>
-    internal Action? Committed { get; init; }
-
     /// <summary>
     /// Whether a file keeps the UTF-8 byte order mark its write starts it with
     /// (<see cref="ByteOrderMarks"/>); the write pipeline decides it for the extraction it begins.
@@ -136,7 +133,6 @@ public sealed class ExtractionGuard : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _transaction.Commit();
-        Committed?.Invoke();
     }
 
     public void Dispose()

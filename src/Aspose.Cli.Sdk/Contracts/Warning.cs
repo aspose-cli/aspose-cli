@@ -20,7 +20,7 @@ public sealed record Warning
         Message = message;
     }
 
-    /// <summary>Stable SCREAMING_SNAKE_CASE identifier, e.g. <c>EVALUATION_MODE</c>.</summary>
+    /// <summary>Stable SCREAMING_SNAKE_CASE identifier, e.g. <c>ENCRYPTION_REMOVED</c>.</summary>
     [Pattern("^[A-Z][A-Z0-9_]*$")]
     public WarningCode Code { get; }
 
@@ -54,24 +54,8 @@ public sealed record Warning
 /// <summary>The warning codes the SDK's shared mechanisms emit.</summary>
 public static class WarningCodes
 {
-    /// <summary>
-    /// Emitted on every output-producing operation that ran without a license.
-    /// The produced file carries an Aspose evaluation watermark.
-    /// </summary>
-    public static readonly WarningCode EvaluationMode = new("EVALUATION_MODE");
-
     /// <summary>A document referenced remote resources, which the CLI did not load.</summary>
     public static readonly WarningCode RemoteResourcesBlocked = new("REMOTE_RESOURCES_BLOCKED");
-
-    /// <summary>Without a license, the engine loaded only the start of the input.</summary>
-    public static readonly WarningCode EvaluationInputTruncated = new("EVALUATION_INPUT_TRUNCATED");
-
-    /// <summary>
-    /// With a license, the output keeps evaluation marks that an earlier save without a license
-    /// wrote into its input, or renders a source that carries them. Only the write pipeline
-    /// reports it.
-    /// </summary>
-    public static readonly WarningCode EvaluationInputMarked = new("EVALUATION_INPUT_MARKED");
 
     /// <summary>The input was encrypted and the output is not: its format cannot hold the encryption.</summary>
     public static readonly WarningCode EncryptionRemoved = new("ENCRYPTION_REMOVED");
@@ -82,10 +66,7 @@ public static class WarningCodes
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<WarningCode> All { get; } =
     [
-        EvaluationMode,
         RemoteResourcesBlocked,
-        EvaluationInputTruncated,
-        EvaluationInputMarked,
         EncryptionRemoved,
         ListTruncated,
     ];

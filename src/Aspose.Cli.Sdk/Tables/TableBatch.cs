@@ -221,7 +221,7 @@ public sealed class TableBatch
                     available: table.Adders.Select(static candidate => candidate.Name).Distinct(StringComparer.Ordinal));
             }
 
-            string parents = string.Join(" or ", adders.Select(static candidate => $"a {candidate.Placement.Parent.Name}"));
+            string parents = "an object of kind " + string.Join(" or ", adders.Select(static candidate => candidate.Placement.Parent.Name));
             AdderEntry adder;
             TableAddress? parent = null;
             if (op.TryGetProperty("in", out _))
@@ -229,7 +229,7 @@ public sealed class TableBatch
                 parent = Address(index, op, "in");
                 adder = adders.FirstOrDefault(candidate => candidate.Placement.Parent == parent.Kind)
                     ?? throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, "in",
-                        $"in names a {parent.Kind.Name}; '{name}' adds to {parents}", parent.Text);
+                        $"in names an object of kind {parent.Kind.Name}; '{name}' adds to {parents}", parent.Text);
                 if (adder.Placement.Parent == table.Root)
                 {
                     throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, "in", $"'{name}' adds to the {table.Root.Name} itself, so it takes no in");
@@ -255,7 +255,7 @@ public sealed class TableBatch
             if (address.Placement?.Delete is null)
             {
                 throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, "delete",
-                    $"a {address.Kind.Name} {(address.Placement is null ? string.Empty : $"below a {address.Placement.Parent.Name} ")}cannot be deleted", address.Text);
+                    $"an object of kind {address.Kind.Name} {(address.Placement is null ? string.Empty : $"below one of kind {address.Placement.Parent.Name} ")}cannot be deleted", address.Text);
             }
 
             return new DeleteOp(index, address);
@@ -268,7 +268,7 @@ public sealed class TableBatch
             if (address.Placement?.Move is null)
             {
                 throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, "move",
-                    $"a {address.Kind.Name} {(address.Placement is null ? string.Empty : $"below a {address.Placement.Parent.Name} ")}cannot be moved", address.Text);
+                    $"an object of kind {address.Kind.Name} {(address.Placement is null ? string.Empty : $"below one of kind {address.Placement.Parent.Name} ")}cannot be moved", address.Text);
             }
 
             if (!op.TryGetProperty("to", out JsonElement to))
@@ -340,12 +340,12 @@ public sealed class TableBatch
                 TableRow? row = kind.Rows.FirstOrDefault(candidate => candidate.Name == member.Name);
                 if (row is null)
                 {
-                    throw TableErrors.Invalid(index, OpsInvalidReasons.UnknownField, field, $"a {kind.Name} has no row '{member.Name}'", at, kind.SettableNames);
+                    throw TableErrors.Invalid(index, OpsInvalidReasons.UnknownField, field, $"kind {kind.Name} has no row '{member.Name}'", at, kind.SettableNames);
                 }
 
                 if (!kind.Rows.Any(candidate => candidate.Name == member.Name && candidate.Settable))
                 {
-                    throw TableErrors.Invalid(index, OpsInvalidReasons.ReadOnlyField, field, $"row '{member.Name}' of a {kind.Name} can only be read", at, kind.SettableNames);
+                    throw TableErrors.Invalid(index, OpsInvalidReasons.ReadOnlyField, field, $"row '{member.Name}' of kind {kind.Name} can only be read", at, kind.SettableNames);
                 }
 
                 values.Add(new PropValue(member.Name, Decode(index, field, row.Kind, member.Value, at)));
