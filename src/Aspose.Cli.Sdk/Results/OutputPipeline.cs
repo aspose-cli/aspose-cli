@@ -20,7 +20,7 @@ namespace Aspose.Cli.Sdk.Results;
 /// from its input. It is also the sole owner of the <c>ENCRYPTION_REMOVED</c> warning: a product
 /// tells it whether each document it opened is encrypted (<see cref="InputOpening"/>) and whether each
 /// copy it publishes is, and the pipeline compares the two. A command that publishes nothing,
-/// such as a dry run or a read, discloses nothing.
+/// such as a read, discloses nothing.
 /// </summary>
 public abstract class OutputPipeline : ILicenseState
 {
@@ -505,14 +505,13 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// <summary>
     /// Publishes an edited document: stages <paramref name="output"/> with the input
     /// precondition, reads the staged file back through <paramref name="verify"/> before
-    /// anything is published, and commits. A dry run publishes nothing. When saving, verifying or
+    /// anything is published, and commits. When saving, verifying or
     /// committing fails, nothing is published and the input is left as it was.
     /// </summary>
     /// <typeparam name="TVerification">The product's verification of the staged output.</typeparam>
     /// <param name="output">The resolved output.</param>
     /// <param name="document">The edited document the output holds.</param>
     /// <param name="precondition">The input the output replaces, which must not change meanwhile.</param>
-    /// <param name="dryRun">Whether the edit only reports what it would do.</param>
     /// <param name="encrypted">Whether the written output carries a password.</param>
     /// <param name="save">Saves the staged file and checks that it opens again.</param>
     /// <param name="verify">Reads the staged file back, or null when the edit is not verified. Issues are reported, not refused.</param>
@@ -526,7 +525,6 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         ResolvedOutput output,
         TDocument document,
         FileWritePrecondition precondition,
-        bool dryRun,
         bool encrypted,
         Action<string> save,
         Func<string, TVerification>? verify,
@@ -537,11 +535,6 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     {
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(save);
-        if (dryRun)
-        {
-            return new EditPublication<TVerification>(null, null);
-        }
-
         using OutputSet<TDocument> transaction = BeginSet([output.Directory], operation);
         StagedOutput staged = transaction.Stage(
             output.Path,

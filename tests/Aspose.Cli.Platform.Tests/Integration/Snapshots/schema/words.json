@@ -119,24 +119,6 @@
           "description": "The date and time of the redline's revisions, Document.Compare's dateTime, written yyyy-MM-ddTHH:mm:ss."
         },
         {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
-        {
           "name": "--font-dir",
           "aliases": [],
           "type": "string[]",
@@ -580,24 +562,6 @@
           "description": "true or false: TxtLoadOptions.DetectNumberingWithWhitespaces of a txt input. Required for such an input."
         },
         {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
-        {
           "name": "--encoding",
           "aliases": [],
           "type": "string",
@@ -927,24 +891,6 @@
       "path": "aspose-cli words create",
       "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format.",
       "options": [
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
         {
           "name": "--encrypt",
           "aliases": [],
@@ -1359,24 +1305,6 @@
       "path": "aspose-cli words extract",
       "description": "Write the bytes of each image the document stores, ImageData.ImageBytes, one file per image in document order; a linked image stores none.",
       "options": [
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
         {
           "name": "--out-dir",
           "aliases": [],
@@ -5865,24 +5793,6 @@
           "secret": false,
           "valueSource": "command-line",
           "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
-        },
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
         },
         {
           "name": "--font-dir",

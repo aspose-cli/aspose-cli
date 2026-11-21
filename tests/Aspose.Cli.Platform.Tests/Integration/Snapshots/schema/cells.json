@@ -139,24 +139,6 @@
           "description": "The culture a text input's numbers and dates are read in, such as en-US or de-DE (LoadOptions.CultureInfo). Required when --convert-numbers or --convert-dates is true."
         },
         {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
-        {
           "name": "--encoding",
           "aliases": [],
           "type": "string",
@@ -497,24 +479,6 @@
       "path": "aspose-cli cells create",
       "description": "Create a workbook: the engine's new workbook, or a copy of a template saved in the output's format.",
       "options": [
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
         {
           "name": "--encrypt",
           "aliases": [],
@@ -5978,24 +5942,6 @@
           "secret": false,
           "valueSource": "command-line",
           "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
-        },
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
         },
         {
           "name": "--font-dir",

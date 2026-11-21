@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Licensing;
-using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Host.Commands;
 
@@ -50,20 +49,10 @@ internal static class LicenseCommandGroup
             "install", "Validate a license file and install it for every compatible product.");
         Option<string?> product = ProductOption(catalog,
             "Install only for this product instead of detecting compatible products.");
-        Option<bool> dryRun = StandardOptions.DryRunOption();
         install.Arguments.Add(file);
         install.Options.Add(product);
-        install.Options.Add(dryRun);
         install.SetAction(parse => executor.Run(parse, globals, context =>
-        {
-            string? requestedProduct = parse.GetValue(product);
-            string source = context.Paths.ResolveInput(parse.GetRequiredValue(file), file.Name);
-            // A dry run checks that the file exists and names the files an installation may
-            // write; it does not validate the license, which needs the engines.
-            return parse.GetValue(dryRun)
-                ? DryRunResult.Of([DryRunChecks.Input, DryRunChecks.Output], LicenseManager.InstallationPaths(context, requestedProduct))
-                : LicenseManager.Install(context, source, requestedProduct);
-        }));
+            LicenseManager.Install(context, context.Paths.ResolveInput(parse.GetRequiredValue(file), file.Name), parse.GetValue(product))));
         return install.WithInvocationPolicy(new CommandInvocationPolicy(RefusesEvaluationRequest: true));
     }
 
@@ -76,16 +65,9 @@ internal static class LicenseCommandGroup
             "remove", "Remove saved user licenses; env and project sources are left untouched.");
         Option<string?> product = ProductOption(catalog,
             "Remove only this product's saved user license.");
-        Option<bool> dryRun = StandardOptions.DryRunOption();
         remove.Options.Add(product);
-        remove.Options.Add(dryRun);
         remove.SetAction(parse => executor.Run(parse, globals, context =>
-        {
-            string? selected = parse.GetValue(product);
-            return parse.GetValue(dryRun)
-                ? DryRunResult.Of([DryRunChecks.Output], LicenseManager.RemovalPaths(context, selected))
-                : LicenseManager.RemoveAndReport(context, selected);
-        }));
+            LicenseManager.RemoveAndReport(context, parse.GetValue(product))));
         return remove.WithInvocationPolicy(new CommandInvocationPolicy(RefusesEvaluationRequest: true));
     }
 

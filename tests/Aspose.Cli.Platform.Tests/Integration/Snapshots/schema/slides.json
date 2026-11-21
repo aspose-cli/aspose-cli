@@ -75,24 +75,6 @@
       "description": "Convert a presentation or selected slides.",
       "options": [
         {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
-        {
           "name": "--encrypt",
           "aliases": [],
           "type": "string",
@@ -380,24 +362,6 @@
       "path": "aspose-cli slides create",
       "description": "Create a presentation: the engine's new presentation, or a copy of a template saved in the output's format.",
       "options": [
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
         {
           "name": "--encrypt",
           "aliases": [],
@@ -832,24 +796,6 @@
       "path": "aspose-cli slides extract",
       "description": "Extract the media a presentation embeds, byte for byte.",
       "options": [
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
         {
           "name": "--out-dir",
           "aliases": [],
@@ -4884,24 +4830,6 @@
           "secret": false,
           "valueSource": "command-line",
           "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
-        },
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
         },
         {
           "name": "--font-dir",

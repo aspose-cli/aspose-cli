@@ -162,7 +162,6 @@ public sealed class OutputTarget
         bool required,
         IReadOnlyList<FormatDescriptor>? writes = null,
         string? derivedMarker = null,
-        bool dryRun = true,
         bool followsInput = false)
     {
         if (writes is { Count: 0 })
@@ -176,7 +175,6 @@ public sealed class OutputTarget
         Required = required;
         Writes = writes;
         DerivedMarker = derivedMarker;
-        HasDryRun = dryRun;
         FollowsInput = followsInput;
     }
 
@@ -193,9 +191,6 @@ public sealed class OutputTarget
 
     /// <summary>What a derived output inserts before the extension, such as <c>.signed</c>.</summary>
     internal string? DerivedMarker { get; }
-
-    /// <summary>Whether the command takes <c>--dry-run</c>; an object table edit does not.</summary>
-    internal bool HasDryRun { get; }
 
     /// <summary>
     /// Whether the output is written in the format of the input, which the command checks the
@@ -247,8 +242,8 @@ public sealed class OutputTarget
         Declared(writes));
 
     /// <summary>
-    /// The edited input of an object table edit, published as <see cref="Mutation"/> publishes it,
-    /// without <c>--dry-run</c>: the edit reports what the saved file holds, never what it would.
+    /// The edited input of an object table edit, published as <see cref="Mutation"/> publishes it:
+    /// the edit reports what the saved file holds.
     /// </summary>
     internal static OutputTarget TableMutation(IReadOnlyList<FormatDescriptor> writes) => new(
         OutputKind.Mutation,
@@ -256,7 +251,6 @@ public sealed class OutputTarget
         null,
         required: false,
         Declared(writes),
-        dryRun: false,
         followsInput: true);
 
     private static string Help(string description)
@@ -378,7 +372,6 @@ public sealed class StandardOptions
             {
                 Description = "Replace the output file if it already exists.",
             };
-            DryRun = !output.HasDryRun ? null : output.Kind == OutputKind.Mutation ? CreateDryRun(EditDryRunDescription) : DryRunOption();
             if (output.Kind == OutputKind.Mutation)
             {
                 InPlace = new Option<bool>(StandardOptionNames.InPlace)
@@ -427,8 +420,6 @@ public sealed class StandardOptions
     internal Option<bool>? Overwrite { get; }
 
     internal Option<bool>? InPlace { get; }
-
-    internal Option<bool>? DryRun { get; }
 
     internal PasswordOptions? InputPassword { get; }
 
@@ -479,7 +470,6 @@ public sealed class StandardOptions
         OutputFile?.AddTo(command);
         AddOption(command, Overwrite);
         AddOption(command, InPlace);
-        AddOption(command, DryRun);
         InputPassword?.AddTo(command);
         OtherPassword?.AddTo(command);
         Encrypt?.AddTo(command);
@@ -564,22 +554,6 @@ public sealed class StandardOptions
         return option;
     }
 
-    /// <summary>
-    /// The <c>--dry-run</c> of a command that writes files: it checks the command line and the
-    /// files it names, then stops before the command runs or writes anything. Every command with
-    /// an output gets it from its traits; a host command that writes through its own pipeline
-    /// adds this one and returns a <see cref="DryRunResult"/>.
-    /// </summary>
-    public static Option<bool> DryRunOption() => CreateDryRun(
-        "Check the input, the output and the options, then stop without running the command or writing any file. "
-        + "A dry run that succeeds does not guarantee that the command succeeds.");
-
-    private const string EditDryRunDescription =
-        "Check the input, the output and the operations, and apply the operations in memory, without writing any file. "
-        + "A dry run that succeeds does not guarantee that the edit succeeds.";
-
-    private static Option<bool> CreateDryRun(string description) => new(StandardOptionNames.DryRun) { Description = description };
-
     /// <summary>The common parameters of a command created here, or null for any other command.</summary>
     internal static StandardOptions? Of(Command command) =>
         Created.TryGetValue(command, out StandardOptions? options) ? options : null;
@@ -618,7 +592,6 @@ public partial class StandardInvocation
     private readonly Lazy<Secret?> _otherPassword;
     private string? _input;
     private string? _other;
-    private bool _inputChecked;
 
     internal StandardInvocation(
         StandardOptions options,
@@ -859,7 +832,6 @@ public partial class StandardInvocation
 
     private string ResolveDocument(Argument<string> argument)
     {
-        _inputChecked = true;
         return Paths.ResolveInput(_parse.GetRequiredValue(argument));
     }
 
@@ -884,7 +856,6 @@ public partial class StandardInvocation
             throw new InvalidOperationException($"'{parameter.Name}' is not an input file parameter of the command.");
         }
 
-        _inputChecked = true;
         return [.. Values(parameter).OfType<string>().Select(value => Paths.ResolveInput(value, parameter.Name))];
     }
 

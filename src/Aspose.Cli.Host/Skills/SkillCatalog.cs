@@ -182,10 +182,10 @@ internal sealed record BundledSkill(
     }
 
     /// <summary>
-    /// Checks what <see cref="InstallInto"/> checks before it writes: the target is absent, empty
-    /// or a Skill this CLI installed, under no link; returns the absolute target.
+    /// What <see cref="InstallInto"/> checks before it writes: the target is absent, empty or a
+    /// Skill this CLI installed, under no link; returns the absolute target.
     /// </summary>
-    public string CheckInstallTarget(string directory)
+    private string CheckInstallTarget(string directory)
     {
         ArgumentException.ThrowIfNullOrEmpty(directory);
         string target = Path.GetFullPath(directory);

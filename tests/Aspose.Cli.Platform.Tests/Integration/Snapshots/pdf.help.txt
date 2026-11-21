@@ -46,7 +46,6 @@ Options:
   --convert-error-action <convert-error-action>  What Document.Convert does with what the PDF/A profile does not allow, a member name of the engine's ConvertErrorAction, such as Delete or None. Required for a pdfa output.
   -o, --out <out>                                Output path; defaults to a sibling using the target extension.
   --overwrite                                    Replace the output file if it already exists.
-  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
   --password-stdin                               Read the password for the PDF from the first line of stdin.
@@ -77,7 +76,6 @@ Arguments:
 Options:
   --template <template>        A document to save as the new one. Default: the engine's new document, new Document().
   --overwrite                  Replace the output file if it already exists.
-  --dry-run                    Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --encrypt <encrypt>          Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>  Name of an environment variable holding the password for the output PDF.
   --encrypt-stdin              Read the password for the output PDF from the first line of stdin.
@@ -146,7 +144,6 @@ Options:
   --bom                                                Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one.
   --out-dir <out-dir> (REQUIRED)                       Safe extraction directory.
   --overwrite                                          Replace the output file if it already exists.
-  --dry-run                                            Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                                Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                        Name of an environment variable holding the password for the PDF.
   --password-stdin                                     Read the password for the PDF from the first line of stdin.
@@ -176,7 +173,6 @@ Arguments:
 Options:
   -o, --out <out> (REQUIRED)     Merged PDF output path.
   --overwrite                    Replace the output file if it already exists.
-  --dry-run                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>          Password for all input PDFs. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for all input PDFs.
   --password-stdin               Read the password for all input PDFs from the first line of stdin.
@@ -244,7 +240,6 @@ Options:
   --dpi <dpi>                    Raster resolution; refused for vector output such as svg. Range: 36-1200. [default: 192]
   -o, --out <out>                Output path. Default: the input path with the image extension. Several pages write <stem>.<page>.<ext> beside it.
   --overwrite                    Replace the output file if it already exists.
-  --dry-run                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the PDF.
   --password-stdin               Read the password for the PDF from the first line of stdin.
@@ -315,7 +310,6 @@ Options:
   --font <font>                                          SignatureCustomAppearance.FontFamilyName of a visible signature; not given, the engine's default appearance.
   -o, --out <out>                                        Signed PDF path. Default: <input>.signed.pdf.
   --overwrite                                            Replace the output file if it already exists.
-  --dry-run                                              Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                                  Password for the input PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                          Name of an environment variable holding the password for the input PDF.
   --password-stdin                                       Read the password for the input PDF from the first line of stdin.
@@ -349,7 +343,6 @@ Options:
   --pages <pages>                 Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --by pages.
   --out-dir <out-dir> (REQUIRED)  Directory that receives the parts, named <stem>.<n>.pdf.
   --overwrite                     Replace the output file if it already exists.
-  --dry-run                       Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>           Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>   Name of an environment variable holding the password for the PDF.
   --password-stdin                Read the password for the PDF from the first line of stdin.

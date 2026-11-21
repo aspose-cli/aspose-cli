@@ -285,11 +285,8 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// Every edit accepts its operations as a bare JSON array as well as an <c>{ops:[...]}</c>
-    /// document, except an edit through an object table
-    /// (<see cref="PublishedSchema.IsObjectTableProduct"/>), whose batch is one document,
-    /// <c>{ops:[...]}</c>, with no second spelling: it refuses the bare array with
-    /// <c>OPS_INVALID</c> and writes nothing.
+    /// An edit's batch is one document, <c>{ops:[...]}</c>, with no second spelling: every edit
+    /// refuses the bare array with <c>OPS_INVALID</c> and writes nothing.
     /// </summary>
     private static IEnumerable<InvariantCase> R22Run(CliCatalog catalog)
     {
@@ -300,14 +297,8 @@ internal static partial class ContractRules
             JsonNode operations = JsonNode.Parse(ScenarioFixtures.Read(edit.Product + ".ops"))!["ops"]!;
             Invocation invocation = Invocation.For(edit, "--ops").Add("--ops", "ops.json");
             invocation.Files["ops.json"] = new ScenarioFile { Text = operations.ToJsonString() };
-            if (edit.Has("--dry-run"))
-            {
-                invocation.Add("--dry-run");
-            }
             yield return InvariantCases.Case("C-R22", $"{edit} --ops with a bare array", edit.Product!, slow: false, invocation,
-                PublishedSchema.IsObjectTableProduct(catalog, edit.Product!)
-                    ? new ScenarioExpectation { ExitCode = invalid, Error = ["OPS_INVALID"], Files = new ScenarioFiles { NothingWritten = true } }
-                    : new ScenarioExpectation { ExitCode = [0] });
+                new ScenarioExpectation { ExitCode = invalid, Error = ["OPS_INVALID"], Files = new ScenarioFiles { NothingWritten = true } });
         }
     }
 

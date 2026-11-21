@@ -324,7 +324,7 @@ public sealed class SkillInstallTests : IDisposable
     public void Install_RefusesADirectoryForTheUsersOwnSkills()
     {
         CliResult result = _workspace.Run(
-            "skill", "install", FirstSkill(), "--host", "codex", "--user", "--dir", "project", "--dry-run", "--output-format", "json");
+            "skill", "install", FirstSkill(), "--host", "codex", "--user", "--dir", "project", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;

@@ -35,7 +35,7 @@ public sealed record TableSearchInvocation(string Input, Secret? Password, Searc
 /// <summary>
 /// The commands of a product on the object table: <c>edit</c>, <c>read</c> and <c>search</c>, each
 /// with the same options in every such product. The edit publishes its input as a mutation output
-/// without <c>--dry-run</c>, and its <c>--ops</c> document follows the table's schema.
+/// and its <c>--ops</c> document follows the table's schema.
 /// </summary>
 public static class TableCommands
 {
