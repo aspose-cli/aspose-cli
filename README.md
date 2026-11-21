@@ -68,8 +68,8 @@ variables that a command's `schema` document lists as the source of an option's 
 `ASPOSE_CLI_MAX_INPUT_BYTES`, for `--max-input-bytes`). Any other `ASPOSE_CLI_*` variable is
 internal.
 
-Evaluation mode changes output as the Aspose SDKs decide; the CLI reports each effect with an
-`EVALUATION_*` warning, but the evaluation output itself is not covered. 1.0 has no experimental
+Evaluation mode changes output as the Aspose SDKs decide; a result states it in its
+`license.mode`, but the evaluation output itself is not covered. 1.0 has no experimental
 features: everything it exposes is covered.
 
 ## Licensing

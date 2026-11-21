@@ -15,6 +15,29 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsKnownIssueTests
 {
     [Fact]
+    public void TextSave_WritesAFootnoteIntoTheBodyText()
+    {
+        WordsFixture.RequireLicense();
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Write("Body");
+        builder.InsertFootnote(Aspose.Words.Notes.FootnoteType.Footnote, "Note text.");
+        builder.Writeln(" continues.");
+        builder.Writeln("Second paragraph.");
+        using var saved = new MemoryStream();
+
+        document.Save(saved, SaveFormat.Text);
+
+        string text = System.Text.Encoding.UTF8.GetString(saved.ToArray()).TrimStart('\uFEFF');
+        string[] lines = [.. text.Split('\n').Select(static line => line.TrimEnd('\r'))];
+        KnownIssue.Reproduces(
+            "WORDS-TEXT-FOOTNOTE-BODY",
+            lines.Contains("Body Note text.", StringComparer.Ordinal),
+            $"the text output reads [{string.Join(" | ", lines)}]");
+    }
+
+    [Fact]
     public void MarkdownLoad_TakesAHeadingAfterAFootnoteDefinitionIntoTheNote()
     {
         WordsFixture.RequireLicense();

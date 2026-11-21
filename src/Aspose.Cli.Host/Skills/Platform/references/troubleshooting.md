@@ -1,12 +1,10 @@
 # Troubleshooting
 
-Read `error.message` and `error.details`; do not retry unchanged input in a
-loop. Product errors and their recovery are in the product Skill.
+A failed command writes one JSON envelope to stderr, leaves stdout empty,
+writes no file and exits non-zero. Its message and details state the fact;
+changing the request is the caller's.
 
 ## The error envelope
-
-A failed command writes one JSON envelope to stderr, leaves stdout empty and
-exits non-zero:
 
 ```json
 {
@@ -20,151 +18,96 @@ exits non-zero:
 }
 ```
 
-- `code` is stable; branch on it, never on `message`.
-  `aspose-cli schema v2/common/diagnostics` lists every error and warning code
-  of this build, with its category and exit code.
-- `details` carries structured context: the resolved path, the option or
-  argument at fault, the valid alternatives (`available`), the
-  failing operation's `id` and `op`. `aspose-cli schema v2/common/error-payload`
-  describes every key; `errors` appears only when there are several problems.
-  `details.reason`, when present, is a short kebab-case token such as
-  `unknown-field`; branch on it, and read `message` for the explanation. An
+- `code` is stable; `aspose-cli schema v2/common/diagnostics` lists every
+  error and warning code of this build with its category and exit code.
+- `details` holds the facts: the resolved `path`, the `option` or `argument`
+  at fault, the names that exist (`available`), an operation's `index` and
+  `at`. `aspose-cli schema v2/common/error-payload` describes every key.
+  `details.reason`, when present, is a short token such as `unknown-field`; an
   `OPS_INVALID` about one field names its path in `details.field`.
 
 Warnings do not fail a command. They appear in the result's `warnings` array
-with a `code`, `message` and, when there are any, `details`. A warning with
-`affectsCompleteness: true` leaves the output incomplete; report it.
+with a `code`, a `message` and, when there are any, `details`.
 
 ## Exit codes
 
-Branch on the exit code first, then on the code in the envelope:
-
-- 0: the command succeeded. Its warnings can still need action.
-- 130: the command was cancelled with Ctrl+C. The work stops, nothing is
-  published, its staging is removed and no error is written. A second Ctrl+C
-  ends the process at once, and the `.aspose-publication-*` staging directory
-  it was writing stays.
+- 0: the command did what was named, and what it wrote was saved.
+- 130: the command was cancelled with Ctrl+C; nothing was written and no error
+  is printed.
 - An exit code the CLI never uses (it uses 0 to 7, 9 and 130), such as
   -1073741571 (`0xC00000FD`): the runtime ended the process, as a stack
-  overflow in a document engine does. No error envelope is written, and what
-  the command wrote before can remain.
-- Any other non-zero exit comes with an error envelope; its code's category
-  and exit code are listed in `aspose-cli schema v2/common/diagnostics`. Usage errors (exit 2) are fixed
-  on the command line, input errors (exit 3) in the input file or its
-  password, and `OPERATION_TIMEOUT` (exit 9) by a smaller request. A
-  publication that failed and could not be fully restored
-  (`OUTPUT_PUBLICATION_PARTIAL`) exits 5 like the other output errors; each
-  target it did not restore whose original it had moved aside gives that
-  original's path in `details.targets[].originalPath`.
+  overflow in a document engine does. No error envelope is written.
+- Any other non-zero exit comes with an error envelope; the diagnostics
+  document gives each code's exit code. 2 is the command line, 3 the input
+  file or its password, 4 the request, 5 the output, 6 a format, 7 the license,
+  9 a timeout.
 
-## Diagnosis
-
-```powershell
-aspose-cli license status --output-format json
-aspose-cli schema v2/common/diagnostics
-```
-
-- `--verbose` writes structured JSONL diagnostics (timings, error codes) to
-  stderr and leaves stdout untouched.
-- `aspose-cli schema <id>` prints the exact schema of any input or result.
-
-## Recovering from common errors
+## Common errors
 
 **The command line.**
 
-- A command line that does not parse, with an unknown command or option or a
-  missing argument or option, is `USAGE_ERROR`. One that parses but gives a
-  value the command refuses, such as a value outside an option's list, an
-  extension no format declares, a number out of range or a range that does not
-  parse, is `OPTION_INVALID`. Both name the option in `details.option`, or the
-  positional argument in `details.argument`.
-- An unknown command, option, value, operation or field lists what exists in
-  `details.available`. A
-  command that only groups others, run without one, is a `USAGE_ERROR` that
-  lists its commands in `details.available`.
-- A token starting with `--` is never taken as a file argument; pass such a
-  file name after a `--` token, which ends the options.
-- `-` names standard input only: `--out -` is refused, so name a file. An
-  `--out` that resolves to the input is refused too: use `--in-place`.
+- A command line that does not parse (an unknown command or option, a missing
+  argument) is `USAGE_ERROR`. One that parses but gives a value the command
+  refuses is `OPTION_INVALID`. Both name the option in `details.option`, or
+  the positional argument in `details.argument`.
+- A token starting with `--` is never a file argument; pass such a file name
+  after `--`.
+- `-` names standard input only: `--out -` is refused. An `--out` that
+  resolves to the input is refused too; `--in-place` replaces the input.
 - An output whose extension is not one of its format's is refused before
-  anything is read, listing the accepted extensions in `details.available`.
-  `convert` and `render` write the format their `--out`
-  extension names when `--to` is absent; a `convert` with neither is refused.
-- A selection such as `--pages` takes 1-based ranges such as `1-3,7,9-`, or
-  `all`; a number past the end fails with the product's not-found code and
-  `details.availableCount`.
+  anything is read, with the accepted extensions in `details.available`.
 
 **The input file.**
 
-- A relative path resolves against `--workdir`, or the current directory;
-  `details.path` is the resolved path.
-- A file another application holds (`FILE_LOCKED`): ask the user to close it
-  and retry the same command; nothing was written.
-- A file that is not a readable document of its type (`FILE_CORRUPT`):
-  renaming a file does not change its format. Content no product recognizes
-  is `FILE_CORRUPT` when any product reads its extension, even one shared by
-  many kinds of file such as `.html` or `.xml`, and `FORMAT_UNSUPPORTED` when
-  none does or the CLI only writes its format, such as `.xps`. Find out what
-  the file really is.
-- A password that is missing or wrong (`PASSWORD_REQUIRED`,
-  `PASSWORD_INVALID`): ask the user; never guess. Pass it with
-  `--password-env <VAR>` or `--password-stdin`. A command that reads two
-  documents, such as `compare`, names the argument in `details.argument`; an
-  operation that needs a password names its `*Env` field in `details.field`.
-- The file changed while the edit read it (`INPUT_CHANGED`): read it again,
-  review what changed, and retry.
-- An input over a resource budget: the message and `details` give the limit.
-  An input larger than `--max-input-bytes`, by its size or by the bytes read
-  of it, is `FILE_TOO_LARGE`: raise the option up to its hard maximum. Any
-  other input resource is `INPUT_BUDGET_EXCEEDED`, and a smaller selection
-  helps.
+- A relative path resolves against `--workdir`, or the current directory. A
+  file that is missing, held by another application or over
+  `--max-input-bytes` (`FILE_NOT_FOUND`, `FILE_LOCKED`, `FILE_TOO_LARGE`) is
+  named in `details.path`.
+- `FORMAT_UNSUPPORTED`: the file's extension names a format the command does
+  not read, such as one only `convert` reads; the message lists the
+  extensions it reads.
+- `FILE_CORRUPT`: the engine could not read the file as a format the product
+  reads; the message gives the engine's reason.
+- A file that needs a password (`PASSWORD_REQUIRED`, `PASSWORD_INVALID`) takes
+  it from `--password-env <VAR>` or `--password-stdin`.
+- `INPUT_CHANGED`: the file changed while the command read it.
+- `INPUT_BUDGET_EXCEEDED`: a resource of the input is over its budget;
+  `details` gives the budget and its limit.
 
 **The output.**
 
-- An output that exists (`OUTPUT_EXISTS`): pass `--overwrite` deliberately or
-  choose another path. Commands that write several files refuse the whole run
-  when one exists; `--overwrite` replaces only the files the command writes.
-- A write the operating system refused (`OUTPUT_UNWRITABLE`): a file open in
-  another application usually reads fine but fails the final in-place
-  replace; ask the user to close it. The input is untouched.
-- An output over a resource budget (`OUTPUT_BUDGET_EXCEEDED`), such as too
-  many files in one output set: write less, such as a narrower selection;
-  `details.resource` and `details.limit` name the budget.
+- `OUTPUT_EXISTS`: the output exists and `--overwrite` was not given. Commands
+  that write several files refuse the whole run when one exists.
+- `OUTPUT_UNWRITABLE`: the operating system refused the write, as for a file
+  another application holds open. The input is untouched.
+- `OUTPUT_BUDGET_EXCEEDED`: the output is over a resource budget;
+  `details.resource` and `details.limit` name it.
 
 **The engine.**
 
-- `FEATURE_UNSUPPORTED`: this build cannot perform the request on this input;
-  the message names what. Do not retry it.
-- `RENDER_FAILED`: the engine failed while rasterizing content it can
-  otherwise read; the input can still be valid. Reduce the selection or check
-  fonts. `RENDER_TOO_LARGE`: lower `--dpi` or render less.
+- `ENGINE_ERROR`: the engine threw while it worked; `details.engineException`
+  and `details.engineMessage` give its exception as it is.
+- `RENDER_FAILED`: the engine failed while drawing content it can otherwise
+  read. `RENDER_TOO_LARGE`: the image is over the pixel budget.
 - Slides rendering needs the Microsoft Visual C++ Redistributable (x64),
-  which the package does not carry. When it is missing, Slides commands that
-  need its native drawing library fail. Ask the user to install it from
-  https://aka.ms/vs/17/release/vc_redist.x64.exe.
+  which the package does not carry: https://aka.ms/vs/17/release/vc_redist.x64.exe.
 - `OPERATION_TIMEOUT` with `details.phase` `regex`: a regular expression you
-  supplied exceeded its own budget; simplify it or search a narrower part of
-  the document.
-- Evaluation codes (`EVALUATION_LIMIT` and the `EVALUATION_*` warnings): see
-  `references/licensing.md`.
+  gave exceeded its own time budget.
+- `EVALUATION_LIMIT`: an evaluation limit stopped the command
+  (`references/licensing.md`).
 
 ## Windows PowerShell
 
-How PowerShell hands an `--ops` document to `aspose-cli` depends on its version
-and on `$PSNativeCommandArgumentPassing`:
+How PowerShell hands an inline `--ops` document to `aspose-cli` depends on its
+version and on `$PSNativeCommandArgumentPassing`:
 
 | shell | inline `'{"ops":...}'` | inline with `\"` | piped to `--ops -` | ops file |
 |-------|------------------------|------------------|--------------------|----------|
-| Windows PowerShell 5.1 | quotes stripped, `OPS_INVALID` | works, but a space inside a string can split it: `USAGE_ERROR` | non-ASCII text becomes `?`, no error | works |
+| Windows PowerShell 5.1 | quotes stripped, `OPS_INVALID` | a space inside a string can split it: `USAGE_ERROR` | non-ASCII text becomes `?`, no error | works |
 | PowerShell 7.3+, `Windows` (default) or `Standard` | works | `OPS_INVALID` | works | works |
 | PowerShell 7, `Legacy` | quotes stripped, `OPS_INVALID` | works | works | works |
 
-- Write the ops document to a file and pass its path: that works in every
-  shell, in UTF-8 with or without a byte order mark and in the UTF-16 that
-  `Out-File` and `>` write in Windows PowerShell 5.1. Never escape quotes as
-  `\"`; whether that helps depends on the shell.
+- An ops file works in every shell, in UTF-8 with or without a byte order mark
+  and in the UTF-16 that `Out-File` and `>` write in Windows PowerShell 5.1.
 - Windows PowerShell 5.1 pipes text to a native command as ASCII
-  (`$OutputEncoding`), so `--ops -` silently turns Chinese and other non-ASCII
-  text into `?`.
-- Windows PowerShell 5.1's `>` redirection re-encodes stdout as UTF-16; parse
-  stdout directly or use PowerShell 7.
+  (`$OutputEncoding`), and its `>` redirection re-encodes stdout as UTF-16.

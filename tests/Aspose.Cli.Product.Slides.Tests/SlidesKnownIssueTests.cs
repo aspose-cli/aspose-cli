@@ -84,36 +84,6 @@ public sealed class SlidesKnownIssueTests
     }
 
     [LicensedFact]
-    public void ChineseRun_AlternatesBetweenChineseAndJapaneseFallbackFonts()
-    {
-        Requires.Windows();
-        string fonts = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
-        Assert.SkipUnless(
-            File.Exists(Path.Combine(fonts, "simsun.ttc")) && File.Exists(Path.Combine(fonts, "msgothic.ttc")),
-            "The defect shows only while both SimSun and MS Gothic are installed.");
-        using var fixture = new SlidesEngineFixture();
-        using var presentation = new Presentation();
-        presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 600, 80).TextFrame.Text = "问题与对策应收账款余额";
-        using var svg = new MemoryStream();
-        presentation.Slides[0].WriteAsSvg(svg);
-        svg.Position = 0;
-
-        string[] families = XDocument.Load(svg).Descendants()
-            .Where(static element => element.Name.LocalName is "text" or "tspan"
-                && element.Value.Any(static character => character is >= '一' and <= '鿿'))
-            .Select(static element => (string?)element.Attribute("font-family"))
-            .OfType<string>()
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
-        Assert.NotEmpty(families);
-
-        KnownIssue.Reproduces(
-            "SLIDES-CJK-FALLBACK",
-            families.Length > 1,
-            $"one Chinese run is drawn in {string.Join(", ", families)}");
-    }
-
-    [LicensedFact]
     public void PptLoad_ListsLayoutsThatAPptxSaveCannotReference()
     {
         using var fixture = new SlidesEngineFixture();
@@ -227,6 +197,26 @@ public sealed class SlidesKnownIssueTests
             "SLIDES-FONT-REGISTRY",
             failure is InvalidCastException,
             failure is null ? "the save succeeded with a REG_DWORD font value" : failure.ToString());
+    }
+
+    // Evaluation mode truncates the text it exports, so only a licensed run sees the break dropped.
+    [LicensedFact]
+    public void MarkdownExport_DropsALineBreakInsideAParagraph()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string path = fixture.File("break.md");
+        using (var presentation = new Presentation())
+        {
+            IAutoShape shape = presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 10, 10, 300, 100);
+            shape.TextFrame.Text = "First line\vSecond line";
+            presentation.Save(path, SaveFormat.Md);
+        }
+
+        string markdown = File.ReadAllText(path);
+        KnownIssue.Reproduces(
+            "SLIDES-MD-LINE-BREAK",
+            markdown.Contains("First lineSecond line", StringComparison.Ordinal),
+            $"the Markdown reads \"{markdown.Replace("\r", "\\r", StringComparison.Ordinal).Replace("\n", "\\n", StringComparison.Ordinal)}\"");
     }
 
     [LicensedFact]

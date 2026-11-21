@@ -1,13 +1,10 @@
-# Editing with operation batches
+# Editing with an ops document
 
-Every product edits through `aspose-cli <product> edit <file> --ops <ops>`.
-The ops document is a JSON object with an `ops` array; each entry is one
-`set`, `add`, `delete`, `move` or `do` on the product's object table. Put
-every related change in one document.
+Every product edits with `aspose-cli <product> edit <file> --ops <ops>`. The
+ops document is a JSON object with an `ops` array of `set`, `add`, `delete`,
+`move` and `do` entries on the product's object table.
 
-## Discovering the table
-
-The generated schema is the only reference. Ask it instead of guessing:
+## The table
 
 ```powershell
 aspose-cli schema v2/pdf/ops/directory
@@ -15,17 +12,15 @@ aspose-cli schema v2/pdf/ops/field
 aspose-cli schema v2/pdf/ops/do.stamp_text
 ```
 
-- `ops/directory` lists the kinds with their address forms, the rows
-  a `set` writes and the rows that are read only, each add with its
-  parameters and each action with its parameters, in one short document.
-- `ops/<kind>`, `add.<kind>` or `do.<action>` prints one entry in
-  full: each row's or parameter's type and the engine member it names.
-- A row names one engine member: setting it sets that member only, and what
-  else the engine changes with it is the engine's doing.
+- `ops/directory` lists the kinds with their address forms, the rows a `set`
+  writes and the rows that are read only, each add with its arguments and
+  each action with its arguments.
+- `ops/<kind>`, `ops/add.<kind>` and `ops/do.<action>` print one entry in
+  full: each row's or argument's type and the engine member it names.
+- A row names one engine member: setting it sets that member only. What else
+  the engine changes with it is the engine's doing.
 
-## The batch document
-
-A PDF batch, for example:
+## The document
 
 ```json
 {
@@ -37,65 +32,57 @@ A PDF batch, for example:
 ```
 
 - Operations apply in order, each on what the ones before it left.
-- Write the document to a file and pass its path. `--ops` also takes `-` for
-  stdin or the JSON itself, but how a shell passes inline JSON or piped text
-  varies (`references/troubleshooting.md`, Windows PowerShell), and only one
-  option of a command reads stdin.
+- `--ops` takes a path, `-` for stdin, or the JSON itself when it starts with
+  `{`. A path works the same in every shell (`references/troubleshooting.md`).
 
 ## Atomic batches
 
-- If any operation fails, nothing is written. The error names the failing
-  operation by its position in `details.index` and its address in
-  `details.at`, and its message says why; a misspelled kind, row or value
-  lists the valid ones in `details.available`. Fix the entry and run the whole
-  batch again.
-- A file an operation reads, such as an image, that is missing or locked fails
-  that operation, with `FILE_NOT_FOUND` or `FILE_LOCKED`, like any failed
-  operation, and nothing is written.
+When any operation fails, nothing is written. The error names the operation
+by its position in `details.index` and its address in `details.at`; a name
+that does not exist lists the names that do in `details.available`. An
+exception the engine throws is `ENGINE_ERROR`, with the engine's exception
+type and message in `details`.
 
-## Reading the outcome
+## The read-back
 
-The result has one entry per operation, read from the saved file after it was
-opened again: its `at` and what the object's rows are `now`; an action gives
-the engine's `returned` value and the `at` it names. `counts` lists the
-inventory counts that changed. The outcome says what the file holds, not that
-it is what you meant: check it against what you asked for before you report
-it.
+After the save, the file is opened again and each operation is read from it:
 
-## Output and in-place
+- a `set`, `add` or `move` gives its `at` and the object's rows `now`;
+- a `delete` gives its `at` and `now: null`;
+- a `do` gives the engine's `returned` value, and the `at` it names, if any.
+
+`counts` lists the inventory counts that changed, before and after. The
+read-back is what the saved file holds, not a judgment of it.
+
+## Outputs
 
 | Option | Effect |
 |--------|--------|
 | (none) | Writes `<name>.out.<ext>` beside the input |
-| `--out <path>` | Writes there; to replace the input use `--in-place` |
-| `--overwrite` | Replaces an existing output; without it the edit fails with `OUTPUT_EXISTS` |
-| `--in-place` | Replaces the input atomically |
+| `--out <path>` | Writes there |
+| `--in-place` | Replaces the input |
+| `--overwrite` | Replaces an existing output; without it an existing output fails with `OUTPUT_EXISTS` |
+
+An edit writes its input's format; `convert` changes formats.
 
 ## Secrets and encryption
 
-Parameters whose names end in `Env` (such as `passwordEnv`) hold the name of
-an environment variable, never the secret. A missing or empty variable fails
-only the operation that names it. Command options follow the same rule:
-prefer the `-env` and `-stdin` forms, such as `--password-env`,
-`--encrypt-env` and `--password-stdin`; the plain forms are visible in the
-process list. A `-stdin` form reads the password as the first line of stdin,
-as UTF-8 text whatever the console's code page, and refuses other bytes with
-`OPTION_INVALID`.
+An argument whose name ends in `Env`, such as `passwordEnv`, holds the name of
+an environment variable, never the secret; a missing or empty variable fails
+that operation. Command options work the same way: `--password-env`,
+`--encrypt-env` and `--password-stdin`, which reads the first line of stdin as
+UTF-8. The plain `--password` and `--encrypt` are visible in the process
+list.
 
-An output made from an encrypted input takes the password an `--encrypt-env`
-style option gives. Without one, an output in a format the product can
-encrypt keeps the input's password. A command that writes several files into
-`outputs[]`, such as `split`, applies the same rule to every file. `encrypted`
-on `output` and on each `outputs[]` entry, present for a format the product
-can encrypt, states whether that written file is encrypted. A document output
-the product cannot encrypt is written unencrypted with an
-`ENCRYPTION_REMOVED` warning; tell the user before you deliver it. Images and
-the files `extract` writes never warn. The product Skill says which of its
-outputs can be encrypted.
+An output made from an encrypted input keeps the input's password in a format
+the product can encrypt, unless an `--encrypt` option gives another; the files
+a command lists in `outputs[]` follow the same rule. `encrypted` on `output`
+and on each `outputs[]` entry states whether that written file is encrypted. A document output in a format the product cannot
+encrypt is written unencrypted with an `ENCRYPTION_REMOVED` warning.
 
-## When a target is not found
+## Not found
 
-A not-found error (a `*_NOT_FOUND` code) states what exists, so you can
-correct the request without another read: `details.requested` echoes what you
-asked for and `details.available` lists the existing names;
-`aspose-cli schema v2/common/not-found-details` describes every field.
+A not-found error (`ADDRESS_NOT_FOUND` and the other `*_NOT_FOUND` codes) gives
+what was asked for in `details.requested` and the names that exist in
+`details.available`; `aspose-cli schema v2/common/not-found-details` describes
+every field.
