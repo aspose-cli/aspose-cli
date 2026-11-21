@@ -70,14 +70,6 @@ Sort every report before changing code.
 Before changing code around an engine, verify the official API and reproduce the behavior with a
 minimal SDK-only case.
 
-## Version 2.0 is in progress
-
-`master` still holds what this direction removes, each part until the change that deletes it:
-`--verify` and `--dry-run`; per-operation snapshots,
-verifiers and warnings; operations that choose for the caller; workarounds for engine defects.
-Do not extend or repair these parts, except for a wrong result. 2.0 keeps no compatibility with
-1.x: delete cleanly, with no alias, compatibility layer or transitional path.
-
 ## Structure
 
 - Launcher -> Host -> SDK; launcher -> active Products; Products -> SDK, never another Product.

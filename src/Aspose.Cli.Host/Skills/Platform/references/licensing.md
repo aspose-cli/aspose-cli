@@ -1,9 +1,8 @@
 # Licensing and evaluation mode
 
 The Aspose engines run in evaluation mode until a license applies. Each
-product (`cells`, `pdf`, `slides`, `words`) is licensed independently: a
-Cells license does not license Words, while a Total license covers every
-product.
+product (`cells`, `pdf`, `slides`, `words`) is licensed on its own: a Cells
+license does not license Words, while a Total license covers every product.
 
 ## Status
 
@@ -12,14 +11,29 @@ aspose-cli license status --output-format json
 ```
 
 `products[]` has one entry per product (`--product <id>` selects one) with its
-`mode` and the effective `source`; `aspose-cli schema
-v2/common/license-status` describes every field. A `mode` of `invalid` means a
-configured source was rejected: its `problem` says why. `license status` is
-diagnostic and still exits 0 then, while document commands refuse that source
-with exit 7.
+`mode` and the effective `source`; `aspose-cli schema v2/common/license-status`
+describes every field. A `mode` of `invalid` means a configured source was
+rejected: its `problem` says why. `license status` still exits 0 then, while
+document commands refuse that source with exit 7.
 
-A document result that ran in evaluation mode carries `license`, with its
-`mode`; a licensed result omits `license`.
+## The evaluation marker
+
+A document command that ran without a license carries `license` in its result,
+with `mode` `evaluation`; a licensed result has no `license`. In evaluation
+mode the engines change what they read and write as the Aspose SDKs decide:
+watermarks or added content in the files written, inputs read in part. The
+product Skill lists what its engine changes.
+
+- Text a read returns can be the engine's evaluation replacement rather than
+  what the file holds: check the text in rendered images, and do not report
+  the file as damaged.
+- `EVALUATION_LIMIT` (exit 7): an evaluation limit stopped the command, and
+  nothing was written; `details.limit` and `details.unit` give the limit.
+
+`--license-mode evaluation` runs one command in evaluation mode without
+reading any license source, while every configured license stays in place.
+It cannot be combined with `--license`, and commands whose effect outlives
+the command, such as `license install`, refuse it.
 
 ## Resolution order
 
@@ -32,13 +46,13 @@ For each product, the first source that is set wins (`<PRODUCT>` is `CELLS`,
 4. `.aspose/licenses/<product>.lic`, then `.aspose/license.lic`, in the working
    directory.
 5. The product license, then the shared license, installed for this user, in
-   the configuration directory: `%APPDATA%\aspose-cli`, or the absolute
-   directory named by `ASPOSE_CLI_CONFIG_DIR`. Windows locates `%APPDATA%`
-   itself, so changing the `APPDATA` variable does not move it.
+   `%APPDATA%\aspose-cli`, or the absolute directory `ASPOSE_CLI_CONFIG_DIR`
+   names. Windows locates `%APPDATA%` itself, so changing the `APPDATA`
+   variable does not move it.
 
 A configured source that is broken (a missing path, a directory, a rejected
-file) is an error, never a silent fall back to evaluation mode; an empty
-environment variable counts as unset.
+file) is an error with exit 7 and `details.source`, never a fall back to
+evaluation mode; an empty environment variable counts as unset.
 
 ## Install and remove
 
@@ -51,50 +65,6 @@ aspose-cli license remove --product words
 `license install` validates the file and installs it for this user, for every
 product it covers or only for `--product`. `license remove` removes installed
 user licenses, all of them or one product's; environment variables and project
-files stay untouched. Neither overrides a higher source: a `--license` option
-or an environment variable keeps priority. License content is never displayed
-or logged.
-
-## License errors
-
-A license error exits 7. When a configured source is missing or rejected, the
-error's `details.source` names the source and its message says what is
-wrong: fix the path or file, or remove the setting to run in evaluation mode.
-Do not retry unchanged input.
-
-## Evaluation mode: what you must disclose
-
-- A command that ran in evaluation mode says so in its result: `license.mode`
-  is `evaluation`; a licensed result has no `license`. What it writes, such as
-  the output of `create`, `edit`, `convert` or `render`, can carry evaluation
-  watermarks or added evaluation content, as the Aspose SDK writes them. The
-  mark is in the file you deliver, so tell the user.
-- In evaluation mode the engines can also read only part of a document. Text
-  a read returns can then be the engine's replacement rather than what the
-  file holds: check the file's text in rendered images instead, and do not
-  report the file as damaged.
-- `EVALUATION_LIMIT` (exit 7) means an evaluation limit stopped the command,
-  and nothing was written. `details.limit` and `details.unit` give the limit.
-- Detect evaluation from the result's `license.mode`.
-- Installing a license does not clean files already produced. Regenerate the
-  deliverable from the original, unmarked inputs.
-
-The product overview lists what evaluation mode changes in its own documents,
-which reads it truncates and which commands it limits.
-
-## Self-check the evaluation disclosure
-
-To see what a user without a license gets, run the command with
-`--license-mode evaluation`. It reads no license source, not even a broken
-one, so the command runs in evaluation mode while every configured license
-stays in place:
-
-```powershell
-aspose-cli words convert report.docx --to pdf --out eval-check.pdf --license-mode evaluation --output-format json
-aspose-cli license status --license-mode evaluation --output-format json
-```
-
-The result reports the evaluation `license` as it would without a license.
-Write to a scratch output, never over a deliverable. The option applies to one
-command and cannot be combined with `--license`; commands whose effect
-outlives the command, such as `license install`, refuse it.
+files stay as they are. A `--license` option or an environment variable keeps
+priority over an installed license. License content is never printed or
+logged, and installing a license does not change files written before.

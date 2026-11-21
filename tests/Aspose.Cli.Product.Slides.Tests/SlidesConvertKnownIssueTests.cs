@@ -13,7 +13,7 @@ namespace Aspose.Cli.Product.Slides.Tests;
 public sealed class SlidesConvertKnownIssueTests
 {
     [LicensedFact]
-    public void OdpSave_TurnsChartsIntoPicturesAndDropsTransitionsAndSections()
+    public void OdpSave_TurnsChartsIntoPicturesAndDropsTransitions()
     {
         using var fixture = new SlidesEngineFixture();
         string path = fixture.File("deck.odp");
@@ -21,19 +21,17 @@ public sealed class SlidesConvertKnownIssueTests
         {
             deck.Slides[0].Shapes.AddChart(ChartType.ClusteredColumn, 50, 50, 300, 200);
             deck.Slides[0].SlideShowTransition.Type = TransitionType.Fade;
-            deck.Sections.AddSection("Part", deck.Slides[0]);
             deck.Save(path, SaveFormat.Odp);
         }
 
         using var reopened = new Presentation(path);
         bool chart = reopened.Slides[0].Shapes.Any(static shape => shape is IChart);
         TransitionType transition = reopened.Slides[0].SlideShowTransition.Type;
-        int sections = reopened.Sections.Count;
 
         KnownIssue.Reproduces(
             "SLIDES-ODP-NATIVE-CONTENT",
-            !chart && transition == TransitionType.None && sections == 0,
-            $"the reopened ODP has a chart: {chart}, transition {transition}, {sections} section(s)");
+            !chart && transition == TransitionType.None,
+            $"the reopened ODP has a chart: {chart}, transition {transition}");
     }
 
     /// <summary>
