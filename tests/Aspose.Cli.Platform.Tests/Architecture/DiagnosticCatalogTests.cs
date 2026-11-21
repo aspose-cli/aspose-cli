@@ -38,11 +38,10 @@ public sealed class DiagnosticCatalogTests
         [
             DiagnosticDescriptor.Error(new ErrorCode("ALPHA_FAILURE", ExitCode.ValidationError)),
             DiagnosticDescriptor.Warning(new WarningCode("ALPHA_NOTICE")),
-            DiagnosticDescriptor.Verification("ALPHA_MISMATCH"),
         ]);
 
         Assert.Equal(
-            ["alpha", "alpha", "alpha"],
+            ["alpha", "alpha"],
             catalog.Diagnostics.All
                 .Where(static descriptor => descriptor.Code.StartsWith("ALPHA_", StringComparison.Ordinal))
                 .Select(static descriptor => descriptor.Owner));

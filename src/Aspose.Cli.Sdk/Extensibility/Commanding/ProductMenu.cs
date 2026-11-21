@@ -1,6 +1,5 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -38,9 +37,6 @@ internal sealed class MenuCommand<TSession, TRequest, TResult> : IMenuEntry<TSes
     }
 
     public Command Create(MenuContext<TSession> context) => Definition().Create(context, _run);
-
-    public IEnumerable<ProductOperationCommand> Operations() =>
-        Definition() is { Operations: { } describe } definition ? [describe(definition.Name)] : [];
 
     public IEnumerable<Func<Tables.DocumentTable>> Tables() =>
         Definition() is { Table: { } table } ? [table] : [];

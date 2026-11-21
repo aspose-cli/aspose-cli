@@ -8,7 +8,7 @@ namespace Aspose.Cli.Architecture.Tests;
 /// <summary>
 /// C-R28: every code the CLI emits is declared where capabilities reads it. As the SDK's
 /// <c>ErrorCodes.All</c> lists every shared code, a product's or the Host's diagnostics class lists
-/// in its <c>All</c> every error code, warning code and verification descriptor it declares, each
+/// in its <c>All</c> every error code and warning code it declares, each
 /// one has an emission site, and no error code of a product or the Host is declared anywhere else.
 /// The rules read the source syntax under <c>src</c>, so they hold whatever the classes are named.
 /// </summary>
@@ -56,7 +56,7 @@ public sealed class ProductDiagnosticDeclarationTests
                     .Select(node => file.At(node, node.ToString()))),
         ];
         OwnershipSourceFiles.AssertNone(loose,
-            $"A product or the Host declares its error codes and verification descriptors only as static members of its diagnostics class, the one with an {AllMember} list:");
+            $"A product or the Host declares its error codes only as static members of its diagnostics class, the one with an {AllMember} list:");
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public sealed class ProductDiagnosticDeclarationTests
                 internal static readonly ErrorCode Listed = new("LISTED", ExitCode.ValidationError);
                 internal static readonly ErrorCode Unlisted = ErrorCode.NotFound("UNLISTED_NOT_FOUND");
                 internal static readonly WarningCode Warned = new("WARNED");
-                internal static readonly DiagnosticDescriptor Checked = DiagnosticDescriptor.Verification("CHECKED");
+                internal static readonly ErrorCode Checked = new("CHECKED", ExitCode.ValidationError);
                 internal const string Remedy = "not a code";
                 internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
                 [
@@ -81,7 +81,6 @@ public sealed class ProductDiagnosticDeclarationTests
             {
                 private static readonly ErrorCode Loose = new ErrorCode("LOOSE", ExitCode.ValidationError);
                 internal static ErrorCode Missing() => ErrorCode.NotFound("LOOSE_NOT_FOUND");
-                internal static DiagnosticDescriptor Issue() => DiagnosticDescriptor.Verification("LOOSE_ISSUE");
             }
             """;
         SyntaxNode root = CSharpSyntaxTree.ParseText(Source).GetRoot();
@@ -89,7 +88,7 @@ public sealed class ProductDiagnosticDeclarationTests
 
         Assert.Equal(["Unlisted", "Checked"], owner.Declarations.Where(declaration => !owner.Listed.Contains(declaration.Name)).Select(static declaration => declaration.Name));
         Assert.Equal(
-            ["new ErrorCode(\"LOOSE\", ExitCode.ValidationError)", "ErrorCode.NotFound(\"LOOSE_NOT_FOUND\")", "DiagnosticDescriptor.Verification(\"LOOSE_ISSUE\")"],
+            ["new ErrorCode(\"LOOSE\", ExitCode.ValidationError)", "ErrorCode.NotFound(\"LOOSE_NOT_FOUND\")"],
             root.DescendantNodes().Where(IsErrorCodeCreation)
                 .Where(node => !node.Ancestors().OfType<ClassDeclarationSyntax>().Contains(owner.Node))
                 .Select(static node => node.ToString()));
@@ -238,9 +237,8 @@ public sealed class ProductDiagnosticDeclarationTests
     }
 
     /// <summary>
-    /// A creation of an error code or verification descriptor: <c>new ErrorCode(...)</c>, a
-    /// target-typed <c>new(...)</c> that initializes an <c>ErrorCode</c> field, or
-    /// <c>ErrorCode.NotFound(...)</c> and <c>DiagnosticDescriptor.Verification(...)</c>.
+    /// A creation of an error code: <c>new ErrorCode(...)</c>, a target-typed <c>new(...)</c> that
+    /// initializes an <c>ErrorCode</c> field, or <c>ErrorCode.NotFound(...)</c>.
     /// </summary>
     private static bool IsErrorCodeCreation(SyntaxNode node) => node switch
     {
@@ -250,7 +248,7 @@ public sealed class ProductDiagnosticDeclarationTests
             Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Type: var type } },
         } && type.ToString() == "ErrorCode",
         InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } =>
-            (access.Expression.ToString(), access.Name.Identifier.ValueText) is ("ErrorCode", "NotFound") or ("DiagnosticDescriptor", "Verification"),
+            (access.Expression.ToString(), access.Name.Identifier.ValueText) is ("ErrorCode", "NotFound"),
         _ => false,
     };
 }

@@ -19,9 +19,9 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// Each constraint applies to one kind of value, which the generators know from its SDK type.
 /// An array constraint (<see cref="MinItemsAttribute"/>, <see cref="MaxItemsAttribute"/>)
 /// applies exactly at its <see cref="Depth"/>; any other constraint applies at the first level
-/// at or below its depth that is not an array or map, so <c>[HexColor]</c> on a list of
+/// at or below its depth that is not an array or map, so <c>[Pattern]</c> on a list of
 /// strings checks every item. A constraint that no level of its member can take is a compile
-/// error (APCLI012, APCLI013).
+/// error (APCLI013).
 /// </remarks>
 public abstract class ValueConstraintAttribute : Attribute
 {

@@ -5,11 +5,7 @@ using Xunit;
 namespace Aspose.Cli.Architecture.Tests;
 
 /// <summary>
-/// What the Skills say an edit outcome means holds for every product (C-R38). Every product applies
-/// its batches through the SDK snapshot runner, so <c>itemsAffected</c> is the number of objects that
-/// changed and is 0 exactly when the operation warns <c>OP_NO_EFFECT</c>
-/// (<c>OperationBehaviorRules</c> checks that on every operation sample); <c>targets</c> past the cap
-/// cover each unit with one range or <c>&lt;unit&gt;/all</c> (<c>BoundedOperationModelTests</c>).
+/// What the Skills say about the outputs a command writes holds for every product.
 /// </summary>
 public sealed partial class EditOutcomeDocumentationTests
 {

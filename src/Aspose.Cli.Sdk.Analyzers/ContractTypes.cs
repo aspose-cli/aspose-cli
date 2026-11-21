@@ -70,9 +70,6 @@ internal static class ContractTypes
         [SdkMetadataNames.MinLengthAttribute] = ["String"],
         [SdkMetadataNames.MaxLengthAttribute] = ["String"],
         [SdkMetadataNames.PatternAttribute] = ["String"],
-        [SdkMetadataNames.HexColorAttribute] = ["String"],
-        [SdkMetadataNames.WebLinkAttribute] = ["String"],
-        [SdkMetadataNames.ValueKindAttribute] = ["String"],
         [SdkMetadataNames.ErrorDetailsAttribute] = ["Object"],
     };
 

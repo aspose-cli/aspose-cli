@@ -64,10 +64,10 @@ public abstract partial record ResultEnvelope
 
     /// <summary>
     /// The id the schema catalog names the schema <paramref name="id"/> of <paramref name="owner"/> by,
-    /// such as <c>v2/common/operation-outcome</c>.
+    /// such as <c>v2/common/resource-budget</c>.
     /// </summary>
     /// <param name="owner">A product id, or <c>common</c>.</param>
-    /// <param name="id">The relative schema id, such as <c>operation-outcome</c>.</param>
+    /// <param name="id">The relative schema id, such as <c>resource-budget</c>.</param>
     public static string CatalogId(string owner, string id) => $"v{ContractVersion}/{owner}/{id}";
 
     /// <summary>

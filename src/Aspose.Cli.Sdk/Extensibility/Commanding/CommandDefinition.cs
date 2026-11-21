@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
@@ -95,12 +94,6 @@ public sealed class CommandDefinition<TRequest, TResult>
 
     /// <summary>Help links.</summary>
     public IReadOnlyList<CommandHelpLink> Links { get; init; } = [];
-
-    /// <summary>
-    /// Describes the operation documents the command applies, given its path below the product,
-    /// from an operation vocabulary's catalog.
-    /// </summary>
-    internal Func<string, ProductOperationCommand>? Operations { get; init; }
 
     /// <summary>
     /// Loads the object table whose operation documents the command applies; <see cref="TableCommands"/>

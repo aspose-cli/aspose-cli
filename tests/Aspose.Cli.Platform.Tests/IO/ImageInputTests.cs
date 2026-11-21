@@ -2,7 +2,6 @@ using System.Text;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Input;
-using Aspose.Cli.Sdk.Operations;
 using SkiaSharp;
 using Xunit;
 
@@ -63,31 +62,15 @@ public sealed class ImageInputTests : IDisposable
         Assert.Equal(path, refused.Details!["path"]!.GetValue<string>());
     }
 
-    [Theory]
-    [MemberData(nameof(Damaged))]
-    public void Read_RefusesAnOperationImageThatIsNotAnIntactImageAsAnInvalidOperation(string kind, byte[] content)
-    {
-        string path = Write("image.png", content);
-
-        OperationInvalidException refused = Assert.Throws<OperationInvalidException>(
-            () => OperationImages.Read(Budgets().Inputs, path));
-
-        Assert.True(refused.Message.Contains(path, StringComparison.Ordinal), kind);
-    }
-
-    // A compressed image would be an SVGZ, whose references no one can remove: refused with the
-    // same code and message for an input and an operation.
+    // A compressed image would be an SVGZ, whose references no one can remove: refused.
     [Fact]
     public void Read_RefusesACompressedImage()
     {
         string path = Write("image.svgz", [0x1F, 0x8B, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
         CliException input = Assert.Throws<CliException>(() => ImageInput.Read(Budgets().Inputs, path));
-        CliException operation = Assert.Throws<CliException>(() => OperationImages.Read(Budgets().Inputs, path));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, input.Code);
-        Assert.Equal(input.Code, operation.Code);
-        Assert.Equal(input.Message, operation.Message);
         Assert.Contains("SVGZ", input.Message, StringComparison.Ordinal);
     }
 
@@ -108,7 +91,7 @@ public sealed class ImageInputTests : IDisposable
     {
         string path = Write("image." + extension, content);
 
-        Assert.Equal(content, OperationImages.Read(Budgets().Inputs, path));
+        Assert.Equal(content, ImageInput.Read(Budgets().Inputs, path));
     }
 
     [Fact]

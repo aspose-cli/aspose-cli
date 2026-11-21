@@ -15,7 +15,6 @@ public sealed record SlidesConvertResult() : EngineResultEnvelope("convert-resul
     public required IReadOnlyList<SlidesConvertOutput> Outputs { get; init; }
 
     /// <summary>The <c>--slides</c> selection that was converted, normalized; omitted when every slide was.</summary>
-    [PageRange]
     public string? Slides { get; init; }
 
     /// <summary>The warnings Aspose.Slides reported while it loaded the presentation and wrote the output, as it reported them; omitted when there were none.</summary>

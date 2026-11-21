@@ -5,7 +5,6 @@ global using Aspose.Cli.Sdk.Formats;
 global using Aspose.Cli.Sdk.IO.Budgets;
 global using Aspose.Cli.Sdk.IO.Output;
 global using Aspose.Cli.Sdk.IO.Publication;
-global using Aspose.Cli.Sdk.Operations;
 global using Aspose.Cli.Sdk.Addressing;
 global using Aspose.Cli.Sdk.Contracts;
 global using Aspose.Cli.Sdk.Extensibility.Commanding;

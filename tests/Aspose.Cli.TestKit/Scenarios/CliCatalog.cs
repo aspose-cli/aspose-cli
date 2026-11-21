@@ -245,9 +245,7 @@ public sealed class CliCatalog
                 .Select(static format => format!["id"]!.GetValue<string>()),
         ],
         Strings(product["convertFormats"]),
-        Strings(product["renderFormats"]),
-        null,
-        []);
+        Strings(product["renderFormats"]));
 
     private static string[] Strings(JsonNode? array) =>
         array is null ? [] : [.. array.AsArray().Select(static item => item!.GetValue<string>())];
@@ -309,9 +307,7 @@ public sealed record CliProduct(
     string Id,
     IReadOnlyList<string> ReadFormats,
     IReadOnlyList<string> ConvertFormats,
-    IReadOnlyList<string> RenderFormats,
-    string? OpsSchemaId,
-    IReadOnlyList<string> Ops);
+    IReadOnlyList<string> RenderFormats);
 
 /// <summary>One diagnostic of the catalog; an error has an exit code, and <paramref name="Severity"/> is <c>error</c> or <c>warning</c>.</summary>
 public sealed record CliDiagnostic(int? ExitCode, string? DetailsSchemaId, string? Severity);

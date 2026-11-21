@@ -33,9 +33,6 @@ internal static partial class OperationRuns
 
     public static string Extension(string product) => ScenarioFixtures.PrimaryFormat(product);
 
-    /// <summary>The options that open an encrypted sample's documents.</summary>
-    public static string[] Open(OperationSample sample) => sample.Encrypted ? ["--password-env", RuleWorkspace.SecretVariable] : [];
-
     /// <summary>Seeds the fixture as <c>input.&lt;format&gt;</c> and every file a sample may read.</summary>
     public static string SeedInput(RuleWorkspace workspace, string product)
     {
@@ -55,53 +52,6 @@ internal static partial class OperationRuns
         workspace.Seed(ops, new JsonObject { ["ops"] = operations }.ToJsonString());
         return workspace.Json([product, "edit", input, "--ops", ops, "--out", output, .. options]);
     }
-
-    /// <summary>
-    /// Seeds the workspace and applies the sample's setup: the document the operation edits and
-    /// the operation, or the failure of the setup edit. Neither a document nor a failure means evaluation mode
-    /// cannot run the setup (<see cref="RuleRun.Unjudged"/>).
-    /// </summary>
-    public static (string? Document, JsonObject Operation, string? Failure) Prepare(RuleWorkspace workspace, OperationSample sample)
-    {
-        JsonObject operation = JsonNode.Parse(sample.Json)!.AsObject();
-        string input = SeedInput(workspace, sample.Product);
-        if (sample.FromHtml is { } html)
-        {
-            // A document the fixture cannot be, such as a PDF with a form, built from HTML.
-            workspace.Seed("source.html", html);
-            input = "from-html." + Extension(sample.Product);
-            RuleRun created = workspace.Json(sample.Product, "create", input, "--from-html", "source.html");
-            if (created.ExitCode != 0)
-            {
-                return (null, operation, created.Unjudged ? null : "creating the document failed: " + created.Describe());
-            }
-        }
-        if (sample.Setup is null)
-        {
-            return (input, operation, null);
-        }
-        string based = "base." + Extension(sample.Product);
-        RuleRun setup = Edit(workspace, sample.Product, input, based, JsonNode.Parse(sample.Setup)!.AsArray(), [.. sample.SetupArgs ?? []]);
-        if (setup.ExitCode != 0)
-        {
-            return (null, operation, setup.Unjudged ? null : "the setup edit failed: " + setup.Describe());
-        }
-        return (based, operation, null);
-    }
-
-    /// <summary>A copy of an operation with the given id.</summary>
-    public static JsonObject WithId(JsonObject operation, string? id = null)
-    {
-        var copy = (JsonObject)operation.DeepClone();
-        if (id is not null)
-        {
-            copy["id"] = id;
-        }
-        return copy;
-    }
-
-    /// <summary>A sample's operation with the given id, for a batch without setup.</summary>
-    public static JsonObject Operation(OperationSample sample, string? id = null) => WithId(JsonNode.Parse(sample.Json)!.AsObject(), id);
 
     /// <summary>
     /// The state of a document. The unedited fixture's state is computed once per product and

@@ -145,8 +145,6 @@ public static partial class ErrorCodes
     /// <summary>The operation exceeded a time budget.</summary>
     public static readonly ErrorCode OperationTimeout = new("OPERATION_TIMEOUT", ExitCode.OperationTimeout);
 
-    // No error exits 8: it means only that a printed result did not pass.
-
     // -- Internal (exit 1) ----------------------------------------------------
 
     /// <summary>An unexpected internal error; a bug that should be reported.</summary>

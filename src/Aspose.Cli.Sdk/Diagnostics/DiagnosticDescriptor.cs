@@ -9,11 +9,7 @@ public enum DiagnosticSeverity
     /// <summary>The command fails and returns a non-zero exit code.</summary>
     Error,
 
-    /// <summary>
-    /// The command succeeds but discloses a non-fatal condition. A code in the
-    /// <see cref="DiagnosticDescriptor.VerificationCategory"/> category instead reports a
-    /// verification issue, which makes the verification <c>ok:false</c> and the command exit 8.
-    /// </summary>
+    /// <summary>The command succeeds but discloses a non-fatal condition.</summary>
     Warning,
 }
 
@@ -23,11 +19,8 @@ public enum DiagnosticSeverity
 /// </summary>
 public sealed record DiagnosticDescriptor
 {
-    /// <summary>Category of every warning that is not a verification issue.</summary>
+    /// <summary>Category of every warning.</summary>
     public const string WarningCategory = "warning";
-
-    /// <summary>Category of codes reported as <see cref="VerificationIssue"/> entries.</summary>
-    public const string VerificationCategory = "verification";
 
     private DiagnosticDescriptor()
     {
@@ -50,7 +43,7 @@ public sealed record DiagnosticDescriptor
 
     /// <summary>
     /// Category the diagnostics document of <c>schema</c> states: an error's follows from its exit code, a
-    /// warning's is <see cref="WarningCategory"/> or <see cref="VerificationCategory"/>.
+    /// warning's is <see cref="WarningCategory"/>.
     /// </summary>
     public required string Category { get; init; }
 
@@ -89,18 +82,6 @@ public sealed record DiagnosticDescriptor
         };
     }
 
-    /// <summary>Declares a verification issue in the <see cref="VerificationCategory"/> category.</summary>
-    /// <param name="code">The issue code.</param>
-    /// <param name="owner">The owner, or empty for a product's own.</param>
-    public static DiagnosticDescriptor Verification(string code, string owner = "") =>
-        new()
-        {
-            Code = code,
-            Owner = Normalized(owner),
-            Severity = DiagnosticSeverity.Warning,
-            Category = VerificationCategory,
-        };
-
     private static string Normalized(string owner) => owner?.Trim() ?? string.Empty;
 
     /// <summary>The category an error with <paramref name="exitCode"/> belongs to.</summary>
@@ -114,7 +95,6 @@ public sealed record DiagnosticDescriptor
             global::Aspose.Cli.Sdk.Errors.ExitCode.OutputError => "output",
             global::Aspose.Cli.Sdk.Errors.ExitCode.FormatError => "format",
             global::Aspose.Cli.Sdk.Errors.ExitCode.LicenseError => "license",
-            global::Aspose.Cli.Sdk.Errors.ExitCode.PartialFailure => "partial",
             global::Aspose.Cli.Sdk.Errors.ExitCode.OperationTimeout => "timeout",
             _ => "error",
         };

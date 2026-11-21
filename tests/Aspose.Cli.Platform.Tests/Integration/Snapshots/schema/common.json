@@ -87,9 +87,7 @@
     "v2/common/license-status",
     "v2/common/license-status-command",
     "v2/common/not-found-details",
-    "v2/common/operation-outcome",
     "v2/common/output",
-    "v2/common/page-size",
     "v2/common/resource-budget",
     "v2/common/result-window",
     "v2/common/schema-catalog",
@@ -103,8 +101,6 @@
     "v2/common/table-inventory",
     "v2/common/table-object",
     "v2/common/table-op-report",
-    "v2/common/unchecked-operation",
-    "v2/common/verification-issue",
     "v2/common/version",
     "v2/common/warning",
     "v2/pdf/convert-command",
@@ -1036,13 +1032,6 @@
           "detailsSchemaId": "v2/common/diagnostic-details"
         },
         {
-          "code": "LOSSY_CONVERSION",
-          "owner": "common",
-          "severity": "warning",
-          "category": "warning",
-          "detailsSchemaId": "v2/common/diagnostic-details"
-        },
-        {
           "code": "OPERATION_TIMEOUT",
           "owner": "common",
           "severity": "error",
@@ -1064,13 +1053,6 @@
           "severity": "error",
           "exitCode": 2,
           "category": "usage",
-          "detailsSchemaId": "v2/common/diagnostic-details"
-        },
-        {
-          "code": "OP_NO_EFFECT",
-          "owner": "common",
-          "severity": "warning",
-          "category": "warning",
           "detailsSchemaId": "v2/common/diagnostic-details"
         },
         {
@@ -1360,88 +1342,6 @@
             "bookmarks": {
               "description": "The outline addresses of the bookmarks a warning is about, such as 1/2."
             },
-            "cause": {
-              "description": "Why an operation field was refused."
-            },
-            "content": {
-              "description": "The kinds of content an output leaves out, each one of these tokens.",
-              "type": "array",
-              "items": {
-                "type": "string",
-                "oneOf": [
-                  {
-                    "const": "attachments",
-                    "description": "Files embedded in the document, such as the attachments of a PDF."
-                  },
-                  {
-                    "const": "bookmarks",
-                    "description": "The bookmarks of the document's outline."
-                  },
-                  {
-                    "const": "charts",
-                    "description": "Charts as charts with their data: the output holds only a picture of them, or none."
-                  },
-                  {
-                    "const": "comments",
-                    "description": "Comments as comments: the output writes their text into the body, draws them in balloons beside its pages, or leaves them out."
-                  },
-                  {
-                    "const": "editing-restrictions",
-                    "description": "Editing restrictions, such as a read-only protection of the document."
-                  },
-                  {
-                    "const": "form-fields",
-                    "description": "Form fields: inputs the output has no field for."
-                  },
-                  {
-                    "const": "form-values",
-                    "description": "The values of form fields."
-                  },
-                  {
-                    "const": "headers-footers",
-                    "description": "Headers and footers."
-                  },
-                  {
-                    "const": "pictures",
-                    "description": "Pictures."
-                  },
-                  {
-                    "const": "portfolios",
-                    "description": "The presentation of a PDF portfolio, such as its file list layout; its files stay plain attachments."
-                  },
-                  {
-                    "const": "revisions",
-                    "description": "Tracked changes as revisions a reader can accept or reject."
-                  },
-                  {
-                    "const": "sections",
-                    "description": "Sections, such as the sections of a deck."
-                  },
-                  {
-                    "const": "shapes",
-                    "description": "Drawings other than charts and pictures, such as shapes, text boxes and groups."
-                  },
-                  {
-                    "const": "speaker-notes",
-                    "description": "Speaker notes."
-                  },
-                  {
-                    "const": "table-styles",
-                    "description": "Table styles: the fills, borders and text formatting a table's style gives it."
-                  },
-                  {
-                    "const": "transitions",
-                    "description": "Slide transitions."
-                  }
-                ]
-              }
-            },
-            "declared": {
-              "description": "The product the command or extension declares."
-            },
-            "detected": {
-              "description": "The products whose formats the content matches."
-            },
             "diagnosticId": {
               "description": "The host diagnostic id of a startup or process failure."
             },
@@ -1471,9 +1371,6 @@
             },
             "extension": {
               "description": "The file extension the error is about."
-            },
-            "feature": {
-              "description": "The feature the product or format does not support."
             },
             "field": {
               "description": "The operation field the error is about."
@@ -1505,12 +1402,6 @@
             "offset": {
               "description": "The byte offset of the problem in an input."
             },
-            "op": {
-              "description": "The op name of the failing operation."
-            },
-            "operation": {
-              "description": "The product feature the error is about."
-            },
             "option": {
               "description": "The option the error is about, such as --pages."
             },
@@ -1525,15 +1416,6 @@
             },
             "phase": {
               "description": "The stage of processing that failed."
-            },
-            "problems": {
-              "description": "The problems the engine reported."
-            },
-            "product": {
-              "description": "The product the error is about."
-            },
-            "profile": {
-              "description": "The conformance profile the error is about."
             },
             "range": {
               "description": "The range or selection as the caller wrote it."
@@ -2138,51 +2020,6 @@
         }
       }
     },
-    "v2/common/operation-outcome": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/operation-outcome.schema.json",
-      "description": "The stable wire result for one bounded edit operation.",
-      "type": "object",
-      "required": [
-        "id",
-        "op",
-        "status",
-        "itemsAffected",
-        "targets"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "description": "Stable correlation id from the input batch.",
-          "type": "string",
-          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
-        },
-        "op": {
-          "description": "Product-owned operation id.",
-          "type": "string"
-        },
-        "status": {
-          "description": "That the operation applied: ok.",
-          "type": "string",
-          "enum": [
-            "ok"
-          ]
-        },
-        "itemsAffected": {
-          "description": "Number of product-owned items changed by the operation.",
-          "type": "integer",
-          "minimum": 0
-        },
-        "targets": {
-          "description": "Product-owned stable addresses of the changed items.",
-          "type": "array",
-          "maxItems": 100,
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
     "v2/common/output": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
@@ -2211,41 +2048,6 @@
         "encrypted": {
           "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
           "type": "boolean"
-        }
-      }
-    },
-    "v2/common/page-size": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/page-size.schema.json",
-      "description": "The size of a page in points (72 per inch) as a read reports it: both dimensions, and the preset they match in either orientation. An operation that sets a page size takes a preset or both dimensions under the same names.",
-      "type": "object",
-      "required": [
-        "width",
-        "height"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "preset": {
-          "description": "The preset the dimensions match; omitted when they match none.",
-          "type": "string",
-          "enum": [
-            "a3",
-            "a4",
-            "a5",
-            "letter",
-            "legal",
-            "tabloid"
-          ]
-        },
-        "width": {
-          "description": "The page width in points.",
-          "type": "number",
-          "exclusiveMinimum": 0
-        },
-        "height": {
-          "description": "The page height in points.",
-          "type": "number",
-          "exclusiveMinimum": 0
         }
       }
     },
@@ -2890,55 +2692,6 @@
         },
         "returned": {
           "description": "The value the action's engine call returned; omitted for set, add, delete and move and for a call that returns nothing."
-        }
-      }
-    },
-    "v2/common/unchecked-operation": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/unchecked-operation.schema.json",
-      "description": "An operation of the batch that an edit's verification did not read back.",
-      "type": "object",
-      "required": [
-        "id",
-        "reason"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "description": "The operation's id in the batch.",
-          "type": "string",
-          "minLength": 1
-        },
-        "reason": {
-          "description": "Why the verification did not read the operation back.",
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "v2/common/verification-issue": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/verification-issue.schema.json",
-      "description": "A problem found while verifying an edited output that had already been produced. Any issue makes the verification ok:false and the command exit 8.",
-      "type": "object",
-      "required": [
-        "code",
-        "message"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "code": {
-          "description": "Stable SCREAMING_SNAKE_CASE identifier an agent can branch on.",
-          "type": "string",
-          "pattern": "^[A-Z][A-Z0-9_]*$"
-        },
-        "message": {
-          "description": "Human-readable explanation.",
-          "type": "string"
-        },
-        "location": {
-          "description": "The affected item's address in the targets syntax <unit>/<address>, such as page/3, slide/2/shape/4 or cell/Sheet1!A1, with names escaped as targets escape them; omitted unless the issue concerns exactly one item.",
-          "type": "string"
         }
       }
     },

@@ -403,6 +403,6 @@ public sealed class ResultContractGeneratorTests
             [CSharpSyntaxTree.ParseText(Prelude + source, new CSharpParseOptions(LanguageVersion.Preview))],
             RoslynTestSupport.PlatformReferences().Append(MetadataReference.CreateFromFile(typeof(ResultEnvelope).Assembly.Location)),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
-        return CSharpGeneratorDriver.Create(new OperationContractGenerator()).RunGenerators(compilation).GetRunResult();
+        return CSharpGeneratorDriver.Create(new ResultContractGenerator()).RunGenerators(compilation).GetRunResult();
     }
 }

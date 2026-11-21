@@ -63,12 +63,6 @@ public static class WarningCodes
     /// <summary>A document referenced remote resources, which the CLI did not load.</summary>
     public static readonly WarningCode RemoteResourcesBlocked = new("REMOTE_RESOURCES_BLOCKED");
 
-    /// <summary>
-    /// The output format cannot hold everything the input holds. A warning that names what the
-    /// output leaves out lists its kinds in <c>details.content</c> (<see cref="ContentLoss"/>).
-    /// </summary>
-    public static readonly WarningCode LossyConversion = new("LOSSY_CONVERSION");
-
     /// <summary>Without a license, the engine loaded only the start of the input.</summary>
     public static readonly WarningCode EvaluationInputTruncated = new("EVALUATION_INPUT_TRUNCATED");
 
@@ -85,42 +79,14 @@ public static class WarningCodes
     /// <summary>A list inside a result was capped; <c>details.list</c> names the list.</summary>
     public static readonly WarningCode ListTruncated = new("LIST_TRUNCATED");
 
-    /// <summary>
-    /// An operation applied but changed nothing, such as a replacement that matched no text;
-    /// <c>details</c> names the operation by <c>id</c> and <c>op</c> and says why in <c>reason</c>.
-    /// </summary>
-    public static readonly WarningCode OpNoEffect = new("OP_NO_EFFECT");
-
-
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<WarningCode> All { get; } =
     [
         EvaluationMode,
         RemoteResourcesBlocked,
-        LossyConversion,
         EvaluationInputTruncated,
         EvaluationInputMarked,
         EncryptionRemoved,
         ListTruncated,
-        OpNoEffect,
     ];
-}
-
-/// <summary>Why an operation changed nothing: the <c>details.reason</c> of an <c>OP_NO_EFFECT</c> warning.</summary>
-public static class NoEffectReasons
-{
-    /// <summary>What the operation looks for, such as text, a pattern or an author, is not in the document.</summary>
-    public const string NoMatch = "no-match";
-
-    /// <summary>
-    /// The objects the operation addresses already had the state it sets, so a snapshot of them
-    /// before and after it found no difference.
-    /// </summary>
-    public const string NoChange = "no-change";
-
-    /// <summary>
-    /// Evaluation mode read the text the operation looks in cut short, so the operation could not
-    /// look at that text; a license lifts the cut.
-    /// </summary>
-    public const string EvaluationTruncated = "evaluation-truncated";
 }

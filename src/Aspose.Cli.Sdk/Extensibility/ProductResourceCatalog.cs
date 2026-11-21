@@ -1,28 +1,25 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Frozen;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
 /// <summary>
 /// Immutable aggregate of the schemas products publish and their other embedded resources. Every
-/// schema is written from records: an operation vocabulary's schema and per-operation views from
-/// its operation records, and a product's result schemas from the result records its contract
+/// schema is written from its source: an object table's operation document schema and per-operation
+/// views from the table, and a product's result schemas from the result records its contract
 /// generator described.
 /// </summary>
 public sealed class ProductResourceCatalog
 {
     private readonly IReadOnlyDictionary<string, Func<string>> _schemas;
-    private readonly IReadOnlyDictionary<string, GeneratedOperationSchema> _operationSchemas;
     private readonly IReadOnlyDictionary<string, Lazy<Tables.TableSchema>> _tableSchemas;
     private readonly IReadOnlyDictionary<string, ProductPackageResources> _byProduct;
 
     private ProductResourceCatalog(
         IReadOnlyList<ProductPackageResources> products,
         IReadOnlyDictionary<string, Func<string>> schemas,
-        IReadOnlyDictionary<string, GeneratedOperationSchema> operationSchemas,
         IReadOnlyDictionary<string, Lazy<Tables.TableSchema>> tableSchemas)
     {
         Products = products;
@@ -30,10 +27,6 @@ public sealed class ProductResourceCatalog
             static product => product.ProductId,
             StringComparer.OrdinalIgnoreCase);
         _schemas = schemas.ToFrozenDictionary(
-            static item => item.Key,
-            static item => item.Value,
-            StringComparer.Ordinal);
-        _operationSchemas = operationSchemas.ToFrozenDictionary(
             static item => item.Key,
             static item => item.Value,
             StringComparer.Ordinal);
@@ -49,28 +42,16 @@ public sealed class ProductResourceCatalog
     public IReadOnlyList<ProductPackageResources> Products { get; }
 
     internal static ProductResourceCatalog Build(
-        IEnumerable<(ProductPackageResources Package, IReadOnlyList<ProductOperationCommand> Operations, IReadOnlyList<Func<Tables.DocumentTable>> Tables, IReadOnlyList<ResultRecord> Results)> products)
+        IEnumerable<(ProductPackageResources Package, IReadOnlyList<Func<Tables.DocumentTable>> Tables, IReadOnlyList<ResultRecord> Results)> products)
     {
         ArgumentNullException.ThrowIfNull(products);
         var packages = new List<ProductPackageResources>();
         // Schemas and their views are written on first use: most invocations never read one.
         var schemas = new Dictionary<string, Func<string>>(StringComparer.Ordinal);
-        var operationSchemas = new Dictionary<string, GeneratedOperationSchema>(StringComparer.Ordinal);
         var tableSchemas = new Dictionary<string, Lazy<Tables.TableSchema>>(StringComparer.Ordinal);
-        foreach ((ProductPackageResources package, IReadOnlyList<ProductOperationCommand> operations, IReadOnlyList<Func<Tables.DocumentTable>> tables, IReadOnlyList<ResultRecord> results) in products)
+        foreach ((ProductPackageResources package, IReadOnlyList<Func<Tables.DocumentTable>> tables, IReadOnlyList<ResultRecord> results) in products)
         {
             var published = new List<string>();
-            foreach (ProductOperationCommand command in operations)
-            {
-                string id = command.Descriptor.InputSchema;
-                if (operationSchemas.TryAdd(id, command.Schema))
-                {
-                    GeneratedOperationSchema schema = command.Schema;
-                    AddSchema(schemas, id, () => schema.Document);
-                    published.Add(id);
-                }
-            }
-
             foreach (Func<Tables.DocumentTable> table in tables.Take(1))
             {
                 // A table's operation document schema is written from the table on first use,
@@ -98,7 +79,6 @@ public sealed class ProductResourceCatalog
         return new ProductResourceCatalog(
             packages.AsReadOnly(),
             schemas,
-            operationSchemas,
             tableSchemas);
     }
 
@@ -136,11 +116,9 @@ public sealed class ProductResourceCatalog
                 $"Unknown schema id '{id}'. Known ids: {string.Join(", ", SchemaIds)}",
                 nameof(id));
 
-    /// <summary>Returns operation IDs indexed for one schema.</summary>
+    /// <summary>Returns the operation names an object table's schema has views for.</summary>
     public IReadOnlyList<string> GetOperations(string schemaId) =>
-        _operationSchemas.TryGetValue(schemaId, out GeneratedOperationSchema? schema) ? schema.Names
-        : _tableSchemas.TryGetValue(schemaId, out Lazy<Tables.TableSchema>? table) ? table.Value.Names
-        : [];
+        _tableSchemas.TryGetValue(schemaId, out Lazy<Tables.TableSchema>? table) ? table.Value.Names : [];
 
     /// <summary>Attempts to read one exact, self-contained operation schema view.</summary>
     public bool TryReadOperation(
@@ -149,9 +127,7 @@ public sealed class ProductResourceCatalog
         [NotNullWhen(true)] out string? document)
     {
         document = null;
-        return _operationSchemas.TryGetValue(schemaId, out GeneratedOperationSchema? schema)
-            ? schema.Operations.TryGetValue(operationId, out document)
-            : _tableSchemas.TryGetValue(schemaId, out Lazy<Tables.TableSchema>? table) && table.Value.Views.TryGetValue(operationId, out document);
+        return _tableSchemas.TryGetValue(schemaId, out Lazy<Tables.TableSchema>? table) && table.Value.Views.TryGetValue(operationId, out document);
     }
 
     private static void AddSchema(Dictionary<string, Func<string>> schemas, string id, Func<string> read)

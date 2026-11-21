@@ -58,7 +58,7 @@ public sealed partial class ExitCodeDeclarationTests
             .ToDictionary(static item => int.Parse(item.Groups["exit"].Value, System.Globalization.CultureInfo.InvariantCulture),
                 static item => item.Groups["text"].Value.ReplaceLineEndings(" "));
 
-        int[] missing = [.. new[] { ExitCode.Success, ExitCode.PartialFailure, ExitCode.Cancelled }
+        int[] missing = [.. new[] { ExitCode.Success, ExitCode.Cancelled }
             .Select(static code => (int)code).Where(code => !stated.ContainsKey(code))];
         Assert.True(missing.Length == 0,
             $"The exit-code section of the platform Skill ({Path.GetRelativePath(RepositoryPaths.Root, path)}) states each exit code "

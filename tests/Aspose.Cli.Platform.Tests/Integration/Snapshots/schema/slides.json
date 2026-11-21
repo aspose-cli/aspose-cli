@@ -321,8 +321,7 @@
         },
         "slides": {
           "description": "The --slides selection that was converted, normalized; omitted when every slide was.",
-          "type": "string",
-          "pattern": "^\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?(\\s*,\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?)*\\s*$"
+          "type": "string"
         },
         "engineWarnings": {
           "description": "The warnings Aspose.Slides reported while it loaded the presentation and wrote the output, as it reported them; omitted when there were none.",
