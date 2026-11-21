@@ -66,18 +66,18 @@ public sealed partial class RenderDpiContractTests : IDisposable
                 }
             }
 
-            JsonObject schema = PublishedSchemas.Document($"v2/{product}/render-result");
+            JsonObject schema = PublishedSchemas.Document($"v3/{product}/render-result");
             JsonObject? dpi = Dereference(schema, schema["properties"]?["dpi"]);
             if (dpi is null)
             {
-                problems.Add($"v2/{product}/render-result declares no dpi");
+                problems.Add($"v3/{product}/render-result declares no dpi");
                 continue;
             }
 
             string bounds = $"minimum {dpi["minimum"]?.ToJsonString() ?? "none"}, maximum {dpi["maximum"]?.ToJsonString() ?? "none"}";
             if (dpi["minimum"]?.GetValue<int>() != minimum || dpi["maximum"]?.GetValue<int>() != maximum)
             {
-                problems.Add($"v2/{product}/render-result dpi has {bounds}; the CLI accepts {minimum}-{maximum}");
+                problems.Add($"v3/{product}/render-result dpi has {bounds}; the CLI accepts {minimum}-{maximum}");
             }
         }
 

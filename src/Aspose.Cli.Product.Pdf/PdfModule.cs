@@ -53,6 +53,6 @@ public sealed class PdfModule : IProductModule
             "pdf edit form.pdf --ops ops.json --out filled.pdf",
         ],
         [
-            new("aspose-cli schema v2/pdf/ops/directory", "the object table: kinds, addresses, rows, adds and actions"),
+            new("aspose-cli schema v3/pdf/ops/directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

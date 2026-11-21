@@ -42,7 +42,7 @@ public sealed class SkillOperationDocumentsTests
         Assert.Equal([MissingProps, UnknownOperation], documents.Select(static document => document.Json.Trim()));
         Assert.Equal([5, 11], documents.Select(static document => document.Line));
         Assert.All(documents, static document => Assert.Equal("cells", document.Command));
-        Json.Schema.JsonSchema schema = PublishedSchemas.Schema("v2/cells/ops");
+        Json.Schema.JsonSchema schema = PublishedSchemas.Schema("v3/cells/ops");
         Assert.All(documents, document =>
         {
             using JsonDocument instance = JsonDocument.Parse(document.Json);

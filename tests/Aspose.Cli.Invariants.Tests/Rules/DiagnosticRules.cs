@@ -50,7 +50,7 @@ internal static partial class ContractRules
     /// <summary>UPPER_SNAKE <c>&lt;SUBJECT&gt;_&lt;PROBLEM/STATE&gt;</c>: two words at least.</summary>
     private static readonly Regex CodeName = new("^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$");
 
-    private const string NotFoundDetailsSchema = "v2/common/not-found-details";
+    private const string NotFoundDetailsSchema = "v3/common/not-found-details";
 
     private static IEnumerable<InvariantCase> R24Declared(CliCatalog catalog)
     {
@@ -90,7 +90,7 @@ internal static partial class ContractRules
         // The rule lists no details, yet OP_NO_EFFECT states its id, op and reason in details: the
         // warning may publish details, optional like the error's.
         yield return Check("C-R27", "warning envelope shape", () => EnvelopeShapeProblems(
-            catalog, "v2/common/warning", definition: null, "the warning",
+            catalog, "v3/common/warning", definition: null, "the warning",
             required: ["code", "message"],
             properties: ["code", "message", "location", "affectsCompleteness"],
             optional: ["details"]));

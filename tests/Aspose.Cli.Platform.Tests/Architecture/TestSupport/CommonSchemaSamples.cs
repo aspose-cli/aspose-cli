@@ -45,7 +45,7 @@ internal static class CommonSchemaSamples
             },
         ],
         Commands = [new CatalogCommand { Name = "license", Description = "Manage the license." }],
-        Ids = ["v2/common/error", "v2/test/edit-command"],
+        Ids = ["v3/common/error", "v3/test/edit-command"],
     };
 
     public static CommandDocument Command { get; } = new()
@@ -106,7 +106,7 @@ internal static class CommonSchemaSamples
                 Severity = "error",
                 ExitCode = 3,
                 Category = "file",
-                DetailsSchemaId = "v2/common/not-found-details",
+                DetailsSchemaId = "v3/common/not-found-details",
             },
         ],
     };

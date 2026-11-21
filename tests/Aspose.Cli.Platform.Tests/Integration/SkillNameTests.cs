@@ -201,8 +201,8 @@ public sealed partial class SkillNameTests : IDisposable
             [
                 .. _members.Where(member => member.Name == name
                     && (product is null
-                        || member.Id.StartsWith($"v2/{product}/", StringComparison.Ordinal)
-                        || member.Id.StartsWith("v2/common/", StringComparison.Ordinal))),
+                        || member.Id.StartsWith($"v3/{product}/", StringComparison.Ordinal)
+                        || member.Id.StartsWith("v3/common/", StringComparison.Ordinal))),
             ];
             if (candidates.Length == 0)
             {

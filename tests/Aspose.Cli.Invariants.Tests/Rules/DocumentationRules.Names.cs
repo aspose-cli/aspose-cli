@@ -152,7 +152,7 @@ internal static partial class ContractRules
                 "'do.stamp_text' has no field 'agrs'"),
             (null, "slides query deck.pptx", "slides read deck.pptx", "'slides' has no command 'query'"),
             (null, "license frobnicate", "license status", "'license' has no command 'frobnicate'"),
-            (null, "schema v2/cells/opz", "schema v2/cells/ops", "'schema' has no schema 'v2/cells/opz'"),
+            (null, "schema v3/cells/opz", "schema v3/cells/ops", "'schema' has no schema 'v3/cells/opz'"),
             (null, "cells read book.xlsx --version", "cells read book.xlsx --verbose", "'cells read' has no option '--version'"),
             (null, "license status extra", "license status --product pdf", "'license status' has no command 'extra'"),
             (null, "words merge a.docx", "words edit a.docx --ops ops.json --in-place", "'words' has no command 'merge'"),

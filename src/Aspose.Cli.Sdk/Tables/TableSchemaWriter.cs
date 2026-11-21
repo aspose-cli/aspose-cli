@@ -36,7 +36,7 @@ public sealed class TableSchema
     /// </summary>
     public const string DirectoryView = "directory";
 
-    /// <summary>The schema's id in the <c>schema</c> command, such as <c>v2/slides/ops</c>.</summary>
+    /// <summary>The schema's id in the <c>schema</c> command, such as <c>v3/slides/ops</c>.</summary>
     public string Id { get; }
 
     /// <summary>The names of the views: <c>directory</c>, each kind, <c>add.&lt;name&gt;</c> and <c>do.&lt;name&gt;</c>.</summary>

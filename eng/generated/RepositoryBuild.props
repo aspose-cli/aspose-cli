@@ -9,7 +9,7 @@
     <AsposeProductSdkVersion>26.9.0</AsposeProductSdkVersion>
     <AsposeProductModuleType>Aspose.Cli.Product.Cells.CellsModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Cells</AsposeProductAssemblyName>
-    <AsposeProductResourceNamespace>v2/cells</AsposeProductResourceNamespace>
+    <AsposeProductResourceNamespace>v3/cells</AsposeProductResourceNamespace>
     <AsposeProductDisplayOrder>1</AsposeProductDisplayOrder>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Aspose.Cli.Product.Pdf'">
@@ -21,7 +21,7 @@
     <AsposeProductSdkVersion>26.8.0</AsposeProductSdkVersion>
     <AsposeProductModuleType>Aspose.Cli.Product.Pdf.PdfModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Pdf</AsposeProductAssemblyName>
-    <AsposeProductResourceNamespace>v2/pdf</AsposeProductResourceNamespace>
+    <AsposeProductResourceNamespace>v3/pdf</AsposeProductResourceNamespace>
     <AsposeProductDisplayOrder>2</AsposeProductDisplayOrder>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Aspose.Cli.Product.Slides'">
@@ -33,7 +33,7 @@
     <AsposeProductSdkVersion>26.9.0</AsposeProductSdkVersion>
     <AsposeProductModuleType>Aspose.Cli.Product.Slides.SlidesModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Slides</AsposeProductAssemblyName>
-    <AsposeProductResourceNamespace>v2/slides</AsposeProductResourceNamespace>
+    <AsposeProductResourceNamespace>v3/slides</AsposeProductResourceNamespace>
     <AsposeProductDisplayOrder>3</AsposeProductDisplayOrder>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Aspose.Cli.Product.Words'">
@@ -45,14 +45,14 @@
     <AsposeProductSdkVersion>26.9.0</AsposeProductSdkVersion>
     <AsposeProductModuleType>Aspose.Cli.Product.Words.WordsModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Words</AsposeProductAssemblyName>
-    <AsposeProductResourceNamespace>v2/words</AsposeProductResourceNamespace>
+    <AsposeProductResourceNamespace>v3/words</AsposeProductResourceNamespace>
     <AsposeProductDisplayOrder>4</AsposeProductDisplayOrder>
   </PropertyGroup>
   <PropertyGroup>
     <GeneratedProductsLfSha256>787BC77245B2402FCCDB687A4D4D0904940BDA6D08A91DF622A6F67AA8635EE6</GeneratedProductsLfSha256>
     <GeneratedProductsCrLfSha256>91064DE18B7E3069E52577A042A5A1FC6A2310B425F782D87424185A2C923A04</GeneratedProductsCrLfSha256>
-    <GeneratedDistributionLfSha256>69E30A91A7FD0CF4E5F2184F09DB8EC3A37AB19E8665659AAA9F800656C9BC2C</GeneratedDistributionLfSha256>
-    <GeneratedDistributionCrLfSha256>2D44512421B4FDE7D4160B564A094BA2E5CF39F2E2305C59772980226D44F7F8</GeneratedDistributionCrLfSha256>
+    <GeneratedDistributionLfSha256>3AB5C3AA0F39F6B3884EEA4B4B52DF51AF914B07A686A998F3A18A6295516D34</GeneratedDistributionLfSha256>
+    <GeneratedDistributionCrLfSha256>C540A746DBBA17924DC8C233494E35C7A67378742006D4BA12C57505A6C5CF99</GeneratedDistributionCrLfSha256>
   </PropertyGroup>
   <Target Name="ValidateRepositoryProjectionSources" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(GeneratedProductsLfSha256)' == '' Or '$(GeneratedProductsCrLfSha256)' == '' Or '$(GeneratedDistributionLfSha256)' == '' Or '$(GeneratedDistributionCrLfSha256)' == ''" Text="Generated repository projections are missing. Run scripts/sync.ps1 ." />

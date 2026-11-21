@@ -50,8 +50,8 @@ internal static partial class ContractRules
     /// </summary>
     private static readonly Dictionary<(string Schema, string Path), string> RealNoneChoices = new()
     {
-        [("v2/cells/ops", "set_page_setup.printComments")] = "omitting printComments leaves the setting as it is, so only none takes back a sheet-end",
-        [("v2/cells/inspect-result", "cellsPageSetupInfo.printComments.anyOf[0]")] = "reads back the printComments none that set_page_setup writes",
+        [("v3/cells/ops", "set_page_setup.printComments")] = "omitting printComments leaves the setting as it is, so only none takes back a sheet-end",
+        [("v3/cells/inspect-result", "cellsPageSetupInfo.printComments.anyOf[0]")] = "reads back the printComments none that set_page_setup writes",
     };
     // rule-exemptions: end
 
@@ -64,7 +64,7 @@ internal static partial class ContractRules
     private static readonly string[] FileCore = ["path", "format", "sizeBytes"];
 
     /// <summary>The license mode block a result carries only when it ran unlicensed (C-R33).</summary>
-    private const string LicenseMode = "v2/common/license";
+    private const string LicenseMode = "v3/common/license";
 
     /// <summary>
     /// The schema subjects whose names and values C-R17, C-R18, C-R20 and C-R33 judge: every one but
@@ -72,7 +72,7 @@ internal static partial class ContractRules
     /// There a kind, a row, an argument and each of their values is the engine's own name, its
     /// positions count as the engine counts them, and a row path joins the engine's members with
     /// dots, because "a name, a value and a unit follow the engine's object model" (AGENTS.md,
-    /// Contract). The SDK's table contracts (<c>v2/common/table-*</c>) are not generated from a
+    /// Contract). The SDK's table contracts (<c>v3/common/table-*</c>) are not generated from a
     /// table: their names are ours, and the rules judge them like any other schema.
     /// </summary>
     private static IEnumerable<SchemaSubject> NamedByUs(CliCatalog catalog) =>
@@ -221,8 +221,8 @@ internal static partial class ContractRules
     /// </summary>
     private static readonly HashSet<(string Schema, string Op)> SourceAndDestination =
     [
-        ("v2/cells/ops", "copy_range"),
-        ("v2/cells/ops", "import_range"),
+        ("v3/cells/ops", "copy_range"),
+        ("v3/cells/ops", "import_range"),
     ];
 
     /// <summary>The parts of C-R20's name rules, one case each, since each is a fix of its own.</summary>
@@ -414,7 +414,7 @@ internal static partial class ContractRules
     /// </summary>
     private static readonly Dictionary<(string Schema, string Path), UnitChoice> UnitsARunChooses = new()
     {
-        [("v2/pdf/extract-result", "outputs")] = new("pdf extract", "--what", ["page", "name"],
+        [("v3/pdf/extract-result", "outputs")] = new("pdf extract", "--what", ["page", "name"],
             "pdf extract names each image or table by the page it comes from and each attachment by the name the document gives it, never used as its file name; the form data names neither; --what chooses which (security fixes S9, 2026-10-21)")
         {
             Fixture = "pdf.media",
@@ -554,7 +554,7 @@ internal static partial class ContractRules
     /// <summary>
     /// C-R33: a result has no top-level <c>kind</c> and does not require the license mode block. A
     /// result is a schema whose top level declares <c>schema</c>, as every command's result does; an
-    /// item schema such as <c>v2/common/table-object</c>, whose <c>kind</c> names the kind of
+    /// item schema such as <c>v3/common/table-object</c>, whose <c>kind</c> names the kind of
     /// the object it reads, is no result.
     /// </summary>
     private static IEnumerable<string> Envelope(string id)

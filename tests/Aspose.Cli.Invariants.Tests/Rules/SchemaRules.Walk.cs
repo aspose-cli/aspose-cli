@@ -12,7 +12,7 @@ namespace Aspose.Cli.Invariants.Tests;
 /// </summary>
 internal sealed record SchemaSubject(string SchemaId, string? Definition, bool OpsRoot = false)
 {
-    /// <summary>The case subject, such as <c>v2/cells/ops#set_validation</c>.</summary>
+    /// <summary>The case subject, such as <c>v3/cells/ops#set_validation</c>.</summary>
     public string Name => Definition is null ? SchemaId : $"{SchemaId}#{Definition}";
 
     /// <summary>Every schema node of the subject, with its display path; another subject's definitions are left out.</summary>
@@ -79,9 +79,9 @@ internal static class PublishedSchema
         IsOps(id) && Document(id)["$defs"] is JsonObject definitions
             && definitions.Any(static definition => definition.Value?["x-addresses"] is not null);
 
-    /// <summary>Whether a product edits through an object table: its ops schema, <c>v2/&lt;product&gt;/ops</c>, is generated from one.</summary>
+    /// <summary>Whether a product edits through an object table: its ops schema, <c>v3/&lt;product&gt;/ops</c>, is generated from one.</summary>
     public static bool IsObjectTableProduct(CliCatalog catalog, string product) =>
-        Ids(catalog).Contains($"v2/{product}/ops", StringComparer.Ordinal) && IsObjectTable($"v2/{product}/ops");
+        Ids(catalog).Contains($"v3/{product}/ops", StringComparer.Ordinal) && IsObjectTable($"v3/{product}/ops");
 
     /// <summary>The parsed schema document; callers must not change it.</summary>
     public static JsonObject Document(string id) => Documents.GetOrAdd(id, PublishedSchemas.Document);

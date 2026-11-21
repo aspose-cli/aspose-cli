@@ -5,7 +5,7 @@
   "displayName": "Aspose CLI",
   "environmentVariablePrefix": "ASPOSE_CLI_",
   "skillPrefix": "aspose-cli-",
-  "schemaBaseUri": "https://schemas.aspose.com/aspose-cli/v2/",
+  "schemaBaseUri": "https://schemas.aspose.com/aspose-cli/v3/",
   "configurationDirectoryName": "aspose-cli",
   "installDirectory": "Aspose/CLI",
   "releaseRepository": "aspose-cli/aspose-cli",

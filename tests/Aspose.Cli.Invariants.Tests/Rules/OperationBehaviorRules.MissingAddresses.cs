@@ -52,7 +52,7 @@ internal static partial class ContractRules
 
     /// <summary>
     /// Every kind of a product's object table, the definitions of its ops schema
-    /// (<c>v2/&lt;product&gt;/ops</c>) that declare <c>x-addresses</c>, with a row that can be set
+    /// (<c>v3/&lt;product&gt;/ops</c>) that declare <c>x-addresses</c>, with a row that can be set
     /// (one not <c>readOnly</c>): a set of the kind's first settable row, with a value of the row's
     /// schema, at an address of the kind's first address form that names no object, is refused
     /// with exit 4 and <c>ADDRESS_NOT_FOUND</c>, whose <c>details.index</c> is 0 and
@@ -67,7 +67,7 @@ internal static partial class ContractRules
     {
         foreach (CliProduct product in catalog.Products.Where(static product => ScenarioFixtures.Products.Contains(product.Id)))
         {
-            string schemaId = $"v2/{product.Id}/ops";
+            string schemaId = $"v3/{product.Id}/ops";
             if (!PublishedSchema.Ids(catalog).Contains(schemaId, StringComparer.Ordinal)
                 || PublishedSchema.Document(schemaId)["$defs"] is not JsonObject definitions)
             {
@@ -174,7 +174,7 @@ internal static partial class ContractRules
         string input = "input." + OperationRuns.Extension(product);
         workspace.Seed(input, ScenarioFixtures.Read($"{product}.rich"));
         CliCommand read = CliCatalog.Current.Command($"{product} read");
-        string[] kinds = read.Has("--kind") && PublishedSchema.Document($"v2/{product}/ops")["$defs"] is JsonObject definitions
+        string[] kinds = read.Has("--kind") && PublishedSchema.Document($"v3/{product}/ops")["$defs"] is JsonObject definitions
             ? [.. definitions.Where(static definition => definition.Value?["x-addresses"] is JsonArray).SelectMany(static definition => new[] { "--kind", definition.Key })]
             : [];
         RuleRun run = workspace.Json([.. read.Tokens, input, .. kinds, .. read.Has("--max-objects") ? new[] { "--max-objects", "10000" } : []]);

@@ -30,7 +30,7 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
     [InlineData("aspose-cli cells query range book.xlsx")]
     [InlineData("aspose-cli docs cells/commands")]
     [InlineData("aspose-cli capabilities")]
-    [InlineData("aspose-cli schema v2/pdf/info")]
+    [InlineData("aspose-cli schema v3/pdf/info")]
     public void Validator_RejectsInvalidSubcommandsAndLiteralReferences(string command) =>
         Assert.NotNull(fixture.Validator.ValidateCommand(command));
 
@@ -39,13 +39,13 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
     [InlineData("aspose-cli cells")]
     [InlineData("aspose-cli --max-input-bytes 30 cells read book.xlsx")]
     [InlineData("aspose-cli cells read book.xlsx --at sheet/Sheet1/range/A1:B2")]
-    [InlineData("aspose-cli schema v2/pdf/ops/directory")]
-    [InlineData("aspose-cli schema v2/pdf/convert-command")]
-    [InlineData("aspose-cli schema v2/pdf/ops")]
+    [InlineData("aspose-cli schema v3/pdf/ops/directory")]
+    [InlineData("aspose-cli schema v3/pdf/convert-command")]
+    [InlineData("aspose-cli schema v3/pdf/ops")]
     [InlineData("aspose-cli schema <id>")]
     [InlineData("aspose-cli cells edit book.xlsx --ops '{\"ops\":[{\"set\":\"sheet/Sheet1/cell/A1\", \"props\":{\"value\":\"--opaque\"}}]}' --in-place")]
     [InlineData("aspose-cli cells convert source.csv --to xlsx --out=\"path with spaces.xlsx\"")]
-    [InlineData("aspose-cli schema v2/pdf/ops | more")]
+    [InlineData("aspose-cli schema v3/pdf/ops | more")]
     public void Validator_AcceptsCurrentCommandsAndTeachingPlaceholders(string command) =>
         Assert.Null(fixture.Validator.ValidateCommand(command));
 

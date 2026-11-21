@@ -75,9 +75,9 @@
     ]
   },
   "documents": {
-    "v2/pdf/convert-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/convert-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf convert",
       "description": "Convert a PDF, or an HTML page the engine imports, to another format with the engine's call for it. An html output is one file: it holds its images, fonts and styles itself.",
       "options": [
@@ -247,9 +247,9 @@
         }
       ]
     },
-    "v2/pdf/convert-result": {
+    "v3/pdf/convert-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/convert-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/convert-result.schema.json",
       "description": "Result of pdf convert: the file the input was converted to.",
       "type": "object",
       "required": [
@@ -262,15 +262,15 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/convert-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/convert-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The converted PDF or HTML.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "outputs": {
           "description": "The written file; tiff holds the pages in one multi-page file.",
@@ -294,13 +294,13 @@
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -336,9 +336,9 @@
         }
       }
     },
-    "v2/pdf/create-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/create-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf create",
       "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format.",
       "options": [
@@ -436,9 +436,9 @@
         }
       ]
     },
-    "v2/pdf/create-result": {
+    "v3/pdf/create-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/create-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/create-result.schema.json",
       "description": "Result of pdf create: the PDF written and what it was created from.",
       "type": "object",
       "required": [
@@ -451,39 +451,39 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/create-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/create-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "output": {
           "description": "The created PDF.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json"
         },
         "inputs": {
           "description": "The template the PDF was saved from; empty for the engine's new document.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source-input.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/source-input.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       }
     },
-    "v2/pdf/edit-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/edit-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf edit",
       "description": "Apply a batch of set, add, delete and do operations to a PDF; nothing is written when one fails.",
       "options": [
@@ -577,7 +577,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "json-source",
-          "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/pdf/ops/directory; one of them in full: aspose-cli schema v2/pdf/ops/<name>."
+          "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v3/pdf/ops/directory; one of them in full: aspose-cli schema v3/pdf/ops/<name>."
         },
         {
           "name": "--out",
@@ -675,9 +675,9 @@
         }
       ]
     },
-    "v2/pdf/edit-result": {
+    "v3/pdf/edit-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/edit-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/edit-result.schema.json",
       "description": "Result of pdf edit: what each operation left, read from the saved document after it was opened again, and the inventory counts that changed.",
       "type": "object",
       "required": [
@@ -692,19 +692,19 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/edit-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/edit-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The edited document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "output": {
           "description": "The written document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json"
         },
         "counts": {
           "description": "The inventory counts that changed, each as [before, after]; the keys are those read reports in inventory.",
@@ -720,32 +720,32 @@
           "description": "The warnings Aspose.PDF reported while it loaded, saved and reopened the document, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         },
         "ops": {
           "description": "What each operation left, in batch order: the object at its address in the saved file, or what its action returned; last, since it grows with the batch.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-op-report.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-op-report.schema.json"
           }
         }
       }
     },
-    "v2/pdf/extract-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/extract-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf extract",
       "description": "Extract a PDF's images, attachments, tables or form data into a directory with the engine's calls for them; the page text is read with 'aspose-cli pdf read --kind text'.",
       "options": [
@@ -912,9 +912,9 @@
         }
       ]
     },
-    "v2/pdf/extract-result": {
+    "v3/pdf/extract-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/extract-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/extract-result.schema.json",
       "description": "Result of pdf extract: the files it wrote into the output directory.",
       "type": "object",
       "required": [
@@ -928,15 +928,15 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/extract-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/extract-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The PDF extracted from.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "what": {
           "description": "What was extracted, as --what named it.",
@@ -957,13 +957,13 @@
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -1008,9 +1008,9 @@
         }
       }
     },
-    "v2/pdf/formats": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/format-list.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/formats": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/format-list.schema.json",
+      "schemaVersion": 3,
       "product": "pdf",
       "formats": [
         {
@@ -1181,9 +1181,9 @@
         }
       ]
     },
-    "v2/pdf/merge-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/merge-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf merge",
       "description": "Merge PDF inputs in order with the engine's PdfFileEditor.Concatenate.",
       "options": [
@@ -1328,9 +1328,9 @@
         }
       ]
     },
-    "v2/pdf/merge-result": {
+    "v3/pdf/merge-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/merge-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/merge-result.schema.json",
       "description": "Result of pdf merge.",
       "type": "object",
       "required": [
@@ -1344,21 +1344,21 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/merge-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/merge-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "output": {
           "description": "The PDF written.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json"
         },
         "inputs": {
           "description": "The documents merged, in order.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
           }
         },
         "concatenated": {
@@ -1367,20 +1367,20 @@
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       }
     },
-    "v2/pdf/ops": {
+    "v3/pdf/ops": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/ops.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/ops.schema.json",
       "title": "Object table operations",
       "description": "An edit's operations, applied in order to the document in memory; when one fails, nothing is written. Each kind's definition lists its addresses and rows, each add's and action's the engine call it makes.",
       "type": "object",
@@ -3222,9 +3222,9 @@
         }
       }
     },
-    "v2/pdf/read-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/read-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf read",
       "description": "Read a PDF's objects, each with every row of the object table, and its inventory.",
       "options": [
@@ -3347,9 +3347,9 @@
         }
       ]
     },
-    "v2/pdf/read-result": {
+    "v3/pdf/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/read-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/read-result.schema.json",
       "description": "Result of pdf read: a window of the document's objects in document order, each with every row of the table it has, and the whole document's inventory.",
       "type": "object",
       "required": [
@@ -3364,54 +3364,54 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/read-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/read-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The document read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "window": {
           "description": "The window of the read or search: how much it returned and the option values that continue it.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/result-window.schema.json"
         },
         "inventory": {
           "description": "How many objects of each kind of content the document holds: under read the kinds read lists, under notRead the others.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-inventory.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-inventory.schema.json"
         },
         "engineWarnings": {
           "description": "The warnings Aspose.PDF reported while it loaded the document, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         },
         "objects": {
           "description": "The objects of the window, in document order, each with its address, kind and rows; last, since it grows with the document.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-object.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-object.schema.json"
           }
         }
       }
     },
-    "v2/pdf/render-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/render-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf render",
       "description": "Render one or more PDF pages.",
       "options": [
@@ -3572,9 +3572,9 @@
         }
       ]
     },
-    "v2/pdf/render-result": {
+    "v3/pdf/render-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/render-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/render-result.schema.json",
       "description": "Result of pdf render.",
       "type": "object",
       "required": [
@@ -3587,15 +3587,15 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/render-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/render-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The rendered PDF.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "outputs": {
           "description": "Each written image and the page it shows, in page order.",
@@ -3612,13 +3612,13 @@
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -3659,9 +3659,9 @@
         }
       }
     },
-    "v2/pdf/search-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/search-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf search",
       "description": "Search the text of a PDF's pages with the engine's TextFragmentAbsorber; each hit names the page's text and gives the engine's rectangle of the match.",
       "options": [
@@ -3807,9 +3807,9 @@
         }
       ]
     },
-    "v2/pdf/search-result": {
+    "v3/pdf/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/search-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/search-result.schema.json",
       "description": "Result of pdf search: the matches the engine finds in the text of the document's pages.",
       "type": "object",
       "required": [
@@ -3823,50 +3823,50 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/search-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/search-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The searched document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "window": {
           "description": "The window of the read or search: how much it returned and the option values that continue it.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/result-window.schema.json"
         },
         "engineWarnings": {
           "description": "The warnings Aspose.PDF reported while it loaded the document, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         },
         "hits": {
           "description": "The hits in page order: the address of the page's text, the row, the matched text and the engine's rectangle of it; last, since it grows with the document.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-hit.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-hit.schema.json"
           }
         }
       }
     },
-    "v2/pdf/sign-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/sign-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf sign",
       "description": "Sign a PDF with a PKCS#7 signature through PdfFileSignature.Sign, and read the new signature back from the saved file.",
       "options": [
@@ -4128,9 +4128,9 @@
         }
       ]
     },
-    "v2/pdf/sign-result": {
+    "v3/pdf/sign-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/sign-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/sign-result.schema.json",
       "description": "Result of pdf sign: the signature fields the saved file holds signed that the input did not.",
       "type": "object",
       "required": [
@@ -4144,19 +4144,19 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/sign-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/sign-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The PDF signed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "output": {
           "description": "The signed PDF written.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json"
         },
         "signatures": {
           "description": "The signature fields the saved file holds signed that the input did not, read back from it.",
@@ -4167,13 +4167,13 @@
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -4199,9 +4199,9 @@
         }
       }
     },
-    "v2/pdf/split-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/split-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf split",
       "description": "Split a PDF by page ranges, each part a new document with Pages.Add of its pages; every part is written or none.",
       "options": [
@@ -4402,9 +4402,9 @@
         }
       ]
     },
-    "v2/pdf/split-result": {
+    "v3/pdf/split-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/split-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/split-result.schema.json",
       "description": "Result of pdf split, which writes every part or none.",
       "type": "object",
       "required": [
@@ -4417,15 +4417,15 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/split-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/split-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The PDF split.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "outputs": {
           "description": "Each part written, in order; its number is the one in its file name.",
@@ -4436,13 +4436,13 @@
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -4484,9 +4484,9 @@
         }
       }
     },
-    "v2/pdf/validate-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/pdf/validate-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli pdf validate",
       "description": "Validate a PDF against a PDF/A profile with Document.Validate; the result holds its return value and its log.",
       "options": [
@@ -4570,9 +4570,9 @@
         }
       ]
     },
-    "v2/pdf/validate-result": {
+    "v3/pdf/validate-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/validate-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/pdf/validate-result.schema.json",
       "description": "Result of pdf validate: what Document.Validate returned for a PDF/A profile, and its log.",
       "type": "object",
       "required": [
@@ -4587,15 +4587,15 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/validate-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/pdf/validate-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The PDF checked.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "profile": {
           "description": "The PDF/A profile checked against.",
@@ -4612,13 +4612,13 @@
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         },
         "log": {

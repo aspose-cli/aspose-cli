@@ -65,7 +65,7 @@ public sealed class PublishedSchemaCacheTests : IDisposable
                 Interlocked.Increment(ref reads);
                 Thread.Sleep(200);
                 return Snapshot("only");
-            }).Documents["v2/common/x"])));
+            }).Documents["v3/common/x"])));
 
         Assert.All(seen, static document => Assert.Equal("only", document));
         Assert.Equal(1, reads);
@@ -104,11 +104,11 @@ public sealed class PublishedSchemaCacheTests : IDisposable
         {
             counted++;
             return Snapshot(document);
-        }).Documents["v2/common/x"];
+        }).Documents["v3/common/x"];
         reads = counted;
         return result;
     }
 
     private static PublishedSchemaSnapshot Snapshot(string document) =>
-        new(["v2/common/x"], new Dictionary<string, string>(StringComparer.Ordinal) { ["v2/common/x"] = document });
+        new(["v3/common/x"], new Dictionary<string, string>(StringComparer.Ordinal) { ["v3/common/x"] = document });
 }

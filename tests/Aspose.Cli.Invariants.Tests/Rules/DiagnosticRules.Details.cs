@@ -9,7 +9,7 @@ namespace Aspose.Cli.Invariants.Tests;
 // C-R25: the error envelope and the dictionary of its details keys.
 internal static partial class ContractRules
 {
-    private const string ErrorSchema = "v2/common/error";
+    private const string ErrorSchema = "v3/common/error";
 
     /// <summary>
     /// The keys C-R25 replaces, which the dictionary the error schema publishes must not hold:

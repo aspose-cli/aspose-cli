@@ -8,8 +8,8 @@ changing the request is the caller's.
 
 ```json
 {
-  "schema": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
-  "schemaVersion": 2,
+  "schema": "https://schemas.aspose.com/aspose-cli/v3/common/error.schema.json",
+  "schemaVersion": 3,
   "error": {
     "code": "ADDRESS_NOT_FOUND",
     "message": "No sheet 'Nope' was found. Must be one of: Data, Summary",
@@ -18,11 +18,11 @@ changing the request is the caller's.
 }
 ```
 
-- `code` is stable; `aspose-cli schema v2/common/diagnostics` lists every
+- `code` is stable; `aspose-cli schema v3/common/diagnostics` lists every
   error and warning code of this build with its category and exit code.
 - `details` holds the facts: the resolved `path`, the `option` or `argument`
   at fault, the names that exist (`available`), an operation's `index` and
-  `at`. `aspose-cli schema v2/common/error-payload` describes every key.
+  `at`. `aspose-cli schema v3/common/error-payload` describes every key.
   `details.reason`, when present, is a short token such as `unknown-field`; an
   `OPS_INVALID` about one field names its path in `details.field`.
 

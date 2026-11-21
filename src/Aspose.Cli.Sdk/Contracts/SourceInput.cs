@@ -2,7 +2,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
 /// Describes a file a command read as the value of one of its options, such as the template or
-/// the content a file is created from: the facts of an <see cref="InputInfo"/> and the option.
+/// the content a file is created from: its path, format, size and encryption, and the option.
 /// </summary>
 /// <remarks>
 /// Products build it only with <c>FileObjects.Sources</c>, which makes the path absolute, reads

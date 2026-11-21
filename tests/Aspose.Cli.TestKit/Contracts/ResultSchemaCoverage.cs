@@ -25,7 +25,7 @@ public static class ResultSchemaCoverage
 /// output, and a result type no command produces any more is noticed.
 /// </summary>
 /// <remarks>
-/// The result types are the product's published result schemas (<c>v2/&lt;product&gt;/…</c>
+/// The result types are the product's published result schemas (<c>v3/&lt;product&gt;/…</c>
 /// except its <c>ops</c> input schema). A run counts when a test's <see cref="TempWorkspace"/>
 /// validated its <c>--output-format json</c> envelope, which <see cref="ResultSchemaCoverage"/> records.
 /// The check runs last in its test process (<see cref="ResultSchemaCoverageOrderer"/>) and only
@@ -42,7 +42,7 @@ public abstract class ResultSchemaCoverageTests
     public void EveryResultSchema_IsProducedByARealRun()
     {
         TestLicense.Require("Licensed tests produce some of the result types.");
-        string prefix = $"v2/{ProductId}/";
+        string prefix = $"v3/{ProductId}/";
         string[] published = [.. PublishedSchemas.ResultIds.Where(id => id.StartsWith(prefix, StringComparison.Ordinal)).Order(StringComparer.Ordinal)];
         Assert.NotEmpty(published);
         string[] uncovered = [.. published.Except(ResultSchemaCoverage.SeenIds, StringComparer.Ordinal)];

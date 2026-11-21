@@ -5,7 +5,7 @@
   <AsposeCliDisplayName>Aspose CLI</AsposeCliDisplayName>
   <AsposeCliEnvironmentVariablePrefix>ASPOSE_CLI_</AsposeCliEnvironmentVariablePrefix>
   <AsposeCliSkillPrefix>aspose-cli-</AsposeCliSkillPrefix>
-  <AsposeCliSchemaBaseUri>https://schemas.aspose.com/aspose-cli/v2/</AsposeCliSchemaBaseUri>
+  <AsposeCliSchemaBaseUri>https://schemas.aspose.com/aspose-cli/v3/</AsposeCliSchemaBaseUri>
   <AsposeCliConfigurationDirectoryName>aspose-cli</AsposeCliConfigurationDirectoryName>
   <AsposeCliInstallDirectory>Aspose/CLI</AsposeCliInstallDirectory>
   <AsposeCliReleaseRepository>aspose-cli/aspose-cli</AsposeCliReleaseRepository>

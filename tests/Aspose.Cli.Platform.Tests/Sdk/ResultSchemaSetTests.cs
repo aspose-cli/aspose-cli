@@ -19,13 +19,13 @@ public sealed class ResultSchemaSetTests
     [Fact]
     public void Block_IsWrittenFromItsRecordsAndDocumentation()
     {
-        Assert.Equal(["v2/test/sample"], Sample.Ids);
-        Assert.True(Sample.TryRead("v2/test/sample", out string? document));
+        Assert.Equal(["v3/test/sample"], Sample.Ids);
+        Assert.True(Sample.TryRead("v3/test/sample", out string? document));
         Assert.Equal(
             """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "$id": "https://schemas.aspose.com/aspose-cli/v2/test/sample.schema.json",
+              "$id": "https://schemas.aspose.com/aspose-cli/v3/test/sample.schema.json",
               "description": "A sample block that shows every shape a result record can take.",
               "type": "object",
               "required": [
@@ -40,7 +40,7 @@ public sealed class ResultSchemaSetTests
               "properties": {
                 "schema": {
                   "description": "The block's schema.",
-                  "const": "https://schemas.aspose.com/aspose-cli/v2/test/sample.schema.json"
+                  "const": "https://schemas.aspose.com/aspose-cli/v3/test/sample.schema.json"
                 },
                 "schemaVersion": {
                   "description": "The block's version.",
@@ -195,7 +195,7 @@ public sealed class ResultSchemaSetTests
     [Fact]
     public void SerializedBlock_ConformsToItsSchema_AndUnknownMembersAreRefused()
     {
-        Assert.True(Sample.TryRead("v2/test/sample", out string? document));
+        Assert.True(Sample.TryRead("v3/test/sample", out string? document));
         JsonSchema schema = JsonSchema.FromText(document);
         var block = new SampleBlock
         {
@@ -245,7 +245,7 @@ public sealed class ResultSchemaSetTests
                 },
             ],
         };
-        Assert.True(new ResultSchemaSet("test", [root], common: null).TryRead("v2/test/nullable", out string? document));
+        Assert.True(new ResultSchemaSet("test", [root], common: null).TryRead("v3/test/nullable", out string? document));
         JsonSchema schema = JsonSchema.FromText(document);
 
         Assert.True(schema.Evaluate(JsonDocument.Parse("""{"any":["a",null]}""").RootElement).IsValid, document);
@@ -287,7 +287,7 @@ public sealed class ResultSchemaSetTests
             ],
         };
         var set = new ResultSchemaSet("test", [root, new() { Type = typeof(Nested.Twin) }, new() { Type = typeof(Other.Twin) }], common: null);
-        Assert.Contains("claimed by Twin and Twin", Assert.Throws<InvalidOperationException>(() => set.TryRead("v2/test/root", out _)).Message, StringComparison.Ordinal);
+        Assert.Contains("claimed by Twin and Twin", Assert.Throws<InvalidOperationException>(() => set.TryRead("v3/test/root", out _)).Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -319,7 +319,7 @@ public sealed class ResultSchemaSetTests
             ],
         };
 
-        Assert.True(new ResultSchemaSet("test", [root, item], SdkSchemaCatalog.Schemas).TryRead("v2/test/files", out string? document));
+        Assert.True(new ResultSchemaSet("test", [root, item], SdkSchemaCatalog.Schemas).TryRead("v3/test/files", out string? document));
         JsonObject page = JsonNode.Parse(document)!["$defs"]!["samplePageFile"]!.AsObject();
         Assert.Equal(["page", "path", "format", "sizeBytes"], page["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
         Assert.Equal(["page", "path", "format", "sizeBytes", "encrypted"], page["properties"]!.AsObject().Select(static pair => pair.Key));
@@ -365,7 +365,7 @@ public sealed record SampleBlock
 {
     /// <summary>The block's schema.</summary>
     [JsonPropertyOrder(-100)]
-    public string Schema => "https://schemas.aspose.com/aspose-cli/v2/test/sample.schema.json";
+    public string Schema => "https://schemas.aspose.com/aspose-cli/v3/test/sample.schema.json";
 
     /// <summary>The block's version.</summary>
     [JsonPropertyOrder(-99)]

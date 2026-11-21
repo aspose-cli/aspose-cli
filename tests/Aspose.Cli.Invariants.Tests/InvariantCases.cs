@@ -547,7 +547,7 @@ internal static class InvariantCases
 
     /// <summary>The schema of a product's object table operation document; null without a table.</summary>
     private static string? OpsSchema(CliCatalog catalog, CliProduct product) =>
-        PublishedSchema.IsObjectTableProduct(catalog, product.Id) ? $"v2/{product.Id}/ops" : null;
+        PublishedSchema.IsObjectTableProduct(catalog, product.Id) ? $"v3/{product.Id}/ops" : null;
 
     /// <summary>The schema definition prefix of an object table's actions.</summary>
     private const string ActionPrefix = "do.";

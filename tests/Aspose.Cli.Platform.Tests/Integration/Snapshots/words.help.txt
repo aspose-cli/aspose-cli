@@ -24,7 +24,7 @@ Examples:
   aspose-cli words edit contract.docx --ops ops.json --out revised.docx
 
 Learn more:
-  aspose-cli schema v2/words/ops/directory  the object table: kinds, addresses, rows, adds and actions
+  aspose-cli schema v3/words/ops/directory  the object table: kinds, addresses, rows, adds and actions
 
 
 ## aspose-cli words compare --help
@@ -68,7 +68,7 @@ Examples:
   aspose-cli words compare original.docx changed.docx --author Review --date-time 2026-03-01T09:00:00 --ignore-formatting --granularity CharLevel --out redline.pdf
 
 Learn more:
-  aspose-cli schema v2/words/compare-result  the fields of the compare result
+  aspose-cli schema v3/words/compare-result  the fields of the compare result
 
 
 ## aspose-cli words convert --help
@@ -109,7 +109,7 @@ Examples:
   aspose-cli words convert notes.txt --to docx --encoding utf-8 --auto-numbering-detection false --detect-numbering-with-whitespaces false --detect-hyperlinks false --leading-spaces Preserve
 
 Learn more:
-  aspose-cli schema v2/words/convert-result  the fields of the convert result
+  aspose-cli schema v3/words/convert-result  the fields of the convert result
 
 
 ## aspose-cli words create --help
@@ -137,7 +137,7 @@ Examples:
   aspose-cli words create letter.docx --template letter.dotx
 
 Learn more:
-  aspose-cli schema v2/words/create-result  the fields of the create result
+  aspose-cli schema v3/words/create-result  the fields of the create result
 
 
 ## aspose-cli words edit --help
@@ -151,7 +151,7 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --ops <ops> (REQUIRED)         The operation document, {"ops": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/words/ops/directory; one of them in full: aspose-cli schema v2/words/ops/<name>.
+  --ops <ops> (REQUIRED)         The operation document, {"ops": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v3/words/ops/directory; one of them in full: aspose-cli schema v3/words/ops/<name>.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.
@@ -171,9 +171,9 @@ Examples:
   aspose-cli words edit contract.docx --in-place --ops ops.json
 
 Learn more:
-  aspose-cli schema v2/words/ops/directory  the kinds and their rows, the adds and the actions an operation names
-  aspose-cli schema v2/words/ops/<name>     one kind, add or action in full
-  aspose-cli schema v2/words/edit-result    the fields of the edit result
+  aspose-cli schema v3/words/ops/directory  the kinds and their rows, the adds and the actions an operation names
+  aspose-cli schema v3/words/ops/<name>     one kind, add or action in full
+  aspose-cli schema v3/words/edit-result    the fields of the edit result
 
 
 ## aspose-cli words extract --help
@@ -202,7 +202,7 @@ Examples:
   aspose-cli words extract locked.docx --what images --password-env DOC_PASSWORD --out-dir images
 
 Learn more:
-  aspose-cli schema v2/words/extract-result  the fields of the extract result
+  aspose-cli schema v3/words/extract-result  the fields of the extract result
 
 
 ## aspose-cli words read --help
@@ -234,8 +234,8 @@ Examples:
   aspose-cli words read contract.docx --at section/0/body/table/0 --kind cell --kind paragraph --kind run
 
 Learn more:
-  aspose-cli schema v2/words/ops/directory  the kinds an address and --kind name, with their rows
-  aspose-cli schema v2/words/read-result    the fields of the read result
+  aspose-cli schema v3/words/ops/directory  the kinds an address and --kind name, with their rows
+  aspose-cli schema v3/words/read-result    the fields of the read result
 
 
 ## aspose-cli words render --help
@@ -267,7 +267,7 @@ Examples:
   aspose-cli words render contract.docx --dpi 192 --out review.png
 
 Learn more:
-  aspose-cli schema v2/words/render-result  the fields of the render result
+  aspose-cli schema v3/words/render-result  the fields of the render result
 
 
 ## aspose-cli words search --help
@@ -298,6 +298,6 @@ Examples:
   aspose-cli words search contract.docx --pattern "20[0-9]{2}" --regex
 
 Learn more:
-  aspose-cli schema v2/words/search-result  the fields of the search result
+  aspose-cli schema v3/words/search-result  the fields of the search result
 
 

@@ -73,7 +73,7 @@ public sealed class DiagnosticCatalogTests
         Assert.Contains("does not match", owner.Message, StringComparison.Ordinal);
 
         InvalidOperationException schema = Assert.Throws<InvalidOperationException>(
-            () => Build("alpha", [valid with { DetailsSchemaId = "v2/alpha/missing" }]));
+            () => Build("alpha", [valid with { DetailsSchemaId = "v3/alpha/missing" }]));
         Assert.Contains("unknown details schema", schema.Message, StringComparison.Ordinal);
 
         InvalidOperationException exit = Assert.Throws<InvalidOperationException>(
