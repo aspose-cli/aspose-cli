@@ -64,17 +64,17 @@ public abstract partial record ResultEnvelope
 
     /// <summary>
     /// The id the schema catalog names the schema <paramref name="id"/> of <paramref name="owner"/> by,
-    /// such as <c>v2/common/resource-budget</c>.
+    /// such as <c>v3/common/resource-budget</c>.
     /// </summary>
     /// <param name="owner">A product id, or <c>common</c>.</param>
     /// <param name="id">The relative schema id, such as <c>resource-budget</c>.</param>
     public static string CatalogId(string owner, string id) => $"v{ContractVersion}/{owner}/{id}";
 
     /// <summary>
-    /// The version of the result contracts this build publishes, the <c>v2</c> of every schema id;
+    /// The version of the result contracts this build publishes, the <c>v3</c> of every schema id;
     /// every published result states it as its <c>schemaVersion</c>.
     /// </summary>
-    public const int ContractVersion = 2;
+    public const int ContractVersion = 3;
 
     /// <summary>
     /// The owner of the schemas an assembly's records state: the product id its product module

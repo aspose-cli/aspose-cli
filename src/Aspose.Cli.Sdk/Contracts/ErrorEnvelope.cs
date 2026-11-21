@@ -24,9 +24,9 @@ public sealed record ErrorEnvelope
     [JsonPropertyOrder(-100)]
     public string Schema { get; } = SchemaUri;
 
-    /// <summary>Version of the error contract.</summary>
+    /// <summary>Version of the error contract, the same number every result states.</summary>
     [JsonPropertyOrder(-99)]
-    public int SchemaVersion { get; } = 2;
+    public int SchemaVersion => ResultEnvelope.ContractVersion;
 
     /// <summary>The error details.</summary>
     public required ErrorPayload Error { get; init; }

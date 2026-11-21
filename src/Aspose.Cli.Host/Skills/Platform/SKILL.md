@@ -34,7 +34,7 @@ A command refuses, before it reads the file, an extension that names a format
 it does not read, such as `.xlsx` given to `pdf read`: `FORMAT_UNSUPPORTED`,
 whose message lists the extensions the command reads. A file without an
 extension, or with one no format names, goes to the engine.
-`aspose-cli schema v2/<product>/formats` marks `convert-input` the formats
+`aspose-cli schema v3/<product>/formats` marks `convert-input` the formats
 only `convert` reads.
 
 ## The object table
@@ -76,9 +76,9 @@ A row a read returns is set under the same name.
   deleted object, and an action's `returned` value. `counts` lists the
   inventory counts that changed, before and after.
 
-`aspose-cli schema v2/<product>/ops/directory` lists the product's kinds with
+`aspose-cli schema v3/<product>/ops/directory` lists the product's kinds with
 their address forms and rows, its adds and its actions. A name it lists is
-printed in full with `aspose-cli schema v2/<product>/ops/<name>`, such as
+printed in full with `aspose-cli schema v3/<product>/ops/<name>`, such as
 `ops/cell`, `ops/add.chart` or `ops/do.sort`.
 
 ## Reading
@@ -120,13 +120,13 @@ each match is in.
 
 | Question | Ask |
 |----------|-----|
-| A command's options, values and defaults | `aspose-cli <product> <command> --help`, `aspose-cli schema v2/<product>/<command>-command` |
-| What a result holds | `aspose-cli schema v2/<product>/<command>-result` |
-| The kinds, rows, adds and actions | `aspose-cli schema v2/<product>/ops/directory`, then `ops/<name>` |
-| The formats a product reads and writes, with their extensions | `aspose-cli schema v2/<product>/formats` |
-| Every error and warning code, with its exit code | `aspose-cli schema v2/common/diagnostics` |
-| What an error's `details` keys mean | `aspose-cli schema v2/common/error-payload` |
-| The resource budgets | `aspose-cli schema v2/common/budgets` |
+| A command's options, values and defaults | `aspose-cli <product> <command> --help`, `aspose-cli schema v3/<product>/<command>-command` |
+| What a result holds | `aspose-cli schema v3/<product>/<command>-result` |
+| The kinds, rows, adds and actions | `aspose-cli schema v3/<product>/ops/directory`, then `ops/<name>` |
+| The formats a product reads and writes, with their extensions | `aspose-cli schema v3/<product>/formats` |
+| Every error and warning code, with its exit code | `aspose-cli schema v3/common/diagnostics` |
+| What an error's `details` keys mean | `aspose-cli schema v3/common/error-payload` |
+| The resource budgets | `aspose-cli schema v3/common/budgets` |
 
 ## References
 

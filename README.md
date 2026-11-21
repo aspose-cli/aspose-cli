@@ -5,7 +5,7 @@ AI agents. `aspose-cli` provides a CLI; documents are processed on your machine.
 
 The CLI source is MIT-licensed and grants no rights to the commercial Aspose SDKs it runs on, which
 have their own [license terms](https://about.aspose.com/legal/eula/); without a license they run
-in evaluation mode, and the CLI discloses every evaluation effect on its output.
+in evaluation mode, and every result of such a run says so.
 
 ## Quick start
 
@@ -41,6 +41,12 @@ project by default or for the user with `--user`.
 
 ## Compatibility
 
+2.0 is a major version. Its contract replaces that of 1.x with no compatibility layer: commands,
+options, edit operations, result fields, codes and schema ids changed. The 2.0 installer does not
+update a 1.x installation: uninstall 1.x first with the `install.ps1` it was installed with
+(`-Uninstall`), which also removes the MCP server registrations a 1.x `-Mcp` install made, then
+install 2.0.
+
 From 1.0 the machine contract changes only by adding, except in a major version. The contract
 is what a script or agent depends on: commands, options and positional arguments with their
 defaults and accepted values; edit operation names and fields; result field names, types and
@@ -57,8 +63,8 @@ change in any release.
 A consumer must ignore result fields, warning codes and error codes it does not know. The result
 schemas describe the current build; validate against them ignoring unknown properties.
 `schemaVersion` in a result is the contract version: it increases only with a breaking change,
-with the major version, never for an addition. It started at 2 and is independent of the CLI
-version, so 1.0 publishes `v2` schema ids. The `schema` field names a schema by id; the id is not
+with the major version, never for an addition. It is independent of the CLI version: 1.x
+published 2, and 2.0 publishes 3, in `v3` schema ids. The `schema` field names a schema by id; the id is not
 a URL to fetch, and `aspose-cli schema <id>` prints that schema offline.
 
 The environment variables in the contract are the license variables `ASPOSE_LICENSE_B64`,
@@ -69,7 +75,7 @@ variables that a command's `schema` document lists as the source of an option's 
 internal.
 
 Evaluation mode changes output as the Aspose SDKs decide; a result states it in its
-`license.mode`, but the evaluation output itself is not covered. 1.0 has no experimental
+`license.mode`, but the evaluation output itself is not covered. 2.0 has no experimental
 features: everything it exposes is covered.
 
 ## Licensing

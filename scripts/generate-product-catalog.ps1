@@ -361,7 +361,7 @@ $products = @(
                 sdkPackageId = [string] $row.sdkPackageId
                 sdkVersion = [string] $row.sdkVersion
                 supplementalPackageVersions = $supplemental
-                resourceNamespace = "v2/$id"
+                resourceNamespace = "v3/$id"
                 displayOrder = $displayOrder
             }
         } |

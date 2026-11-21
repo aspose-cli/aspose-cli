@@ -84,9 +84,9 @@
     ]
   },
   "documents": {
-    "v2/words/compare-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/words/compare-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli words compare",
       "description": "Compare a changed document with the original, Document.Compare, and write the redline: a copy of the original whose revisions are the differences.",
       "options": [
@@ -444,9 +444,9 @@
         }
       ]
     },
-    "v2/words/compare-result": {
+    "v3/words/compare-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/compare-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/words/compare-result.schema.json",
       "description": "Result of words compare: the redline Document.Compare made of the original, and its revision count.",
       "type": "object",
       "required": [
@@ -461,23 +461,23 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/words/compare-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/words/compare-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "left": {
           "description": "The original document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "right": {
           "description": "The changed document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "output": {
           "description": "The redline written.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json"
         },
         "revisionCount": {
           "description": "The redline's revision count, Document.Revisions.Count after the comparison.",
@@ -488,25 +488,25 @@
           "description": "The warnings Aspose.Words reported, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       }
     },
-    "v2/words/convert-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/words/convert-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli words convert",
       "description": "Convert a document to another format with the engine's options for it. An html, html-fixed or md output is one file: it holds its images, fonts and styles itself.",
       "options": [
@@ -797,9 +797,9 @@
         }
       ]
     },
-    "v2/words/convert-result": {
+    "v3/words/convert-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/convert-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/words/convert-result.schema.json",
       "description": "Result of words convert.",
       "type": "object",
       "required": [
@@ -812,15 +812,15 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/words/convert-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/words/convert-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The converted document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "outputs": {
           "description": "The written files: the one file the document was converted to.",
@@ -838,18 +838,18 @@
           "description": "The warnings Aspose.Words reported, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -885,9 +885,9 @@
         }
       }
     },
-    "v2/words/create-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/words/create-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli words create",
       "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format.",
       "options": [
@@ -985,9 +985,9 @@
         }
       ]
     },
-    "v2/words/create-result": {
+    "v3/words/create-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/create-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/words/create-result.schema.json",
       "description": "Result of words create: the document written and what it was created from.",
       "type": "object",
       "required": [
@@ -1000,46 +1000,46 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/words/create-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/words/create-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "output": {
           "description": "The created document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json"
         },
         "inputs": {
           "description": "The template the document was saved from; empty for the engine's new document.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source-input.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/source-input.schema.json"
           }
         },
         "engineWarnings": {
           "description": "The warnings Aspose.Words reported, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       }
     },
-    "v2/words/edit-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/words/edit-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli words edit",
       "description": "Apply a batch of set, add, delete, move and do operations to a document; nothing is written when one fails.",
       "options": [
@@ -1133,7 +1133,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "json-source",
-          "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/words/ops/directory; one of them in full: aspose-cli schema v2/words/ops/<name>."
+          "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v3/words/ops/directory; one of them in full: aspose-cli schema v3/words/ops/<name>."
         },
         {
           "name": "--out",
@@ -1231,9 +1231,9 @@
         }
       ]
     },
-    "v2/words/edit-result": {
+    "v3/words/edit-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/edit-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/words/edit-result.schema.json",
       "description": "Result of words edit: what each operation left, read from the saved document after it was opened again, and the inventory counts that changed.",
       "type": "object",
       "required": [
@@ -1248,19 +1248,19 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/words/edit-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/words/edit-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The edited document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "output": {
           "description": "The written document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json"
         },
         "counts": {
           "description": "The inventory counts that changed, each as [before, after]; the keys are those read reports in inventory.",
@@ -1276,32 +1276,32 @@
           "description": "The warnings Aspose.Words reported while it loaded, saved and reopened the document, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         },
         "ops": {
           "description": "What each operation left, in batch order: the object at its address in the saved file, or what its action returned; last, since it grows with the batch.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-op-report.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-op-report.schema.json"
           }
         }
       }
     },
-    "v2/words/extract-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/words/extract-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli words extract",
       "description": "Write the bytes of each image the document stores, ImageData.ImageBytes, one file per image in document order; a linked image stores none.",
       "options": [
@@ -1415,9 +1415,9 @@
         }
       ]
     },
-    "v2/words/extract-result": {
+    "v3/words/extract-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/extract-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/words/extract-result.schema.json",
       "description": "Result of words extract: one file per image the document stores, in document order.",
       "type": "object",
       "required": [
@@ -1431,15 +1431,15 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/words/extract-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/words/extract-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "what": {
           "description": "What was extracted.",
@@ -1459,18 +1459,18 @@
           "description": "The warnings Aspose.Words reported, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -1511,9 +1511,9 @@
         }
       }
     },
-    "v2/words/formats": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/format-list.schema.json",
-      "schemaVersion": 2,
+    "v3/words/formats": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/format-list.schema.json",
+      "schemaVersion": 3,
       "product": "words",
       "formats": [
         {
@@ -1821,9 +1821,9 @@
         }
       ]
     },
-    "v2/words/ops": {
+    "v3/words/ops": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/ops.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/words/ops.schema.json",
       "title": "Object table operations",
       "description": "An edit's operations, applied in order to the document in memory; when one fails, nothing is written. Each kind's definition lists its addresses and rows, each add's and action's the engine call it makes.",
       "type": "object",
@@ -5586,9 +5586,9 @@
         }
       }
     },
-    "v2/words/read-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/words/read-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli words read",
       "description": "Read a document's objects, each with every row of the object table, and its inventory.",
       "options": [
@@ -5711,9 +5711,9 @@
         }
       ]
     },
-    "v2/words/read-result": {
+    "v3/words/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/words/read-result.schema.json",
       "description": "Result of words read: a window of the document's objects in document order, each with every row of the table it has, and the whole document's inventory.",
       "type": "object",
       "required": [
@@ -5728,54 +5728,54 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/words/read-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The document read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "window": {
           "description": "The window of the read or search: how much it returned and the option values that continue it.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/result-window.schema.json"
         },
         "inventory": {
           "description": "How many objects of each kind of content the document holds: under read the kinds read lists, under notRead the others.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-inventory.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-inventory.schema.json"
         },
         "engineWarnings": {
           "description": "The warnings Aspose.Words reported while it loaded the document, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         },
         "objects": {
           "description": "The objects of the window, in document order, each with its address, kind and rows; last, since it grows with the document.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-object.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-object.schema.json"
           }
         }
       }
     },
-    "v2/words/render-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/words/render-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli words render",
       "description": "Render one or more document pages.",
       "options": [
@@ -5936,9 +5936,9 @@
         }
       ]
     },
-    "v2/words/render-result": {
+    "v3/words/render-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/render-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/words/render-result.schema.json",
       "description": "Result of words render.",
       "type": "object",
       "required": [
@@ -5951,15 +5951,15 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/words/render-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/words/render-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The rendered document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "outputs": {
           "description": "One written image per rendered page, in page order.",
@@ -5979,18 +5979,18 @@
           "description": "The warnings Aspose.Words reported, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -6032,9 +6032,9 @@
         }
       }
     },
-    "v2/words/search-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/words/search-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli words search",
       "description": "Search the text of a document's paragraphs, as Paragraph.GetText() gives it; each hit names the paragraph's address.",
       "options": [
@@ -6180,9 +6180,9 @@
         }
       ]
     },
-    "v2/words/search-result": {
+    "v3/words/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/search-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/words/search-result.schema.json",
       "description": "Result of words search: the matches in the text rows of the document's objects.",
       "type": "object",
       "required": [
@@ -6196,43 +6196,43 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/words/search-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/words/search-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The searched document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "window": {
           "description": "The window of the read or search: how much it returned and the option values that continue it.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/result-window.schema.json"
         },
         "engineWarnings": {
           "description": "The warnings Aspose.Words reported while it loaded the document, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         },
         "hits": {
           "description": "The hits in document order: the object's address, the text row, and where the match is in it; last, since it grows with the document.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-hit.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-hit.schema.json"
           }
         }
       }

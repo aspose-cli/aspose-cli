@@ -1,6 +1,6 @@
 {
-  "schema": "https://schemas.aspose.com/aspose-cli/v2/common/schema-catalog.schema.json",
-  "schemaVersion": 2,
+  "schema": "https://schemas.aspose.com/aspose-cli/v3/common/schema-catalog.schema.json",
+  "schemaVersion": 3,
   "cliVersion": "<build>",
   "products": [
     "cells",
@@ -51,123 +51,123 @@
     }
   ],
   "ids": [
-    "v2/cells/convert-command",
-    "v2/cells/convert-result",
-    "v2/cells/create-command",
-    "v2/cells/create-result",
-    "v2/cells/edit-command",
-    "v2/cells/edit-result",
-    "v2/cells/formats",
-    "v2/cells/ops",
-    "v2/cells/ops/directory",
-    "v2/cells/read-command",
-    "v2/cells/read-result",
-    "v2/cells/render-command",
-    "v2/cells/render-result",
-    "v2/cells/search-command",
-    "v2/cells/search-result",
-    "v2/common/aspose-cli-command",
-    "v2/common/budget-list",
-    "v2/common/budgets",
-    "v2/common/command",
-    "v2/common/diagnostic-details",
-    "v2/common/diagnostic-list",
-    "v2/common/diagnostics",
-    "v2/common/engine-warning",
-    "v2/common/error",
-    "v2/common/error-payload",
-    "v2/common/font-list",
-    "v2/common/fonts-list-command",
-    "v2/common/format-list",
-    "v2/common/input",
-    "v2/common/license",
-    "v2/common/license-install-command",
-    "v2/common/license-remove-command",
-    "v2/common/license-status",
-    "v2/common/license-status-command",
-    "v2/common/not-found-details",
-    "v2/common/output",
-    "v2/common/resource-budget",
-    "v2/common/result-window",
-    "v2/common/schema-catalog",
-    "v2/common/schema-command",
-    "v2/common/skill-install",
-    "v2/common/skill-install-command",
-    "v2/common/skill-list",
-    "v2/common/skill-list-command",
-    "v2/common/source-input",
-    "v2/common/table-hit",
-    "v2/common/table-inventory",
-    "v2/common/table-object",
-    "v2/common/table-op-report",
-    "v2/common/version",
-    "v2/common/warning",
-    "v2/pdf/convert-command",
-    "v2/pdf/convert-result",
-    "v2/pdf/create-command",
-    "v2/pdf/create-result",
-    "v2/pdf/edit-command",
-    "v2/pdf/edit-result",
-    "v2/pdf/extract-command",
-    "v2/pdf/extract-result",
-    "v2/pdf/formats",
-    "v2/pdf/merge-command",
-    "v2/pdf/merge-result",
-    "v2/pdf/ops",
-    "v2/pdf/ops/directory",
-    "v2/pdf/read-command",
-    "v2/pdf/read-result",
-    "v2/pdf/render-command",
-    "v2/pdf/render-result",
-    "v2/pdf/search-command",
-    "v2/pdf/search-result",
-    "v2/pdf/sign-command",
-    "v2/pdf/sign-result",
-    "v2/pdf/split-command",
-    "v2/pdf/split-result",
-    "v2/pdf/validate-command",
-    "v2/pdf/validate-result",
-    "v2/slides/convert-command",
-    "v2/slides/convert-result",
-    "v2/slides/create-command",
-    "v2/slides/create-result",
-    "v2/slides/edit-command",
-    "v2/slides/edit-result",
-    "v2/slides/extract-command",
-    "v2/slides/extract-result",
-    "v2/slides/formats",
-    "v2/slides/ops",
-    "v2/slides/ops/directory",
-    "v2/slides/read-command",
-    "v2/slides/read-result",
-    "v2/slides/render-command",
-    "v2/slides/render-result",
-    "v2/slides/search-command",
-    "v2/slides/search-result",
-    "v2/words/compare-command",
-    "v2/words/compare-result",
-    "v2/words/convert-command",
-    "v2/words/convert-result",
-    "v2/words/create-command",
-    "v2/words/create-result",
-    "v2/words/edit-command",
-    "v2/words/edit-result",
-    "v2/words/extract-command",
-    "v2/words/extract-result",
-    "v2/words/formats",
-    "v2/words/ops",
-    "v2/words/ops/directory",
-    "v2/words/read-command",
-    "v2/words/read-result",
-    "v2/words/render-command",
-    "v2/words/render-result",
-    "v2/words/search-command",
-    "v2/words/search-result"
+    "v3/cells/convert-command",
+    "v3/cells/convert-result",
+    "v3/cells/create-command",
+    "v3/cells/create-result",
+    "v3/cells/edit-command",
+    "v3/cells/edit-result",
+    "v3/cells/formats",
+    "v3/cells/ops",
+    "v3/cells/ops/directory",
+    "v3/cells/read-command",
+    "v3/cells/read-result",
+    "v3/cells/render-command",
+    "v3/cells/render-result",
+    "v3/cells/search-command",
+    "v3/cells/search-result",
+    "v3/common/aspose-cli-command",
+    "v3/common/budget-list",
+    "v3/common/budgets",
+    "v3/common/command",
+    "v3/common/diagnostic-details",
+    "v3/common/diagnostic-list",
+    "v3/common/diagnostics",
+    "v3/common/engine-warning",
+    "v3/common/error",
+    "v3/common/error-payload",
+    "v3/common/font-list",
+    "v3/common/fonts-list-command",
+    "v3/common/format-list",
+    "v3/common/input",
+    "v3/common/license",
+    "v3/common/license-install-command",
+    "v3/common/license-remove-command",
+    "v3/common/license-status",
+    "v3/common/license-status-command",
+    "v3/common/not-found-details",
+    "v3/common/output",
+    "v3/common/resource-budget",
+    "v3/common/result-window",
+    "v3/common/schema-catalog",
+    "v3/common/schema-command",
+    "v3/common/skill-install",
+    "v3/common/skill-install-command",
+    "v3/common/skill-list",
+    "v3/common/skill-list-command",
+    "v3/common/source-input",
+    "v3/common/table-hit",
+    "v3/common/table-inventory",
+    "v3/common/table-object",
+    "v3/common/table-op-report",
+    "v3/common/version",
+    "v3/common/warning",
+    "v3/pdf/convert-command",
+    "v3/pdf/convert-result",
+    "v3/pdf/create-command",
+    "v3/pdf/create-result",
+    "v3/pdf/edit-command",
+    "v3/pdf/edit-result",
+    "v3/pdf/extract-command",
+    "v3/pdf/extract-result",
+    "v3/pdf/formats",
+    "v3/pdf/merge-command",
+    "v3/pdf/merge-result",
+    "v3/pdf/ops",
+    "v3/pdf/ops/directory",
+    "v3/pdf/read-command",
+    "v3/pdf/read-result",
+    "v3/pdf/render-command",
+    "v3/pdf/render-result",
+    "v3/pdf/search-command",
+    "v3/pdf/search-result",
+    "v3/pdf/sign-command",
+    "v3/pdf/sign-result",
+    "v3/pdf/split-command",
+    "v3/pdf/split-result",
+    "v3/pdf/validate-command",
+    "v3/pdf/validate-result",
+    "v3/slides/convert-command",
+    "v3/slides/convert-result",
+    "v3/slides/create-command",
+    "v3/slides/create-result",
+    "v3/slides/edit-command",
+    "v3/slides/edit-result",
+    "v3/slides/extract-command",
+    "v3/slides/extract-result",
+    "v3/slides/formats",
+    "v3/slides/ops",
+    "v3/slides/ops/directory",
+    "v3/slides/read-command",
+    "v3/slides/read-result",
+    "v3/slides/render-command",
+    "v3/slides/render-result",
+    "v3/slides/search-command",
+    "v3/slides/search-result",
+    "v3/words/compare-command",
+    "v3/words/compare-result",
+    "v3/words/convert-command",
+    "v3/words/convert-result",
+    "v3/words/create-command",
+    "v3/words/create-result",
+    "v3/words/edit-command",
+    "v3/words/edit-result",
+    "v3/words/extract-command",
+    "v3/words/extract-result",
+    "v3/words/formats",
+    "v3/words/ops",
+    "v3/words/ops/directory",
+    "v3/words/read-command",
+    "v3/words/read-result",
+    "v3/words/render-command",
+    "v3/words/render-result",
+    "v3/words/search-command",
+    "v3/words/search-result"
   ],
   "documents": {
-    "v2/common/aspose-cli-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/common/aspose-cli-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli",
       "description": "Aspose CLI: read, edit, convert and render documents with the Aspose engines. Every command prints JSON; 'schema' lists the commands and the documents that describe them.",
       "options": [
@@ -300,9 +300,9 @@
       ],
       "arguments": []
     },
-    "v2/common/budget-list": {
+    "v3/common/budget-list": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/budget-list.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/budget-list.schema.json",
       "description": "The budgets document of aspose-cli schema: the resource budgets and their limits.",
       "type": "object",
       "required": [
@@ -315,17 +315,17 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/budget-list.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/budget-list.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "resourceBudgets": {
           "description": "The budgets every command applies, in ordinal order of their kinds.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/resource-budget.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/resource-budget.schema.json"
           }
         },
         "products": {
@@ -339,7 +339,7 @@
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -362,16 +362,16 @@
               "description": "The product's budgets.",
               "type": "array",
               "items": {
-                "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/resource-budget.schema.json"
+                "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/resource-budget.schema.json"
               }
             }
           }
         }
       }
     },
-    "v2/common/budgets": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/budget-list.schema.json",
-      "schemaVersion": 2,
+    "v3/common/budgets": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/budget-list.schema.json",
+      "schemaVersion": 3,
       "resourceBudgets": [
         {
           "kind": "decoded-text-characters",
@@ -518,9 +518,9 @@
         }
       ]
     },
-    "v2/common/command": {
+    "v3/common/command": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
       "description": "A <command>-command document of aspose-cli schema: one command's options and arguments, as the command line parses them.",
       "type": "object",
       "required": [
@@ -534,11 +534,11 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "path": {
           "description": "Full command path, e.g. aspose-cli cells read.",
@@ -567,7 +567,7 @@
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -747,15 +747,15 @@
         }
       }
     },
-    "v2/common/diagnostic-details": {
+    "v3/common/diagnostic-details": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/diagnostic-details.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/diagnostic-details.schema.json",
       "description": "Base schema for product-owned diagnostic details: an object whose members a product may narrow without changing the common envelope.",
       "type": "object"
     },
-    "v2/common/diagnostic-list": {
+    "v3/common/diagnostic-list": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/diagnostic-list.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/diagnostic-list.schema.json",
       "description": "The diagnostics document of aspose-cli schema: every error and warning code.",
       "type": "object",
       "required": [
@@ -767,11 +767,11 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/diagnostic-list.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/diagnostic-list.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "diagnostics": {
           "description": "The codes, in ordinal order.",
@@ -784,7 +784,7 @@
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -839,9 +839,9 @@
         }
       }
     },
-    "v2/common/diagnostics": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/diagnostic-list.schema.json",
-      "schemaVersion": 2,
+    "v3/common/diagnostics": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/diagnostic-list.schema.json",
+      "schemaVersion": 3,
       "diagnostics": [
         {
           "code": "ADDRESS_AMBIGUOUS",
@@ -849,7 +849,7 @@
           "severity": "error",
           "exitCode": 4,
           "category": "validation",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "ADDRESS_NOT_FOUND",
@@ -857,7 +857,7 @@
           "severity": "error",
           "exitCode": 4,
           "category": "validation",
-          "detailsSchemaId": "v2/common/not-found-details"
+          "detailsSchemaId": "v3/common/not-found-details"
         },
         {
           "code": "BOOKMARK_NOT_FOUND",
@@ -865,14 +865,14 @@
           "severity": "error",
           "exitCode": 4,
           "category": "validation",
-          "detailsSchemaId": "v2/common/not-found-details"
+          "detailsSchemaId": "v3/common/not-found-details"
         },
         {
           "code": "ENCRYPTION_REMOVED",
           "owner": "common",
           "severity": "warning",
           "category": "warning",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "ENGINE_ERROR",
@@ -880,7 +880,7 @@
           "severity": "error",
           "exitCode": 6,
           "category": "format",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "EVALUATION_LIMIT",
@@ -888,7 +888,7 @@
           "severity": "error",
           "exitCode": 7,
           "category": "license",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "EXTRACT_BUDGET_EXCEEDED",
@@ -896,7 +896,7 @@
           "severity": "error",
           "exitCode": 4,
           "category": "validation",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "FEATURE_UNSUPPORTED",
@@ -904,7 +904,7 @@
           "severity": "error",
           "exitCode": 6,
           "category": "format",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "FILE_ACCESS_DENIED",
@@ -912,7 +912,7 @@
           "severity": "error",
           "exitCode": 3,
           "category": "input",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "FILE_CORRUPT",
@@ -920,7 +920,7 @@
           "severity": "error",
           "exitCode": 3,
           "category": "input",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "FILE_LOCKED",
@@ -928,7 +928,7 @@
           "severity": "error",
           "exitCode": 3,
           "category": "input",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "FILE_NOT_FOUND",
@@ -936,7 +936,7 @@
           "severity": "error",
           "exitCode": 3,
           "category": "input",
-          "detailsSchemaId": "v2/common/not-found-details"
+          "detailsSchemaId": "v3/common/not-found-details"
         },
         {
           "code": "FILE_TOO_LARGE",
@@ -944,7 +944,7 @@
           "severity": "error",
           "exitCode": 3,
           "category": "input",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "FORMAT_UNSUPPORTED",
@@ -952,7 +952,7 @@
           "severity": "error",
           "exitCode": 6,
           "category": "format",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "INPUT_BUDGET_EXCEEDED",
@@ -960,7 +960,7 @@
           "severity": "error",
           "exitCode": 3,
           "category": "input",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "INPUT_CHANGED",
@@ -968,7 +968,7 @@
           "severity": "error",
           "exitCode": 3,
           "category": "input",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "INPUT_ENCODING_INVALID",
@@ -976,7 +976,7 @@
           "severity": "error",
           "exitCode": 3,
           "category": "input",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "INTERNAL_ERROR",
@@ -984,7 +984,7 @@
           "severity": "error",
           "exitCode": 1,
           "category": "internal",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "LICENSE_FILE_NOT_FOUND",
@@ -992,7 +992,7 @@
           "severity": "error",
           "exitCode": 7,
           "category": "license",
-          "detailsSchemaId": "v2/common/not-found-details"
+          "detailsSchemaId": "v3/common/not-found-details"
         },
         {
           "code": "LICENSE_INVALID",
@@ -1000,14 +1000,14 @@
           "severity": "error",
           "exitCode": 7,
           "category": "license",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "LIST_TRUNCATED",
           "owner": "common",
           "severity": "warning",
           "category": "warning",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "OPERATION_TIMEOUT",
@@ -1015,7 +1015,7 @@
           "severity": "error",
           "exitCode": 9,
           "category": "timeout",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "OPS_INVALID",
@@ -1023,7 +1023,7 @@
           "severity": "error",
           "exitCode": 4,
           "category": "validation",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "OPTION_INVALID",
@@ -1031,7 +1031,7 @@
           "severity": "error",
           "exitCode": 2,
           "category": "usage",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "OUTPUT_BUDGET_EXCEEDED",
@@ -1039,7 +1039,7 @@
           "severity": "error",
           "exitCode": 5,
           "category": "output",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "OUTPUT_CONFLICT",
@@ -1047,7 +1047,7 @@
           "severity": "error",
           "exitCode": 5,
           "category": "output",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "OUTPUT_EXISTS",
@@ -1055,7 +1055,7 @@
           "severity": "error",
           "exitCode": 5,
           "category": "output",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "OUTPUT_PUBLICATION_FAILED",
@@ -1063,7 +1063,7 @@
           "severity": "error",
           "exitCode": 5,
           "category": "output",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "OUTPUT_PUBLICATION_PARTIAL",
@@ -1071,7 +1071,7 @@
           "severity": "error",
           "exitCode": 5,
           "category": "output",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "OUTPUT_UNWRITABLE",
@@ -1079,7 +1079,7 @@
           "severity": "error",
           "exitCode": 5,
           "category": "output",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "PAGE_NOT_FOUND",
@@ -1087,7 +1087,7 @@
           "severity": "error",
           "exitCode": 4,
           "category": "validation",
-          "detailsSchemaId": "v2/common/not-found-details"
+          "detailsSchemaId": "v3/common/not-found-details"
         },
         {
           "code": "PASSWORD_INVALID",
@@ -1095,7 +1095,7 @@
           "severity": "error",
           "exitCode": 3,
           "category": "input",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "PASSWORD_REQUIRED",
@@ -1103,14 +1103,14 @@
           "severity": "error",
           "exitCode": 3,
           "category": "input",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "REMOTE_RESOURCES_BLOCKED",
           "owner": "common",
           "severity": "warning",
           "category": "warning",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "RENDER_FAILED",
@@ -1118,7 +1118,7 @@
           "severity": "error",
           "exitCode": 6,
           "category": "format",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "RENDER_TOO_LARGE",
@@ -1126,7 +1126,7 @@
           "severity": "error",
           "exitCode": 4,
           "category": "validation",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
           "code": "STYLE_NOT_FOUND",
@@ -1134,7 +1134,7 @@
           "severity": "error",
           "exitCode": 4,
           "category": "validation",
-          "detailsSchemaId": "v2/common/not-found-details"
+          "detailsSchemaId": "v3/common/not-found-details"
         },
         {
           "code": "USAGE_ERROR",
@@ -1142,13 +1142,13 @@
           "severity": "error",
           "exitCode": 2,
           "category": "usage",
-          "detailsSchemaId": "v2/common/diagnostic-details"
+          "detailsSchemaId": "v3/common/diagnostic-details"
         }
       ]
     },
-    "v2/common/engine-warning": {
+    "v3/common/engine-warning": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json",
       "description": "A warning the document engine reported through its warning callback, as it reported it.",
       "type": "object",
       "required": [
@@ -1177,9 +1177,9 @@
         }
       }
     },
-    "v2/common/error": {
+    "v3/common/error": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/error.schema.json",
       "description": "The single error shape of the CLI, written to stderr when a command fails. Exit codes are coarse and frozen; code carries the precise, machine-readable meaning.",
       "type": "object",
       "required": [
@@ -1191,21 +1191,21 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this error conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/error.schema.json"
         },
         "schemaVersion": {
-          "description": "Version of the error contract.",
-          "const": 2
+          "description": "Version of the error contract, the same number every result states.",
+          "const": 3
         },
         "error": {
           "description": "The error details.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/error-payload.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/error-payload.schema.json"
         }
       }
     },
-    "v2/common/error-payload": {
+    "v3/common/error-payload": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/error-payload.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/error-payload.schema.json",
       "description": "Error details: the message states the fact and details carries structured context, often including the valid alternatives.",
       "type": "object",
       "required": [
@@ -1381,9 +1381,9 @@
         }
       }
     },
-    "v2/common/font-list": {
+    "v3/common/font-list": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/font-list.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/font-list.schema.json",
       "description": "Result of aspose-cli fonts list: the font environment of each product engine — the default fallback font and the sources it scans. Answers \"where does this build look for fonts, and what does it fall back to\" so a \"renders wrong on the server\" problem can be traced to font configuration.",
       "type": "object",
       "required": [
@@ -1395,11 +1395,11 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/font-list.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/font-list.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "products": {
           "description": "One entry per product, in catalog order: every product with font diagnostics, or only the one --product names.",
@@ -1410,13 +1410,13 @@
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -1474,9 +1474,9 @@
         }
       }
     },
-    "v2/common/fonts-list-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/common/fonts-list-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli fonts list",
       "description": "List each engine's font sources and its default fallback font.",
       "options": [
@@ -1502,9 +1502,9 @@
       ],
       "arguments": []
     },
-    "v2/common/format-list": {
+    "v3/common/format-list": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/format-list.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/format-list.schema.json",
       "description": "A product's formats document of aspose-cli schema: the formats the product declares.",
       "type": "object",
       "required": [
@@ -1517,11 +1517,11 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/format-list.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/format-list.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "product": {
           "description": "Product id, e.g. cells.",
@@ -1539,7 +1539,7 @@
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -1585,9 +1585,9 @@
         }
       }
     },
-    "v2/common/input": {
+    "v3/common/input": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json",
       "description": "Describes a file a command read.",
       "type": "object",
       "required": [
@@ -1617,9 +1617,9 @@
         }
       }
     },
-    "v2/common/license": {
+    "v3/common/license": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json",
       "description": "License mode attached to a result whose engine ran without a license; a licensed result omits it.",
       "type": "object",
       "required": [
@@ -1636,9 +1636,9 @@
         }
       }
     },
-    "v2/common/license-install-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/common/license-install-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli license install",
       "description": "Validate a license file and install it for every compatible product.",
       "options": [
@@ -1677,9 +1677,9 @@
         }
       ]
     },
-    "v2/common/license-remove-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/common/license-remove-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli license remove",
       "description": "Remove saved user licenses; env and project sources are left untouched.",
       "options": [
@@ -1705,9 +1705,9 @@
       ],
       "arguments": []
     },
-    "v2/common/license-status": {
+    "v3/common/license-status": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/license-status.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/license-status.schema.json",
       "description": "Result of aspose-cli license status: the effective, independently verified license status of every selected product; there is no first-product summary.",
       "type": "object",
       "required": [
@@ -1720,11 +1720,11 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/license-status.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/license-status.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "products": {
           "description": "The license status of each selected product.",
@@ -1747,7 +1747,7 @@
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -1805,9 +1805,9 @@
         }
       }
     },
-    "v2/common/license-status-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/common/license-status-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli license status",
       "description": "Show whether licensing applies and which license source and mode are in effect.",
       "options": [
@@ -1833,9 +1833,9 @@
       ],
       "arguments": []
     },
-    "v2/common/not-found-details": {
+    "v3/common/not-found-details": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/not-found-details.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/not-found-details.schema.json",
       "description": "Details of an error whose code names a target that does not exist: a part the document does not contain, or a file. They state what was requested and what exists, so the caller can correct the request without another inspection. Operation errors add the operation's id and op.",
       "type": "object",
       "required": [
@@ -1897,9 +1897,9 @@
         }
       }
     },
-    "v2/common/output": {
+    "v3/common/output": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json",
       "description": "Describes a file a command produced.",
       "type": "object",
       "required": [
@@ -1928,9 +1928,9 @@
         }
       }
     },
-    "v2/common/resource-budget": {
+    "v3/common/resource-budget": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/resource-budget.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/resource-budget.schema.json",
       "description": "One discoverable default and hard maximum for a resource.",
       "type": "object",
       "required": [
@@ -1977,9 +1977,9 @@
         }
       }
     },
-    "v2/common/result-window": {
+    "v3/common/result-window": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/result-window.schema.json",
       "description": "How much of a larger collection a bounded read or search returned, and the option values that continue it. Every windowed result carries it as window, written after the payload and before license and warnings, so an agent always finds it in the same place.",
       "type": "object",
       "required": [
@@ -2023,9 +2023,9 @@
         }
       }
     },
-    "v2/common/schema-catalog": {
+    "v3/common/schema-catalog": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/schema-catalog.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/schema-catalog.schema.json",
       "description": "Result of aspose-cli schema without an id: the products and their commands and formats, the platform commands, and the id of every document aspose-cli schema <id> prints.",
       "type": "object",
       "required": [
@@ -2040,11 +2040,11 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/schema-catalog.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/schema-catalog.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "cliVersion": {
           "description": "CLI version without build metadata, e.g. 2.0.0.",
@@ -2078,7 +2078,7 @@
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -2171,9 +2171,9 @@
         }
       }
     },
-    "v2/common/schema-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/common/schema-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli schema",
       "description": "Print the catalog of products, commands and document ids, or the document an id names.",
       "options": [],
@@ -2192,9 +2192,9 @@
         }
       ]
     },
-    "v2/common/skill-install": {
+    "v3/common/skill-install": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/skill-install.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/skill-install.schema.json",
       "description": "Result of aspose-cli skill install: the agent skill bundled inside the binary was extracted to a target directory, ready for an agent framework to load.",
       "type": "object",
       "required": [
@@ -2208,11 +2208,11 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/skill-install.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/skill-install.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "skill": {
           "description": "The installed skill's name, e.g. aspose-cli-cells.",
@@ -2231,14 +2231,14 @@
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       }
     },
-    "v2/common/skill-install-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/common/skill-install-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli skill install",
       "description": "Install a bundled Agent Skill for Codex, Claude Code, or OpenCode.",
       "options": [
@@ -2322,9 +2322,9 @@
         }
       ]
     },
-    "v2/common/skill-list": {
+    "v3/common/skill-list": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/skill-list.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/skill-list.schema.json",
       "description": "Result of aspose-cli skill list: skills bundled in this build.",
       "type": "object",
       "required": [
@@ -2336,11 +2336,11 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/skill-list.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/skill-list.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "skills": {
           "description": "Bundled skill packages available for installation.",
@@ -2353,7 +2353,7 @@
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -2387,18 +2387,18 @@
         }
       }
     },
-    "v2/common/skill-list-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/common/skill-list-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli skill list",
       "description": "List bundled Agent Skills and supported hosts.",
       "options": [],
       "arguments": []
     },
-    "v2/common/source-input": {
+    "v3/common/source-input": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/source-input.schema.json",
-      "description": "Describes a file a command read as the value of one of its options, such as the template or the content a file is created from: the facts of an InputInfo and the option.",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/source-input.schema.json",
+      "description": "Describes a file a command read as the value of one of its options, such as the template or the content a file is created from: its path, format, size and encryption, and the option.",
       "type": "object",
       "required": [
         "path",
@@ -2433,9 +2433,9 @@
         }
       }
     },
-    "v2/common/table-hit": {
+    "v3/common/table-hit": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/table-hit.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/table-hit.schema.json",
       "description": "One match of a search in a text row of the object table.",
       "type": "object",
       "required": [
@@ -2473,9 +2473,9 @@
         }
       }
     },
-    "v2/common/table-inventory": {
+    "v3/common/table-inventory": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/table-inventory.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/table-inventory.schema.json",
       "description": "How many objects of each kind of content a document holds, counted with the engine's own collections: read for the kinds the object table addresses, which read lists, and notRead for the kinds it does not.",
       "type": "object",
       "required": [
@@ -2500,9 +2500,9 @@
         }
       }
     },
-    "v2/common/table-object": {
+    "v3/common/table-object": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/table-object.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/table-object.schema.json",
       "description": "One object of a document, as the object table reads it.",
       "type": "object",
       "required": [
@@ -2526,9 +2526,9 @@
         }
       }
     },
-    "v2/common/table-op-report": {
+    "v3/common/table-op-report": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/table-op-report.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/table-op-report.schema.json",
       "description": "What one operation of an edit left, read from the saved file after it was opened again: the object at the operation's address, or the value an action's engine call returned.",
       "type": "object",
       "additionalProperties": false,
@@ -2554,9 +2554,9 @@
         }
       }
     },
-    "v2/common/version": {
+    "v3/common/version": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/version.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/version.schema.json",
       "description": "Result of aspose-cli --version --output-format json: the build identity.",
       "type": "object",
       "required": [
@@ -2571,11 +2571,11 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/common/version.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/common/version.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "cliVersion": {
           "description": "CLI version without build metadata, e.g. 1.0.0; the same value as the schema catalog's cliVersion.",
@@ -2607,7 +2607,7 @@
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -2641,9 +2641,9 @@
         }
       }
     },
-    "v2/common/warning": {
+    "v3/common/warning": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json",
       "description": "A non-fatal condition of a command that succeeded. Warnings are part of the public contract.",
       "type": "object",
       "required": [

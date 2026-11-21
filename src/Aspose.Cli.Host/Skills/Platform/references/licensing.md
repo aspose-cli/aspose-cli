@@ -11,7 +11,7 @@ aspose-cli license status --output-format json
 ```
 
 `products[]` has one entry per product (`--product <id>` selects one) with its
-`mode` and the effective `source`; `aspose-cli schema v2/common/license-status`
+`mode` and the effective `source`; `aspose-cli schema v3/common/license-status`
 describes every field. A `mode` of `invalid` means a configured source was
 rejected: its `problem` says why. `license status` still exits 0 then, while
 document commands refuse that source with exit 7.

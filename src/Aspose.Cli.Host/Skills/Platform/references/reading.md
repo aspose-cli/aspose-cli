@@ -26,7 +26,7 @@ with the engine's `rect`.
 ## Windows
 
 A read or a search returns one window and reports it in `window`
-(`aspose-cli schema v2/common/result-window`):
+(`aspose-cli schema v3/common/result-window`):
 
 ```json
 "window": {"unit": "object", "returned": 2, "total": 6, "truncated": true, "next": {"from": "sheet/Sheet1/cell/B2"}}
@@ -61,7 +61,7 @@ its default fallback font.
 ## Budgets
 
 `--max-input-bytes` bounds the size of every input; exceeding it fails with
-`FILE_TOO_LARGE`. `aspose-cli schema v2/common/budgets` lists every resource
+`FILE_TOO_LARGE`. `aspose-cli schema v3/common/budgets` lists every resource
 budget with its default and maximum. A budget bounds a file as it sits on
 disk, not the memory an engine uses while it loads it.
 

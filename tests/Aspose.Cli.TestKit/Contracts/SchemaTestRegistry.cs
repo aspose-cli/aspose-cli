@@ -6,7 +6,7 @@ namespace Aspose.Cli.TestKit;
 /// <summary>Build options with every common SDK schema registered by identity.</summary>
 public static class SchemaTestRegistry
 {
-    /// <summary>Registers every schema the SDK publishes under <c>v2/common</c>.</summary>
+    /// <summary>Registers every schema the SDK publishes under <c>v3/common</c>.</summary>
     public static BuildOptions CreateOptions() => CreateOptions(SdkSchemaCatalog.Ids, SdkSchemaCatalog.Read);
 
     /// <summary>Registers the schemas <paramref name="read"/> returns for <paramref name="ids"/>, such as the host's common schemas.</summary>

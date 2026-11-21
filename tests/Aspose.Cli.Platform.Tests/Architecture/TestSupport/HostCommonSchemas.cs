@@ -4,7 +4,7 @@ using Json.Schema;
 
 namespace Aspose.Cli.Architecture.Tests.TestSupport;
 
-/// <summary>The <c>v2/common</c> schemas the host publishes: the SDK's and the host's own.</summary>
+/// <summary>The <c>v3/common</c> schemas the host publishes: the SDK's and the host's own.</summary>
 internal static class HostCommonSchemas
 {
     /// <summary>Every common schema id, in ordinal order.</summary>

@@ -33,7 +33,7 @@ public sealed class ResultSchemaStrictnessTests
     public void EveryResultObject_IsClosedAndEveryPropertyDescribed()
     {
         string[] ids = [.. PublishedSchemas.ResultIds];
-        Assert.Contains("v2/pdf/render-result", ids);
+        Assert.Contains("v3/pdf/render-result", ids);
         var problems = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (string id in ids)
         {

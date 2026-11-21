@@ -233,7 +233,7 @@ public sealed class TableTests
         TableSchema schema = TableSchema.Of("deck", DeckTable.Table);
         JsonNode document = JsonNode.Parse(schema.Document)!;
 
-        Assert.Equal("v2/deck/ops", schema.Id);
+        Assert.Equal("v3/deck/ops", schema.Id);
         Assert.Equal(["directory", "deck", "card", "line", "add.card", "add.line", "add.rule", "do.schema", "do.count", "do.open"], schema.Names);
         Assert.True(document["$defs"]!["card"]!["properties"]!["id"]!["readOnly"]!.GetValue<bool>());
         JsonNode directory = JsonNode.Parse(schema.Views["directory"])!;

@@ -70,10 +70,10 @@ public sealed class ResultSchemaSet
     /// <summary>The owner: a product id, or <c>common</c>.</summary>
     public string Owner { get; }
 
-    /// <summary>The published schema ids, such as <c>v2/pdf/render-result</c>, in ordinal order.</summary>
+    /// <summary>The published schema ids, such as <c>v3/pdf/render-result</c>, in ordinal order.</summary>
     public IReadOnlyList<string> Ids { get; }
 
-    /// <summary>The schema id of a relative id of <paramref name="owner"/>, such as <c>v2/common/resource-budget</c>.</summary>
+    /// <summary>The schema id of a relative id of <paramref name="owner"/>, such as <c>v3/common/resource-budget</c>.</summary>
     public static string Id(string owner, string relativeId) => ResultEnvelope.CatalogId(owner, relativeId);
 
     /// <summary>Reads a published schema.</summary>

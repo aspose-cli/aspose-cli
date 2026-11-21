@@ -4,7 +4,7 @@
     {
       "args": [
         "schema",
-        "v2/common/not-found-detail"
+        "v3/common/not-found-detail"
       ],
       "expect": {
         "exitCode": 2,
@@ -12,7 +12,7 @@
         "json": [
           {
             "path": "error.details.available",
-            "contains": "v2/common/not-found-details"
+            "contains": "v3/common/not-found-details"
           }
         ]
       }
@@ -20,7 +20,7 @@
     {
       "args": [
         "schema",
-        "v2/pdf/ops/fild"
+        "v3/pdf/ops/fild"
       ],
       "expect": {
         "exitCode": 2,
@@ -28,7 +28,7 @@
         "json": [
           {
             "path": "error.details.available",
-            "contains": "v2/pdf/ops/field"
+            "contains": "v3/pdf/ops/field"
           }
         ]
       }

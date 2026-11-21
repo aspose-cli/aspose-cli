@@ -7,9 +7,9 @@ ops document is a JSON object with an `ops` array of `set`, `add`, `delete`,
 ## The table
 
 ```powershell
-aspose-cli schema v2/pdf/ops/directory
-aspose-cli schema v2/pdf/ops/field
-aspose-cli schema v2/pdf/ops/do.stamp_text
+aspose-cli schema v3/pdf/ops/directory
+aspose-cli schema v3/pdf/ops/field
+aspose-cli schema v3/pdf/ops/do.stamp_text
 ```
 
 - `ops/directory` lists the kinds with their address forms, the rows a `set`
@@ -84,5 +84,5 @@ encrypt is written unencrypted with an `ENCRYPTION_REMOVED` warning.
 
 A not-found error (`ADDRESS_NOT_FOUND` and the other `*_NOT_FOUND` codes) gives
 what was asked for in `details.requested` and the names that exist in
-`details.available`; `aspose-cli schema v2/common/not-found-details` describes
+`details.available`; `aspose-cli schema v3/common/not-found-details` describes
 every field.

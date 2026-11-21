@@ -52,6 +52,6 @@ public sealed class WordsModule : IProductModule
             "words edit contract.docx --ops ops.json --out revised.docx",
         ],
         [
-            new("aspose-cli schema v2/words/ops/directory", "the object table: kinds, addresses, rows, adds and actions"),
+            new("aspose-cli schema v3/words/ops/directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

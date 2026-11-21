@@ -3,7 +3,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// <summary>
 /// Publishes a record that is not a <see cref="ResultEnvelope"/> as a schema of its own, such as
 /// a shared block that results reference. The id is relative to the record's owner: the SDK and
-/// the host publish under <c>v2/common/</c>, a product under <c>v2/&lt;product&gt;/</c>. A result
+/// the host publish under <c>v3/common/</c>, a product under <c>v3/&lt;product&gt;/</c>. A result
 /// states its id through its <see cref="ResultEnvelope"/> constructor instead.
 /// </summary>
 /// <param name="id">The relative schema id, such as <c>resource-budget</c>.</param>

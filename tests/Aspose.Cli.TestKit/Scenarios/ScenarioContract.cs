@@ -83,7 +83,7 @@ public static partial class ScenarioContract
         return CheckFailure(catalog, result, report);
     }
 
-    /// <summary>Evaluates a JSON value against a schema by id, such as <c>v2/common/not-found-details</c>; null when it conforms.</summary>
+    /// <summary>Evaluates a JSON value against a schema by id, such as <c>v3/common/not-found-details</c>; null when it conforms.</summary>
     public static string? Validate(string schemaId, JsonNode? value)
     {
         JsonSchema schema = SchemaById(schemaId);

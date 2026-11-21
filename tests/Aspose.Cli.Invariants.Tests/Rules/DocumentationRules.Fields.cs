@@ -33,7 +33,7 @@ internal static partial class ContractRules
                 && PublishedSchema.Definitions(SchemaId(candidate)).Contains(op, StringComparer.Ordinal))];
 
         /// <summary>The id of a product's object table operation schema.</summary>
-        private static string SchemaId(CliProduct product) => $"v2/{product.Id}/ops";
+        private static string SchemaId(CliProduct product) => $"v3/{product.Id}/ops";
 
         /// <summary>
         /// The field names at <paramref name="path"/> inside the operation, the keys of the objects

@@ -21,7 +21,7 @@ namespace Aspose.Cli.Host.Tests;
 /// </summary>
 public sealed class StartupCatalogTests
 {
-    private const string DetailsSchemaId = "v2/alpha/unwritable";
+    private const string DetailsSchemaId = "v3/alpha/unwritable";
 
     [Fact]
     public void Build_ChecksADiagnosticDetailsSchemaWithoutWritingIt()

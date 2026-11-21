@@ -51,7 +51,7 @@ Examples:
   aspose-cli fonts list --output-format json
 
 Learn more:
-  aspose-cli schema v2/common/font-list  the fields of the font list
+  aspose-cli schema v3/common/font-list  the fields of the font list
 
 
 ## aspose-cli fonts list --help
@@ -72,7 +72,7 @@ Examples:
   aspose-cli fonts list --output-format json
 
 Learn more:
-  aspose-cli schema v2/common/font-list  the fields of the font list
+  aspose-cli schema v3/common/font-list  the fields of the font list
 
 
 ## aspose-cli license --help
@@ -95,7 +95,7 @@ Examples:
   aspose-cli license install Aspose.Total.lic
 
 Learn more:
-  aspose-cli schema v2/common/license-status  the fields of the license status
+  aspose-cli schema v3/common/license-status  the fields of the license status
 
 
 ## aspose-cli license install --help
@@ -119,7 +119,7 @@ Examples:
   aspose-cli license install Aspose.Total.lic --product cells
 
 Learn more:
-  aspose-cli schema v2/common/license-status  the fields of the license status
+  aspose-cli schema v3/common/license-status  the fields of the license status
 
 
 ## aspose-cli license remove --help
@@ -140,7 +140,7 @@ Examples:
   aspose-cli license remove --product pdf
 
 Learn more:
-  aspose-cli schema v2/common/license-status  the fields of the license status
+  aspose-cli schema v3/common/license-status  the fields of the license status
 
 
 ## aspose-cli license status --help
@@ -161,7 +161,7 @@ Examples:
   aspose-cli license status --output-format json
 
 Learn more:
-  aspose-cli schema v2/common/license-status  the fields of the license status
+  aspose-cli schema v3/common/license-status  the fields of the license status
 
 
 ## aspose-cli schema --help
@@ -179,10 +179,10 @@ Global options:
 
 Examples:
   aspose-cli schema
-  aspose-cli schema v2/common/diagnostics
+  aspose-cli schema v3/common/diagnostics
 
 Learn more:
-  aspose-cli schema v2/common/schema-catalog  the fields of the catalog
+  aspose-cli schema v3/common/schema-catalog  the fields of the catalog
   aspose-cli skill list                       the Agent Skills bundled with this build
 
 
@@ -251,6 +251,6 @@ Examples:
   aspose-cli skill list --output-format json
 
 Learn more:
-  aspose-cli schema v2/common/skill-list  the fields of the skill list
+  aspose-cli schema v3/common/skill-list  the fields of the skill list
 
 

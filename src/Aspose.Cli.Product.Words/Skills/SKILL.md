@@ -23,7 +23,7 @@ text, Markdown, PDF, EPUB, MOBI, AZW3 and CHM are read only by `convert`. The sh
 
 ## The object table
 
-`aspose-cli schema v2/words/ops/directory` lists the vocabulary in one short JSON
+`aspose-cli schema v3/words/ops/directory` lists the vocabulary in one short JSON
 document: each kind with its address forms, the rows a set writes (`rows`) and the rows that are
 read only (`readOnlyRows`), and whether it can be deleted; each add with the kinds it adds to and
 its parameters; each action with its parameters. One entry in full, with each row's type and the

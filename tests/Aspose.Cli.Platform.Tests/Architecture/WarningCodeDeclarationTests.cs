@@ -508,7 +508,7 @@ public sealed partial class WarningCodeDeclarationTests
             _ => false,
         };
 
-    /// <summary>JSON text that writes an envelope's schema version, such as <c>"schemaVersion": 2</c>.</summary>
+    /// <summary>JSON text that writes an envelope's schema version, such as <c>"schemaVersion": 3</c>.</summary>
     [GeneratedRegex("""(?:\\?")schemaVersion(?:\\?")\s*:\s*2\b""")]
     private static partial Regex EnvelopeText();
 

@@ -22,7 +22,7 @@ Examples:
   aspose-cli cells edit book.xlsx --ops ops.json --out revised.xlsx
 
 Learn more:
-  aspose-cli schema v2/cells/ops/directory  the object table: kinds, addresses, rows, adds and actions
+  aspose-cli schema v3/cells/ops/directory  the object table: kinds, addresses, rows, adds and actions
 
 
 ## aspose-cli cells convert --help
@@ -65,7 +65,7 @@ Examples:
   aspose-cli cells convert export.csv --to xlsx --separator ; --encoding windows-1252 --convert-numbers true --convert-dates true --culture de-DE
 
 Learn more:
-  aspose-cli schema v2/cells/convert-result  the fields of the convert result
+  aspose-cli schema v3/cells/convert-result  the fields of the convert result
 
 
 ## aspose-cli cells create --help
@@ -93,7 +93,7 @@ Examples:
   aspose-cli cells create report.xlsx --template brand.xltx
 
 Learn more:
-  aspose-cli schema v2/cells/create-result  the fields of the create result
+  aspose-cli schema v3/cells/create-result  the fields of the create result
 
 
 ## aspose-cli cells edit --help
@@ -107,7 +107,7 @@ Arguments:
   <file>  Workbook file path.
 
 Options:
-  --ops <ops> (REQUIRED)         The operation document, {"ops": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/cells/ops/directory; one of them in full: aspose-cli schema v2/cells/ops/<name>.
+  --ops <ops> (REQUIRED)         The operation document, {"ops": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v3/cells/ops/directory; one of them in full: aspose-cli schema v3/cells/ops/<name>.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.
@@ -127,9 +127,9 @@ Examples:
   aspose-cli cells edit book.xlsx --in-place --ops ops.json
 
 Learn more:
-  aspose-cli schema v2/cells/ops/directory  the kinds and their rows, the adds and the actions an operation names
-  aspose-cli schema v2/cells/ops/<name>     one kind, add or action in full
-  aspose-cli schema v2/cells/edit-result    the fields of the edit result
+  aspose-cli schema v3/cells/ops/directory  the kinds and their rows, the adds and the actions an operation names
+  aspose-cli schema v3/cells/ops/<name>     one kind, add or action in full
+  aspose-cli schema v3/cells/edit-result    the fields of the edit result
 
 
 ## aspose-cli cells read --help
@@ -160,8 +160,8 @@ Examples:
   aspose-cli cells read book.xlsx --at "sheet/Sales 2026" --kind cell
 
 Learn more:
-  aspose-cli schema v2/cells/ops/directory  the kinds an address and --kind name, with their rows
-  aspose-cli schema v2/cells/read-result    the fields of the read result
+  aspose-cli schema v3/cells/ops/directory  the kinds an address and --kind name, with their rows
+  aspose-cli schema v3/cells/read-result    the fields of the read result
 
 
 ## aspose-cli cells render --help
@@ -195,7 +195,7 @@ Examples:
   aspose-cli cells render book.xlsx --sheet Data --sheet Summary --out check.png
 
 Learn more:
-  aspose-cli schema v2/cells/render-result  the fields of the render result
+  aspose-cli schema v3/cells/render-result  the fields of the render result
 
 
 ## aspose-cli cells search --help
@@ -226,6 +226,6 @@ Examples:
   aspose-cli cells search book.xlsx --pattern "SUM\(" --regex
 
 Learn more:
-  aspose-cli schema v2/cells/search-result  the fields of the search result
+  aspose-cli schema v3/cells/search-result  the fields of the search result
 
 

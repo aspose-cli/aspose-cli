@@ -14,8 +14,8 @@ public sealed class RawDocumentOutputTests : IDisposable
     [Fact]
     public void Schema_WithCompactOutput_PrintsTheSameDocumentOnOneLine()
     {
-        CliResult indented = _workspace.Run("schema", "v2/common/error", "--output-format", "json");
-        CliResult compact = _workspace.Run("schema", "v2/common/error", "--output-format", "compact");
+        CliResult indented = _workspace.Run("schema", "v3/common/error", "--output-format", "json");
+        CliResult compact = _workspace.Run("schema", "v3/common/error", "--output-format", "compact");
 
         Assert.True(compact.ExitCode == 0, compact.StdErr);
         Assert.Single(compact.StdOut.TrimEnd().ReplaceLineEndings("\n").Split('\n'));

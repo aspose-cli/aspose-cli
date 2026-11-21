@@ -54,6 +54,6 @@ public sealed class SlidesModule : IProductModule
             "slides edit deck.pptx --ops ops.json --out revised.pptx",
         ],
         [
-            new("aspose-cli schema v2/slides/ops/directory", "the object table: kinds, addresses, rows, adds and actions"),
+            new("aspose-cli schema v3/slides/ops/directory", "the object table: kinds, addresses, rows, adds and actions"),
         ]);
 }

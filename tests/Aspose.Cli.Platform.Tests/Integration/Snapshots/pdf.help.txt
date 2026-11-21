@@ -27,7 +27,7 @@ Examples:
   aspose-cli pdf edit form.pdf --ops ops.json --out filled.pdf
 
 Learn more:
-  aspose-cli schema v2/pdf/ops/directory  the object table: kinds, addresses, rows, adds and actions
+  aspose-cli schema v3/pdf/ops/directory  the object table: kinds, addresses, rows, adds and actions
 
 
 ## aspose-cli pdf convert --help
@@ -60,7 +60,7 @@ Examples:
   aspose-cli pdf convert page.html --out page.pdf
 
 Learn more:
-  aspose-cli schema v2/pdf/convert-result  the fields of the convert result
+  aspose-cli schema v3/pdf/convert-result  the fields of the convert result
 
 
 ## aspose-cli pdf create --help
@@ -88,7 +88,7 @@ Examples:
   aspose-cli pdf create letter.pdf --template letterhead.pdf
 
 Learn more:
-  aspose-cli schema v2/pdf/create-result  the fields of the create result
+  aspose-cli schema v3/pdf/create-result  the fields of the create result
 
 
 ## aspose-cli pdf edit --help
@@ -102,7 +102,7 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --ops <ops> (REQUIRED)         The operation document, {"ops": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/pdf/ops/directory; one of them in full: aspose-cli schema v2/pdf/ops/<name>.
+  --ops <ops> (REQUIRED)         The operation document, {"ops": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v3/pdf/ops/directory; one of them in full: aspose-cli schema v3/pdf/ops/<name>.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.
@@ -122,9 +122,9 @@ Examples:
   aspose-cli pdf edit report.pdf --in-place --ops ops.json
 
 Learn more:
-  aspose-cli schema v2/pdf/ops/directory  the kinds and their rows, the adds and the actions an operation names
-  aspose-cli schema v2/pdf/ops/<name>     one kind, add or action in full
-  aspose-cli schema v2/pdf/edit-result    the fields of the edit result
+  aspose-cli schema v3/pdf/ops/directory  the kinds and their rows, the adds and the actions an operation names
+  aspose-cli schema v3/pdf/ops/<name>     one kind, add or action in full
+  aspose-cli schema v3/pdf/edit-result    the fields of the edit result
 
 
 ## aspose-cli pdf extract --help
@@ -157,7 +157,7 @@ Examples:
   aspose-cli pdf extract form.pdf --what forms --form-format json --out-dir form-data
 
 Learn more:
-  aspose-cli schema v2/pdf/extract-result  the fields of the extract result
+  aspose-cli schema v3/pdf/extract-result  the fields of the extract result
 
 
 ## aspose-cli pdf merge --help
@@ -188,7 +188,7 @@ Examples:
   aspose-cli pdf merge a.pdf b.pdf c.pdf --out combined.pdf --overwrite
 
 Learn more:
-  aspose-cli schema v2/pdf/merge-result  the fields of the merge result
+  aspose-cli schema v3/pdf/merge-result  the fields of the merge result
 
 
 ## aspose-cli pdf read --help
@@ -220,8 +220,8 @@ Examples:
   aspose-cli pdf read report.pdf --kind text --max-objects 20
 
 Learn more:
-  aspose-cli schema v2/pdf/ops/directory  the kinds an address and --kind name, with their rows
-  aspose-cli schema v2/pdf/read-result    the fields of the read result
+  aspose-cli schema v3/pdf/ops/directory  the kinds an address and --kind name, with their rows
+  aspose-cli schema v3/pdf/read-result    the fields of the read result
 
 
 ## aspose-cli pdf render --help
@@ -253,7 +253,7 @@ Examples:
   aspose-cli pdf render report.pdf --to svg --pages 3 --out page.svg
 
 Learn more:
-  aspose-cli schema v2/pdf/render-result  the fields of the render result
+  aspose-cli schema v3/pdf/render-result  the fields of the render result
 
 
 ## aspose-cli pdf search --help
@@ -284,7 +284,7 @@ Examples:
   aspose-cli pdf search report.pdf --pattern "[0-9]{18}" --regex
 
 Learn more:
-  aspose-cli schema v2/pdf/search-result  the fields of the search result
+  aspose-cli schema v3/pdf/search-result  the fields of the search result
 
 
 ## aspose-cli pdf sign --help
@@ -323,7 +323,7 @@ Examples:
   aspose-cli pdf sign contract.pdf --page 2 --certificate signer.pfx --certificate-password-stdin --visible --rect 36,36,180,60 --reason Approved --out signed.pdf
 
 Learn more:
-  aspose-cli schema v2/pdf/sign-result  the fields of the sign result
+  aspose-cli schema v3/pdf/sign-result  the fields of the sign result
 
 
 ## aspose-cli pdf split --help
@@ -358,7 +358,7 @@ Examples:
   aspose-cli pdf split report.pdf --by pages --groups 1-3 --groups 4-6 --out-dir parts
 
 Learn more:
-  aspose-cli schema v2/pdf/split-result  the fields of the split result
+  aspose-cli schema v3/pdf/split-result  the fields of the split result
 
 
 ## aspose-cli pdf validate --help
@@ -385,6 +385,6 @@ Examples:
   aspose-cli pdf validate locked.pdf --profile pdfa-1b --password-env PDF_PASSWORD
 
 Learn more:
-  aspose-cli schema v2/pdf/validate-result  the fields of the validate result
+  aspose-cli schema v3/pdf/validate-result  the fields of the validate result
 
 

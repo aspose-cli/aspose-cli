@@ -11,9 +11,9 @@ namespace Aspose.Cli.Invariants.Tests;
 // inputs[] of the SDK's source-input objects, never fields of their own.
 internal static partial class ContractRules
 {
-    private const string CommonInput = "v2/common/input";
-    private const string CommonOutput = "v2/common/output";
-    private const string CommonSourceInput = "v2/common/source-input";
+    private const string CommonInput = "v3/common/input";
+    private const string CommonOutput = "v3/common/output";
+    private const string CommonSourceInput = "v3/common/source-input";
 
     private static IEnumerable<InvariantCase> R40(CliCatalog catalog)
     {
@@ -30,7 +30,7 @@ internal static partial class ContractRules
     private static IEnumerable<IGrouping<string, string>> SharedVerbResults(CliCatalog catalog, HashSet<string> results) =>
         catalog.Commands
             .Where(static command => command.Product is not null && command.Tokens.Length == 2)
-            .Select(command => (command.Verb, Id: $"v2/{command.Product}/{command.Verb}-result"))
+            .Select(command => (command.Verb, Id: $"v3/{command.Product}/{command.Verb}-result"))
             .Where(item => results.Contains(item.Id))
             .GroupBy(static item => item.Verb, static item => item.Id)
             .Where(static verb => verb.Count() > 1)
@@ -156,7 +156,7 @@ internal static partial class ContractRules
     /// <summary>The common schema a property references directly, or null.</summary>
     private static string? CommonId(JsonObject schema) =>
         schema["$ref"]?.GetValue<string>() is { } reference && !reference.StartsWith('#')
-            ? PublishedSchemas.IdOf(reference.Split('#')[0]) is var target && target.StartsWith("v2/common/", StringComparison.Ordinal) ? target : null
+            ? PublishedSchemas.IdOf(reference.Split('#')[0]) is var target && target.StartsWith("v3/common/", StringComparison.Ordinal) ? target : null
             : null;
 
     /// <summary>A <c>$ref</c> followed to the node it names, in the schemas <paramref name="documents"/> reads.</summary>
@@ -189,7 +189,7 @@ internal static partial class ContractRules
         static JsonObject Reference(string id) => new() { ["$ref"] = $"https://schemas.aspose.com/aspose-cli/{id}.schema.json" };
 
         // Slides and Words extract listed items[] of their own records, without format or size.
-        JsonObject extract = Copy("v2/slides/extract-result");
+        JsonObject extract = Copy("v3/slides/extract-result");
         JsonObject extractProperties = (JsonObject)extract["properties"]!;
         extractProperties.Remove("outputs");
         extractProperties["items"] = new JsonObject
@@ -203,29 +203,29 @@ internal static partial class ContractRules
         };
 
         // Slides create reported its template and Markdown as fields of their own.
-        JsonObject slidesCreate = Copy("v2/slides/create-result");
+        JsonObject slidesCreate = Copy("v3/slides/create-result");
         JsonObject slidesCreateProperties = (JsonObject)slidesCreate["properties"]!;
         slidesCreateProperties.Remove("inputs");
         slidesCreateProperties["template"] = Reference(CommonInput);
         slidesCreateProperties["markdown"] = Reference(CommonInput);
 
         // Words create reported no source at all.
-        JsonObject wordsCreate = Copy("v2/words/create-result");
+        JsonObject wordsCreate = Copy("v3/words/create-result");
         ((JsonObject)wordsCreate["properties"]!).Remove("inputs");
 
         // One product's convert wrote one output where the others list outputs[].
-        JsonObject convert = Copy("v2/words/convert-result");
+        JsonObject convert = Copy("v3/words/convert-result");
         JsonObject convertProperties = (JsonObject)convert["properties"]!;
         convertProperties.Remove("outputs");
         convertProperties["output"] = Reference(CommonOutput);
 
         (string Verb, string[] Ids, JsonObject Changed, string Problem)[] samples =
         [
-            ("extract", ["v2/pdf/extract-result", "v2/slides/extract-result"], extract, "lists files in items[] whose items are not an SDK OutputItem"),
-            ("create", ["v2/pdf/create-result", "v2/slides/create-result"], slidesCreate, "reports the source template as a field of its own"),
-            ("create", ["v2/pdf/create-result", "v2/slides/create-result"], slidesCreate, "v2/slides/create-result: reports no inputs[]"),
-            ("create", ["v2/pdf/create-result", "v2/words/create-result"], wordsCreate, "v2/words/create-result: reports no inputs[]"),
-            ("convert", ["v2/pdf/convert-result", "v2/words/convert-result"], convert, "convert reports its written files in different shapes"),
+            ("extract", ["v3/pdf/extract-result", "v3/slides/extract-result"], extract, "lists files in items[] whose items are not an SDK OutputItem"),
+            ("create", ["v3/pdf/create-result", "v3/slides/create-result"], slidesCreate, "reports the source template as a field of its own"),
+            ("create", ["v3/pdf/create-result", "v3/slides/create-result"], slidesCreate, "v3/slides/create-result: reports no inputs[]"),
+            ("create", ["v3/pdf/create-result", "v3/words/create-result"], wordsCreate, "v3/words/create-result: reports no inputs[]"),
+            ("convert", ["v3/pdf/convert-result", "v3/words/convert-result"], convert, "convert reports its written files in different shapes"),
         ];
         foreach ((string verb, string[] ids, JsonObject changed, string problem) in samples)
         {

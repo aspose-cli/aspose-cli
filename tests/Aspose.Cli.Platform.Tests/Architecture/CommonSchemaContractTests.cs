@@ -62,10 +62,10 @@ public sealed class CommonSchemaContractTests
     [Fact]
     public void EveryCommonSchema_ParsesAndHasCanonicalIdentity()
     {
-        Assert.Contains("v2/common/error", HostCommonSchemas.Ids);
+        Assert.Contains("v3/common/error", HostCommonSchemas.Ids);
         foreach (string id in HostCommonSchemas.Ids)
         {
-            Assert.StartsWith("v2/common/", id, StringComparison.Ordinal);
+            Assert.StartsWith("v3/common/", id, StringComparison.Ordinal);
             string text = HostCommonSchemas.Read(id);
             Assert.NotNull(CommonSchema(UriPrefix + id + ".schema.json"));
             JsonObject document = JsonNode.Parse(text)!.AsObject();
@@ -77,9 +77,21 @@ public sealed class CommonSchemaContractTests
                 document["$id"]?.GetValue<string>());
             if (document["properties"]?["schemaVersion"] is { } version)
             {
-                Assert.True(version["const"]?.GetValue<int>() == 2, $"{id} states schemaVersion {version["const"]}, not the 2 of its v2 id.");
+                Assert.True(version["const"]?.GetValue<int>() == ResultEnvelope.ContractVersion,
+                    $"{id} states schemaVersion {version["const"]}, not the {ResultEnvelope.ContractVersion} of its v{ResultEnvelope.ContractVersion} id.");
             }
         }
+    }
+
+    /// <summary>An error states the contract version a result states, in its envelope and in its schema.</summary>
+    [Fact]
+    public void ErrorEnvelope_StatesTheResultContractVersion()
+    {
+        var error = new ErrorEnvelope { Error = new ErrorPayload { Code = "TEST_ERROR", Message = "Test." } };
+        JsonObject schema = JsonNode.Parse(SdkSchemaCatalog.Read(ResultEnvelope.CatalogId("common", ErrorEnvelope.Id)))!.AsObject();
+
+        Assert.Equal(ResultEnvelope.ContractVersion, error.SchemaVersion);
+        Assert.Equal(ResultEnvelope.ContractVersion, schema["properties"]!["schemaVersion"]!["const"]!.GetValue<int>());
     }
 
     [Fact]
@@ -98,15 +110,15 @@ public sealed class CommonSchemaContractTests
             "skill-list",
             "version",
         ];
-        const string WarningUri = UriPrefix + "v2/common/warning.schema.json";
+        const string WarningUri = UriPrefix + "v3/common/warning.schema.json";
 
         foreach (string id in results)
         {
-            JsonObject document = JsonNode.Parse(HostCommonSchemas.Read("v2/common/" + id))!.AsObject();
+            JsonObject document = JsonNode.Parse(HostCommonSchemas.Read("v3/common/" + id))!.AsObject();
             Assert.Equal(WarningUri, document["properties"]!["warnings"]!["items"]!["$ref"]!.GetValue<string>());
         }
 
-        JsonObject warning = JsonNode.Parse(SdkSchemaCatalog.Read("v2/common/warning"))!.AsObject();
+        JsonObject warning = JsonNode.Parse(SdkSchemaCatalog.Read("v3/common/warning"))!.AsObject();
         JsonObject properties = warning["properties"]!.AsObject();
         Assert.False(warning["additionalProperties"]!.GetValue<bool>());
         Assert.Equal(1, properties["location"]!["minLength"]!.GetValue<int>());

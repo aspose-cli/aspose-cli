@@ -47,7 +47,7 @@ public sealed class ConvertOutputsContractTests : IDisposable
     [MemberData(nameof(CliContractTests.ProductIds), MemberType = typeof(CliContractTests))]
     public void ConvertResultSchema_OutputsItemsDeclareOnlyFileFields(string product)
     {
-        CliResult schema = _workspace.Run("schema", $"v2/{product}/convert-result");
+        CliResult schema = _workspace.Run("schema", $"v3/{product}/convert-result");
 
         Assert.True(schema.ExitCode == 0, schema.StdErr);
         JsonObject document = JsonNode.Parse(schema.StdOut)!.AsObject();

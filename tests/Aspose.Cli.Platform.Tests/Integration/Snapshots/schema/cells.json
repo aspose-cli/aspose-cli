@@ -66,9 +66,9 @@
     ]
   },
   "documents": {
-    "v2/cells/convert-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/cells/convert-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli cells convert",
       "description": "Convert a workbook, or CSV or TSV text, to another format with the engine's options for it. An html, mhtml or md output is one file: it holds its images itself (SaveAsSingleFile, ExportImagesAsBase64).",
       "options": [
@@ -381,9 +381,9 @@
         }
       ]
     },
-    "v2/cells/convert-result": {
+    "v3/cells/convert-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/convert-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/cells/convert-result.schema.json",
       "description": "Result of cells convert: the file a workbook, or CSV or TSV text, was converted to.",
       "type": "object",
       "required": [
@@ -396,15 +396,15 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/convert-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/cells/convert-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The converted input file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "outputs": {
           "description": "The written files: the one file the input was converted to.",
@@ -426,18 +426,18 @@
           "description": "The warnings Aspose.Cells reported while it loaded the input and wrote the output, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -473,9 +473,9 @@
         }
       }
     },
-    "v2/cells/create-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/cells/create-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli cells create",
       "description": "Create a workbook: the engine's new workbook, or a copy of a template saved in the output's format.",
       "options": [
@@ -573,9 +573,9 @@
         }
       ]
     },
-    "v2/cells/create-result": {
+    "v3/cells/create-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/create-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/cells/create-result.schema.json",
       "description": "Result of cells create: the new workbook and the template it was saved from, if any.",
       "type": "object",
       "required": [
@@ -588,46 +588,46 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/create-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/cells/create-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "output": {
           "description": "The created workbook.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json"
         },
         "inputs": {
           "description": "The template the workbook was saved from; empty for the engine's new workbook.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source-input.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/source-input.schema.json"
           }
         },
         "engineWarnings": {
           "description": "The warnings Aspose.Cells reported while it loaded the template and saved the workbook, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       }
     },
-    "v2/cells/edit-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/cells/edit-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli cells edit",
       "description": "Apply a batch of set, add, delete, move and do operations to a workbook; nothing is written when one fails.",
       "options": [
@@ -721,7 +721,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "json-source",
-          "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v2/cells/ops/directory; one of them in full: aspose-cli schema v2/cells/ops/<name>."
+          "description": "The operation document, {\"ops\": [...]}: a path to it, '-' to read it from stdin, or the document itself when the value starts with { (inline). At most 10000 operations; each is a set, add, delete, move or do. The kinds, rows, adds and actions: aspose-cli schema v3/cells/ops/directory; one of them in full: aspose-cli schema v3/cells/ops/<name>."
         },
         {
           "name": "--out",
@@ -819,9 +819,9 @@
         }
       ]
     },
-    "v2/cells/edit-result": {
+    "v3/cells/edit-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/edit-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/cells/edit-result.schema.json",
       "description": "Result of cells edit: what each operation left, read from the saved workbook after it was opened again, and the inventory counts that changed.",
       "type": "object",
       "required": [
@@ -836,19 +836,19 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/edit-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/cells/edit-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The edited workbook.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "output": {
           "description": "The written workbook.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json"
         },
         "counts": {
           "description": "The inventory counts that changed, each as [before, after]; the keys are those read reports in inventory.",
@@ -864,32 +864,32 @@
           "description": "The warnings Aspose.Cells reported while it loaded, saved and reopened the workbook, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         },
         "ops": {
           "description": "What each operation left, in batch order: the object at its address in the saved file, or what its action returned; last, since it grows with the batch.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-op-report.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-op-report.schema.json"
           }
         }
       }
     },
-    "v2/cells/formats": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/format-list.schema.json",
-      "schemaVersion": 2,
+    "v3/cells/formats": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/format-list.schema.json",
+      "schemaVersion": 3,
       "product": "cells",
       "formats": [
         {
@@ -1109,9 +1109,9 @@
         }
       ]
     },
-    "v2/cells/ops": {
+    "v3/cells/ops": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/ops.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/cells/ops.schema.json",
       "title": "Object table operations",
       "description": "An edit's operations, applied in order to the document in memory; when one fails, nothing is written. Each kind's definition lists its addresses and rows, each add's and action's the engine call it makes.",
       "type": "object",
@@ -5721,9 +5721,9 @@
         }
       }
     },
-    "v2/cells/read-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/cells/read-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli cells read",
       "description": "Read a workbook's objects, each with every row of the object table, and its inventory.",
       "options": [
@@ -5846,9 +5846,9 @@
         }
       ]
     },
-    "v2/cells/read-result": {
+    "v3/cells/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/cells/read-result.schema.json",
       "description": "Result of cells read: a window of the workbook's objects in document order, each with every row of the table it has, and the whole workbook's inventory.",
       "type": "object",
       "required": [
@@ -5863,54 +5863,54 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/cells/read-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The workbook read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "window": {
           "description": "The window of the read or search: how much it returned and the option values that continue it.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/result-window.schema.json"
         },
         "inventory": {
           "description": "How many objects of each kind of content the workbook holds: under read the kinds read lists, under notRead the others.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-inventory.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-inventory.schema.json"
         },
         "engineWarnings": {
           "description": "The warnings Aspose.Cells reported while it loaded the workbook, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         },
         "objects": {
           "description": "The objects of the window, in document order, each with its address, kind and rows; last, since it grows with the workbook.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-object.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-object.schema.json"
           }
         }
       }
     },
-    "v2/cells/render-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/cells/render-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli cells render",
       "description": "Render sheets, or an area of one, to images as the engine draws them.",
       "options": [
@@ -6085,9 +6085,9 @@
         }
       ]
     },
-    "v2/cells/render-result": {
+    "v3/cells/render-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/render-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/cells/render-result.schema.json",
       "description": "Result of cells render: the image of each sheet named, as the engine draws it.",
       "type": "object",
       "required": [
@@ -6100,15 +6100,15 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/render-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/cells/render-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The rendered input file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "outputs": {
           "description": "The image of each rendered sheet, in the order --sheet named them: the --out path itself for one sheet, <stem>.<sheet>.<ext> for each of several.",
@@ -6132,18 +6132,18 @@
           "description": "The warnings Aspose.Cells reported while it loaded the workbook, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         }
       },
@@ -6184,9 +6184,9 @@
         }
       }
     },
-    "v2/cells/search-command": {
-      "schema": "https://schemas.aspose.com/aspose-cli/v2/common/command.schema.json",
-      "schemaVersion": 2,
+    "v3/cells/search-command": {
+      "schema": "https://schemas.aspose.com/aspose-cli/v3/common/command.schema.json",
+      "schemaVersion": 3,
       "path": "aspose-cli cells search",
       "description": "Search the text of a workbook's cells, as their number formats show it, their formulas and their comments; each hit names the object's address and row.",
       "options": [
@@ -6332,9 +6332,9 @@
         }
       ]
     },
-    "v2/cells/search-result": {
+    "v3/cells/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/search-result.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v3/cells/search-result.schema.json",
       "description": "Result of cells search: the matches in the text rows of the workbook's objects.",
       "type": "object",
       "required": [
@@ -6348,43 +6348,43 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/search-result.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v3/cells/search-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
-          "const": 2
+          "const": 3
         },
         "input": {
           "description": "The searched workbook.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "window": {
           "description": "The window of the read or search: how much it returned and the option values that continue it.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/result-window.schema.json"
         },
         "engineWarnings": {
           "description": "The warnings Aspose.Cells reported while it loaded the workbook, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/engine-warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
           }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/license.schema.json"
         },
         "warnings": {
           "description": "Warnings the agent is expected to act on (for example ENCRYPTION_REMOVED: tell the user the output opens without a password). Omitted when empty.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/warning.schema.json"
           }
         },
         "hits": {
           "description": "The hits in document order: the object's address, the text row, and where the match is in it; last, since it grows with the workbook.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/table-hit.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-hit.schema.json"
           }
         }
       }
