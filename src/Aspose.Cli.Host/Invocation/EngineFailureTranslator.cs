@@ -64,7 +64,7 @@ internal sealed class EngineFailureTranslator
             return null;
         }
 
-        if (exception is EngineOpException || ExceptionOrigin.IsThirdParty(exception, _own))
+        if (ExceptionOrigin.IsThirdParty(exception, _own))
         {
             return EngineErrors.EngineFailed($"{product} failed inside its document engine: {exception.Message}", exception);
         }

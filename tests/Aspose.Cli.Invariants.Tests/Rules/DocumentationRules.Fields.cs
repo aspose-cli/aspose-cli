@@ -28,12 +28,12 @@ internal static partial class ContractRules
         /// </summary>
         public CliProduct[] Owners(string? product, string op) =>
             [.. catalog.Products.Where(candidate => (product is null || candidate.Id == product)
-                && (op.StartsWith("do.", StringComparison.Ordinal)
-                    ? PublishedSchema.IsObjectTableProduct(catalog, candidate.Id) && PublishedSchema.Definitions(SchemaId(candidate)).Contains(op, StringComparer.Ordinal)
-                    : candidate.Ops.Contains(op, StringComparer.Ordinal)))];
+                && op.StartsWith("do.", StringComparison.Ordinal)
+                && PublishedSchema.IsObjectTableProduct(catalog, candidate.Id)
+                && PublishedSchema.Definitions(SchemaId(candidate)).Contains(op, StringComparer.Ordinal))];
 
-        /// <summary>The id of a product's operation schema: its op vocabulary's, or its object table's.</summary>
-        private static string SchemaId(CliProduct product) => product.OpsSchemaId ?? $"v2/{product.Id}/ops";
+        /// <summary>The id of a product's object table operation schema.</summary>
+        private static string SchemaId(CliProduct product) => $"v2/{product.Id}/ops";
 
         /// <summary>
         /// The field names at <paramref name="path"/> inside the operation, the keys of the objects

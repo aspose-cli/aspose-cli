@@ -33,12 +33,6 @@ public enum ExitCode
     /// <summary>A license problem (invalid file, evaluation limit reached).</summary>
     LicenseError = 7,
 
-    /// <summary>
-    /// The command printed its result, but the result did not pass: a failed verification or
-    /// check. No error envelope has this code.
-    /// </summary>
-    PartialFailure = 8,
-
     /// <summary>The operation exceeded a time budget.</summary>
     OperationTimeout = 9,
 

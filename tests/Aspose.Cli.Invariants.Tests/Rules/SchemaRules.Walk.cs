@@ -70,13 +70,6 @@ internal static class PublishedSchema
         }
     }
 
-    /// <summary>The ops schema subject of one operation.</summary>
-    public static SchemaSubject OpSubject(CliProduct product, string op) => new(product.OpsSchemaId!, op);
-
-    /// <summary>The products whose edit command takes an ops document.</summary>
-    public static IEnumerable<CliProduct> OpsProducts(CliCatalog catalog) =>
-        catalog.Products.Where(static product => product.OpsSchemaId is not null);
-
     /// <summary>
     /// Whether a schema is generated from a product's object table: an ops schema whose
     /// definitions declare <c>x-addresses</c>, the address forms of the table's kinds. Its kinds,

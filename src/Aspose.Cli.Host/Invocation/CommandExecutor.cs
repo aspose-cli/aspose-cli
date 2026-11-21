@@ -32,8 +32,7 @@ internal sealed class CommandExecutor
         => RunEnvelope(
             parseResult,
             globalOptions,
-            scope => handler(scope.Globals, scope.Budgets),
-            detectPartial: false);
+            scope => handler(scope.Globals, scope.Budgets));
 
     public int Run(
         ParseResult parseResult,
@@ -45,8 +44,7 @@ internal sealed class CommandExecutor
             scope => handler(CompositionRoot.Create(
                     _host.Catalog,
                     scope.Globals,
-                    resourceBudgets: scope.Budgets)),
-            detectPartial: true);
+                    resourceBudgets: scope.Budgets)));
 
     /// <summary>
     /// Runs a command that answers with one result. Ctrl+C cancels it as the caller's own
@@ -56,8 +54,7 @@ internal sealed class CommandExecutor
     private int RunEnvelope(
         ParseResult parseResult,
         GlobalOptions globalOptions,
-        Func<ExecutionScope, ResultEnvelope> handler,
-        bool detectPartial)
+        Func<ExecutionScope, ResultEnvelope> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
         return ConsoleInterrupt.Run(
@@ -71,7 +68,7 @@ internal sealed class CommandExecutor
                     scope.Deadline.ThrowIfExpired("command-start");
                     ResultEnvelope result = handler(scope);
                     if (!scope.Budgets.HasCommittedOutputs) { scope.Deadline.ThrowIfExpired("command-complete"); }
-                    return scope.Complete(result, detectPartial);
+                    return scope.Complete(result);
                 }));
     }
 
@@ -296,23 +293,17 @@ internal sealed class CommandExecutor
         /// Runs every finalization step that can fail, then writes the result,
         /// so a command never answers with both a result and an error.
         /// </summary>
-        public int Complete(
-            ResultEnvelope result,
-            bool detectPartial)
+        public int Complete(ResultEnvelope result)
         {
             if (NetworkGate.Warning is { } blocked)
             {
                 result = result with { Warnings = [.. result.Warnings ?? [], blocked] };
             }
 
-            int exitCode = Complete(() => _writer.WriteResult(result));
-            return detectPartial
-                && result is IPartialOutcome { HasFailures: true }
-                    ? (int)ExitCode.PartialFailure
-                    : exitCode;
+            return Complete(() => _writer.WriteResult(result));
         }
 
-        /// <inheritdoc cref="Complete(ResultEnvelope, bool)"/>
+        /// <inheritdoc cref="Complete(ResultEnvelope)"/>
         public int Complete(Action writeResult)
         {
             Budgets.ThrowIfFailed();

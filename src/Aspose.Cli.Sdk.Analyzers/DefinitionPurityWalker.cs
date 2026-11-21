@@ -302,7 +302,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
                 member == "NotFound" || IsDataMember(symbol),
             SdkMetadataNames.WarningCode => IsDataMember(symbol),
             SdkMetadataNames.DiagnosticDescriptor =>
-                member is "Error" or "Warning" or "Verification" || IsDataMember(symbol),
+                member is "Error" or "Warning" || IsDataMember(symbol),
             _ => IsDefinitionValue(typeName) && IsDataMember(symbol),
         };
     }

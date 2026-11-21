@@ -290,7 +290,7 @@ public sealed class OutputPipelineTests
         Assert.Empty(document.Marks);
     }
 
-    private static readonly Warning Other = new(WarningCodes.LossyConversion, "Other.");
+    private static readonly Warning Other = new(WarningCodes.ListTruncated, "Other.");
 
     private static readonly FormatDescriptor Doc = new("doc", FormatUse.Convert, ".doc");
 

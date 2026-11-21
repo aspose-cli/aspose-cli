@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 using Aspose.Cli.Sdk.Analyzers;
-using Aspose.Cli.Sdk.Operations;
+using Aspose.Cli.Sdk.Contracts;
 using Xunit;
 
 namespace Aspose.Cli.Architecture.Tests;
@@ -17,12 +17,12 @@ public sealed class SdkMetadataNamesTests
     [Fact]
     public void EveryName_ResolvesInTheSdk()
     {
-        Assembly sdk = typeof(OperationCatalog<>).Assembly;
+        Assembly sdk = typeof(ResultEnvelope).Assembly;
         string[] unresolved = [.. Unresolved(Table(), sdk)];
 
         Assert.Equal("Aspose.Cli.Sdk", sdk.GetName().Name);
         Assert.Equal(sdk.GetName().Name, Assert.Single(Names(Table()), static name => name.Field == "SdkAssembly").Value);
-        Assert.True(Names(Table()).Length > 50, "The table must list the SDK types the analyzers recognize.");
+        Assert.True(Names(Table()).Length > 30, "The table must list the SDK types the analyzers recognize.");
         Assert.True(unresolved.Length == 0, "Names the SDK does not declare: " + string.Join(", ", unresolved));
     }
 
@@ -46,7 +46,7 @@ public sealed class SdkMetadataNamesTests
     }
 
     private static Type Table() =>
-        typeof(OperationContractGenerator).Assembly.GetType(TableName, throwOnError: true)!;
+        typeof(ResultContractGenerator).Assembly.GetType(TableName, throwOnError: true)!;
 
     private static (string Field, string Value)[] Names(Type table) =>
         [.. table.GetFields(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)

@@ -44,9 +44,6 @@ internal static partial class ContractRules
     private static readonly HashSet<string> CoordinateNames = new(StringComparer.Ordinal) { "x", "y" };
 
     // rule-exemptions: begin
-    /// <summary>Field names whose products may give them different types (C-R20): each follows its product's address or style model.</summary>
-    private static readonly HashSet<string> ProductModelNames = new(StringComparer.Ordinal) { "at", "target", "style", "column" };
-
     /// <summary>
     /// C-R33 exceptions: enums where <c>none</c> is a real choice an agent makes, not the absence of
     /// a value, by schema id and path.
@@ -65,8 +62,6 @@ internal static partial class ContractRules
     private static readonly Regex DateName = new("^(date|time|timestamp)$|[a-z](Date|Time|Utc|At|Timestamp)$", RegexOptions.CultureInvariant);
 
     private static readonly string[] FileCore = ["path", "format", "sizeBytes"];
-
-    private const string OperationOutcome = "v2/common/operation-outcome";
 
     /// <summary>The license mode block a result carries only when it ran unlicensed (C-R33).</summary>
     private const string LicenseMode = "v2/common/license";
@@ -155,26 +150,6 @@ internal static partial class ContractRules
                     yield return Check("C-R20", $"{subject.Name} {aspect.ToString().ToLowerInvariant()}", () =>
                         FieldNames(subject).Where(item => item.Aspect == aspect).Select(static item => item.Message));
                 }
-            }
-        }
-        foreach ((string schema, string definition) in MeasuredFields.Keys.Select(static key => (key.Schema, key.Definition)).Distinct())
-        {
-            yield return Check("C-R20", $"{schema}#{definition} units", () => UnitNames(schema, definition));
-        }
-        CliProduct[] products = [.. PublishedSchema.OpsProducts(catalog)];
-        var shapes = products.ToDictionary(static product => product.Id, FieldShapes, StringComparer.Ordinal);
-        foreach (CliProduct product in products)
-        {
-            foreach (string name in shapes[product.Id].Keys.Order(StringComparer.Ordinal))
-            {
-                yield return Check("C-R20", $"{product.OpsSchemaId} field {name}", () => ProductFieldTypes(product.OpsSchemaId!, name, shapes[product.Id][name]));
-            }
-        }
-        foreach (string name in shapes.Values.SelectMany(static fields => fields.Keys).Distinct().Order(StringComparer.Ordinal))
-        {
-            if (!ProductModelNames.Contains(name) && shapes.Values.Count(fields => fields.ContainsKey(name)) > 1)
-            {
-                yield return Check("C-R20", $"ops field {name} across products", () => CrossProductFieldTypes(shapes, name));
             }
         }
     }
@@ -278,186 +253,6 @@ internal static partial class ContractRules
     /// <summary>Whether a field holds one of a fixed set of variants: an enum or constants.</summary>
     private static bool IsVariant(string schemaId, JsonObject schema) =>
         PublishedSchema.Shape(schemaId, schema, values: false).Split(" | ").All(static shape => shape == "enum");
-
-    /// <summary>
-    /// The types each field name of a product's ops takes, with the definitions that give it each;
-    /// a constraint that repeats a field inside <c>allOf</c>, <c>if</c> and the like declares nothing.
-    /// </summary>
-    private static Dictionary<string, SortedDictionary<string, List<string>>> FieldShapes(CliProduct product)
-    {
-        string id = product.OpsSchemaId!;
-        var shapes = new Dictionary<string, SortedDictionary<string, List<string>>>(StringComparer.Ordinal);
-        foreach (string definition in PublishedSchema.Definitions(id))
-        {
-            foreach (SchemaProperty property in new SchemaSubject(id, definition).Properties())
-            {
-                if (property.Name is "id" or "op" || ConstraintPath.IsMatch(property.OwnerPath))
-                {
-                    continue;
-                }
-                string shape = PublishedSchema.Shape(id, property.Schema, values: false);
-                if (!shapes.TryGetValue(property.Name, out SortedDictionary<string, List<string>>? byShape))
-                {
-                    shapes[property.Name] = byShape = new(StringComparer.Ordinal);
-                }
-                if (!byShape.TryGetValue(shape, out List<string>? places))
-                {
-                    byShape[shape] = places = [];
-                }
-                places.Add(property.OwnerPath.Length == 0 ? definition : $"{definition}.{property.OwnerPath}");
-            }
-        }
-        return shapes;
-    }
-
-    private static readonly Regex ConstraintPath = new(@"(anyOf|oneOf|allOf)\[|\.(if|then|else|not)(\.|\[|$)", RegexOptions.CultureInvariant);
-
-    private static IEnumerable<string> ProductFieldTypes(string schema, string name, SortedDictionary<string, List<string>> shapes)
-    {
-        string[] places = [.. shapes.Values.SelectMany(static owners => owners).Order(StringComparer.Ordinal)];
-        if (ShapedByTheirObject.TryGetValue((schema, name), out (string[] Definitions, string Reason) exception))
-        {
-            if (shapes.Count > 1 && places.SequenceEqual(exception.Definitions.Order(StringComparer.Ordinal), StringComparer.Ordinal))
-            {
-                return [];
-            }
-
-            return [$"the {name} exception for {string.Join(", ", exception.Definitions)} no longer matches ({string.Join(", ", places)}); update or remove it"];
-        }
-
-        return shapes.Count < 2
-            ? []
-            : [.. shapes.Select(static shape => $"{shape.Key} in {string.Join(", ", shape.Value.Take(3))}{(shape.Value.Count > 3 ? $" and {shape.Value.Count - 3} more" : string.Empty)}")];
-    }
-
-    // rule-exemptions: begin
-    /// <summary>
-    /// C-R20 exceptions to one type per field name within a product's ops: fields whose shape
-    /// follows the object they name, by ops schema and field name, with exactly the definitions
-    /// that declare them and why.
-    /// </summary>
-    private static readonly Dictionary<(string Schema, string Field), (string[] Definitions, string Reason)> ShapedByTheirObject = new()
-    {
-        [("v2/cells/ops", "values")] = (
-            ["insert_pivot", "set_values"],
-            "values are the values of the object they fill (user, 2026-10-12): a range's a row-major matrix, a pivot table's its value fields"),
-        [("v2/cells/ops", "at")] = (
-            ["add_sparkline", "delete_columns", "delete_rows", "import_sheet", "insert_chart", "insert_columns", "insert_image", "insert_pivot", "insert_rows", "insert_sheet"],
-            "at is a destination shaped as the unit it addresses (user, 2026-10-12): a sheet position, a row number, a column letter, or a cell or range anchor such as the cells sparklines are drawn in"),
-        [("v2/cells/ops", "to")] = (
-            ["copy_range", "import_range", "move_sheet"],
-            "to is a destination (user, 2026-10-12): a sheet position or a cell anchor"),
-        [("v2/cells/ops", "first")] = (
-            ["group_columns", "group_rows", "resize_columns", "resize_rows", "ungroup_columns", "ungroup_rows"],
-            "first ends a span of rows or of columns (user, 2026-10-12): a row number or a column letter"),
-        [("v2/cells/ops", "last")] = (
-            ["group_columns", "group_rows", "resize_columns", "resize_rows", "ungroup_columns", "ungroup_rows"],
-            "last ends a span of rows or of columns (user, 2026-10-12): a row number or a column letter"),
-    };
-
-    /// <summary>
-    /// C-R20 exceptions to one type per field name across products: fields whose shape follows the
-    /// object they name, by field name, with exactly the product definitions that declare them and
-    /// why (user decision 2026-10-12).
-    /// </summary>
-    private static readonly Dictionary<string, (string[] Places, string Reason)> ShapedByTheirObjectAcrossProducts = new(StringComparer.Ordinal)
-    {
-        ["values"] = (
-            ["cells insert_pivot", "cells set_values"],
-            "values are the values of the object they name, shaped as that object is: a range's or a table's a two-dimensional grid, a pivot's its value fields"),
-    };
-
-    /// <summary>
-    /// C-R20 exceptions to one shape per field name across products where one product's object
-    /// has an optional field of its own model and the fields both have stay the same: by field
-    /// name, with exactly the product definitions that declare it, the product and its own field,
-    /// and why (user decision 2026-10-12). The shared fields of the objects keep their own
-    /// cross-product cases, such as <c>list</c> with its <c>kind</c> and <c>level</c>.
-    /// </summary>
-    private static readonly Dictionary<string, (string[] Places, string Product, string Field, string Reason)> OwnFieldAcrossProducts = new(StringComparer.Ordinal);
-    // rule-exemptions: end
-
-    /// <summary>The products whose fields of one name agree among themselves but not with another product's; a product that disagrees with itself has its own case.</summary>
-    private static IEnumerable<string> CrossProductFieldTypes(Dictionary<string, Dictionary<string, SortedDictionary<string, List<string>>>> shapes, string name)
-    {
-        string[] Places() =>
-        [
-            .. shapes.Where(pair => pair.Value.ContainsKey(name))
-                .SelectMany(pair => pair.Value[name].Values.SelectMany(static owners => owners).Select(owner => $"{pair.Key} {owner}"))
-                .Order(StringComparer.Ordinal),
-        ];
-
-        if (ShapedByTheirObjectAcrossProducts.TryGetValue(name, out (string[] Places, string Reason) exception))
-        {
-            string[] places = Places();
-            return places.SequenceEqual(exception.Places.Order(StringComparer.Ordinal), StringComparer.Ordinal)
-                ? []
-                : [$"the {name} exception across products for {string.Join(", ", exception.Places)} no longer matches ({string.Join(", ", places)}); update or remove it"];
-        }
-
-        if (OwnFieldAcrossProducts.TryGetValue(name, out (string[] Places, string Product, string Field, string Reason) own))
-        {
-            string[] places = Places();
-            if (!places.SequenceEqual(own.Places.Order(StringComparer.Ordinal), StringComparer.Ordinal))
-            {
-                return [$"the {name} exception across products for {string.Join(", ", own.Places)} no longer matches ({string.Join(", ", places)}); update or remove it"];
-            }
-
-            // Each product declares one shape, and the one product's, without its own field, is the others'.
-            (string Product, string Shape)[] declared =
-            [
-                .. shapes.Where(pair => pair.Value.ContainsKey(name))
-                    .SelectMany(pair => pair.Value[name].Keys.Select(shape => (pair.Key, shape))),
-            ];
-            string? field = declared.Where(item => item.Product == own.Product).Select(static item => item.Shape).FirstOrDefault();
-            if (field is null || !ObjectFields(field).Contains(own.Field, StringComparer.Ordinal))
-            {
-                return [$"the {name} exception across products expects {own.Product} to declare {own.Field}, which it no longer does; update or remove it"];
-            }
-
-            string[] compared = [.. declared.Select(item => item.Product == own.Product ? WithoutField(item.Shape, own.Field) : item.Shape).Distinct()];
-            return compared.Length == 1
-                ? []
-                : [.. declared.Select(static item => $"{item.Product} {item.Shape}")];
-        }
-
-        (string Product, string Shape)[] uniform =
-        [
-            .. shapes.Where(pair => pair.Value.TryGetValue(name, out var fields) && fields.Count == 1)
-                .Select(pair => (pair.Key, pair.Value[name].Keys.Single())),
-        ];
-        return uniform.Select(static item => item.Shape).Distinct().Count() > 1
-            ? [.. uniform.Select(static item => $"{item.Product} {item.Shape}")]
-            : [];
-    }
-
-    /// <summary>The fields an object shape such as <c>array of object{list,style,text}</c> lists.</summary>
-    private static string[] ObjectFields(string shape) =>
-        ObjectShape.Match(shape) is { Success: true } match ? match.Groups["fields"].Value.Split(',') : [];
-
-    private static string WithoutField(string shape, string field) =>
-        ObjectShape.Replace(shape, match => "object{" + string.Join(",", match.Groups["fields"].Value.Split(',').Where(name => name != field)) + "}", 1);
-
-    private static readonly Regex ObjectShape = new(@"object\{(?<fields>[^{}]*)\}", RegexOptions.CultureInvariant);
-
-    /// <summary>
-    /// Each edit result lists its outcomes as the SDK's operation outcome. That outcome is one SDK
-    /// record, <c>BoundedOperationOutcome</c>, whose error is the error envelope's own type, so
-    /// its shape (no <c>index</c>, the envelope's error) is not judged here; the host
-    /// capabilities snapshot pins it.
-    /// </summary>
-    private static IEnumerable<InvariantCase> R30Schema(CliCatalog catalog)
-    {
-        foreach (CliProduct product in PublishedSchema.OpsProducts(catalog))
-        {
-            string id = $"v2/{product.Id}/edit-result";
-            yield return Check("C-R30", $"{id} applied", () =>
-                PublishedSchema.Document(id)["properties"]?["applied"]?["items"]?["$ref"]?.GetValue<string>() is { } reference
-                    && PublishedSchemas.IdOf(reference) == OperationOutcome
-                    ? []
-                    : [$"applied[] is not {OperationOutcome}"]);
-        }
-    }
 
     private static IEnumerable<InvariantCase> R31(CliCatalog catalog)
     {

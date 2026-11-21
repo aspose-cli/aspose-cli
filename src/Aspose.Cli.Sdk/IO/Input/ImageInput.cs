@@ -31,8 +31,7 @@ public enum EngineImageFormat
 /// TIFF, JPEG 2000, PICT, DICOM) is recognized from its signature; anything else is refused.
 /// The decode's output is small whatever the image's size, so checking an image never refuses
 /// one the engines would take. An image a created or imported document
-/// embeds is <c>FILE_CORRUPT</c> naming the image; an image an edit operation inserts goes
-/// through <see cref="Operations.OperationImages"/> instead. An engine reads what an SVG image
+/// embeds is <c>FILE_CORRUPT</c> naming the image. An engine reads what an SVG image
 /// names past any resource hook, local files and shares included, so a read SVG keeps only what
 /// it holds itself (<see cref="SvgReferences"/>) and the gate lists what was removed
 /// (<see cref="NetworkGate.Withhold"/>); an SVG that does not parse as XML, and a compressed one

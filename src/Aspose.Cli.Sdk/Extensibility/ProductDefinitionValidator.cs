@@ -1,5 +1,4 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Formats;
 
 namespace Aspose.Cli.Sdk.Extensibility;
@@ -27,7 +26,6 @@ internal sealed class ProductDefinitionValidator
         }
 
         ValidateManifest(definition.Manifest);
-        ValidateOperations(definition);
         ValidateFormats(definition);
         ValidateBudgetOptions(definition);
         return definition;
@@ -48,8 +46,6 @@ internal sealed class ProductDefinitionValidator
             throw new InvalidOperationException(
                 $"Product '{productId}' received resources for '{resources.ProductId}'.");
         }
-
-        ValidateOperationSchemas(definition);
     }
 
     public static IReadOnlyDictionary<IProductModule, ProductModuleRegistration>
@@ -86,21 +82,6 @@ internal sealed class ProductDefinitionValidator
         return byModule;
     }
 
-    private static void ValidateOperationSchemas(ProductDefinition definition)
-    {
-        string productId = definition.Manifest.Id;
-        string prefix = $"v2/{productId}/";
-        foreach (ProductOperationDescriptor operation in
-            definition.Operations.Select(static command => command.Descriptor))
-        {
-            if (!operation.InputSchema.StartsWith(prefix, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    $"Product '{productId}' operation command '{operation.Command}' references unowned schema '{operation.InputSchema}'.");
-            }
-        }
-    }
-
     private static void ValidateManifest(ProductManifest manifest)
     {
         ArgumentNullException.ThrowIfNull(manifest);
@@ -120,38 +101,6 @@ internal sealed class ProductDefinitionValidator
         }
     }
 
-    private static void ValidateOperations(ProductDefinition definition)
-    {
-        ProductManifest manifest = definition.Manifest;
-        var commands = new HashSet<string>(StringComparer.Ordinal);
-        foreach (ProductOperationDescriptor? operation in definition.Operations.Select(static command => command?.Descriptor))
-        {
-            string[] command = operation?.Command.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [];
-            if (operation is null
-                || command.Length == 0
-                || command.Any(static segment => !IsToken(segment))
-                || !string.Equals(operation.Command, string.Join(' ', command), StringComparison.Ordinal)
-                || !commands.Add(operation.Command))
-            {
-                throw new InvalidOperationException(
-                    $"Product '{manifest.Id}' declares an invalid or duplicate operation command.");
-            }
-            if (string.IsNullOrWhiteSpace(operation.InputSchema)
-                || operation.MaximumOperationCount < 1
-                || operation.Ops.Count == 0
-                || operation.Ops.Any(static op => !IsToken(op))
-                || operation.Ops.Distinct(StringComparer.Ordinal).Count() != operation.Ops.Count)
-            {
-                throw new InvalidOperationException(
-                    $"Product '{manifest.Id}' operation command '{operation.Command}' has an invalid schema, limit or operation list.");
-            }
-        }
-    }
-
-    /// <summary>
-    /// A budget that names a command option is raised through that option, so the option
-    /// must exist: the host otherwise enforces the budget's maximum instead of its default.
-    /// </summary>
     private static void ValidateBudgetOptions(ProductDefinition definition)
     {
         string[] declared = definition.Manifest.ResourceBudgets
@@ -196,14 +145,6 @@ internal sealed class ProductDefinitionValidator
             CollectOptions(child, names);
         }
     }
-
-    private static bool IsToken(string value) =>
-        !string.IsNullOrWhiteSpace(value)
-        && value[0] is >= 'a' and <= 'z'
-        && value.All(static character =>
-            character is >= 'a' and <= 'z'
-                or >= '0' and <= '9'
-                or '-' or '_');
 
     private static void ValidateDescriptor(
         ProductModuleRegistration descriptor,

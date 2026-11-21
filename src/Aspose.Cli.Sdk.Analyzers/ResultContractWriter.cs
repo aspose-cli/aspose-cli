@@ -95,7 +95,7 @@ internal sealed class ResultContractWriter(
             if (attribute.ConstructorArguments.FirstOrDefault().Value is not string id || !RelativeId.IsMatch(id)
                 || AnalyzerTypes.Inherits(type, SdkMetadataNames.ResultEnvelope))
             {
-                Report(type, $"[SchemaId] on '{type.Name}' must name a relative id such as 'operation-outcome', on a record that is not a ResultEnvelope; a result states its id to the ResultEnvelope constructor.");
+                Report(type, $"[SchemaId] on '{type.Name}' must name a relative id such as 'resource-budget', on a record that is not a ResultEnvelope; a result states its id to the ResultEnvelope constructor.");
                 return null;
             }
 
@@ -142,10 +142,10 @@ internal sealed class ResultContractWriter(
 
     /// <summary>
     /// Whether records of another assembly may derive from <paramref name="type"/>: an SDK envelope
-    /// base, the SDK's output item or the SDK's edit verification core.
+    /// base or the SDK's output item.
     /// </summary>
     private static bool IsInheritable(INamedTypeSymbol type) =>
-        IsEnvelope(type) || (type.IsAbstract && type.ToDisplayString() is SdkMetadataNames.OutputItem or SdkMetadataNames.EditVerification);
+        IsEnvelope(type) || (type.IsAbstract && type.ToDisplayString() == SdkMetadataNames.OutputItem);
 
     private void Enqueue(INamedTypeSymbol type)
     {
@@ -177,7 +177,7 @@ internal sealed class ResultContractWriter(
             }
             else if (!IsInheritable(baseType))
             {
-                Report(type, $"Result record '{type.Name}' derives from '{baseType.Name}' of another assembly; only the SDK's envelope bases, OutputItem and EditVerification can be inherited across assemblies.");
+                Report(type, $"Result record '{type.Name}' derives from '{baseType.Name}' of another assembly; only the SDK's envelope bases and OutputItem can be inherited across assemblies.");
             }
 
             code.Append(", Base = typeof(").Append(TypeName(baseType)).Append(')');

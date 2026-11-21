@@ -254,59 +254,6 @@ internal static partial class ContractRules
                     new ScenarioExpectation { ExitCode = [2], Error = ["OPTION_INVALID"], Files = new ScenarioFiles { NothingWritten = true } });
             }
         }
-        foreach (CliProduct product in catalog.Products.Where(static product => ScenarioFixtures.Products.Contains(product.Id)))
-        {
-            if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product.Id} edit") is { } edit
-                && R16Operation(catalog, product) is { } operation)
-            {
-                yield return InvariantCases.Case("C-R16", $"{product.Id} op {operation["op"]} with a malformed selection", product.Id, slow: false,
-                    R26Edit(edit, operation),
-                    new ScenarioExpectation { ExitCode = [4], Error = ["OPS_INVALID"], Files = new ScenarioFiles { NothingWritten = true } });
-            }
-        }
-    }
-
-    /// <summary>The selection definitions of the ops schemas and the malformed value of each.</summary>
-    private static readonly Dictionary<string, string> R16Definitions = new(StringComparer.Ordinal)
-    {
-        ["#/$defs/pages"] = "1-x",
-        ["#/$defs/range"] = "A1:!!",
-    };
-
-    /// <summary>
-    /// The first operation whose only required field is a selection, directly or in an object
-    /// such as a target, with that selection malformed; null when the product has none.
-    /// </summary>
-    private static JsonObject? R16Operation(CliCatalog catalog, CliProduct product)
-    {
-        if (product.OpsSchemaId is null)
-        {
-            return null;
-        }
-        JsonNode definitions = JsonNode.Parse(catalog.SchemaText(product.OpsSchemaId))!["$defs"]!;
-        foreach (string op in product.Ops)
-        {
-            if (definitions[op]?["properties"] is not JsonObject properties)
-            {
-                continue;
-            }
-            string[] required = [.. (definitions[op]!["required"] as JsonArray ?? []).Select(static name => name!.GetValue<string>()).Where(static name => name != "op")];
-            foreach ((string field, JsonNode? schema) in properties.Where(property => required.Length == 0 || required is [var only] && only == property.Key))
-            {
-                string reference = schema?["$ref"]?.GetValue<string>() ?? string.Empty;
-                if (R16Definitions.TryGetValue(reference, out string? malformed))
-                {
-                    return new JsonObject { ["op"] = op, [field] = malformed };
-                }
-                if (reference.StartsWith("#/$defs/", StringComparison.Ordinal)
-                    && definitions[reference["#/$defs/".Length..]]?["properties"] is JsonObject inner
-                    && inner.FirstOrDefault(static property => R16Definitions.ContainsKey(property.Value?["$ref"]?.GetValue<string>() ?? string.Empty)) is { Key: { } name } selection)
-                {
-                    return new JsonObject { ["op"] = op, [field] = new JsonObject { [name] = R16Definitions[selection.Value!["$ref"]!.GetValue<string>()] } };
-                }
-            }
-        }
-        return null;
     }
 
     /// <summary>
@@ -508,10 +455,6 @@ internal static partial class ContractRules
                 yield return R26Case(output, $"{convert} --out extension {extension} as {extensionTypo}", product,
                     Invocation.For(convert, "--to").Add("--out", "output" + extensionTypo));
             }
-            foreach (InvariantCase item in R26Operations(catalog, output, catalog.Product(product)))
-            {
-                yield return item;
-            }
         }
         string first = ScenarioFixtures.Products.First();
         string[] commands = [.. catalog.Commands.Single(static command => command.Words.Length == 0).Subcommands];
@@ -540,76 +483,6 @@ internal static partial class ContractRules
             .Single(format => format["id"]!.GetValue<string>() == id)["extensions"]!.AsArray()
             .Select(static extension => extension!.GetValue<string>()))
         .Distinct(StringComparer.OrdinalIgnoreCase);
-
-    private static IEnumerable<InvariantCase> R26Operations(CliCatalog catalog, string output, CliProduct product)
-    {
-        if (product.OpsSchemaId is null || product.Ops.Count == 0
-            || catalog.Commands.FirstOrDefault(command => command.Words == $"{product.Id} edit") is not { } edit)
-        {
-            yield break;
-        }
-        JsonNode definitions = JsonNode.Parse(catalog.SchemaText(product.OpsSchemaId))!["$defs"]!;
-        string op = product.Ops[0];
-        string opTypo = InvariantCases.Typo(op, product.Ops);
-        yield return R26Case(output, $"{product.Id} op {op} as {opTypo}", product.Id,
-            R26Edit(edit, new JsonObject { ["op"] = opTypo }));
-
-        foreach (string candidate in product.Ops)
-        {
-            if (definitions[candidate]?["properties"] is not JsonObject properties)
-            {
-                continue;
-            }
-            string[] fields = [.. properties.Select(static property => property.Key).Where(static key => key is not ("id" or "op"))];
-            if (fields.Length == 0)
-            {
-                continue;
-            }
-            string fieldTypo = InvariantCases.Typo(fields[0], fields);
-            yield return R26Case(output, $"{product.Id} op {candidate} field {fields[0]} as {fieldTypo}", product.Id,
-                R26Edit(edit, new JsonObject { ["op"] = candidate, [fieldTypo] = "x" }));
-            break;
-        }
-
-        // The first operation with an enum field whose required fields are all enums, so it is
-        // complete with their first values.
-        foreach (string candidate in product.Ops)
-        {
-            if (definitions[candidate]?["properties"] is not JsonObject properties)
-            {
-                continue;
-            }
-            string[] required = [.. (definitions[candidate]!["required"] as JsonArray ?? []).Select(static name => name!.GetValue<string>()).Where(static name => name != "op")];
-            string? field = properties.Where(static property => property.Key != "op" && property.Value?["enum"] is JsonArray { Count: > 0 })
-                .Select(static property => property.Key).FirstOrDefault();
-            if (field is null || required.Any(name => properties[name]?["enum"] is not JsonArray { Count: > 0 }))
-            {
-                continue;
-            }
-            var operation = new JsonObject { ["op"] = candidate };
-            foreach (string name in required)
-            {
-                operation[name] = properties[name]!["enum"]![0]!.DeepClone();
-            }
-            string[] values = [.. properties[field]!["enum"]!.AsArray().Select(static value => value!.ToString())];
-            string valueTypo = InvariantCases.Typo(values[0], values);
-            operation[field] = valueTypo;
-            yield return R26Case(output, $"{product.Id} op {candidate} {field} {values[0]} as {valueTypo}", product.Id,
-                R26Edit(edit, operation));
-            break;
-        }
-    }
-
-    private static Invocation R26Edit(CliCommand edit, JsonObject operation)
-    {
-        Invocation invocation = Invocation.For(edit, "--ops").Add("--ops", "ops.json");
-        invocation.Files["ops.json"] = new ScenarioFile { Text = new JsonObject { ["ops"] = new JsonArray(operation) }.ToJsonString() };
-        if (edit.Has("--dry-run"))
-        {
-            invocation.Add("--dry-run");
-        }
-        return invocation;
-    }
 
     private static InvariantCase R26Case(string output, string subject, string shard, Invocation invocation) =>
         Runs("C-R26", subject, shard, slow: false, invocation, session => R26Problems(session.Run(output, "json")));

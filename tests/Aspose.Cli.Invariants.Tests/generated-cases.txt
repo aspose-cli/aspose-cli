@@ -351,9 +351,7 @@ C-R17 | v2/common/input
 C-R17 | v2/common/license
 C-R17 | v2/common/license-status
 C-R17 | v2/common/not-found-details
-C-R17 | v2/common/operation-outcome
 C-R17 | v2/common/output
-C-R17 | v2/common/page-size
 C-R17 | v2/common/resource-budget
 C-R17 | v2/common/result-window
 C-R17 | v2/common/schema-catalog
@@ -364,8 +362,6 @@ C-R17 | v2/common/table-hit
 C-R17 | v2/common/table-inventory
 C-R17 | v2/common/table-object
 C-R17 | v2/common/table-op-report
-C-R17 | v2/common/unchecked-operation
-C-R17 | v2/common/verification-issue
 C-R17 | v2/common/version
 C-R17 | v2/common/warning
 C-R17 | v2/pdf/convert-result
@@ -417,9 +413,7 @@ C-R18 | v2/common/input
 C-R18 | v2/common/license
 C-R18 | v2/common/license-status
 C-R18 | v2/common/not-found-details
-C-R18 | v2/common/operation-outcome
 C-R18 | v2/common/output
-C-R18 | v2/common/page-size
 C-R18 | v2/common/resource-budget
 C-R18 | v2/common/result-window
 C-R18 | v2/common/schema-catalog
@@ -430,8 +424,6 @@ C-R18 | v2/common/table-hit
 C-R18 | v2/common/table-inventory
 C-R18 | v2/common/table-object
 C-R18 | v2/common/table-op-report
-C-R18 | v2/common/unchecked-operation
-C-R18 | v2/common/verification-issue
 C-R18 | v2/common/version
 C-R18 | v2/common/warning
 C-R18 | v2/pdf/convert-result
@@ -686,15 +678,9 @@ C-R20 | v2/common/license-status variants
 C-R20 | v2/common/not-found-details fixednames
 C-R20 | v2/common/not-found-details spelling
 C-R20 | v2/common/not-found-details variants
-C-R20 | v2/common/operation-outcome fixednames
-C-R20 | v2/common/operation-outcome spelling
-C-R20 | v2/common/operation-outcome variants
 C-R20 | v2/common/output fixednames
 C-R20 | v2/common/output spelling
 C-R20 | v2/common/output variants
-C-R20 | v2/common/page-size fixednames
-C-R20 | v2/common/page-size spelling
-C-R20 | v2/common/page-size variants
 C-R20 | v2/common/resource-budget fixednames
 C-R20 | v2/common/resource-budget spelling
 C-R20 | v2/common/resource-budget variants
@@ -725,12 +711,6 @@ C-R20 | v2/common/table-object variants
 C-R20 | v2/common/table-op-report fixednames
 C-R20 | v2/common/table-op-report spelling
 C-R20 | v2/common/table-op-report variants
-C-R20 | v2/common/unchecked-operation fixednames
-C-R20 | v2/common/unchecked-operation spelling
-C-R20 | v2/common/unchecked-operation variants
-C-R20 | v2/common/verification-issue fixednames
-C-R20 | v2/common/verification-issue spelling
-C-R20 | v2/common/verification-issue variants
 C-R20 | v2/common/version fixednames
 C-R20 | v2/common/version spelling
 C-R20 | v2/common/version variants
@@ -1209,10 +1189,6 @@ C-R28 | codes declared once
 C-R28 | common code names
 C-R28 | common not-found details
 C-R28 | evaluation codes
-C-R30 | cells operations have samples
-C-R30 | pdf operations have samples
-C-R30 | slides operations have samples
-C-R30 | words operations have samples
 C-R31 | cells edit paths
 C-R31 | cells render paths
 C-R31 | pdf edit paths
@@ -1260,12 +1236,8 @@ C-R31 | v2/common/license-status fields
 C-R31 | v2/common/license-status outputs
 C-R31 | v2/common/not-found-details fields
 C-R31 | v2/common/not-found-details outputs
-C-R31 | v2/common/operation-outcome fields
-C-R31 | v2/common/operation-outcome outputs
 C-R31 | v2/common/output fields
 C-R31 | v2/common/output outputs
-C-R31 | v2/common/page-size fields
-C-R31 | v2/common/page-size outputs
 C-R31 | v2/common/resource-budget fields
 C-R31 | v2/common/resource-budget outputs
 C-R31 | v2/common/result-window fields
@@ -1286,10 +1258,6 @@ C-R31 | v2/common/table-object fields
 C-R31 | v2/common/table-object outputs
 C-R31 | v2/common/table-op-report fields
 C-R31 | v2/common/table-op-report outputs
-C-R31 | v2/common/unchecked-operation fields
-C-R31 | v2/common/unchecked-operation outputs
-C-R31 | v2/common/verification-issue fields
-C-R31 | v2/common/verification-issue outputs
 C-R31 | v2/common/version fields
 C-R31 | v2/common/version outputs
 C-R31 | v2/common/warning fields
@@ -1424,15 +1392,9 @@ C-R33 | v2/common/license-status none
 C-R33 | v2/common/not-found-details envelope
 C-R33 | v2/common/not-found-details names
 C-R33 | v2/common/not-found-details none
-C-R33 | v2/common/operation-outcome envelope
-C-R33 | v2/common/operation-outcome names
-C-R33 | v2/common/operation-outcome none
 C-R33 | v2/common/output envelope
 C-R33 | v2/common/output names
 C-R33 | v2/common/output none
-C-R33 | v2/common/page-size envelope
-C-R33 | v2/common/page-size names
-C-R33 | v2/common/page-size none
 C-R33 | v2/common/resource-budget envelope
 C-R33 | v2/common/resource-budget names
 C-R33 | v2/common/resource-budget none
@@ -1463,12 +1425,6 @@ C-R33 | v2/common/table-object none
 C-R33 | v2/common/table-op-report envelope
 C-R33 | v2/common/table-op-report names
 C-R33 | v2/common/table-op-report none
-C-R33 | v2/common/unchecked-operation envelope
-C-R33 | v2/common/unchecked-operation names
-C-R33 | v2/common/unchecked-operation none
-C-R33 | v2/common/verification-issue envelope
-C-R33 | v2/common/verification-issue names
-C-R33 | v2/common/verification-issue none
 C-R33 | v2/common/version envelope
 C-R33 | v2/common/version names
 C-R33 | v2/common/version none
@@ -1685,10 +1641,6 @@ C-R38 | src/Aspose.Cli.Sdk bare commands
 C-R38 | src/Aspose.Cli.Sdk.Analyzers
 C-R38 | src/Aspose.Cli.Sdk.Analyzers bare commands
 C-R38 | written mistakes
-C-R39 | cells round-trip exemptions
-C-R39 | pdf round-trip exemptions
-C-R39 | slides round-trip exemptions
-C-R39 | words round-trip exemptions
 C-R40 | convert file shape
 C-R40 | create file shape
 C-R40 | edit file shape

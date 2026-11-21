@@ -15,9 +15,6 @@ using Xunit;
 
 namespace Aspose.Cli.TestKit;
 
-/// <summary>A product-owned input value and the schema that describes it.</summary>
-public sealed record ProductSchemaSample(string Schema, object Value);
-
 /// <summary>
 /// The count naming rule, checked on the source-generated JSON metadata of every
 /// <see cref="JsonSerializerContext"/> in the given assemblies: each context's
@@ -134,19 +131,6 @@ public static class JsonCountNames
 public abstract class ProductContractTests<TModule>
     where TModule : IProductModule, new()
 {
-    /// <summary>Product-owned canonical input samples.</summary>
-    protected abstract IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; }
-
-    /// <summary>
-    /// The fields of listed result objects that share a name with an operation field while
-    /// meaning something else, each by its result schema and the JSON pointer of the property,
-    /// with the reason; see <see cref="ListedObjects_ShareTheOperationVocabulary"/>. An exemption
-    /// covers that one property, so another field of the name, in the same result or another, is
-    /// still compared.
-    /// </summary>
-    protected virtual IReadOnlyDictionary<(string Schema, string Pointer), string> Homonyms { get; } =
-        new Dictionary<(string Schema, string Pointer), string>();
-
     /// <summary>Ensures the module produces an equivalent pure definition repeatedly.</summary>
     [Fact]
     public void Define_IsDeterministic()
@@ -238,16 +222,7 @@ public abstract class ProductContractTests<TModule>
             .ToArray();
         Assert.NotEmpty(results);
 
-        Type[] inputs = roots
-            .Where(static root =>
-                !typeof(ResultEnvelope).IsAssignableFrom(root))
-            .ToArray();
-        Assert.Equal(
-            inputs.OrderBy(static type => type.FullName, StringComparer.Ordinal),
-            CanonicalInputs
-                .Select(static sample => sample.Value.GetType())
-                .Distinct()
-                .OrderBy(static type => type.FullName, StringComparer.Ordinal));
+        Assert.Empty(roots.Except(results));
 
         IReadOnlyList<string> productSchemas = ProductCatalog.Build([new TModule()]).Resources
             .GetProduct(definition.Manifest.Id)
@@ -278,185 +253,6 @@ public abstract class ProductContractTests<TModule>
         Assert.NotEmpty(resources.SchemaIds);
     }
 
-    /// <summary>
-    /// Prevents the product's edit result, its one partial outcome, from drifting away from the
-    /// shared operation wire contract: its record lists every outcome as a
-    /// <see cref="BoundedOperationOutcome"/>, and its schema requires <c>applied</c> and
-    /// references the shared outcome schema for each item. A product without an operation
-    /// vocabulary, whose edit applies an object table's operations, has no such outcome.
-    /// </summary>
-    [Fact]
-    public void PartialOutcomes_UseSharedBoundedOperationContract()
-    {
-        ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
-        ProductDefinition definition = Assert.Single(catalog.Products);
-        if (definition.Operations.Count == 0)
-        {
-            return;
-        }
-
-        Type outcome = Assert.Single(
-            definition.Json.ResultRecords.Select(static record => record.Type).Distinct(),
-            // A partial outcome that applies operations, as an edit does; a check such as a
-            // validation that fails completes partially too, but applies nothing.
-            static type => typeof(IPartialOutcome).IsAssignableFrom(type) && type.GetProperty("Applied") is not null);
-
-        PropertyInfo? applied = outcome.GetProperty("Applied");
-        Assert.NotNull(applied);
-        Assert.Equal(
-            typeof(IReadOnlyList<BoundedOperationOutcome>),
-            applied!.PropertyType);
-        string id = definition.Json.ResultRecords.First(record => record.Type == outcome).SchemaId!;
-        JsonObject schema = JsonNode.Parse(catalog.Resources.Read(ResultSchemaSet.Id(definition.Manifest.Id, id)))!.AsObject();
-        Assert.Contains("applied", schema["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
-        Assert.Equal(
-            ResultEnvelope.SchemaUri("common", "operation-outcome"),
-            schema["properties"]!["applied"]!["items"]!["$ref"]!.GetValue<string>());
-
-        Assert.Equal(
-            ["Id", "ItemsAffected", "Op", "Status", "Targets"],
-            typeof(BoundedOperationOutcome)
-                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Select(static property => property.Name)
-                .OrderBy(static name => name, StringComparer.Ordinal));
-        Assert.Equal(
-            ["Code", "Details", "Docs", "Message"],
-            typeof(ErrorPayload)
-                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Select(static property => property.Name)
-                .OrderBy(static name => name, StringComparer.Ordinal));
-    }
-
-    /// <summary>
-    /// Validates every canonical product input against its declared schema. A product with an
-    /// operation vocabulary has at least its operation document; a product without one may read
-    /// no product-owned input document at all.
-    /// </summary>
-    [Fact]
-    public void CanonicalInputs_ConformToCurrentSchemas()
-    {
-        ProductDefinition definition = new TModule().Define();
-        Assert.NotNull(definition.Json);
-        ProductResourceCatalog resources =
-            ProductCatalog.Build([new TModule()]).Resources;
-
-        if (definition.Operations.Count == 0 && CanonicalInputs.Count == 0)
-        {
-            return;
-        }
-
-        Assert.NotEmpty(CanonicalInputs);
-        Assert.Equal(
-            CanonicalInputs.Count,
-            CanonicalInputs
-                .Select(static sample => sample.Schema)
-                .Distinct(StringComparer.Ordinal)
-                .Count());
-
-        foreach (ProductSchemaSample sample in CanonicalInputs)
-        {
-            Assert.NotNull(sample.Value);
-            Assert.NotNull(
-                definition.Json!.LocalOptions.GetTypeInfo(sample.Value.GetType()));
-            string schemaId = ResourceSchemaId(sample.Schema);
-            JsonSchema schema = ParseSchema(resources.Read(schemaId));
-            string json = JsonSerializer.Serialize(
-                sample.Value,
-                sample.Value.GetType(),
-                definition.Json.LocalOptions);
-            using JsonDocument instance = JsonDocument.Parse(json);
-            EvaluationResults evaluation = schema.Evaluate(instance.RootElement);
-            Assert.True(
-                evaluation.IsValid,
-                $"{sample.Value.GetType().FullName} does not conform to {schemaId}: "
-                    + JsonSerializer.Serialize(evaluation));
-        }
-    }
-
-
-    /// <summary>Every product rejects malformed operation discriminators through its own metadata.</summary>
-    [Theory]
-    [InlineData("null")]
-    [InlineData("[]")]
-    [InlineData("{}")]
-    [InlineData("{\"op\":null}")]
-    [InlineData("{\"op\":1}")]
-    [InlineData("{\"op\":false}")]
-    [InlineData("{\"op\":[]}")]
-    [InlineData("{\"op\":{}}")]
-    [InlineData("{\"op\":\"__unknown_operation__\"}")]
-    public void OperationDiscriminators_RejectMalformedInput(string operation)
-    {
-        JsonSerializerOptions options = new TModule().Define().Json.LocalOptions;
-        foreach (ProductSchemaSample sample in OperationInputs())
-        {
-            Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize(
-                "{\"ops\":[" + operation + "]}", sample.Value.GetType(), options));
-        }
-    }
-
-    /// <summary>Discriminator order is flexible; unknown and duplicate members are never accepted.</summary>
-    [Fact]
-    public void Operations_RoundTripWithStrictMembersAndDiscriminatorLast()
-    {
-        JsonSerializerOptions options = new TModule().Define().Json.LocalOptions;
-        foreach (ProductSchemaSample sample in OperationInputs())
-        {
-            Type batchType = sample.Value.GetType();
-            JsonObject batch = JsonSerializer.SerializeToNode(sample.Value, batchType, options)!.AsObject();
-            foreach (JsonNode? node in batch["ops"]!.AsArray())
-            {
-                JsonObject operation = node!.AsObject();
-                JsonNode discriminator = operation["op"]!.DeepClone();
-                operation.Remove("op");
-                operation.Add("op", discriminator);
-            }
-
-            string json = batch.ToJsonString();
-            object restored = JsonSerializer.Deserialize(json, batchType, options)!;
-            Assert.True(JsonNode.DeepEquals(batch, JsonSerializer.SerializeToNode(restored, batchType, options)));
-
-            Assert.Throws<JsonException>(() => JsonSerializer.Deserialize(
-                "{\"ops\":[]," + json[1..], batchType, options));
-
-            string first = batch["ops"]![0]!.ToJsonString();
-            foreach (string member in new[] { "\"__unexpected\":true", "\"opName\":\"ignored\"", "\"op\":\"__unknown_operation__\"" })
-            {
-                Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize(
-                    "{\"ops\":[{" + member + "," + first[1..] + "]}", batchType, options));
-            }
-        }
-    }
-
-    private IEnumerable<ProductSchemaSample> OperationInputs() => CanonicalInputs.Where(static sample =>
-        sample.Value.GetType().BaseType is { IsGenericType: true } type
-        && type.GetGenericTypeDefinition() == typeof(BoundedOperationEnvelope<>));
-
-    /// <summary>Checks nested unknown fields using a valid product-owned operation.</summary>
-    protected static void AssertOperationObjectIsStrict<TOperation>(string input, string member)
-    {
-        JsonSerializerOptions options = new TModule().Define().Json.LocalOptions;
-        Assert.NotNull(JsonSerializer.Deserialize<TOperation>(input, options));
-        JsonObject operation = JsonNode.Parse(input)!.AsObject();
-        operation[member]!["__unexpected"] = true;
-        JsonException error = Assert.ThrowsAny<JsonException>(() =>
-            JsonSerializer.Deserialize<TOperation>(operation.ToJsonString(), options));
-        Assert.Contains("__unexpected", error.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>Checks omitted and explicit operation fields through the production JSON metadata.</summary>
-    protected static void AssertOperationDefaults<TOperation>(string input, string expected)
-    {
-        JsonSerializerOptions options = new TModule().Define().Json!.LocalOptions;
-        TOperation operation = JsonSerializer.Deserialize<TOperation>(input, options)!;
-        JsonObject actual = JsonSerializer.SerializeToNode(operation, options)!.AsObject();
-        foreach ((string name, JsonNode? value) in JsonNode.Parse(expected)!.AsObject())
-        {
-            Assert.True(JsonNode.DeepEquals(value, actual[name]),
-                $"Field '{name}' in {input}: expected {value}, actual {actual[name]}.");
-        }
-    }
-
     /// <summary>Ensures every schema the product publishes parses and states its canonical identity.</summary>
     [Fact]
     public void EveryCurrentSchema_ParsesAndHasCanonicalIdentity()
@@ -485,182 +281,14 @@ public abstract class ProductContractTests<TModule>
     }
 
     /// <summary>
-    /// Ensures every manifest operation has a self-contained schema view that parses and is
-    /// narrowed to that operation.
-    /// </summary>
-    [Fact]
-    public void Operations_HaveNarrowedSchemaViews()
-    {
-        ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
-        foreach (ProductOperationDescriptor operation in Assert.Single(catalog.Products).Operations
-            .Select(static command => command.Descriptor))
-        {
-            foreach (string name in operation.Ops)
-            {
-                Assert.True(catalog.Resources.TryReadOperation(operation.InputSchema, name, out string? view));
-                _ = ParseSchema(view);
-                JsonNode oneOf = JsonNode.Parse(view)!["properties"]!["ops"]!["items"]!["oneOf"]!;
-                Assert.Equal($"#/$defs/{name}", Assert.Single(oneOf.AsArray())!["$ref"]!.GetValue<string>());
-            }
-        }
-    }
-
-    /// <summary>
     /// Names every integer count <c>&lt;noun&gt;Count</c> across the product's source-generated
-    /// contracts (results, inputs and operation records); see <see cref="JsonCountNames"/>.
+    /// contracts; see <see cref="JsonCountNames"/>.
     /// </summary>
     [Fact]
     public void IntegerCounts_AreNamedNounCount()
     {
         IReadOnlyList<string> violations = JsonCountNames.Violations([typeof(TModule).Assembly]);
         Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
-    }
-
-    /// <summary>
-    /// Keeps the objects results list in the edit vocabulary. A field of a listed object
-    /// (an item of a result array, such as a sheet, chart, shape, block, page or bookmark,
-    /// and anything nested in it) that shares its name with an operation field has a JSON type
-    /// the operations accept and, where both state allowed values, only values they accept, so
-    /// what is read can be written back under the same name. Result metadata outside lists is
-    /// not a document object and is not compared; a genuine homonym is named in
-    /// <see cref="Homonyms"/> by its schema and property with its reason, and an exemption that
-    /// covers no mismatch any more fails.
-    /// </summary>
-    [Fact]
-    public void ListedObjects_ShareTheOperationVocabulary()
-    {
-        ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
-        ProductDefinition definition = Assert.Single(catalog.Products);
-        string[] operationSchemas = definition.Operations
-            .Select(static operation => operation.Descriptor.InputSchema)
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
-        if (operationSchemas.Length == 0)
-        {
-            return;
-        }
-
-        string[] mismatches =
-        [
-            .. OperationVocabulary.Mismatches(
-                operationSchemas.Select(id => JsonNode.Parse(catalog.Resources.Read(id))!.AsObject()),
-                catalog.Resources.GetProduct(definition.Manifest.Id).SchemaIds
-                    .Except(operationSchemas, StringComparer.Ordinal)
-                    .Select(id => (id, JsonNode.Parse(catalog.Resources.Read(id))!.AsObject())),
-                Homonyms),
-        ];
-        Assert.True(mismatches.Length == 0, string.Join(Environment.NewLine, mismatches));
-    }
-
-    /// <summary>
-    /// Keeps every operation document a product Skill shows valid against the generated schema:
-    /// the example <c>*.json</c> files, fenced <c>json</c> blocks and inline <c>--ops</c>
-    /// arguments that <see cref="SkillOperationDocuments"/> finds. A document that does not parse
-    /// fails, as does an example command naming an ops file that is not there. A Skill therefore
-    /// cannot teach a field, value or shape the build rejects.
-    /// </summary>
-    [Fact]
-    public void SkillOperationDocuments_ConformToTheGeneratedSchema()
-    {
-        ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
-        ProductDefinition definition = Assert.Single(catalog.Products);
-        ProductOperationDescriptor[] operations = definition.Operations
-            .Select(static operation => operation.Descriptor)
-            .ToArray();
-        string[] operationSchemas = operations
-            .Select(static operation => operation.InputSchema)
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
-        string skills = Path.Combine(RepositoryPaths.Root, "src", typeof(TModule).Assembly.GetName().Name!, "Skills");
-        if (operationSchemas.Length == 0 || !Directory.Exists(skills))
-        {
-            return;
-        }
-
-        JsonSchema[] schemas = [.. operationSchemas.Select(id => ParseSchema(catalog.Resources.Read(id)))];
-        (IReadOnlyList<SkillOperationDocument> documents, IReadOnlyList<string> problems) =
-            SkillOperationDocuments.Collect(skills);
-        var failures = new List<string>(problems);
-        foreach (SkillOperationDocument document in documents)
-        {
-            JsonNode? node;
-            try
-            {
-                node = JsonNode.Parse(document.Json);
-            }
-            catch (JsonException error)
-            {
-                failures.Add($"{document.Location}: does not parse: {error.Message}");
-                continue;
-            }
-
-            using JsonDocument instance = JsonDocument.Parse(document.Json);
-            if (!schemas.Any(schema => schema.Evaluate(instance.RootElement).IsValid))
-            {
-                failures.Add($"{document.Location}: {DescribeRejection(catalog, operations, node)}");
-            }
-        }
-
-        Assert.True(failures.Count == 0, "Skill operation documents the schema rejects:" + Environment.NewLine
-            + string.Join(Environment.NewLine, failures));
-    }
-
-    /// <summary>Names the operations of a rejected document that fail on their own, and why.</summary>
-    private static string DescribeRejection(
-        ProductCatalog catalog,
-        IReadOnlyList<ProductOperationDescriptor> operations,
-        JsonNode? document)
-    {
-        if (document is not JsonObject batch || batch["ops"] is not JsonArray ops)
-        {
-            return "not an object with an 'ops' array";
-        }
-
-        var reasons = new List<string>();
-        for (int index = 0; index < ops.Count; index++)
-        {
-            string? name = ops[index] is JsonObject operation && operation["op"] is JsonValue value
-                && value.TryGetValue(out string? text) ? text : null;
-            string[] views = [.. operations
-                .Where(descriptor => name is not null && descriptor.Ops.Contains(name, StringComparer.Ordinal))
-                .Select(descriptor => catalog.Resources.TryReadOperation(descriptor.InputSchema, name!, out string? view) ? view : null)
-                .OfType<string>()];
-            if (views.Length == 0)
-            {
-                reasons.Add($"ops[{index}] has unknown op '{name}'");
-                continue;
-            }
-
-            using JsonDocument single = JsonDocument.Parse(new JsonObject { ["ops"] = new JsonArray(ops[index]!.DeepClone()) }.ToJsonString());
-            EvaluationResults[] results = [.. views.Select(view => ParseSchema(view).Evaluate(
-                single.RootElement,
-                new EvaluationOptions { OutputFormat = OutputFormat.List }))];
-            if (results.Any(static result => result.IsValid))
-            {
-                continue;
-            }
-
-            IEnumerable<string> errors = (results[0].Details ?? [])
-                .Where(static detail => detail.Errors is { Count: > 0 })
-                .SelectMany(static detail => detail.Errors!.Select(error => $"{detail.InstanceLocation} {error.Value}"))
-                .Distinct(StringComparer.Ordinal)
-                .Take(4);
-            reasons.Add($"ops[{index}] '{name}': {string.Join("; ", errors)}");
-        }
-
-        string json = batch.ToJsonString();
-        return reasons.Count > 0
-            ? string.Join(" | ", reasons)
-            : "the document level is invalid: " + json[..Math.Min(json.Length, 160)];
-    }
-
-    private static string ResourceSchemaId(string schema)
-    {
-        const string prefix = "https://schemas.aspose.com/aspose-cli/";
-        const string suffix = ".schema.json";
-        Assert.StartsWith(prefix, schema, StringComparison.Ordinal);
-        Assert.EndsWith(suffix, schema, StringComparison.Ordinal);
-        return schema[prefix.Length..^suffix.Length];
     }
 
     private static JsonSchema ParseSchema(string document) =>

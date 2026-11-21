@@ -139,7 +139,6 @@ public sealed class ProductCatalog
             ProductResourceCatalog.Build(
                 ordered.Select(product => (
                     resources[product.Manifest.Id],
-                    product.Operations,
                     product.Tables,
                     product.Json.ResultRecords))));
     }

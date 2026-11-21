@@ -3,7 +3,6 @@ namespace Aspose.Cli.Sdk.Extensibility;
 using System.CommandLine;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Formats;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Serialization;
 
 /// <summary>
@@ -18,7 +17,6 @@ public sealed class ProductDefinition
         Type sessionType,
         IReadOnlyList<FormatDescriptor> formats,
         ProductJsonDefinition json,
-        Func<IReadOnlyList<ProductOperationCommand>> operations,
         Func<IReadOnlyList<Func<Tables.DocumentTable>>> tables,
         IReadOnlyList<DiagnosticDescriptor> diagnostics,
         Func<ProductCommandRunner, Command> commandFactory,
@@ -31,8 +29,6 @@ public sealed class ProductDefinition
         Formats = formats;
         Json = json ?? throw new ArgumentNullException(nameof(json));
 
-        _operations = new Lazy<IReadOnlyList<ProductOperationCommand>>(
-            operations ?? throw new ArgumentNullException(nameof(operations)));
         _tables = new Lazy<IReadOnlyList<Func<Tables.DocumentTable>>>(
             tables ?? throw new ArgumentNullException(nameof(tables)));
         Diagnostics = diagnostics;
@@ -53,14 +49,6 @@ public sealed class ProductDefinition
 
     /// <summary>Product-owned source-generated JSON metadata.</summary>
     public ProductJsonDefinition Json { get; }
-
-    /// <summary>
-    /// The commands that apply this product's operation documents, in menu order; each comes
-    /// from its edit definition, created on first access.
-    /// </summary>
-    public IReadOnlyList<ProductOperationCommand> Operations => _operations.Value;
-
-    private readonly Lazy<IReadOnlyList<ProductOperationCommand>> _operations;
 
     /// <summary>Loads the object tables whose operation documents the product's commands apply; the table loads the engine's types.</summary>
     public IReadOnlyList<Func<Tables.DocumentTable>> Tables => _tables.Value;
@@ -275,7 +263,6 @@ public sealed class ProductDefinitionBuilder<TSession>
             typeof(TSession),
             formats,
             _json,
-            Operations,
             Tables,
             Array.AsReadOnly(_diagnostics.ToArray()),
             CreateCommand,
@@ -293,9 +280,6 @@ public sealed class ProductDefinitionBuilder<TSession>
 
         return _help?.Invoke() is { } help ? product.WithExamples(help.Examples, help.Links) : product;
     }
-
-    private IReadOnlyList<ProductOperationCommand> Operations() =>
-        Array.AsReadOnly(_menu.SelectMany(static entry => entry.Operations()).ToArray());
 
     private IReadOnlyList<Func<Tables.DocumentTable>> Tables() =>
         Array.AsReadOnly(_menu.SelectMany(static entry => entry.Tables()).ToArray());

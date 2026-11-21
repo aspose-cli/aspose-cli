@@ -35,25 +35,16 @@ Warnings do not fail a command. They appear in the result's `warnings` array
 with a `code`, `message` and, when there are any, `details`. A warning with
 `affectsCompleteness: true` leaves the output incomplete; report it.
 
-A `LOSSY_CONVERSION` that names what the output leaves out lists the kinds of
-content in `details.content`; one without it names no kind, such as one that
-says the format may not keep every feature. `aspose-cli schema
-v2/common/error-payload` gives the meaning of every value.
-
 ## Exit codes
 
 Branch on the exit code first, then on the code in the envelope:
 
 - 0: the command succeeded. Its warnings can still need action.
-- 8: the command finished and printed its result, but the result did not pass
-  or is incomplete: a failed verification.
-  Read the result; it says what failed. Exit 8 means only this: no error
-  envelope ever comes with it.
 - 130: the command was cancelled with Ctrl+C. The work stops, nothing is
   published, its staging is removed and no error is written. A second Ctrl+C
   ends the process at once, and the `.aspose-publication-*` staging directory
   it was writing stays.
-- An exit code the CLI never uses (it uses 0 to 9 and 130), such as
+- An exit code the CLI never uses (it uses 0 to 7, 9 and 130), such as
   -1073741571 (`0xC00000FD`): the runtime ended the process, as a stack
   overflow in a document engine does. No error envelope is written, and what
   the command wrote before can remain.

@@ -8,7 +8,6 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Formats;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.Platform.Tests.Sdk;
 using Json.Schema;
@@ -83,29 +82,6 @@ public sealed class CommonSchemaContractTests
         }
     }
 
-    [Theory]
-    [InlineData("v2/common/operation-outcome", typeof(BoundedOperationOutcome))]
-    [InlineData("v2/common/verification-issue", typeof(VerificationIssue))]
-    public void CommonResultSchema_RequiresExactlyTheRecordsNonNullableMembers(
-        string id,
-        Type record)
-    {
-        JsonObject schema = JsonNode.Parse(SdkSchemaCatalog.Read(id))!.AsObject();
-        NullabilityInfoContext nullability = new();
-        PropertyInfo[] members = record.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-        Assert.Equal(
-            members.Select(static member => JsonNamingPolicy.CamelCase.ConvertName(member.Name)).Order(),
-            schema["properties"]!.AsObject().Select(static pair => pair.Key).Order());
-        Assert.Equal(
-            members
-                .Where(member => nullability.Create(member).ReadState != NullabilityState.Nullable)
-                .Select(static member => JsonNamingPolicy.CamelCase.ConvertName(member.Name))
-                .Order(),
-            schema["required"]!.AsArray().Select(static value => value!.GetValue<string>()).Order());
-        Assert.False(schema["additionalProperties"]!.GetValue<bool>());
-    }
-
     [Fact]
     public void CommonWarningShapes_AllowStructuredVisualEvidence()
     {
@@ -159,15 +135,6 @@ public sealed class CommonSchemaContractTests
         Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
     }
 
-    [Fact]
-    public void ProductCatalog_RejectsAnOperationVocabularyOutsideTheProductNamespace()
-    {
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(
-            () => CreateCatalog("other", TestOp.Catalog.Describe));
-
-        Assert.Contains("references unowned schema 'v2/common/ops'", error.Message, StringComparison.Ordinal);
-    }
-
     /// <summary>A common schema by its canonical URI, with every common schema registered for its references.</summary>
     private static JsonSchema CommonSchema(string uri)
     {
@@ -175,9 +142,7 @@ public sealed class CommonSchemaContractTests
         return Assert.IsType<JsonSchema>(CommonSchemas.SchemaRegistry.Get(new Uri(uri)));
     }
 
-    private static ProductCatalog CreateCatalog(
-        string productId = "test",
-        Func<string, ProductOperationCommand>? operations = null)
+    private static ProductCatalog CreateCatalog(string productId = "test")
     {
         ProductDefinition definition = ExtProduct.Define<ITestSession>(
                 new ProductManifest
@@ -206,10 +171,7 @@ public sealed class CommonSchemaContractTests
                     "Edits.",
                     new CommandTraits(),
                     [],
-                    static (_, _) => new TestMenu.TestRequest())
-                {
-                    Operations = operations,
-                },
+                    static (_, _) => new TestMenu.TestRequest()),
                 static (ITestSession _, TestMenu.TestRequest _) => new TestResult())
             .Activator(static _ =>
                 throw new InvalidOperationException(

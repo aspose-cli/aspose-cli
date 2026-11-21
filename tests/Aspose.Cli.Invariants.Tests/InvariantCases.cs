@@ -31,8 +31,6 @@ internal static class InvariantCases
     public const string CorruptInput = "corrupt-input";
     public const string UnknownOption = "unknown-option";
     public const string UnknownCommand = "unknown-command";
-    public const string UnknownOp = "unknown-op";
-    public const string UnknownField = "unknown-field";
     public const string InvalidEnum = "invalid-enum";
     public const string UnwritableOutput = "unwritable-output";
     public const string ReadOnly = "read-only";
@@ -79,8 +77,6 @@ internal static class InvariantCases
         [CorruptInput] = "C-R24",
         [UnknownOption] = "C-R26",
         [UnknownCommand] = "C-R26",
-        [UnknownOp] = "C-R26",
-        [UnknownField] = "C-R26",
         [InvalidEnum] = "C-R26",
         [UnwritableOutput] = "C-R24",
         [ReadOnly] = "C-R11",
@@ -141,7 +137,6 @@ internal static class InvariantCases
         }
         foreach (CliProduct product in catalog.Products.Where(static product => ScenarioFixtures.Products.Contains(product.Id)))
         {
-            cases.AddRange(OperationCases(catalog, product));
             cases.AddRange(OperationSecretCases(catalog, product));
             cases.AddRange(UnwritableOutputCases(catalog, product));
             cases.AddRange(OutputReopensCases(catalog, product));
@@ -242,58 +237,6 @@ internal static class InvariantCases
                     Files = new ScenarioFiles { NothingWritten = true },
                 });
         }
-    }
-
-    private static IEnumerable<InvariantCase> OperationCases(CliCatalog catalog, CliProduct product)
-    {
-        if (product.OpsSchemaId is null || product.Ops.Count == 0)
-        {
-            yield break;
-        }
-        JsonNode definitions = JsonNode.Parse(catalog.SchemaText(product.OpsSchemaId))!["$defs"]!;
-        string extension = ScenarioFixtures.PrimaryFormat(product.Id);
-        string input = "input." + extension;
-        int[] sample = [0, product.Ops.Count / 2, product.Ops.Count - 1];
-        for (int index = 0; index < product.Ops.Count; index++)
-        {
-            string op = product.Ops[index];
-            bool slow = !sample.Contains(index);
-            string typo = Typo(op, product.Ops);
-            yield return Case(UnknownOp, $"{product.Id} {op} as {typo}", product.Id, slow,
-                Edit(product.Id, input, extension, new JsonObject { ["op"] = typo }),
-                new ScenarioExpectation
-                {
-                    ExitCode = [4],
-                    Error = ["OPS_INVALID"],
-                    Files = new ScenarioFiles { NothingWritten = true },
-                });
-
-            string[] fields = definitions[op]?["properties"] is JsonObject properties
-                ? [.. properties.Select(static property => property.Key).Where(static key => key is not ("id" or "op"))]
-                : [];
-            if (fields.Length == 0)
-            {
-                continue;
-            }
-            string field = fields[0];
-            string fieldTypo = Typo(field, fields);
-            yield return Case(UnknownField, $"{product.Id} {op}.{field} as {fieldTypo}", product.Id, slow,
-                Edit(product.Id, input, extension, new JsonObject { ["op"] = op, [fieldTypo] = "x" }),
-                new ScenarioExpectation
-                {
-                    ExitCode = [4],
-                    Error = ["OPS_INVALID"],
-                    Files = new ScenarioFiles { NothingWritten = true },
-                });
-        }
-    }
-
-    private static Invocation Edit(string product, string input, string extension, JsonObject operation)
-    {
-        var invocation = new Invocation([product, "edit", input, "--ops", "ops.json", "--dry-run"]);
-        invocation.Files[input] = new ScenarioFile { Fixture = $"{product}.{extension}" };
-        invocation.Files["ops.json"] = new ScenarioFile { Text = new JsonObject { ["ops"] = new JsonArray(operation) }.ToJsonString() };
-        return invocation;
     }
 
     // ----- (d) an output the command cannot write is refused --------------------------------
@@ -627,7 +570,7 @@ internal static class InvariantCases
         // password as the wrong one; nothing else.
         int refused = catalog.Diagnostics[PasswordInvalid].ExitCode!.Value;
         HashSet<string> removals = RemovalVerbs(catalog);
-        foreach ((string name, JsonObject operation) in SecretOperations(definitions, product))
+        foreach ((string name, JsonObject operation) in SecretOperations(definitions))
         {
             var invocation = new Invocation([product.Id, "edit", input, "--ops", "ops.json", "--out", "output." + extension]);
             invocation.Files[input] = new ScenarioFile { Fixture = $"{product.Id}.{extension}" };
@@ -641,28 +584,19 @@ internal static class InvariantCases
     }
 
     /// <summary>
-    /// Each operation of a product with a secret field, by name, written with every secret field
-    /// naming <see cref="SecretVariable"/> and every other required field the first value of its
-    /// enum, or a list of its first member: an <c>op</c> operation by its fields, and an action of an object table
-    /// (<c>do.&lt;action&gt;</c>) by its <c>args</c>. One that needs another required value is left out.
+    /// Each action of an object table (<c>do.&lt;action&gt;</c>) with a secret field, by name, its
+    /// <c>args</c> written with every secret field naming <see cref="SecretVariable"/> and every
+    /// other required field the first value of its enum, or a list of its first member. One that
+    /// needs another required value is left out.
     /// </summary>
-    private static IEnumerable<(string Name, JsonObject Operation)> SecretOperations(JsonNode definitions, CliProduct product)
+    private static IEnumerable<(string Name, JsonObject Operation)> SecretOperations(JsonNode definitions)
     {
-        foreach (string op in product.Ops)
-        {
-            if (definitions[op]?["properties"] is JsonObject properties
-                && Fields(properties, definitions[op]!["required"], "op") is { } fields)
-            {
-                fields["op"] = op;
-                yield return (op, fields);
-            }
-        }
         foreach ((string key, JsonNode? definition) in definitions.AsObject())
         {
             if (key.StartsWith(ActionPrefix, StringComparison.Ordinal)
                 && definition?["properties"]?["args"] is { } args
                 && args["properties"] is JsonObject properties
-                && Fields(properties, args["required"], null) is { } fields)
+                && Fields(properties, args["required"]) is { } fields)
             {
                 string action = key[ActionPrefix.Length..];
                 yield return (action, new JsonObject { ["do"] = action, ["args"] = fields });
@@ -670,15 +604,15 @@ internal static class InvariantCases
         }
     }
 
-    /// <summary>The schema of a product's operation document: its <c>op</c> vocabulary's, or its object table's; null for neither.</summary>
+    /// <summary>The schema of a product's object table operation document; null without a table.</summary>
     private static string? OpsSchema(CliCatalog catalog, CliProduct product) =>
-        product.OpsSchemaId ?? (PublishedSchema.IsObjectTableProduct(catalog, product.Id) ? $"v2/{product.Id}/ops" : null);
+        PublishedSchema.IsObjectTableProduct(catalog, product.Id) ? $"v2/{product.Id}/ops" : null;
 
     /// <summary>The schema definition prefix of an object table's actions.</summary>
     private const string ActionPrefix = "do.";
 
     /// <summary>The secret fields and the enum values of the other required fields, or null without a secret or with another required value.</summary>
-    private static JsonObject? Fields(JsonObject properties, JsonNode? required, string? skip)
+    private static JsonObject? Fields(JsonObject properties, JsonNode? required)
     {
         string[] secrets = [.. properties.Select(static property => property.Key).Where(static key => key.EndsWith("Env", StringComparison.Ordinal))];
         if (secrets.Length == 0)
@@ -690,7 +624,7 @@ internal static class InvariantCases
         {
             fields[secret] = SecretVariable;
         }
-        foreach (string name in (required as JsonArray ?? []).Select(static name => name!.GetValue<string>()).Where(name => name != skip && !secrets.Contains(name)))
+        foreach (string name in (required as JsonArray ?? []).Select(static name => name!.GetValue<string>()).Where(name => !secrets.Contains(name)))
         {
             if (properties[name]?["items"]?["enum"] is JsonArray { Count: > 0 } members)
             {
@@ -710,19 +644,19 @@ internal static class InvariantCases
     /// <summary>
     /// The operation verbs that undo another verb of the catalog, so they remove what it sets:
     /// <c>un&lt;verb&gt;</c> beside <c>&lt;verb&gt;</c>, such as <c>unprotect</c>, and
-    /// <c>de&lt;x&gt;</c> beside <c>en&lt;x&gt;</c>, such as <c>decrypt</c>; the actions of an object
-    /// table count as operations.
+    /// <c>de&lt;x&gt;</c> beside <c>en&lt;x&gt;</c>, such as <c>decrypt</c>, among the actions of the
+    /// object tables.
     /// </summary>
     internal static HashSet<string> RemovalVerbs(CliCatalog catalog)
     {
         HashSet<string> verbs =
         [
-            .. catalog.Products.SelectMany(product => product.Ops.Concat(OpsSchema(catalog, product) is { } schema
+            .. catalog.Products.SelectMany(product => OpsSchema(catalog, product) is { } schema
                     ? JsonNode.Parse(catalog.SchemaText(schema))!["$defs"]!.AsObject()
                         .Select(static definition => definition.Key)
                         .Where(static key => key.StartsWith(ActionPrefix, StringComparison.Ordinal))
                         .Select(static key => key[ActionPrefix.Length..])
-                    : []))
+                    : [])
                 .Select(static op => op.Split('_')[0]),
         ];
         return

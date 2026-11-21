@@ -126,7 +126,7 @@ public sealed class OutputPipelineEncryptionTests
         Assert.Same(result, pipeline.Disclose(result));
     }
 
-    private static readonly Warning Other = new(WarningCodes.LossyConversion, "Other.");
+    private static readonly Warning Other = new(WarningCodes.ListTruncated, "Other.");
 
     private static void Save(string path) => File.WriteAllText(path, "saved");
 

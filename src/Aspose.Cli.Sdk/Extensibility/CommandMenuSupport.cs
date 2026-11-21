@@ -1,5 +1,4 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Sdk.Extensibility;
@@ -50,9 +49,6 @@ internal interface IMenuEntry<TSession>
     where TSession : class
 {
     Command Create(MenuContext<TSession> context);
-
-    /// <summary>The operation documents the entry's command applies, under its name.</summary>
-    IEnumerable<ProductOperationCommand> Operations();
 
     /// <summary>Loads the object table whose operation documents the entry's command applies, if any.</summary>
     IEnumerable<Func<Tables.DocumentTable>> Tables();

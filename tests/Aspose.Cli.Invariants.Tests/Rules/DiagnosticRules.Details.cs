@@ -156,15 +156,6 @@ internal static partial class ContractRules
                 yield return new DetailsSample($"{id} invalid option value", id, Invocation.For(valued, option.Name).Add(option.Name, "no-such-value"));
             }
 
-            if (product.Ops.Count > 0)
-            {
-                yield return new DetailsSample($"{id} unknown op", id, EditWith(id, extension, new JsonObject { ["op"] = "no_such_op" }));
-                yield return new DetailsSample($"{id} unknown field", id, EditWith(id, extension, new JsonObject { ["op"] = product.Ops[0], ["noSuchField"] = "x" }));
-                yield return new DetailsSample($"{id} several invalid operations", id, EditWith(id, extension,
-                    new JsonObject { ["op"] = product.Ops[0], ["noSuchField"] = "x" },
-                    new JsonObject { ["op"] = product.Ops[^1], ["otherMissingField"] = "x" }));
-            }
-
             CliCommand render = catalog.Command($"{id} render");
             if (render.Options.FirstOrDefault(static option => option.Name is "--pages" or "--slides" or "--sheet") is { } selection)
             {
@@ -191,22 +182,6 @@ internal static partial class ContractRules
                 };
             }
 
-            // Evaluation mode exports only the first worksheet to a text format.
-            if (product.Ops.Contains("insert_sheet") && catalog.Command($"{id} convert").Has("--sheets"))
-            {
-                Invocation edit = EditWith(id, extension, new JsonObject { ["op"] = "insert_sheet", ["name"] = "Second" });
-                var export = new Invocation([id, "convert", edit.Input!, "--to", "csv", "--sheets", "2"]);
-                foreach ((string file, ScenarioFile seed) in edit.Files)
-                {
-                    export.Files[file] = seed;
-                }
-                yield return new DetailsSample($"{id} evaluation export of a later sheet", id, export)
-                {
-                    Setup = [[.. edit.Args.Where(static arg => arg != "--dry-run"), "--in-place"]],
-                    EvaluationOnly = true,
-                };
-            }
-
             CliCommand convert = catalog.Command($"{id} convert");
             string[] writable = [.. product.ReadFormats, .. product.ConvertFormats, .. product.RenderFormats];
             if (catalog.Products.Where(other => other.Id != id)
@@ -219,16 +194,6 @@ internal static partial class ContractRules
                     Invocation.For(convert, "--to").Add("--to", target, "--out", "out." + foreign));
             }
         }
-    }
-
-    private static Invocation EditWith(string product, string extension, params JsonObject[] operations)
-    {
-        string input = "input." + extension;
-        var invocation = new Invocation([product, "edit", input, "--ops", "ops.json", "--dry-run"]);
-        invocation.Files[input] = new ScenarioFile { Fixture = $"{product}.{extension}" };
-        invocation.Inputs.Add(input);
-        invocation.Files["ops.json"] = new ScenarioFile { Text = new JsonObject { ["ops"] = new JsonArray([.. operations]) }.ToJsonString() };
-        return invocation;
     }
 
     /// <summary>

@@ -4,7 +4,7 @@ namespace Aspose.Cli.Sdk.Analyzers;
 /// The metadata names of the SDK types the analyzers and generators recognize. They build for
 /// netstandard2.0 and cannot reference the SDK, so this table is the one place those names are
 /// written: a test resolves every entry in the SDK, and a generator that cannot resolve the
-/// types it needs reports <see cref="OperationContractGenerator.MissingSdkType"/> instead of
+/// types it needs reports <see cref="ResultContractGenerator.MissingSdkType"/> instead of
 /// skipping the rules that depend on them.
 /// </summary>
 /// <remarks>A constant whose field name ends in <c>Namespace</c> names a namespace; every other constant names a type.</remarks>
@@ -12,7 +12,6 @@ internal static class SdkMetadataNames
 {
     internal const string SdkAssembly = "Aspose.Cli.Sdk";
 
-    internal const string OperationsNamespace = "Aspose.Cli.Sdk.Operations";
     internal const string ContractsNamespace = "Aspose.Cli.Sdk.Contracts";
     internal const string CommandingNamespace = "Aspose.Cli.Sdk.Extensibility.Commanding";
 
@@ -32,31 +31,15 @@ internal static class SdkMetadataNames
     internal const string ProductJsonDefinition = "Aspose.Cli.Sdk.Serialization.ProductJsonDefinition";
     internal const string ProductJsonRootAttribute = "Aspose.Cli.Sdk.Serialization.ProductJsonRootAttribute";
 
-    // Operation contracts.
-    internal const string BoundedOperation = ContractsNamespace + ".BoundedOperation";
-    internal const string OperationVocabularyAttribute = OperationsNamespace + ".OperationVocabularyAttribute";
-    internal const string OperationAttribute = OperationsNamespace + ".OperationAttribute";
-    internal const string OperationInputAttribute = OperationsNamespace + ".OperationInputAttribute";
-    internal const string RecordRuleAttribute = OperationsNamespace + ".RecordRuleAttribute";
-    internal const string MemberCountAttribute = OperationsNamespace + ".MemberCountAttribute";
-    internal const string MinPropertiesAttribute = OperationsNamespace + ".MinPropertiesAttribute";
-    internal const string InputPathAttribute = OperationsNamespace + ".InputPathAttribute";
-    internal const string SecretEnvAttribute = OperationsNamespace + ".SecretEnvAttribute";
-    internal const string ReadBackAttribute = OperationsNamespace + ".ReadBackAttribute";
-    internal const string NotReadBackAttribute = OperationsNamespace + ".NotReadBackAttribute";
-    internal const string ReadBackByPositionAttribute = OperationsNamespace + ".ReadBackByPositionAttribute";
-    internal const string NotStateAttribute = OperationsNamespace + ".NotStateAttribute";
-
     // Result contracts.
     internal const string ResultEnvelope = ContractsNamespace + ".ResultEnvelope";
     internal const string OutputItem = ContractsNamespace + ".OutputItem";
-    internal const string EditVerification = ContractsNamespace + ".EditVerification";
     internal const string WarningCode = ContractsNamespace + ".WarningCode";
     internal const string SchemaIdAttribute = ContractsNamespace + ".SchemaIdAttribute";
     internal const string OpenEnumAttribute = ContractsNamespace + ".OpenEnumAttribute";
     internal const string OneOfByAttribute = ContractsNamespace + ".OneOfByAttribute";
 
-    // Value constraints, shared by operation and result contracts.
+    // Value constraints of result contracts.
     internal const string ValueConstraintAttribute = ContractsNamespace + ".ValueConstraintAttribute";
     internal const string MinItemsAttribute = ContractsNamespace + ".MinItemsAttribute";
     internal const string MaxItemsAttribute = ContractsNamespace + ".MaxItemsAttribute";
@@ -71,24 +54,11 @@ internal static class SdkMetadataNames
     internal const string MaxLengthAttribute = ContractsNamespace + ".MaxLengthAttribute";
     internal const string PatternAttribute = ContractsNamespace + ".PatternAttribute";
     internal const string ErrorDetailsAttribute = ContractsNamespace + ".ErrorDetailsAttribute";
-    internal const string HexColorAttribute = OperationsNamespace + ".HexColorAttribute";
-    internal const string WebLinkAttribute = OperationsNamespace + ".WebLinkAttribute";
-    internal const string ValueKindAttribute = OperationsNamespace + ".ValueKindAttribute";
 
     /// <summary>The types the contract generator resolves as symbols; it describes no contract when one is missing.</summary>
     internal static readonly string[] ContractSymbols =
     [
         ValueConstraintAttribute,
-        RecordRuleAttribute,
-        MemberCountAttribute,
-        MinPropertiesAttribute,
-        InputPathAttribute,
-        SecretEnvAttribute,
-        ReadBackAttribute,
-        NotReadBackAttribute,
-        ReadBackByPositionAttribute,
-        NotStateAttribute,
-        OperationInputAttribute,
     ];
 
     /// <summary>The System.Text.Json types the contract generators recognize.</summary>
