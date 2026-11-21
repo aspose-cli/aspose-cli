@@ -47,7 +47,6 @@ Options:
   --bom                                Start a csv or tsv output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one.
   -o, --out <out>                      Output path. Default: the input path with the target extension (with '.out' inserted when that would overwrite the input).
   --overwrite                          Replace the output file if it already exists.
-  --dry-run                            Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>        Name of an environment variable holding the password for the workbook.
   --password-stdin                     Read the password for the workbook from the first line of stdin.
@@ -82,7 +81,6 @@ Arguments:
 Options:
   --template <template>        A workbook to save as the new one. Default: the engine's new workbook, with one sheet.
   --overwrite                  Replace the output file if it already exists.
-  --dry-run                    Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --encrypt <encrypt>          Password for the output workbook. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>  Name of an environment variable holding the password for the output workbook.
   --encrypt-stdin              Read the password for the output workbook from the first line of stdin.
@@ -183,7 +181,6 @@ Options:
   --dpi <dpi>                    Raster resolution; refused for vector output such as svg. Range: 36-1200. [default: 192]
   -o, --out <out>                Output path. Default: the input path with the image extension. Several sheets write <stem>.<sheet>.<ext> beside it.
   --overwrite                    Replace the output file if it already exists.
-  --dry-run                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the workbook.
   --password-stdin               Read the password for the workbook from the first line of stdin.

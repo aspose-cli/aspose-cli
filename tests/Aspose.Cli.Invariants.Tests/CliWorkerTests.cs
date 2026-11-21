@@ -37,7 +37,7 @@ internal static class CliWorkerMode
 
 /// <summary>
 /// A worker runs a command line as a child process does: the same exit code, stdout and stderr
-/// for each product's commands, their dry runs, errors and help, an encrypted input and an
+/// for each product's commands, their errors and help, an encrypted input and an
 /// evaluation workspace; and a real child process keeps the result on stdout and diagnostics on
 /// stderr.
 /// </summary>
@@ -102,10 +102,10 @@ public sealed class CliWorkerTests
         }
         TestContext.Current.TestOutputHelper?.WriteLine($"{cases.Length} {product} cases, {(projectLicense ? "project license" : "no license")}, {differences.Count} differ.");
         // Without a license, one case per command: at least eight, or every command of a product with fewer.
-        // With one, a command's run, an unknown option, a missing input and help: at least thirty,
-        // or four for each command of a product with fewer.
+        // With one, a command's run, an unknown option and help, and a missing input for a command
+        // that reads one: at least thirty, or three for each command of a product with fewer.
         int commands = CliCatalog.Current.Commands.Count(command => command.Product == product && command.Arguments.Count + command.Options.Count > 0);
-        Assert.True(cases.Length >= (projectLicense ? Math.Min(30, 4 * commands) : Math.Min(8, commands)), $"Only {cases.Length} cases for {product}.");
+        Assert.True(cases.Length >= (projectLicense ? Math.Min(30, 3 * commands) : Math.Min(8, commands)), $"Only {cases.Length} cases for {product}.");
         Assert.True(differences.Count == 0, $"{differences.Count} of {cases.Length} runs differ:{Environment.NewLine}" + string.Join(Environment.NewLine, differences));
     }
 
@@ -182,7 +182,7 @@ public sealed class CliWorkerTests
 
     /// <summary>
     /// The cases of a product: each command's smallest valid invocation; with a project license
-    /// also its dry run, an unknown option, a missing input, its help, and its encrypted input
+    /// also an unknown option, a missing input, its help, and its encrypted input
     /// opened with the right and a wrong password.
     /// </summary>
     private static IEnumerable<(string Name, Invocation Invocation)> Cases(string product, bool projectLicense)
@@ -203,10 +203,6 @@ public sealed class CliWorkerTests
             if (!projectLicense)
             {
                 continue;
-            }
-            if (command.Has("--dry-run"))
-            {
-                yield return ($"{command} --dry-run", Invocation.For(command).Add("--dry-run"));
             }
             yield return ($"{command} --no-such-option", Invocation.For(command).Add("--no-such-option"));
             if (invocation.Input is { } input)

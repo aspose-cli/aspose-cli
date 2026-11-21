@@ -27,7 +27,7 @@ internal static partial class ContractRules
         new("C-R08", R08),
         new("C-R09", R09),
         new("C-R10", R10Declared, R10Run),
-        new("C-R11", R11Declared, R11Run),
+        new("C-R11", R11Declared),
         new("C-R12", R12Declared, R12Run),
         new("C-R13", R13Declared, R13Run),
         new("C-R14", R14),

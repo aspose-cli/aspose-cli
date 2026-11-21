@@ -46,7 +46,7 @@ Read the product Skill before the first command on that document type.
 2. **Edit in one batch.** Put related changes in one `edit --ops` file; the
    batch is atomic (`references/editing.md`).
 3. **Protect the user's file.** Write to `--out`, or replace the input with
-   `--in-place`. `--dry-run` checks a request without writing.
+   `--in-place`.
 4. **Read back, then look.** Report values from a read after the edit, render
    it with `<product> render` and look at the images yourself
    (`references/verification.md`).

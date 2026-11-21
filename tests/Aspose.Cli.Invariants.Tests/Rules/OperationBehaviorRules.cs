@@ -39,64 +39,6 @@ internal static partial class ContractRules
     };
 
 
-    // ----- C-R11: a dry run writes nothing and says what it checked ------------------------------
-
-    /// <summary>
-    /// Every command that writes files (<see cref="Writes"/>) and declares <c>--dry-run</c>, run
-    /// with it: it succeeds, says <c>dryRun: true</c>, lists what it checked and writes nothing,
-    /// in the workspace, the user configuration or the installation directory; an edit lists its
-    /// operations in <c>applied[]</c> and their targets among its checks. Whether a writing
-    /// command declares <c>--dry-run</c> at all is <c>R11Declared</c>'s question.
-    /// </summary>
-    private static IEnumerable<InvariantCase> R11Run(CliCatalog catalog)
-    {
-        foreach (TreeCommand tree in CommandTree.Of(catalog).Where(static command => Writes(command) && command.Has("--dry-run")))
-        {
-            CliCommand command = tree.Command;
-            Invocation invocation = DryRunInvocation(command);
-            invocation.Add("--dry-run");
-            var json = new List<JsonAssertion>
-            {
-                new() { Path = "dryRun", Value = true },
-                new() { Path = "checked", Exists = true },
-            };
-            if (command.Has("--ops"))
-            {
-                json.Add(new JsonAssertion { Path = "applied[0].op", Exists = true });
-                json.Add(new JsonAssertion { Path = "checked", Contains = "targets" });
-            }
-            ScenarioExpectation expect = new()
-            {
-                ExitCode = [0],
-                Json = json,
-                Files = new ScenarioFiles { NothingWritten = true, NothingInstalled = true },
-            };
-            yield return InvariantCases.Case("C-R11", $"{command} --dry-run", InvariantCases.ShardOf(command), slow: false, invocation, expect);
-        }
-    }
-
-    /// <summary>
-    /// The smallest valid invocation of a writing command for its dry run: a license installation
-    /// an existing file, and a Skill
-    /// installation a bundled Skill for a host's project directory, the workspace.
-    /// </summary>
-    private static Invocation DryRunInvocation(CliCommand command)
-    {
-        Invocation invocation = Invocation.For(command);
-        switch (command.Words)
-        {
-            case "license install":
-                invocation.Replace(invocation.Args[^1], "license.lic");
-                invocation.Files["license.lic"] = new ScenarioFile { Text = "<License />" };
-                break;
-            case "skill install":
-                invocation.Replace(invocation.Args[^1], "aspose-cli-platform");
-                invocation.Add("--host", "codex");
-                break;
-        }
-        return invocation;
-    }
-
     // ----- C-R12: one naming scheme for multi-file outputs ---------------------------------------
 
     /// <summary>

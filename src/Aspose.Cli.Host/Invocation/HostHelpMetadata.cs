@@ -27,8 +27,8 @@ internal static class HostHelpMetadata
                 ],
                 [status]);
             Find(license, "status").WithExamples(["license status", "license status --output-format json"], [status]);
-            Find(license, "install").WithExamples(["license install Aspose.Total.lic", "license install Aspose.Total.lic --dry-run"], [status]);
-            Find(license, "remove").WithExamples(["license remove --dry-run", "license remove"], [status]);
+            Find(license, "install").WithExamples(["license install Aspose.Total.lic", "license install Aspose.Total.lic --product cells"], [status]);
+            Find(license, "remove").WithExamples(["license remove", "license remove --product pdf"], [status]);
         }
 
         if (FindOptional(root, "fonts") is { } fonts)
@@ -50,7 +50,7 @@ internal static class HostHelpMetadata
             [Skills]);
         Find(skill, "list").WithExamples(["skill list", "skill list --output-format json"], [Result("skill-list", "the fields of the skill list")]);
         Find(skill, "install").WithExamples(
-            ["skill install aspose-cli-platform --host codex", "skill install aspose-cli-platform --host claude-code --user --dry-run"],
+            ["skill install aspose-cli-platform --host codex", "skill install aspose-cli-platform --host claude-code --user"],
             [Skills]);
     }
 

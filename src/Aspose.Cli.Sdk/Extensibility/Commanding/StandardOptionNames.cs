@@ -18,8 +18,6 @@ internal static class StandardOptionNames
     public const string FontDir = "--font-dir";
     public const string Ops = "--ops";
     public const string InPlace = "--in-place";
-    public const string DryRun = "--dry-run";
-    public const string Verify = "--verify";
 
     /// <summary>
     /// The target format of a convert or render command. A product may still name another
@@ -45,6 +43,6 @@ internal static class StandardOptionNames
         Password, Password + EnvironmentSuffix, Password + StandardInputSuffix,
         Encrypt, Encrypt + EnvironmentSuffix, Encrypt + StandardInputSuffix,
         FontDir,
-        Ops, InPlace, DryRun, Verify,
+        Ops, InPlace,
     ];
 }

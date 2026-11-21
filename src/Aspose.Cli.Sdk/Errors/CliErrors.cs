@@ -446,15 +446,9 @@ public static partial class CliErrors
 
     /// <summary>An output file exists and the caller did not ask to replace it.</summary>
     /// <param name="path">The file.</param>
-    /// <param name="partsDependOnDocument">
-    /// Whether the file is one the command may write as a numbered part, which a dry run cannot
-    /// tell without reading how many parts the document has.
-    /// </param>
-    public static CliException OutputExists(string path, bool partsDependOnDocument = false) => CliException.Create(
+    public static CliException OutputExists(string path) => CliException.Create(
         ErrorCodes.OutputExists,
-        partsDependOnDocument
-            ? $"Output file already exists: {path}; the command may write it, since how many parts it writes, and so their names, depend on the document."
-            : $"Output file already exists: {path}",
+        $"Output file already exists: {path}",
         details: new JsonObject { ["path"] = path });
 
     /// <summary>

@@ -110,14 +110,13 @@ Arguments:
 
 Options:
   --product <cells|pdf|slides|words>  Install only for this product instead of detecting compatible products.
-  --dry-run                           Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli license install Aspose.Total.lic
-  aspose-cli license install Aspose.Total.lic --dry-run
+  aspose-cli license install Aspose.Total.lic --product cells
 
 Learn more:
   aspose-cli schema v2/common/license-status  the fields of the license status
@@ -132,14 +131,13 @@ Usage:
 
 Options:
   --product <cells|pdf|slides|words>  Remove only this product's saved user license.
-  --dry-run                           Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli license remove --dry-run
   aspose-cli license remove
+  aspose-cli license remove --product pdf
 
 Learn more:
   aspose-cli schema v2/common/license-status  the fields of the license status
@@ -226,14 +224,13 @@ Options:
   --user                               Install for the current user instead of the project.
   --dir <dir>                          Project root used without --user. Default: current working directory.
   --target <target>                    Advanced: explicit parent directory; the selected Skill folder is created there.
-  --dry-run                            Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
 
 Global options:
   -h/--help, --output-format, -v/--verbose, --license, --license-mode, --workdir, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli skill install aspose-cli-platform --host codex
-  aspose-cli skill install aspose-cli-platform --host claude-code --user --dry-run
+  aspose-cli skill install aspose-cli-platform --host claude-code --user
 
 Learn more:
   aspose-cli skill list  the Agent Skills bundled with this build

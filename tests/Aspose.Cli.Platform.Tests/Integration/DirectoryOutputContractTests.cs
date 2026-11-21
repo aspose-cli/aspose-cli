@@ -126,7 +126,7 @@ public sealed class DirectoryOutputContractTests
     }
 
     [Theory]
-    [InlineData("pdf split input.pdf --by pages --out-dir parts.v1 --dry-run")]
+    [InlineData("pdf split input.pdf --by pages --out-dir parts.v1")]
     public void ADirectoryNameWithADotNamingNoFormat_IsAccepted(string commandLine)
     {
         using var workspace = new TempWorkspace();

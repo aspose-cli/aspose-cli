@@ -1,6 +1,5 @@
 using System.CommandLine.Parsing;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
@@ -104,101 +103,6 @@ public partial class StandardInvocation
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when it is missing or a file occupies the path.</exception>
     public ResolvedDirectory DirectoryOutput => _directoryOutput ??=
         new(Declared(_options.OutputDirectory, "output directory").ResolveRequired(_parse, Paths), Overwrite);
-
-    /// <summary>
-    /// Whether the caller asked for a dry run (<c>--dry-run</c>): the command checks its command
-    /// line and the files it names, then stops before it runs. An edit still applies its
-    /// operations in memory; every other command returns <see cref="DryRunResult"/> instead.
-    /// </summary>
-    public bool DryRun => _options.DryRun is { } dryRun && _parse.GetValue(dryRun);
-
-    /// <summary>
-    /// The result of a dry run of a command that is not an edit: what it resolved, which are
-    /// its inputs and its output, and the paths and format it would write. Without
-    /// <c>--overwrite</c>, a file the run would replace is refused as the run refuses it.
-    /// </summary>
-    /// <exception cref="CliException"><c>OUTPUT_EXISTS</c> for a file the run would or may replace.</exception>
-    internal DryRunResult DryRunResult()
-    {
-        var checks = new List<string>();
-        if (_inputChecked)
-        {
-            checks.Add(DryRunChecks.Input);
-        }
-
-        (string[] paths, string? parameter, IEnumerable<(string Path, bool Possible)> written) = _output is { } file
-            ? Written(file)
-            : _directoryOutput is { } directory ? Written(directory) : ([], null, []);
-        if (paths.Length > 0)
-        {
-            checks.Add(DryRunChecks.Output);
-        }
-
-        bool overwrite = _output?.Overwrite ?? _directoryOutput?.Overwrite ?? true;
-        if (!overwrite && written.FirstOrDefault(static target => File.Exists(target.Path)) is { Path: not null } existing)
-        {
-            throw CliErrors.OutputExists(existing.Path, existing.Possible);
-        }
-
-        return Contracts.DryRunResult.Of(checks, paths, _output?.Format.Id);
-    }
-
-    // The paths a dry run reports for an output file, and the files the run writes there: the
-    // parts a selection numbers, else, when the parts depend on the document, the file itself and
-    // the numbered (or, for other images, named) files beside it that the run may write.
-    private (string[] Paths, string? Parameter, IEnumerable<(string Path, bool Possible)> Written) Written(ResolvedOutput file)
-    {
-        string parameter = _options.CreatedFile?.Name ?? StandardOptionNames.Out;
-        string stem = Path.GetFileNameWithoutExtension(file.Path);
-        string extension = Path.GetExtension(file.Path);
-        IReadOnlyList<int>? numbers = NumberedParts.Of(_parse);
-        if (numbers is { Count: > 0 })
-        {
-            string[] parts = [.. file.Parts(numbers)];
-            return (parts, parameter, parts.Select(static part => (part, false)));
-        }
-
-        string? label = numbers is not null ? "[0-9]+" : file.Format.Image ? ".+" : null;
-        return label is null
-            ? ([file.Path], parameter, [(file.Path, false)])
-            : ([file.Path], parameter, Beside(file.Directory, $"{Regex.Escape(stem)}\\.{label}{Regex.Escape(extension)}").Prepend(file.Path).Select(static path => (path, true)));
-    }
-
-    // The files of a split the run writes in the directory: those its command line numbers, else
-    // the numbered files of the input there that it may write, whatever their extension when the
-    // command does not declare the format of its parts.
-    private (string[] Paths, string? Parameter, IEnumerable<(string Path, bool Possible)> Written) Written(ResolvedDirectory directory)
-    {
-        if (NumberedParts.Of(_parse) is not { } numbers || _input is null)
-        {
-            return ([directory.Path], StandardOptionNames.OutDir, []);
-        }
-
-        string stem = PartNames.SafeStem(Path.GetFileNameWithoutExtension(_input));
-        if (numbers.Count > 0 && Declared(_options.OutputTarget, "output").Writes is [var format, ..] && format.PreferredExtension is { } extension)
-        {
-            string[] parts = [.. directory.Parts(stem, extension, numbers)];
-            return (parts, StandardOptionNames.OutDir, parts.Select(static part => (part, false)));
-        }
-
-        string labels = numbers.Count > 0 ? $"({string.Join('|', PartNames.Numbered(numbers))})" : "[0-9]+";
-        return ([directory.Path], StandardOptionNames.OutDir,
-            Beside(directory.Path, $"{Regex.Escape(stem)}\\.{labels}\\.[^.]+").Select(static path => (path, true)));
-    }
-
-    // The files in a directory whose names match a pattern, ignoring case, in ordinal order.
-    private static IEnumerable<string> Beside(string directory, string name)
-    {
-        if (!Directory.Exists(directory))
-        {
-            return [];
-        }
-
-        var pattern = new Regex($"^{name}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
-        return Directory.EnumerateFiles(directory)
-            .Where(path => pattern.IsMatch(Path.GetFileName(path)))
-            .Order(StringComparer.Ordinal);
-    }
 
     /// <summary>Whether the caller named the format with <c>--to</c>.</summary>
     public bool TargetRequested => _options.To is { } to && _parse.GetResult(to) is { Implicit: false };

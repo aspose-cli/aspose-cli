@@ -12,7 +12,6 @@ namespace Aspose.Cli.Sdk.Serialization;
 [JsonSerializable(typeof(ErrorEnvelope))]
 [JsonSerializable(typeof(VersionResult))]
 [JsonSerializable(typeof(FontListResult))]
-[JsonSerializable(typeof(DryRunResult))]
 [JsonSerializable(typeof(Warning))]
 [JsonSerializable(typeof(JsonObject))]
 [JsonSerializable(typeof(string))]

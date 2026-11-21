@@ -34,7 +34,6 @@ internal static class InvariantCases
     public const string InvalidEnum = "invalid-enum";
     public const string UnwritableOutput = "unwritable-output";
     public const string ReadOnly = "read-only";
-    public const string DryRun = "dry-run";
     public const string OutputReopens = "output-reopens";
     public const string SecretHidden = "secret-hidden";
     public const string EvaluationDisclosed = "evaluation-disclosed";
@@ -80,7 +79,6 @@ internal static class InvariantCases
         [InvalidEnum] = "C-R26",
         [UnwritableOutput] = "C-R24",
         [ReadOnly] = "C-R11",
-        [DryRun] = "C-R11",
         [OutputReopens] = "C-R31",
         [SecretHidden] = "C-R10",
         [EvaluationDisclosed] = "C-R27",
@@ -125,7 +123,6 @@ internal static class InvariantCases
             cases.Add(MissingInputCase(command));
             cases.Add(CorruptInputCase(catalog, command));
             cases.AddRange(ReadOnlyCases(command));
-            cases.AddRange(DryRunCases(command));
         }
         cases.AddRange(SecretCases(runnable));
         foreach (CliCommand command in visible)
@@ -291,8 +288,7 @@ internal static class InvariantCases
         }
     }
 
-    // ----- (e) read-only commands succeed and write nothing; dry runs write nothing and ------
-    // ----- report no output, while the same edit run for real reports the file it wrote ----
+    // ----- (e) read-only commands succeed and write nothing ----------------------------------
 
     private static IEnumerable<InvariantCase> ReadOnlyCases(CliCommand command)
     {
@@ -314,60 +310,6 @@ internal static class InvariantCases
             Invocation detailed = Invocation.For(command).Add("--detail", detail);
             yield return Case(ReadOnly, $"{command} --detail {detail}", ShardOf(command), slow: false, detailed, Unchanged(detailed));
         }
-    }
-
-    // An edit's dry run beside its real runs, each mode of its mutation output; C-R11 runs the
-    // dry run of every other writing command.
-    private static IEnumerable<InvariantCase> DryRunCases(CliCommand command)
-    {
-        if (!command.Has("--dry-run") || !command.Has("--in-place") || command.Product is not { } product)
-        {
-            yield break;
-        }
-        string extension = ScenarioFixtures.PrimaryFormat(product);
-        (string Subject, string[] Extra)[] variants =
-        [
-            ("", []),
-            (" --in-place", ["--in-place"]),
-            ($" --out out.{extension}", ["--out", "out." + extension]),
-        ];
-        foreach ((string subject, string[] extra) in variants)
-        {
-            Invocation invocation = Invocation.For(command).Add("--dry-run").Add(extra);
-            yield return Case(DryRun, $"{command} --dry-run{subject}", product, slow: false, invocation, new ScenarioExpectation
-            {
-                ExitCode = [0],
-                Json =
-                [
-                    new JsonAssertion { Path = "dryRun", Value = true },
-                    // A dry run publishes nothing, so its result names no output, even for --out or --in-place.
-                    new JsonAssertion { Path = "output", Exists = false },
-                ],
-                Files = new ScenarioFiles { NothingWritten = true },
-            });
-        }
-        // The same edit run for real says it was not a dry run and names the file it published.
-        if (command.Has("--out"))
-        {
-            string output = "out." + extension;
-            yield return Case(DryRun, $"{command} --out {output}", product, slow: false, Invocation.For(command).Add("--out", output), Published(output));
-        }
-        if (command.Has("--in-place"))
-        {
-            Invocation inPlace = Invocation.For(command).Add("--in-place");
-            yield return Case(DryRun, $"{command} --in-place", product, slow: false, inPlace, Published(inPlace.Input!));
-        }
-
-        static ScenarioExpectation Published(string path) => new()
-        {
-            ExitCode = [0],
-            Json =
-            [
-                new JsonAssertion { Path = "dryRun", Value = false },
-                new JsonAssertion { Path = "output.path", Exists = true },
-            ],
-            Files = new ScenarioFiles { Present = [path] },
-        };
     }
 
     // ----- (f) every declared conversion opens again ----------------------------------------

@@ -11,7 +11,7 @@ namespace Aspose.Cli.Sdk.Tests;
 
 /// <summary>
 /// <see cref="OutputPipeline{TDocument}.PublishEdit"/> publishes an edited document as every
-/// product edit does: a dry run writes nothing, an in-place edit backs up the file it replaces,
+/// product edit does: an in-place edit backs up the file it replaces,
 /// the read-back sees the staged file before anything is published, a read-back that fails
 /// publishes nothing, and the output reports the encryption the product gave.
 /// </summary>
@@ -21,30 +21,13 @@ public sealed class OutputPipelineEditPublicationTests
     private const string Edited = "edited";
 
     [Fact]
-    public void DryRun_WritesNoOutput()
-    {
-        using var temp = new TempDirectory();
-        string input = Input(temp);
-        bool saved = false;
-
-        EditPublication<Checked> publication = Pipeline().PublishEdit<Checked>(
-            InPlace(input), new object(), FileWritePrecondition.Capture(input), dryRun: true, encrypted: false,
-            _ => saved = true, static path => new Checked(File.ReadAllText(path)), "test-edit");
-
-        Assert.Equal(new EditPublication<Checked>(null, null), publication);
-        Assert.False(saved);
-        Assert.Equal(Original, File.ReadAllText(input));
-        Assert.Equal([input], Directory.GetFiles(temp.Path));
-    }
-
-    [Fact]
     public void InPlaceEdit_PublishesTheEdit()
     {
         using var temp = new TempDirectory();
         string input = Input(temp);
 
         EditPublication<Checked> publication = Pipeline().PublishEdit<Checked>(
-            InPlace(input), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted: false,
+            InPlace(input), new object(), FileWritePrecondition.Capture(input), encrypted: false,
             Save, verify: null, "test-edit");
 
         Assert.Equal(Edited, File.ReadAllText(input));
@@ -60,7 +43,7 @@ public sealed class OutputPipelineEditPublicationTests
         string? targetDuringVerify = null;
 
         EditPublication<Checked> publication = Pipeline().PublishEdit(
-            InPlace(input), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted: false,
+            InPlace(input), new object(), FileWritePrecondition.Capture(input), encrypted: false,
             Save,
             candidate =>
             {
@@ -81,7 +64,7 @@ public sealed class OutputPipelineEditPublicationTests
         string input = Input(temp);
 
         Assert.Throws<InvalidOperationException>(() => Pipeline().PublishEdit<Checked>(
-            InPlace(input), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted: false,
+            InPlace(input), new object(), FileWritePrecondition.Capture(input), encrypted: false,
             Save, static _ => throw new InvalidOperationException("read-back failed"), "test-edit"));
 
         Assert.Equal(Original, File.ReadAllText(input));
@@ -99,7 +82,7 @@ public sealed class OutputPipelineEditPublicationTests
         pipeline.Opened(new InputProtection(true));
 
         EditPublication<Checked> publication = pipeline.PublishEdit<Checked>(
-            InPlace(input), new object(), FileWritePrecondition.Capture(input), dryRun: false, encrypted,
+            InPlace(input), new object(), FileWritePrecondition.Capture(input), encrypted,
             Save, verify: null, "test-edit");
 
         Assert.Equal(encrypted, publication.Output!.Encrypted);

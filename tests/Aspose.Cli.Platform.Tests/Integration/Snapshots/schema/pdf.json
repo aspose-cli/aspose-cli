@@ -96,24 +96,6 @@
           "description": "What Document.Convert does with what the PDF/A profile does not allow, a member name of the engine's ConvertErrorAction, such as Delete or None. Required for a pdfa output."
         },
         {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
-        {
           "name": "--font-dir",
           "aliases": [],
           "type": "string[]",
@@ -360,24 +342,6 @@
       "path": "aspose-cli pdf create",
       "description": "Create a document: the engine's new document, or a copy of a template saved in the output's format.",
       "options": [
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
         {
           "name": "--encrypt",
           "aliases": [],
@@ -804,24 +768,6 @@
           "description": "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one."
         },
         {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
-        {
           "name": "--form-format",
           "aliases": [],
           "type": "string",
@@ -1241,24 +1187,6 @@
       "path": "aspose-cli pdf merge",
       "description": "Merge PDF inputs in order with the engine's PdfFileEditor.Concatenate.",
       "options": [
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
         {
           "name": "--encrypt",
           "aliases": [],
@@ -3503,24 +3431,6 @@
           "description": "Raster resolution; refused for vector output such as svg. Range: 36-1200."
         },
         {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
-        {
           "name": "--font-dir",
           "aliases": [],
           "type": "string[]",
@@ -4021,24 +3931,6 @@
           "description": "PKCS7.ContactInfo."
         },
         {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
-        },
-        {
           "name": "--font",
           "aliases": [],
           "type": "string",
@@ -4328,24 +4220,6 @@
           "secret": false,
           "valueSource": "command-line",
           "description": "How to divide the document: one part per page, per --every N of them or per --groups group."
-        },
-        {
-          "name": "--dry-run",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
         },
         {
           "name": "--encrypt",

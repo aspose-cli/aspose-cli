@@ -96,7 +96,6 @@ public static class TableEdit
                 output,
                 opened.Document,
                 precondition,
-                dryRun: false,
                 protection.Encrypted,
                 temp =>
                 {
@@ -124,7 +123,7 @@ public static class TableEdit
             return new TableEditOutcome
             {
                 Input = input,
-                Output = publication.Output!,
+                Output = publication.Output,
                 Ops = publication.Verification!.Ops,
                 Counts = publication.Verification.Counts,
                 EngineWarnings = warnings.Warnings.Count == 0 ? null : warnings.Warnings,

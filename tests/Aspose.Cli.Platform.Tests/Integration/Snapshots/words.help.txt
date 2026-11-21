@@ -52,7 +52,6 @@ Options:
   --ignore-headers-and-footers               Set CompareOptions.IgnoreHeadersAndFooters to true.
   -o, --out <out>                            The redline's path; its extension selects the format, such as .docx or .pdf.
   --overwrite                                Replace the output file if it already exists.
-  --dry-run                                  Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --left-password <left-password>            Password for the original document. Discouraged: visible in the process list; prefer --left-password-env.
   --left-password-env <left-password-env>    Name of an environment variable holding the password for the original document.
   --left-password-stdin                      Read the password for the original document from the first line of stdin.
@@ -92,7 +91,6 @@ Options:
   --leading-spaces <leading-spaces>    TxtLoadOptions.LeadingSpacesOptions of a txt input, a member name of the engine's TxtLeadingSpacesOptions, such as ConvertToIndent, Preserve or Trim. Required for such an input.
   -o, --out <out>                      Output path; defaults to a sibling using the target extension.
   --overwrite                          Replace the output file if it already exists.
-  --dry-run                            Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>        Name of an environment variable holding the password for the document.
   --password-stdin                     Read the password for the document from the first line of stdin.
@@ -127,7 +125,6 @@ Arguments:
 Options:
   --template <template>        A document to save as the new one. Default: the engine's new document, new Document().
   --overwrite                  Replace the output file if it already exists.
-  --dry-run                    Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --encrypt <encrypt>          Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>  Name of an environment variable holding the password for the output document.
   --encrypt-stdin              Read the password for the output document from the first line of stdin.
@@ -193,7 +190,6 @@ Options:
   --what <images> (REQUIRED)      What to extract: images, the bytes of each image the document stores.
   --out-dir <out-dir> (REQUIRED)  The directory the images go to.
   --overwrite                     Replace the output file if it already exists.
-  --dry-run                       Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>           Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>   Name of an environment variable holding the password for the document.
   --password-stdin                Read the password for the document from the first line of stdin.
@@ -258,7 +254,6 @@ Options:
   --dpi <dpi>                    Raster resolution; refused for vector output such as svg. Range: 36-1200. [default: 192]
   -o, --out <out>                Output path. Default: the input path with the image extension. Several pages write <stem>.<page>.<ext> beside it.
   --overwrite                    Replace the output file if it already exists.
-  --dry-run                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>          Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the document.
   --password-stdin               Read the password for the document from the first line of stdin.

@@ -269,7 +269,7 @@ internal static partial class ContractRules
         : name.EndsWith("-stdin", StringComparison.Ordinal) ? name[..^"-stdin".Length]
         : name;
 
-    // ----- C-R11 (declared): every command that writes files has --overwrite and --dry-run --------
+    // ----- C-R11 (declared): every command that writes files has --overwrite ---------------------
 
     // rule-exemptions: begin
     /// <summary>The writing commands that have no <c>--overwrite</c>, each with its reason.</summary>
@@ -284,7 +284,7 @@ internal static partial class ContractRules
     /// The writing commands that declare their own output options: the host's, and a product's
     /// <c>create</c>, which writes the file its argument names. A product command that names an
     /// output gets <c>--out</c> or <c>--out-dir</c> only from its <c>OutputTarget</c> trait, which
-    /// adds <c>--overwrite</c> and <c>--dry-run</c> beside it (<c>StandardOptions</c>), and analyzer
+    /// adds <c>--overwrite</c> beside it (<c>StandardOptions</c>), and analyzer
     /// <c>APCLI008</c> keeps it from declaring any of them itself, so its declaration is not judged.
     /// </summary>
     private static IEnumerable<InvariantCase> R11Declared(CliCatalog catalog)
@@ -292,9 +292,9 @@ internal static partial class ContractRules
         foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => Writes(command)
             && (command.Product is null || command.ProductVerb == "create")))
         {
-            // A removal replaces nothing, so it needs --dry-run but no --overwrite.
+            // A removal replaces nothing, so it needs no --overwrite.
             bool exempt = OverwriteExemptions.Any(exemption => exemption.Command == command.ToString());
-            string[] required = RemovesInstalled(command) || exempt ? ["--dry-run"] : ["--overwrite", "--dry-run"];
+            string[] required = RemovesInstalled(command) || exempt ? [] : ["--overwrite"];
             yield return Check("C-R11", $"{command} declared", () =>
             [
                 .. required
@@ -317,8 +317,8 @@ internal static partial class ContractRules
     /// <summary>
     /// A command that writes files: it names an output (<c>--out</c>, <c>--out-dir</c>), creates
     /// the file its argument names (a product's <c>create</c>), or installs into or removes from
-    /// an installation directory (a service's <c>install</c> or <c>remove</c>). C-R11 holds each to
-    /// <c>--dry-run</c>, declared here and run in <c>OperationBehaviorRules.cs</c>.
+    /// an installation directory (a service's <c>install</c> or <c>remove</c>). C-R11 holds each but
+    /// a removal and the exempt installations to <c>--overwrite</c>.
     /// </summary>
     internal static bool Writes(TreeCommand command) =>
         command.Has("--out") || command.Has("--out-dir") || command.ProductVerb == "create" || command.Product is null && command.Verb is "install" or "remove";

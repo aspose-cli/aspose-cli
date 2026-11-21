@@ -120,7 +120,6 @@ C-R09 | --convert-dates
 C-R09 | --convert-numbers
 C-R09 | --detect-hyperlinks
 C-R09 | --detect-numbering-with-whitespaces
-C-R09 | --dry-run
 C-R09 | --encrypt-stdin
 C-R09 | --ignore-case-changes
 C-R09 | --ignore-comments
@@ -190,35 +189,13 @@ C-R10 | words extract declared
 C-R10 | words read declared
 C-R10 | words render declared
 C-R10 | words search declared
-C-R11 | cells convert --dry-run
-C-R11 | cells create --dry-run
 C-R11 | cells create declared
-C-R11 | cells render --dry-run
-C-R11 | license install --dry-run
 C-R11 | license install declared
-C-R11 | license remove --dry-run
 C-R11 | license remove declared
-C-R11 | pdf convert --dry-run
-C-R11 | pdf create --dry-run
 C-R11 | pdf create declared
-C-R11 | pdf extract --dry-run
-C-R11 | pdf merge --dry-run
-C-R11 | pdf render --dry-run
-C-R11 | pdf sign --dry-run
-C-R11 | pdf split --dry-run
-C-R11 | skill install --dry-run
 C-R11 | skill install declared
-C-R11 | slides convert --dry-run
-C-R11 | slides create --dry-run
 C-R11 | slides create declared
-C-R11 | slides extract --dry-run
-C-R11 | slides render --dry-run
-C-R11 | words compare --dry-run
-C-R11 | words convert --dry-run
-C-R11 | words create --dry-run
 C-R11 | words create declared
-C-R11 | words extract --dry-run
-C-R11 | words render --dry-run
 C-R12 | cells render of every unit by default
 C-R12 | cells render one unit
 C-R12 | pdf render of every unit by default
@@ -341,7 +318,6 @@ C-R17 | v2/common/budget-list
 C-R17 | v2/common/command
 C-R17 | v2/common/diagnostic-details
 C-R17 | v2/common/diagnostic-list
-C-R17 | v2/common/dry-run-result
 C-R17 | v2/common/engine-warning
 C-R17 | v2/common/error
 C-R17 | v2/common/error-payload
@@ -403,7 +379,6 @@ C-R18 | v2/common/budget-list
 C-R18 | v2/common/command
 C-R18 | v2/common/diagnostic-details
 C-R18 | v2/common/diagnostic-list
-C-R18 | v2/common/dry-run-result
 C-R18 | v2/common/engine-warning
 C-R18 | v2/common/error
 C-R18 | v2/common/error-payload
@@ -648,9 +623,6 @@ C-R20 | v2/common/diagnostic-details variants
 C-R20 | v2/common/diagnostic-list fixednames
 C-R20 | v2/common/diagnostic-list spelling
 C-R20 | v2/common/diagnostic-list variants
-C-R20 | v2/common/dry-run-result fixednames
-C-R20 | v2/common/dry-run-result spelling
-C-R20 | v2/common/dry-run-result variants
 C-R20 | v2/common/engine-warning fixednames
 C-R20 | v2/common/engine-warning spelling
 C-R20 | v2/common/engine-warning variants
@@ -1216,8 +1188,6 @@ C-R31 | v2/common/diagnostic-details fields
 C-R31 | v2/common/diagnostic-details outputs
 C-R31 | v2/common/diagnostic-list fields
 C-R31 | v2/common/diagnostic-list outputs
-C-R31 | v2/common/dry-run-result fields
-C-R31 | v2/common/dry-run-result outputs
 C-R31 | v2/common/engine-warning fields
 C-R31 | v2/common/engine-warning outputs
 C-R31 | v2/common/error fields
@@ -1362,9 +1332,6 @@ C-R33 | v2/common/diagnostic-details none
 C-R33 | v2/common/diagnostic-list envelope
 C-R33 | v2/common/diagnostic-list names
 C-R33 | v2/common/diagnostic-list none
-C-R33 | v2/common/dry-run-result envelope
-C-R33 | v2/common/dry-run-result names
-C-R33 | v2/common/dry-run-result none
 C-R33 | v2/common/engine-warning envelope
 C-R33 | v2/common/engine-warning names
 C-R33 | v2/common/engine-warning none
@@ -1948,7 +1915,6 @@ same-name-option | --at
 same-name-option | --bom
 same-name-option | --case-sensitive
 same-name-option | --dpi
-same-name-option | --dry-run
 same-name-option | --encoding
 same-name-option | --encrypt
 same-name-option | --encrypt-env
@@ -2244,7 +2210,6 @@ unknown-option | cells convert --bom as --bomm
 unknown-option | cells convert --convert-dates as --cnovert-dates
 unknown-option | cells convert --convert-numbers as --cnovert-numbers
 unknown-option | cells convert --culture as --cluture
-unknown-option | cells convert --dry-run as --dyr-run
 unknown-option | cells convert --encoding as --ecnoding
 unknown-option | cells convert --encrypt as --ecnrypt
 unknown-option | cells convert --encrypt-env as --ecnrypt-env
@@ -2259,7 +2224,6 @@ unknown-option | cells convert --password-stdin as --psasword-stdin
 unknown-option | cells convert --separator as --spearator
 unknown-option | cells convert --sheet as --sheett
 unknown-option | cells convert --to as --too
-unknown-option | cells create --dry-run as --dyr-run
 unknown-option | cells create --encrypt as --ecnrypt
 unknown-option | cells create --encrypt-env as --ecnrypt-env
 unknown-option | cells create --encrypt-stdin as --ecnrypt-stdin
@@ -2285,7 +2249,6 @@ unknown-option | cells read --password-env as --psasword-env
 unknown-option | cells read --password-stdin as --psasword-stdin
 unknown-option | cells render --area as --areaa
 unknown-option | cells render --dpi as --dpii
-unknown-option | cells render --dry-run as --dyr-run
 unknown-option | cells render --font-dir as --fnot-dir
 unknown-option | cells render --out as --outt
 unknown-option | cells render --overwrite as --oevrwrite
@@ -2303,13 +2266,10 @@ unknown-option | cells search --pattern as --ptatern
 unknown-option | cells search --regex as --regexx
 unknown-option | cells search --skip as --skipp
 unknown-option | fonts list --product as --porduct
-unknown-option | license install --dry-run as --dyr-run
 unknown-option | license install --product as --porduct
-unknown-option | license remove --dry-run as --dyr-run
 unknown-option | license remove --product as --porduct
 unknown-option | license status --product as --porduct
 unknown-option | pdf convert --convert-error-action as --cnovert-error-action
-unknown-option | pdf convert --dry-run as --dyr-run
 unknown-option | pdf convert --font-dir as --fnot-dir
 unknown-option | pdf convert --out as --outt
 unknown-option | pdf convert --overwrite as --oevrwrite
@@ -2318,7 +2278,6 @@ unknown-option | pdf convert --password as --psasword
 unknown-option | pdf convert --password-env as --psasword-env
 unknown-option | pdf convert --password-stdin as --psasword-stdin
 unknown-option | pdf convert --to as --too
-unknown-option | pdf create --dry-run as --dyr-run
 unknown-option | pdf create --encrypt as --ecnrypt
 unknown-option | pdf create --encrypt-env as --ecnrypt-env
 unknown-option | pdf create --encrypt-stdin as --ecnrypt-stdin
@@ -2336,7 +2295,6 @@ unknown-option | pdf edit --password as --psasword
 unknown-option | pdf edit --password-env as --psasword-env
 unknown-option | pdf edit --password-stdin as --psasword-stdin
 unknown-option | pdf extract --bom as --bomm
-unknown-option | pdf extract --dry-run as --dyr-run
 unknown-option | pdf extract --form-format as --from-format
 unknown-option | pdf extract --out-dir as --otu-dir
 unknown-option | pdf extract --overwrite as --oevrwrite
@@ -2345,7 +2303,6 @@ unknown-option | pdf extract --password as --psasword
 unknown-option | pdf extract --password-env as --psasword-env
 unknown-option | pdf extract --password-stdin as --psasword-stdin
 unknown-option | pdf extract --what as --whatt
-unknown-option | pdf merge --dry-run as --dyr-run
 unknown-option | pdf merge --encrypt as --ecnrypt
 unknown-option | pdf merge --encrypt-env as --ecnrypt-env
 unknown-option | pdf merge --encrypt-stdin as --ecnrypt-stdin
@@ -2362,7 +2319,6 @@ unknown-option | pdf read --password as --psasword
 unknown-option | pdf read --password-env as --psasword-env
 unknown-option | pdf read --password-stdin as --psasword-stdin
 unknown-option | pdf render --dpi as --dpii
-unknown-option | pdf render --dry-run as --dyr-run
 unknown-option | pdf render --font-dir as --fnot-dir
 unknown-option | pdf render --out as --outt
 unknown-option | pdf render --overwrite as --oevrwrite
@@ -2383,7 +2339,6 @@ unknown-option | pdf sign --certificate as --cretificate
 unknown-option | pdf sign --certificate-password-env as --cretificate-password-env
 unknown-option | pdf sign --certificate-password-stdin as --cretificate-password-stdin
 unknown-option | pdf sign --contact as --cnotact
-unknown-option | pdf sign --dry-run as --dyr-run
 unknown-option | pdf sign --font as --fontt
 unknown-option | pdf sign --font-dir as --fnot-dir
 unknown-option | pdf sign --location as --lcoation
@@ -2397,7 +2352,6 @@ unknown-option | pdf sign --reason as --raeson
 unknown-option | pdf sign --rect as --rectt
 unknown-option | pdf sign --visible as --vsiible
 unknown-option | pdf split --by as --byy
-unknown-option | pdf split --dry-run as --dyr-run
 unknown-option | pdf split --encrypt as --ecnrypt
 unknown-option | pdf split --encrypt-env as --ecnrypt-env
 unknown-option | pdf split --encrypt-stdin as --ecnrypt-stdin
@@ -2414,11 +2368,9 @@ unknown-option | pdf validate --password-env as --psasword-env
 unknown-option | pdf validate --password-stdin as --psasword-stdin
 unknown-option | pdf validate --profile as --porfile
 unknown-option | skill install --dir as --dirr
-unknown-option | skill install --dry-run as --dyr-run
 unknown-option | skill install --host as --hostt
 unknown-option | skill install --target as --traget
 unknown-option | skill install --user as --userr
-unknown-option | slides convert --dry-run as --dyr-run
 unknown-option | slides convert --encrypt as --ecnrypt
 unknown-option | slides convert --encrypt-env as --ecnrypt-env
 unknown-option | slides convert --encrypt-stdin as --ecnrypt-stdin
@@ -2430,7 +2382,6 @@ unknown-option | slides convert --password-env as --psasword-env
 unknown-option | slides convert --password-stdin as --psasword-stdin
 unknown-option | slides convert --slides as --sildes
 unknown-option | slides convert --to as --too
-unknown-option | slides create --dry-run as --dyr-run
 unknown-option | slides create --encrypt as --ecnrypt
 unknown-option | slides create --encrypt-env as --ecnrypt-env
 unknown-option | slides create --encrypt-stdin as --ecnrypt-stdin
@@ -2448,7 +2399,6 @@ unknown-option | slides edit --overwrite as --oevrwrite
 unknown-option | slides edit --password as --psasword
 unknown-option | slides edit --password-env as --psasword-env
 unknown-option | slides edit --password-stdin as --psasword-stdin
-unknown-option | slides extract --dry-run as --dyr-run
 unknown-option | slides extract --out-dir as --otu-dir
 unknown-option | slides extract --overwrite as --oevrwrite
 unknown-option | slides extract --password as --psasword
@@ -2464,7 +2414,6 @@ unknown-option | slides read --password as --psasword
 unknown-option | slides read --password-env as --psasword-env
 unknown-option | slides read --password-stdin as --psasword-stdin
 unknown-option | slides render --dpi as --dpii
-unknown-option | slides render --dry-run as --dyr-run
 unknown-option | slides render --font-dir as --fnot-dir
 unknown-option | slides render --out as --outt
 unknown-option | slides render --overwrite as --oevrwrite
@@ -2484,7 +2433,6 @@ unknown-option | slides search --regex as --regexx
 unknown-option | slides search --skip as --skipp
 unknown-option | words compare --author as --atuhor
 unknown-option | words compare --date-time as --dtae-time
-unknown-option | words compare --dry-run as --dyr-run
 unknown-option | words compare --font-dir as --fnot-dir
 unknown-option | words compare --granularity as --garnularity
 unknown-option | words compare --ignore-case-changes as --ingore-case-changes
@@ -2506,7 +2454,6 @@ unknown-option | words compare --right-password-stdin as --rgiht-password-stdin
 unknown-option | words convert --auto-numbering-detection as --atuo-numbering-detection
 unknown-option | words convert --detect-hyperlinks as --dteect-hyperlinks
 unknown-option | words convert --detect-numbering-with-whitespaces as --dteect-numbering-with-whitespaces
-unknown-option | words convert --dry-run as --dyr-run
 unknown-option | words convert --encoding as --ecnoding
 unknown-option | words convert --encrypt as --ecnrypt
 unknown-option | words convert --encrypt-env as --ecnrypt-env
@@ -2520,7 +2467,6 @@ unknown-option | words convert --password as --psasword
 unknown-option | words convert --password-env as --psasword-env
 unknown-option | words convert --password-stdin as --psasword-stdin
 unknown-option | words convert --to as --too
-unknown-option | words create --dry-run as --dyr-run
 unknown-option | words create --encrypt as --ecnrypt
 unknown-option | words create --encrypt-env as --ecnrypt-env
 unknown-option | words create --encrypt-stdin as --ecnrypt-stdin
@@ -2537,7 +2483,6 @@ unknown-option | words edit --overwrite as --oevrwrite
 unknown-option | words edit --password as --psasword
 unknown-option | words edit --password-env as --psasword-env
 unknown-option | words edit --password-stdin as --psasword-stdin
-unknown-option | words extract --dry-run as --dyr-run
 unknown-option | words extract --out-dir as --otu-dir
 unknown-option | words extract --overwrite as --oevrwrite
 unknown-option | words extract --password as --psasword
@@ -2552,7 +2497,6 @@ unknown-option | words read --password as --psasword
 unknown-option | words read --password-env as --psasword-env
 unknown-option | words read --password-stdin as --psasword-stdin
 unknown-option | words render --dpi as --dpii
-unknown-option | words render --dry-run as --dyr-run
 unknown-option | words render --font-dir as --fnot-dir
 unknown-option | words render --out as --outt
 unknown-option | words render --overwrite as --oevrwrite
