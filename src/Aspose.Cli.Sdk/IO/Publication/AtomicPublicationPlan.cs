@@ -231,8 +231,10 @@ internal sealed class AtomicPublicationPlan
         {
             return;
         }
+        // The swap gives a staged file the attributes of the target it replaces, and a displaced
+        // file is that target, so either may be read-only.
         if (expected is null
-            || !FilePublicationOwnedDelete.TryDelete(path, expected))
+            || !FilePublicationOwnedDelete.TryDelete(path, expected, clearReadOnly: true))
         {
             throw new IOException(
                 $"Publication cleanup preserved changed or unknown file '{path}'.");

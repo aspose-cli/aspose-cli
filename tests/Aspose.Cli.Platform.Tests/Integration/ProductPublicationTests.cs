@@ -49,6 +49,57 @@ public sealed class ProductPublicationTests
     }
 
     /// <summary>
+    /// A command whose target is a read-only file, its own input or another file it was told to
+    /// overwrite, reports that target as unwritable, leaves it as it was and leaves nothing else
+    /// in its folder.
+    /// </summary>
+    [Theory]
+    [InlineData("input.docx", """words edit input.docx --in-place --ops {"ops":[{"set":"document","props":{"builtInDocumentProperties.title":"Edited"}}]}""")]
+    [InlineData("target.docx", """words edit input.docx --out target.docx --overwrite --ops {"ops":[{"set":"document","props":{"builtInDocumentProperties.title":"Edited"}}]}""")]
+    [InlineData("target.pdf", "words convert input.docx --out target.pdf --overwrite")]
+    [InlineData("target.png", "words render input.docx --pages 1 --out target.png --overwrite")]
+    [InlineData("input.xlsx", """cells edit input.xlsx --in-place --ops {"ops":[{"set":"sheet/Sheet1/cell/A1","props":{"value":1}}]}""")]
+    [InlineData("input.pptx", """slides edit input.pptx --in-place --ops {"ops":[{"set":"slide/256","props":{"hidden":true}}]}""")]
+    [InlineData("input.pdf", """pdf edit input.pdf --in-place --ops {"ops":[{"set":"document","props":{"info.title":"Edited"}}]}""")]
+    public void ReadOnlyTarget_IsUnwritableAndItsFolderHoldsWhatItHeld(string targetName, string commandLine)
+    {
+        Requires.Windows();
+        using var workspace = new TempWorkspace();
+        string[] command = commandLine.Split(' ');
+        string input = CreateInput(workspace, command[0], Path.GetExtension(command[2])[1..]);
+        string target = workspace.File(targetName);
+        if (target != input)
+        {
+            File.WriteAllText(target, "existing");
+        }
+        byte[] content = File.ReadAllBytes(target);
+        File.SetAttributes(target, File.GetAttributes(target) | FileAttributes.ReadOnly);
+        FileAttributes attributes = File.GetAttributes(target);
+        string[] entries = [.. Directory.EnumerateFileSystemEntries(workspace.Path, "*", SearchOption.AllDirectories).Order()];
+        try
+        {
+            CliResult result = workspace.Run([.. command, "--output-format", "json"]);
+
+            Assert.True(result.ExitCode == 5, $"exit {result.ExitCode}: {result.StdErr}");
+            JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+            Assert.Equal("OUTPUT_UNWRITABLE", error["code"]!.GetValue<string>());
+            Assert.Equal(
+                $"Output file could not be written: {target} (the file is read-only or access to it is denied)",
+                error["message"]!.GetValue<string>());
+            Assert.Equal(content, File.ReadAllBytes(target));
+            Assert.Equal(attributes, File.GetAttributes(target));
+            Assert.Equal(entries, Directory.EnumerateFileSystemEntries(workspace.Path, "*", SearchOption.AllDirectories).Order());
+        }
+        finally
+        {
+            foreach (string file in Directory.EnumerateFiles(workspace.Path, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+            }
+        }
+    }
+
+    /// <summary>
     /// The reported size is that of the published files, for one written file, a page per file
     /// and a deck with its companion files.
     /// </summary>

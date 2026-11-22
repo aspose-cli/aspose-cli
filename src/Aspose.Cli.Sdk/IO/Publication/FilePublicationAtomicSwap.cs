@@ -77,6 +77,11 @@ internal static class FilePublicationAtomicSwap
             throw CliErrors.OutputUnwritable(
                 target, "another application has the file open", exception, "replace");
         }
+        catch (UnauthorizedAccessException exception)
+        {
+            throw CliErrors.OutputUnwritable(
+                target, "the file is read-only or access to it is denied", exception, "replace");
+        }
         FilePublicationSnapshot published;
         try
         {

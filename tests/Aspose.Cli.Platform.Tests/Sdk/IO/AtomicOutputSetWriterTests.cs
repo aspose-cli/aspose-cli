@@ -526,6 +526,49 @@ public sealed class AtomicOutputSetWriterTests
         Assert.Equal(["target.txt"], Directory.EnumerateFileSystemEntries(temp.Path).Select(Path.GetFileName));
     }
 
+    /// <summary>
+    /// A read-only target after one that was already replaced fails the set as unwritable: the
+    /// replaced target gets its original back, and the folder holds what it held before.
+    /// </summary>
+    [Fact]
+    public void ReadOnlyLaterTargetRestoresTheEarlierOneAndLeavesNoTransaction()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string first = temp.File("first.txt");
+        string second = temp.File("second.txt");
+        File.WriteAllText(first, "original-one");
+        File.WriteAllText(second, "original-two");
+        File.SetAttributes(second, File.GetAttributes(second) | FileAttributes.ReadOnly);
+        FileAttributes attributes = File.GetAttributes(second);
+        try
+        {
+            using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+            set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement-one"));
+            set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
+
+            CliException error = Assert.Throws<CliException>(() => set.Commit());
+
+            Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+            Assert.Equal(second, error.Details!["path"]!.GetValue<string>());
+            Assert.True(error.Details["recoveryComplete"]!.GetValue<bool>());
+            Assert.Equal(
+                ["restored", "unchanged"],
+                Assert.IsType<JsonArray>(error.Details["targets"]).Select(static item => item!["status"]!.GetValue<string>()));
+            Assert.Equal("original-one", File.ReadAllText(first));
+            Assert.Equal("original-two", File.ReadAllText(second));
+            Assert.Equal(attributes, File.GetAttributes(second));
+            Assert.Equal([first, second], Directory.EnumerateFileSystemEntries(temp.Path).Order());
+        }
+        finally
+        {
+            foreach (string file in Directory.EnumerateFiles(temp.Path, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+            }
+        }
+    }
+
     [Fact]
     public void SuccessfulOverwritePreservesPortableMetadata()
     {

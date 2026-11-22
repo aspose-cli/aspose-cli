@@ -29,7 +29,9 @@ internal static class FilePublicationOwnedDelete
     /// Deletes the file at <paramref name="path"/> when it is still the one
     /// <paramref name="expected"/> admitted. With <paramref name="clearReadOnly"/>, which only a
     /// publication passes for a tree its transaction owns, a read-only attribute of the admitted
-    /// file is cleared first, through the same handle, so it does not keep the file.
+    /// file is cleared first, through the same handle, so it does not keep the file. Only a file
+    /// that is read-only is opened with the right to write its attributes; any other is deleted
+    /// with the same rights as without <paramref name="clearReadOnly"/>.
     /// </summary>
     public static bool TryDelete(string path, FilePublicationSnapshot expected, bool clearReadOnly = false)
     {
@@ -47,7 +49,7 @@ internal static class FilePublicationOwnedDelete
             return false;
         }
 
-        return TryDeleteVerified(path, expected, clearReadOnly);
+        return TryDeleteVerified(path, expected, clearReadOnly && attributes.Value.HasFlag(FileAttributes.ReadOnly));
     }
 
     public static bool TryDelete(string path, FilePhysicalIdentity expectedIdentity)
