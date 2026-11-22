@@ -35,7 +35,7 @@ public sealed class SlidesResourceLoadingTests
         {
             Input = input,
             Batch = TestBatch.Parse([new JsonObject { ["set"] = "presentation", ["props"] = new JsonObject { ["title"] = "Linked" } }]),
-            Output = TestOutput.At(fixture.File("linked.edited.pptx")),
+            Output = new EditOutput(fixture.File("linked.edited.pptx")),
         });
         SlidesRenderResult rendered = SlidesExport.Render(fixture.Session, new SlidesRenderRequest
         {

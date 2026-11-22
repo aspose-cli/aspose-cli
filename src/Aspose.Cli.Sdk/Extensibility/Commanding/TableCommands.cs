@@ -12,10 +12,11 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <summary>One resolved object table edit invocation.</summary>
 /// <param name="Input">The document to edit.</param>
 /// <param name="Batch">The checked operation batch.</param>
-/// <param name="Output">Where the edited document is published.</param>
+/// <param name="Output">Where the edited document is published; its format is the input's.</param>
 /// <param name="Password">The password that opens the input, or null.</param>
 /// <param name="EncryptPassword">The password the output opens with (<c>--encrypt</c>), or null.</param>
-public sealed record TableEditInvocation(string Input, TableBatch Batch, ResolvedOutput Output, Secret? Password, Secret? EncryptPassword);
+/// <param name="EncryptOption">The option that gave <paramref name="EncryptPassword"/>, or null.</param>
+public sealed record TableEditInvocation(string Input, TableBatch Batch, EditOutput Output, Secret? Password, Secret? EncryptPassword, string? EncryptOption);
 
 /// <summary>One resolved object table read invocation.</summary>
 /// <param name="Input">The document to read.</param>
@@ -80,12 +81,12 @@ public static class TableCommands
         return new CommandDefinition<TRequest, TResult>(
             "edit",
             description,
-            traits with { Output = OutputTarget.TableMutation(writes) },
+            traits with { Output = OutputTarget.Mutation(writes) },
             [ops],
             (parse, standard) =>
             {
                 string source = parse.GetRequiredValue(ops);
-                ResolvedOutput output = standard.Output;
+                EditOutput output = standard.EditOutput;
                 string text = JsonInputSource.Read(source, standard.Paths, standard.Inputs, StandardOptionNames.Ops);
                 var inputs = new BatchInputs(standard);
                 TableBatch batch = TableBatch.Parse(
@@ -101,7 +102,7 @@ public static class TableCommands
                 }
 
                 Secret? encrypt = traits.Encrypt is null ? null : standard.EncryptPassword();
-                return bind(new TableEditInvocation(standard.Input, batch, output, standard.InputPassword, encrypt));
+                return bind(new TableEditInvocation(standard.Input, batch, output, standard.InputPassword, encrypt, standard.EncryptOption));
             })
         {
             Examples = examples ?? [],

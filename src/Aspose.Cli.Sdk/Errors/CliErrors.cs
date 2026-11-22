@@ -672,6 +672,19 @@ public static partial class CliErrors
     internal static string SecretMissingReason(string variable) => $"environment variable '{variable}' is not set or is empty";
 
     /// <summary>
+    /// An output password given for a format that cannot carry one, naming the option the caller
+    /// passed and the formats among those the command writes that can.
+    /// </summary>
+    /// <param name="option">The option that gave the password, such as <c>--encrypt-env</c>.</param>
+    /// <param name="format">The id of the format the output is written in.</param>
+    /// <param name="protectable">The ids of the formats the command writes that can carry a password, in declared order.</param>
+    internal static CliException Unprotectable(string option, string format, IReadOnlyList<string> protectable)
+    {
+        string reason = $"the '{format}' format cannot be password-protected";
+        return OptionInvalid(option, protectable.Count == 0 ? reason : $"{reason}; {string.Join(", ", protectable)} can");
+    }
+
+    /// <summary>
     /// An option or argument value that names none of the values it accepts; the details list
     /// them, and the message ends with the same values.
     /// </summary>

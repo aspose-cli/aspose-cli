@@ -8,7 +8,6 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
-using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.Sdk.Tests;
@@ -127,44 +126,6 @@ public sealed class ProductMenuTests : IDisposable
         Assert.Contains("Describe", Assert.Throws<InvalidOperationException>(builder.Build).Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void EncryptPassword_UsesTheFormatTheProductDetectsInTheEditedInput()
-    {
-        static ProductDefinitionBuilder<TestSession> Product(Func<string, string?>? detect)
-        {
-            ProductDefinitionBuilder<TestSession> builder = ExtProduct.Define<TestSession>(Manifest)
-                .Describe("A product in a menu.")
-                .Command(ProtectCommand.Create, TestHandlers.Protect)
-                .Complete();
-            return detect is null ? builder : builder.DetectFormat(detect);
-        }
-
-        Command judged = Product(null).Build().CreateCommand(_hosts.Run);
-        Command detected = Product(static _ => "old").Build().CreateCommand(_hosts.Run);
-
-        Assert.Equal("secret", Assert.IsType<TextResult>(Run(judged, "protect", "doc.test", "--encrypt", "secret")).Value);
-        CliException refused = RunFailing(detected, "protect", "doc.test", "--encrypt", "secret");
-        Assert.Equal(ErrorCodes.OptionInvalid, refused.Code);
-        Assert.Equal("--encrypt", refused.Details!["option"]!.GetValue<string>());
-    }
-
-    [Fact]
-    public void EncryptPassword_IgnoresTheDetectorForACommandThatDoesNotEditItsInput()
-    {
-        Command product = ExtProduct.Define<TestSession>(Manifest)
-            .Describe("A product in a menu.")
-            .Command(ProtectedCopyCommand.Create, TestHandlers.Protect)
-            .Complete()
-            .DetectFormat(static _ => throw new InvalidOperationException("Only an edit detects its input's format."))
-            .Build()
-            .CreateCommand(_hosts.Run);
-
-        TextResult copied = Assert.IsType<TextResult>(
-            Run(product, "copy", "doc.test", "--out", "copy.test", "--encrypt", "secret"));
-
-        Assert.Equal("secret", copied.Value);
-    }
-
     /// <summary>
     /// A failure is attributed to the product whose module defined it, not to the assembly of its
     /// session type, which may be a type the product does not own.
@@ -248,8 +209,6 @@ public sealed class ProductMenuTests : IDisposable
 
     public sealed record CompareRequest(string Input, string Other);
 
-    public sealed record ProtectRequest(string? Password);
-
 #pragma warning disable APCLI003 // Test results, not product JSON roots.
     public sealed record TextResult(string Value) : TestResultEnvelope("text");
 
@@ -269,8 +228,6 @@ public sealed class ProductMenuTests : IDisposable
 
         public static TextResult Compare(TestSession session, CompareRequest request) =>
             throw CliErrors.PasswordRequired(request.Other);
-
-        public static TextResult Protect(TestSession session, ProtectRequest request) => new(request.Password ?? string.Empty);
     }
 
     private static class InspectCommand
@@ -335,44 +292,6 @@ public sealed class ProductMenuTests : IDisposable
             },
             [],
             static (_, standard) => new CompareRequest(standard.Input, standard.Other));
-    }
-
-    /// <summary>An edit whose output extension names a protectable and an unprotectable format.</summary>
-    private static class ProtectCommand
-    {
-        public static readonly FormatDescriptor[] Writes =
-        [
-            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, ".test") with { Protectable = true },
-            FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, ".test"),
-        ];
-
-        public static CommandDefinition<ProtectRequest, TextResult> Create() => new(
-            "protect",
-            "Protects the document.",
-            new CommandTraits
-            {
-                Input = Document,
-                Output = OutputTarget.Mutation(Writes),
-                Encrypt = new EncryptedOutput("the output document"),
-            },
-            [],
-            static (_, standard) => new ProtectRequest(standard.EncryptPassword()?.Reveal()));
-    }
-
-    /// <summary>A conversion to the same output formats, which does not keep its input's format.</summary>
-    private static class ProtectedCopyCommand
-    {
-        public static CommandDefinition<ProtectRequest, TextResult> Create() => new(
-            "copy",
-            "Writes a protected copy of the document.",
-            new CommandTraits
-            {
-                Input = Document,
-                Output = OutputTarget.File("Output path.", ProtectCommand.Writes, required: true),
-                Encrypt = new EncryptedOutput("the output document"),
-            },
-            [],
-            static (_, standard) => new ProtectRequest(standard.EncryptPassword()?.Reveal()));
     }
 
     private sealed class LoggingFonts : IFontEnvironment

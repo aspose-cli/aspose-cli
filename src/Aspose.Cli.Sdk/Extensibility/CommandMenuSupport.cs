@@ -21,11 +21,9 @@ public delegate object? ProductGuard<in TSession>(TSession session, Func<object?
 /// <summary>What every command of one product menu shares when its command tree is built.</summary>
 /// <param name="Run">The host pipeline.</param>
 /// <param name="Guard">The product guard, or null.</param>
-/// <param name="DetectFormat">The product's content format detector, or null.</param>
 internal sealed record MenuContext<TSession>(
     ProductCommandRunner Run,
-    ProductGuard<TSession>? Guard,
-    Func<string, string?>? DetectFormat)
+    ProductGuard<TSession>? Guard)
     where TSession : class
 {
     /// <summary>

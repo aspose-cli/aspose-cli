@@ -122,7 +122,6 @@ public sealed class ProductDefinitionBuilder<TSession>
     private string? _description;
     private Func<CommandHelp>? _help;
     private ProductGuard<TSession>? _guard;
-    private Func<string, string?>? _detectFormat;
     private Func<
         ProductActivationContext,
         ProductBinding>? _bindingFactory;
@@ -194,19 +193,6 @@ public sealed class ProductDefinitionBuilder<TSession>
         return this;
     }
 
-    /// <summary>
-    /// Registers how the product detects a file's format id from its content without loading it
-    /// (null when it cannot tell). Only the menu commands that edit their input use it, to choose
-    /// among the formats an output extension names, as <c>EncryptPassword()</c> does for an edit
-    /// that keeps its input's format; a command that creates or converts a file never calls it.
-    /// </summary>
-    public ProductDefinitionBuilder<TSession> DetectFormat(Func<string, string?> detect)
-    {
-        EnsureMutable();
-        _detectFormat = detect ?? throw new ArgumentNullException(nameof(detect));
-        return this;
-    }
-
     /// <summary>Adds one menu line, in help order.</summary>
     internal ProductDefinitionBuilder<TSession> AddMenuEntry(IMenuEntry<TSession> entry)
     {
@@ -271,7 +257,7 @@ public sealed class ProductDefinitionBuilder<TSession>
 
     private Command CreateCommand(ProductCommandRunner runner)
     {
-        var context = new MenuContext<TSession>(runner, _guard, _detectFormat);
+        var context = new MenuContext<TSession>(runner, _guard);
         var product = new Command(_manifest.Id, _description);
         foreach (IMenuEntry<TSession> entry in _menu)
         {

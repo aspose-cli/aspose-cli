@@ -107,7 +107,7 @@ public sealed class CellsFixture : IDisposable
     {
         Input = input,
         Batch = TableBatch.Parse(ops, Engine.Mapping.CellsTable.Definition, new Inputs()),
-        Output = CellsOutput.At(output),
+        Output = new EditOutput(output),
     };
 
     /// <summary>The files and secrets of a batch, as the command line reads them.</summary>

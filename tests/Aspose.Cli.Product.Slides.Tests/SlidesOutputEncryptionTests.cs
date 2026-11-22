@@ -172,7 +172,7 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
                 ["do"] = "import_slide",
                 ["args"] = new JsonObject { ["file"] = source, ["sourceSlide"] = 256 },
             }]),
-            Output = TestOutput.At(fixture.File("imported.pptx")),
+            Output = new EditOutput(fixture.File("imported.pptx")),
         }));
 
         Assert.Equal(ErrorCodes.PasswordRequired, error.Code);

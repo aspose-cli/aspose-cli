@@ -52,23 +52,6 @@ internal sealed class WordsDocumentLoader
     internal LoadedDocument Reopen(string path, Secret? password, EngineWarningLog warnings) =>
         InputOpening.OpenPublished(() => OpenCore(path, PasswordSource.Option(password), warnings, editable: true, text: null));
 
-    /// <summary>
-    /// The format id <paramref name="path"/>'s content has, detected without loading it; null when
-    /// detection fails, since the load that follows reports why.
-    /// </summary>
-    internal static string? DetectFormatId(string path)
-    {
-        try
-        {
-            using FileStream input = InputFiles.OpenRead(path);
-            return WordsEngineFormats.IdOf(FileFormatUtil.DetectFileFormat(input).LoadFormat);
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            return null;
-        }
-    }
-
     private LoadedDocument OpenCore(string path, PasswordSource password, EngineWarningLog warnings, bool editable, WordsTextInput? text)
     {
         using FileStream input = Loading.Load(path, password, () => InputFiles.OpenRead(path));

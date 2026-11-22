@@ -7,7 +7,10 @@ using Aspose.Cli.Sdk.IO.Output;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
-/// <summary>The one place that decides the file a command publishes and its format.</summary>
+/// <summary>
+/// The one place that decides the file a command publishes and its format, except an edit's
+/// format: that is its input's, which the edit decides once the input is open.
+/// </summary>
 public partial class StandardInvocation
 {
     private ResolvedOutput? _output;
@@ -17,13 +20,14 @@ public partial class StandardInvocation
     /// The file the command publishes, resolved once. Its format is the one <c>--to</c> names
     /// when the command has a <c>--to</c>; otherwise the format among those the command writes
     /// that the named output's extension chooses (<see cref="FormatDescriptor.ChosenByExtension"/>);
-    /// otherwise the edited input's format, the <c>--to</c> default or the command's only format.
+    /// otherwise the <c>--to</c> default or the command's only format.
     /// The output's extension must be one of that format's: a missing or foreign extension is
-    /// refused before any input is read.
+    /// refused before any input is read. An edit, whose format is its input's, resolves only
+    /// <see cref="EditOutput"/> here.
     /// </summary>
     /// <exception cref="CliException">
-    /// <c>OPTION_INVALID</c> for an output that names an input, a contradictory edit mode or
-    /// a format nothing names; <c>USAGE_ERROR</c> for an extension that is not the format's or
+    /// <c>OPTION_INVALID</c> for an output that names an input or a format nothing names;
+    /// <c>USAGE_ERROR</c> for an extension that is not the format's or
     /// that only formats <c>--to</c> alone chooses declare;
     /// <c>FILE_NOT_FOUND</c> for a missing input an output is derived from.
     /// </exception>
@@ -33,67 +37,41 @@ public partial class StandardInvocation
     internal ResolvedOutput? ResolvedFile => _output;
 
     /// <summary>
-    /// The password for <see cref="Output"/>, or null when none was given. A password for a
+    /// The password for the command's output, or null when none was given. A password for a
     /// format that cannot carry one is refused, naming the option the caller passed, before the
-    /// secret is read and before any input is loaded. When the output's extension names several
-    /// formats, as <c>.xml</c> names WordML and Flat OPC, the edited input keeps its own: the
-    /// overload that takes a detector of the input's format refuses that format, and while it is
-    /// unknown every such format must be protectable. This overload uses the detector the product
-    /// registered (<c>ProductDefinitionBuilder.DetectFormat</c>) for a menu command that edits its
-    /// input, and otherwise judges <see cref="ResolvedOutput.Format"/>.
+    /// secret is read and before any input is loaded. An edit writes its input's format, which
+    /// the edit judges once the input is open (<see cref="Tables.TableEdit"/>).
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for an unprotectable format or a bad source.</exception>
-    public Secret? EncryptPassword() =>
-        EncryptPassword(DetectFormat is { } detect ? () => detect(Input) : null);
-
-    /// <inheritdoc cref="EncryptPassword()"/>
-    /// <param name="sourceFormat">
-    /// Detects the format id of the edited input from its content without loading it, or returns
-    /// null; called only for a password and an output whose extension names several formats.
-    /// </param>
-    public Secret? EncryptPassword(Func<string?>? sourceFormat)
+    public Secret? EncryptPassword()
     {
         PasswordOptions encrypt = Declared(_options.Encrypt, "output password");
-        if (encrypt.SelectedOption(_parse) is { } option)
+        if (encrypt.SelectedOption(_parse) is { } option
+            && WrittenFormats().FirstOrDefault(static format => !format.Protectable) is { } unprotectable)
         {
-            FormatDescriptor[] written = WrittenFormats(sourceFormat);
-            if (written.Any(static format => !format.Protectable))
-            {
-                throw Unprotectable(option, written);
-            }
+            throw CliErrors.Unprotectable(option, unprotectable.Id, [.. _options.Protects.Select(static format => format.Id)]);
         }
 
         return encrypt.Resolve(_parse, Inputs, ReadEnvironment);
     }
 
-    // The format an output is written in: the edited input's own among those its extension names,
-    // or for a set of files in a directory every format the command declares for them.
-    private FormatDescriptor[] WrittenFormats(Func<string?>? sourceFormat)
+    /// <summary>
+    /// The option that gave the output password (<c>--encrypt</c>, <c>--encrypt-env</c> or
+    /// <c>--encrypt-stdin</c>), which an error about its use names; null when none was given.
+    /// </summary>
+    internal string? EncryptOption => _options.Encrypt?.SelectedOption(_parse);
+
+    // The formats an output is written in, as far as they are known before any input opens: for a
+    // set of files in a directory every format the command declares for them, and for an edit none.
+    private FormatDescriptor[] WrittenFormats()
     {
         OutputTarget target = Declared(_options.OutputTarget, "output");
-        if (target.Kind == OutputKind.Directory)
+        return target.Kind switch
         {
-            return [.. target.Writes ?? throw new InvalidOperationException("A directory output that can be encrypted declares the formats of its files.")];
-        }
-
-        ResolvedOutput output = Output;
-        if (output.Alternatives.Count < 2 || sourceFormat is null)
-        {
-            return [output.Format];
-        }
-
-        return sourceFormat() is { } id ? [output.Keeping(id)] : [.. output.Alternatives];
-    }
-
-    private CliException Unprotectable(string option, IReadOnlyList<FormatDescriptor> written)
-    {
-        string[] protectable = [.. Writes(Declared(_options.OutputTarget, "output"))
-            .Where(static candidate => candidate.Protectable).Select(static format => format.Id)];
-        string formats = string.Join(" or ", written.Select(static format => $"'{format.Id}'"));
-        string reason = written.Count == 1
-            ? $"the {formats} format cannot be password-protected"
-            : $"the {formats} format of the edited file cannot be password-protected";
-        return CliErrors.OptionInvalid(option, protectable.Length == 0 ? reason : $"{reason}; {string.Join(", ", protectable)} can");
+            OutputKind.Directory => [.. target.Writes ?? throw new InvalidOperationException("A directory output that can be encrypted declares the formats of its files.")],
+            OutputKind.Mutation => [],
+            _ => [Output.Format],
+        };
     }
 
     /// <summary>
@@ -115,27 +93,24 @@ public partial class StandardInvocation
             throw new InvalidOperationException("A command that publishes a directory resolves no output file.");
         }
 
-        IReadOnlyList<FormatDescriptor> writes = Writes(target);
-        (FormatDescriptor format, IReadOnlyList<FormatDescriptor> alternatives) = ResolveFormat(target, writes);
         if (target.Kind == OutputKind.Mutation)
         {
-            return Mutated(format, alternatives);
+            throw new InvalidOperationException("An edit writes its input's format, decided once the input is open: it resolves EditOutput.");
         }
 
+        FormatDescriptor format = ResolveFormat(Writes(target));
         string path = target.Kind == OutputKind.CreatedFile
             ? CreatedPath
             : _options.OutputFile!.Required
                 ? _options.OutputFile.ResolveRequired(_parse, Paths, DeclaredInputs())
                 : RequestedOutputPath() ?? Derived(OutputFileOption.DerivePath(Input, target.DerivedMarker + format.PreferredExtension));
-        return new ResolvedOutput(format, path, Overwrite, inPlace: false, alternatives);
+        return new ResolvedOutput(format, path, Overwrite);
     }
 
     // The command template refuses an output file that has neither --to nor declared formats.
     private IReadOnlyList<FormatDescriptor> Writes(OutputTarget target) => _options.Target?.Offered ?? target.Writes!;
 
-    private (FormatDescriptor Format, IReadOnlyList<FormatDescriptor> Alternatives) ResolveFormat(
-        OutputTarget target,
-        IReadOnlyList<FormatDescriptor> writes)
+    private FormatDescriptor ResolveFormat(IReadOnlyList<FormatDescriptor> writes)
     {
         (string Parameter, string Value)? named = NamedOutput();
         if (RequestedTarget() is { } requested)
@@ -145,36 +120,24 @@ public partial class StandardInvocation
                 throw NotTheFormatsExtension(parameter, value, requested);
             }
 
-            return (requested, []);
+            return requested;
         }
 
         if (named is var (option, output))
         {
-            return ChosenBy(writes, option, output) is [var first, ..] alternatives
-                ? (first, alternatives)
-                : target.FollowsInput
-                    ? (writes[0], writes)
-                    : throw NamesNoFormatWritten(option, output, writes, derived: false);
-        }
-
-        if (target.Kind == OutputKind.Mutation)
-        {
-            string input = _parse.GetRequiredValue(_options.Input!);
-            return Writing(writes, input) is [var first, ..] alternatives
-                ? (first, alternatives)
-                : target.FollowsInput
-                    ? (writes[0], writes)
-                    : throw NamesNoFormatWritten(StandardOptionNames.Out, input, writes, derived: true);
+            return ChosenBy(writes, option, output) is [var first, ..]
+                ? first
+                : throw NamesNoFormatWritten(option, output, writes);
         }
 
         if (_options.Target?.Default is { } fallback)
         {
-            return (_options.Target.Named(fallback)!, []);
+            return _options.Target.Named(fallback)!;
         }
 
         if (writes is [var only])
         {
-            return (only, []);
+            return only;
         }
 
         string[] ids = [.. writes.Select(static format => format.Id)];
@@ -189,15 +152,11 @@ public partial class StandardInvocation
             + $"or an {StandardOptionNames.Out} whose extension names one of them."], parameter: StandardOptionNames.To);
     }
 
-    // The formats among those written that declare the file's extension, in declared order.
-    private static FormatDescriptor[] Writing(IReadOnlyList<FormatDescriptor> writes, string file) =>
-        [.. writes.Where(format => format.Names(file))];
-
     // The formats among those written that the named output's extension chooses, in declared
     // order. An extension that only formats --to alone chooses declare is refused, naming them.
     private static FormatDescriptor[] ChosenBy(IReadOnlyList<FormatDescriptor> writes, string parameter, string output)
     {
-        FormatDescriptor[] declaring = Writing(writes, output);
+        FormatDescriptor[] declaring = [.. writes.Where(format => format.Names(output))];
         FormatDescriptor[] chosen = [.. declaring.Where(static format => format.ChosenByExtension)];
         if (chosen.Length > 0 || declaring.Length == 0)
         {
@@ -251,20 +210,18 @@ public partial class StandardInvocation
     }
 
     /// <param name="parameter">The option or argument that names the output.</param>
-    /// <param name="output">The named output, or the input an edit's output is derived from.</param>
+    /// <param name="output">The named output.</param>
     /// <param name="writes">The formats the command writes.</param>
-    /// <param name="derived">Whether <paramref name="output"/> is the input, since no output was named.</param>
     private CliException NamesNoFormatWritten(
         string parameter,
         string output,
-        IReadOnlyList<FormatDescriptor> writes,
-        bool derived)
+        IReadOnlyList<FormatDescriptor> writes)
     {
         string command = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath()]);
         string extension = Path.GetExtension(output);
         bool images = writes.All(static format => format.Image);
         // An image command given its input's own extension was asked for what the input already is.
-        bool inputs = images && !derived && extension.Length > 1 && _options.Input is { } input
+        bool inputs = images && extension.Length > 1 && _options.Input is { } input
             && _parse.GetValue(input) is { } given
             && string.Equals(Path.GetExtension(given), extension, StringComparison.OrdinalIgnoreCase);
         string[] extensions = [.. writes.SelectMany(static format => format.Extensions).Distinct(StringComparer.OrdinalIgnoreCase)];
@@ -282,7 +239,7 @@ public partial class StandardInvocation
         return CliErrors.OutputExtensionInvalid(
             parameter,
             output,
-            derived ? $"The input '{output}', whose name the output keeps without {parameter}," : $"{(option ? parameter : "The " + parameter)} '{output}'",
+            $"{(option ? parameter : "The " + parameter)} '{output}'",
             problem,
             extensions,
             producer is [var named] ? new JsonObject { ["format"] = named.Id } : []);

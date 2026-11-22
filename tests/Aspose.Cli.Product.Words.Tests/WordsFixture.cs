@@ -95,7 +95,7 @@ public sealed class WordsFixture : IDisposable
     {
         Input = input,
         Batch = TableBatch.Parse(ops, WordsTable.Definition, new Inputs()),
-        Output = TestOutput.At(output),
+        Output = new EditOutput(output),
     };
 
     /// <summary>The files and secrets of a batch, as the command line reads them.</summary>

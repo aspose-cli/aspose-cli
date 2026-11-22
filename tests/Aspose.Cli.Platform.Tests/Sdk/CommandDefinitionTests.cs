@@ -391,30 +391,38 @@ public sealed class CommandDefinitionTests : IDisposable
     }
 
     [Fact]
-    public void Output_OfAnEditKeepsTheInputFormatUnlessItsOutputNamesAnother()
+    public void EditOutput_IsWhereTheEditedInputGoes_ItsFormatIsLeftToTheEdit()
     {
         FormatDescriptor[] writes =
         [
-            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, ".test"),
-            FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, ".test"),
-            FormatDescriptor.Declare("tsx", FormatUse.Input | FormatUse.Convert, ".tsx"),
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, ".test") with { Protectable = true },
+            FormatDescriptor.Declare("plain", FormatUse.Input | FormatUse.Convert, ".plain"),
         ];
         Command edit = Create(
             "edit", "Edits.",
-            new CommandTraits { Input = Report, Output = OutputTarget.Mutation(writes) },
+            new CommandTraits { Input = Report, Output = OutputTarget.Mutation(writes), Encrypt = Encrypted },
             [],
             (_, standard) => Result(string.Join('|',
-                standard.Output.Format.Id, standard.Output.Keeping("old").Id, standard.Output.InPlace, Path.GetFileName(standard.Output.Path))));
+                Path.GetFileName(standard.EditOutput.Path), standard.EditOutput.Overwrite, standard.EditOutput.InPlace,
+                standard.EncryptPassword()?.Reveal(), standard.EncryptOption)));
         File.WriteAllText(_temp.File("report.foo"), "foo");
 
-        Assert.Equal("tst|old|False|report.out.test", Run(edit, "report.test"));
-        Assert.Equal("tst|old|True|report.test", Run(edit, "report.test", "--in-place"));
-        Assert.Equal("tsx|tsx|False|copy.tsx", Run(edit, "report.test", "--out", "copy.tsx"));
-        CliException input = RunFailing(edit, "report.foo");
-        Assert.Equal(ErrorCodes.OptionInvalid, input.Code);
+        Assert.Equal("report.out.test|False|False||", Run(edit, "report.test"));
+        Assert.Equal("report.test|True|True||", Run(edit, "report.test", "--in-place"));
+        Assert.Equal("copy.test|True|False||", Run(edit, "report.test", "--out", "copy.test", "--overwrite"));
+        // No extension is judged before the input opens, nor whether its format can carry a password.
+        Assert.Equal("report.out.foo|False|False||", Run(edit, "report.foo"));
+        Assert.Equal("copy.plain|False|False|b|--encrypt-env", Run(edit, "report.test", "--out", "copy.plain", "--encrypt-env", "RIGHT"));
+        Assert.Throws<InvalidOperationException>(() => Run(
+            Create("edit", "Edits.", new CommandTraits { Input = Report, Output = OutputTarget.Mutation(writes) }, [], (_, standard) => Result(standard.Output.Path)),
+            "report.test"));
+
+        CliException combined = RunFailing(edit, "report.test", "--in-place", "--out", "copy.test");
+        Assert.Equal("Invalid use of --in-place: cannot be combined with --out", combined.Message);
+        CliException dash = RunFailing(edit, "report.test", "--in-place", "--out", "-");
+        Assert.Equal("--out", dash.Details!["option"]!.GetValue<string>());
+        CliException input = RunFailing(edit, "report.test", "--out", "REPORT.TEST");
         Assert.Equal("--out", input.Details!["option"]!.GetValue<string>());
-        Assert.StartsWith("The input 'report.foo', whose name the output keeps without --out, has the .foo extension", input.Message, StringComparison.Ordinal);
-        Assert.Equal("--out", RunFailing(edit, "report.test", "--out", "copy.foo").Details!["option"]!.GetValue<string>());
     }
 
     [Fact]

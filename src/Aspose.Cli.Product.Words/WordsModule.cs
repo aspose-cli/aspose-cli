@@ -1,5 +1,4 @@
 using Aspose.Cli.Product.Words.Commands;
-using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Words;
@@ -32,7 +31,6 @@ public sealed class WordsModule : IProductModule
             .Formats(WordsFormats.Definitions)
             .Diagnostics(WordsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
-            .DetectFormat(WordsDocumentLoader.DetectFormatId)
             .Describe("Read, edit, convert and render documents through the Aspose.Words object model.", Help)
             .Command(ReadCommand.Create, WordsRead.Run)
             .Command(SearchCommand.Create, WordsSearch.Run)

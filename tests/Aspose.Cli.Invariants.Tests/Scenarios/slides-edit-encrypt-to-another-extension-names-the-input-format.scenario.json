@@ -1,0 +1,53 @@
+{
+  "name": "slides edit --encrypt-env of a pptx input to an --out without an extension, with one that names no format, or with another format's, is refused for the extension, naming pptx, the format the edit writes, and writes nothing",
+  "files": {
+    "input.pptx": { "fixture": "slides.pptx" },
+    "ops.json": { "fixture": "slides.ops" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "ops.json", "--out", "copy.zzz", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "--out 'copy.zzz' has the .zzz extension, and an edit writes the format of its input, pptx. Must be one of: .pptx." },
+          { "path": "error.details.option", "equals": "--out" },
+          { "path": "error.details.format", "equals": "pptx" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "ops.json", "--out", "copy", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "--out 'copy' has no extension, and an edit writes the format of its input, pptx. Must be one of: .pptx." },
+          { "path": "error.details.option", "equals": "--out" },
+          { "path": "error.details.format", "equals": "pptx" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["slides", "edit", "input.pptx", "--ops", "ops.json", "--out", "copy.odp", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "--out 'copy.odp' has the .odp extension, and an edit writes the format of its input, pptx. Must be one of: .pptx." },
+          { "path": "error.details.format", "equals": "pptx" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    }
+  ]
+}
