@@ -36,10 +36,7 @@ public sealed record Warning
     [MinLength(1)]
     public string? Location { get; init; }
 
-    /// <summary>
-    /// Structured context, with the keys an error's details use, such as the <c>id</c> and
-    /// <c>op</c> of the operation a warning is about.
-    /// </summary>
+    /// <summary>Structured context, with the keys an error's details use.</summary>
     public JsonObject? Details { get; init; }
 
     /// <summary>
@@ -60,14 +57,10 @@ public static class WarningCodes
     /// <summary>The input was encrypted and the output is not: its format cannot hold the encryption.</summary>
     public static readonly WarningCode EncryptionRemoved = new("ENCRYPTION_REMOVED");
 
-    /// <summary>A list inside a result was capped; <c>details.list</c> names the list.</summary>
-    public static readonly WarningCode ListTruncated = new("LIST_TRUNCATED");
-
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<WarningCode> All { get; } =
     [
         RemoteResourcesBlocked,
         EncryptionRemoved,
-        ListTruncated,
     ];
 }

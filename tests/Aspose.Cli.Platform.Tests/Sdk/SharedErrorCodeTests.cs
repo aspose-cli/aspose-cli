@@ -24,25 +24,16 @@ public sealed class SharedErrorCodeTests
     }
 
     /// <summary>
-    /// The free-text factories of <c>FEATURE_UNSUPPORTED</c> say which kind of refusal they are
-    /// in <c>details.reason</c>, so a caller can tell them apart without reading the message.
+    /// A resource the CLI does not let the engine read is <c>FEATURE_UNSUPPORTED</c> and says so in
+    /// <c>details.reason</c>, so a caller can tell it without reading the message.
     /// </summary>
     [Fact]
-    public void FeatureUnsupported_FreeTextFactoriesStateTheirReason()
+    public void ResourceRefused_StatesItsReason()
     {
-        (CliException Error, string Reason)[] cases =
-        [
-            (CliErrors.ResourceRefused("The input names a network address."), "resource-refused"),
-            (CliErrors.ContentUnsupported("The table is too large."), "content-too-large"),
-            (CliErrors.EnvironmentUnsupported("The font registry is unreadable."), "environment"),
-            (CliErrors.EngineDefect("The engine writes invalid JSON."), "engine-defect"),
-        ];
+        CliException error = CliErrors.ResourceRefused("The input names a network address.");
 
-        Assert.All(cases, static item =>
-        {
-            Assert.Equal(ErrorCodes.FeatureUnsupported, item.Error.Code);
-            Assert.Equal(item.Reason, item.Error.Details!["reason"]!.GetValue<string>());
-        });
+        Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
+        Assert.Equal("resource-refused", error.Details!["reason"]!.GetValue<string>());
     }
 
     [Fact]

@@ -860,14 +860,6 @@
           "detailsSchemaId": "v3/common/not-found-details"
         },
         {
-          "code": "BOOKMARK_NOT_FOUND",
-          "owner": "common",
-          "severity": "error",
-          "exitCode": 4,
-          "category": "validation",
-          "detailsSchemaId": "v3/common/not-found-details"
-        },
-        {
           "code": "ENCRYPTION_REMOVED",
           "owner": "common",
           "severity": "warning",
@@ -1003,13 +995,6 @@
           "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
-          "code": "LIST_TRUNCATED",
-          "owner": "common",
-          "severity": "warning",
-          "category": "warning",
-          "detailsSchemaId": "v3/common/diagnostic-details"
-        },
-        {
           "code": "OPERATION_TIMEOUT",
           "owner": "common",
           "severity": "error",
@@ -1129,14 +1114,6 @@
           "detailsSchemaId": "v3/common/diagnostic-details"
         },
         {
-          "code": "STYLE_NOT_FOUND",
-          "owner": "common",
-          "severity": "error",
-          "exitCode": 4,
-          "category": "validation",
-          "detailsSchemaId": "v3/common/not-found-details"
-        },
-        {
           "code": "USAGE_ERROR",
           "owner": "common",
           "severity": "error",
@@ -1252,9 +1229,6 @@
             "availableCount": {
               "description": "How many names or values exist or are accepted."
             },
-            "bookmarks": {
-              "description": "The outline addresses of the bookmarks a warning is about, such as 1/2."
-            },
             "diagnosticId": {
               "description": "The host diagnostic id of a startup or process failure."
             },
@@ -1288,17 +1262,11 @@
             "field": {
               "description": "The operation field the error is about."
             },
-            "fields": {
-              "description": "The full names of the form fields the error is about."
-            },
             "format": {
               "description": "The format id the error is about."
             },
             "height": {
               "description": "The height of a render, in pixels."
-            },
-            "id": {
-              "description": "The id of the failing operation, as its applied[] entry states it."
             },
             "index": {
               "description": "The position of the failing operation in an object table batch's ops, from 0."
@@ -1306,14 +1274,8 @@
             "limit": {
               "description": "The budget's limit, in unit."
             },
-            "list": {
-              "description": "The result field holding a list that was capped, such as outline."
-            },
             "notSupplied": {
               "description": "The resources a document names that the CLI's resource loader supplied no bytes for, each as {reference, reason}: the reference as the document writes it and why nothing was supplied, such as a network address."
-            },
-            "offset": {
-              "description": "The byte offset of the problem in an input."
             },
             "option": {
               "description": "The option the error is about, such as --pages."
@@ -1329,9 +1291,6 @@
             },
             "phase": {
               "description": "The stage of processing that failed."
-            },
-            "range": {
-              "description": "The range or selection as the caller wrote it."
             },
             "reason": {
               "description": "Why the value or file was refused, as a short kebab-case token such as unknown-field; the message explains it.",
@@ -1836,7 +1795,7 @@
     "v3/common/not-found-details": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v3/common/not-found-details.schema.json",
-      "description": "Details of an error whose code names a target that does not exist: a part the document does not contain, or a file. They state what was requested and what exists, so the caller can correct the request without another inspection. Operation errors add the operation's id and op.",
+      "description": "Details of an error whose code names a target that does not exist: a part the document does not contain, or a file. They state what was requested and what exists, so the caller can correct the request without another inspection. An object table's errors add the operation's position and the address.",
       "type": "object",
       "required": [
         "subject",
@@ -1865,10 +1824,6 @@
           "description": "Where the missing file was configured, such as an environment variable; present when a setting names it.",
           "type": "string"
         },
-        "sheet": {
-          "description": "The worksheet whose targets available lists; present for a target looked up on one sheet.",
-          "type": "string"
-        },
         "available": {
           "description": "The names that exist, in document order; present for named targets and truncated to 50 when availableCount is larger.",
           "type": "array",
@@ -1876,15 +1831,6 @@
           "items": {
             "type": "string"
           }
-        },
-        "id": {
-          "description": "The id of the failing operation, as its applied[] entry states it; present only for an operation error.",
-          "type": "string",
-          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
-        },
-        "op": {
-          "description": "The failing operation's op name; present only for an operation error that states one.",
-          "type": "string"
         },
         "index": {
           "description": "The position of the failing operation in an object table batch, from 0; present only for such an operation.",
@@ -2668,7 +2614,7 @@
           "minLength": 1
         },
         "details": {
-          "description": "Structured context, with the keys an error's details use, such as the id and op of the operation a warning is about.",
+          "description": "Structured context, with the keys an error's details use.",
           "type": "object"
         },
         "affectsCompleteness": {

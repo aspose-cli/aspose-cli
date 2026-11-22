@@ -79,12 +79,6 @@ public static partial class ErrorCodes
 
     public static readonly ErrorCode PageNotFound = ErrorCode.NotFound("PAGE_NOT_FOUND");
 
-    /// <summary>A bookmark named by the caller does not exist (documents with bookmarks share it).</summary>
-    public static readonly ErrorCode BookmarkNotFound = ErrorCode.NotFound("BOOKMARK_NOT_FOUND");
-
-    /// <summary>A named style does not exist in the document.</summary>
-    public static readonly ErrorCode StyleNotFound = ErrorCode.NotFound("STYLE_NOT_FOUND");
-
     /// <summary>An address of the object table names an object the document does not contain.</summary>
     public static readonly ErrorCode AddressNotFound = ErrorCode.NotFound("ADDRESS_NOT_FOUND");
 
@@ -173,8 +167,6 @@ public static partial class ErrorCodes
         RenderFailed,
         OpsInvalid,
         PageNotFound,
-        BookmarkNotFound,
-        StyleNotFound,
         AddressNotFound,
         AddressAmbiguous,
         ExtractBudgetExceeded,
