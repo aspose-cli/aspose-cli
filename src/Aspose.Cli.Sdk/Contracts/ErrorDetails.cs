@@ -24,7 +24,8 @@ public sealed record DiagnosticDetails
 /// <summary>
 /// Details of an error whose code names a target that does not exist: a part the document does
 /// not contain, or a file. They state what was requested and what exists, so the caller can
-/// correct the request without another inspection. Operation errors add the operation's id and op.
+/// correct the request without another inspection. An object table's errors add the operation's
+/// position and the address.
 /// </summary>
 [SchemaId(SchemaName)]
 public sealed record NotFoundDetails
@@ -50,22 +51,12 @@ public sealed record NotFoundDetails
     /// <summary>Where the missing file was configured, such as an environment variable; present when a setting names it.</summary>
     public string? Source { get; init; }
 
-    /// <summary>The worksheet whose targets available lists; present for a target looked up on one sheet.</summary>
-    public string? Sheet { get; init; }
-
     /// <summary>
     /// The names that exist, in document order; present for named targets and truncated to 50
     /// when availableCount is larger.
     /// </summary>
     [MaxItems(50)]
     public IReadOnlyList<string>? Available { get; init; }
-
-    /// <summary>The id of the failing operation, as its applied[] entry states it; present only for an operation error.</summary>
-    [Pattern("^[A-Za-z][A-Za-z0-9._-]{0,63}$")]
-    public string? Id { get; init; }
-
-    /// <summary>The failing operation's op name; present only for an operation error that states one.</summary>
-    public string? Op { get; init; }
 
     /// <summary>The position of the failing operation in an object table batch, from 0; present only for such an operation.</summary>
     [Minimum(0)]

@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Licensing;
 
@@ -17,29 +16,6 @@ public static class EnvelopeParts
     public static LicenseInfo? License(LicenseState state) => state == LicenseState.Licensed
         ? null
         : new LicenseInfo { Mode = state.ToContractName() };
-
-    /// <summary>
-    /// Discloses a list inside a result that holds only its first <paramref name="returned"/>
-    /// of <paramref name="total"/> entries, so no result is cut short silently. <c>details.list</c>
-    /// names the list, <c>details.limit</c> the entries it holds and <c>details.actual</c> those that exist.
-    /// </summary>
-    /// <param name="list">The result field that was capped, e.g. <c>outline</c>.</param>
-    /// <param name="returned">How many entries the list holds.</param>
-    /// <param name="total">How many entries exist.</param>
-    public static Warning ListTruncated(string list, int returned, int total)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(list);
-        return new Warning(WarningCodes.ListTruncated, $"'{list}' lists the first {returned} of {total} entries.")
-        {
-            Details = new JsonObject
-            {
-                ["list"] = list,
-                ["limit"] = returned,
-                ["actual"] = total,
-                ["unit"] = "entries",
-            },
-        };
-    }
 
     /// <summary>Combines optional warning collections without emitting an empty list.</summary>
     public static IReadOnlyList<Warning>? CombineWarnings(

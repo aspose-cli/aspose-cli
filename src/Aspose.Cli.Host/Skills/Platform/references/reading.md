@@ -39,9 +39,7 @@ A read or a search returns one window and reports it in `window`
 - `total` is absent when the command stopped before counting every unit, as a
   search usually does.
 
-`--help` gives each command's budget options with their defaults. A list
-inside a result that reaches its cap is reported with a `LIST_TRUNCATED`
-warning.
+`--help` gives each command's budget options with their defaults.
 
 ## Rendering
 

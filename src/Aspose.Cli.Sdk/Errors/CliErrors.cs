@@ -159,31 +159,6 @@ public static partial class CliErrors
         details: new JsonObject { ["path"] = path });
 
     /// <summary>
-    /// A protection inside a document, such as a workbook's structure or a document's editing
-    /// restriction, that has a password the operation did not supply or supplied wrongly. It is
-    /// the same mistake as a file's open password, so it has the same codes.
-    /// </summary>
-    /// <param name="passwordGiven">Whether the operation supplied a password.</param>
-    /// <param name="target">What is protected, such as <c>the workbook structure</c>.</param>
-    /// <param name="operationField">The operation field that supplies the password.</param>
-    /// <param name="innerException">The engine's refusal, if any.</param>
-    public static CliException ProtectionPassword(
-        bool passwordGiven,
-        string target,
-        string operationField,
-        Exception? innerException = null)
-    {
-        ErrorCode code = passwordGiven ? ErrorCodes.PasswordInvalid : ErrorCodes.PasswordRequired;
-        return CliException.Create(
-            code,
-            passwordGiven
-                ? $"The provided password does not unprotect {target}."
-                : $"The protection of {target} has a password.",
-            details: new JsonObject { ["target"] = target, ["field"] = operationField },
-            innerException: innerException);
-    }
-
-    /// <summary>
     /// An encrypted file the command opens with no password at all, such as a template:
     /// <c>PASSWORD_REQUIRED</c>.
     /// </summary>
@@ -347,17 +322,6 @@ public static partial class CliErrors
         },
         innerException: inner);
 
-    /// <summary>
-    /// A text file that is not UTF-8 and names no encoding: read as UTF-8, its invalid bytes
-    /// would be replaced, so it is refused rather than imported with altered text.
-    /// </summary>
-    /// <param name="path">The text file.</param>
-    /// <param name="offset">The offset of the first invalid byte.</param>
-    public static CliException InputEncodingInvalid(string path, long offset) => CliException.Create(
-        ErrorCodes.InputEncodingInvalid,
-        $"'{Path.GetFileName(path)}' is not UTF-8 text (invalid byte at offset {offset}); read as UTF-8, its text would be replaced.",
-        details: new JsonObject { ["path"] = path, ["offset"] = offset });
-
     public static CliException RenderTooLarge(long width, long height, int? dpi, long maxPixels, string? target = null)
     {
         string megabytes = ((double)width * height * 4d / 1_048_576d)
@@ -409,24 +373,6 @@ public static partial class CliErrors
             ["timeoutSeconds"] = seconds,
             ["phase"] = phase,
         });
-
-    /// <summary>
-    /// The content recognizers that choose a file's product ran past their shared routing
-    /// budget, a fixed bound.
-    /// </summary>
-    /// <param name="budget">The routing budget that ran out.</param>
-    public static CliException FileRoutingTimeout(TimeSpan budget)
-    {
-        int seconds = Math.Max(1, (int)Math.Ceiling(budget.TotalSeconds));
-        return CliException.Create(
-            ErrorCodes.OperationTimeout,
-            $"Recognizing the file's content to choose its product did not finish within the {seconds}s routing budget.",
-            details: new JsonObject
-            {
-                ["timeoutSeconds"] = seconds,
-                ["phase"] = "file-routing",
-            });
-    }
 
     /// <summary>
     /// A regular expression the caller supplied ran past its execution budget, which bounds
@@ -711,39 +657,6 @@ public static partial class CliErrors
         message,
         details: new JsonObject { ["reason"] = "resource-refused" });
 
-    /// <summary>
-    /// Input content that the output cannot hold, such as a table larger than a slide table
-    /// may be. The caller has to restructure the content. <c>details.reason</c> is
-    /// <c>content-too-large</c>.
-    /// </summary>
-    /// <param name="message">What the content is and the limit it exceeds.</param>
-    public static CliException ContentUnsupported(string message) => CliException.Create(
-        ErrorCodes.FeatureUnsupported,
-        message,
-        details: new JsonObject { ["reason"] = "content-too-large" });
-
-    /// <summary>
-    /// Content the document engine would write wrong, a confirmed defect of the engine that
-    /// <c>KNOWN-ISSUES.md</c> records, so the command refuses it before writing anything.
-    /// <c>details.reason</c> is <c>engine-defect</c>.
-    /// </summary>
-    /// <param name="message">What the engine would write wrong, and for which content.</param>
-    public static CliException EngineDefect(string message) => CliException.Create(
-        ErrorCodes.FeatureUnsupported,
-        message,
-        details: new JsonObject { ["reason"] = "engine-defect" });
-
-    /// <summary>
-    /// The local environment a document engine reads, such as the font registry, holds
-    /// something the engine cannot read, so every document would fail the same way.
-    /// <c>details.reason</c> is <c>environment</c>.
-    /// </summary>
-    /// <param name="message">What in the environment the engine cannot read.</param>
-    public static CliException EnvironmentUnsupported(string message) => CliException.Create(
-        ErrorCodes.FeatureUnsupported,
-        message,
-        details: new JsonObject { ["reason"] = "environment" });
-
     public static CliException LicenseFileNotFound(string path, string source) => CliException.Create(
         ErrorCodes.LicenseFileNotFound,
         $"License file configured via {source} does not exist: {path}",
@@ -767,20 +680,6 @@ public static partial class CliErrors
         details: new JsonObject { ["source"] = source },
         innerException: inner,
         explanation: reason);
-
-    /// <summary>
-    /// A command refuses what evaluation mode would silently get wrong, such as an export the
-    /// engine would write from another worksheet than the one asked for. A limit the engine itself raises is reported by the SDK
-    /// alone, from its product's evaluation profile; no product translates an engine exception.
-    /// </summary>
-    /// <param name="message">What evaluation mode allows and what it stopped.</param>
-    /// <param name="details">The facts of the limit, if any.</param>
-    public static CliException EvaluationLimit(
-        string message,
-        JsonObject? details = null) => CliException.Create(
-        ErrorCodes.EvaluationLimit,
-        message,
-        details: details);
 
     /// <summary>
     /// The error for an evaluation limit the engine raised, which the SDK write pipeline alone
@@ -811,36 +710,11 @@ public static partial class CliErrors
     /// <param name="subject">What was looked up, e.g. <c>sheet</c> or <c>bookmark</c>.</param>
     /// <param name="requested">The name as the caller wrote it.</param>
     /// <param name="available">Every name of this kind in document order.</param>
-    /// <param name="sheet">The worksheet the names are of, when the target is looked up on one sheet.</param>
     public static CliException NotFound(
         ErrorCode code,
         string subject,
         string requested,
-        IReadOnlyCollection<string> available,
-        string? sheet = null) => NotFoundIn(code, subject, requested, available, listInMessage: true, sheet);
-
-    /// <summary>
-    /// The error for a text a search did not find, such as a heading or a find text. The texts
-    /// searched are not names to choose from, so the message does not list them; the details
-    /// state them as <see cref="NotFound"/> does.
-    /// </summary>
-    /// <param name="code">A code declared with <see cref="ErrorCode.NotFound"/>.</param>
-    /// <param name="subject">What was searched for, e.g. <c>text</c> or <c>heading</c>.</param>
-    /// <param name="requested">The text as the caller wrote it.</param>
-    /// <param name="searched">The texts searched, in document order.</param>
-    public static CliException TextNotFound(
-        ErrorCode code,
-        string subject,
-        string requested,
-        IReadOnlyCollection<string> searched) => NotFoundIn(code, subject, requested, searched, listInMessage: false);
-
-    private static CliException NotFoundIn(
-        ErrorCode code,
-        string subject,
-        string requested,
-        IReadOnlyCollection<string> available,
-        bool listInMessage,
-        string? sheet = null)
+        IReadOnlyCollection<string> available)
     {
         RequireNotFoundCode(code);
         ArgumentException.ThrowIfNullOrWhiteSpace(subject);
@@ -853,10 +727,9 @@ public static partial class CliErrors
             ["subject"] = subject,
             ["requested"] = requested,
             ["availableCount"] = available.Count,
-            ["sheet"] = sheet,
         };
         mistake.WriteTo(details);
-        string message = listInMessage && available.Count > 0
+        string message = available.Count > 0
             ? $"No {subject} '{requested}' was found. {mistake.MustBeOneOf()}"
             : $"No {subject} '{requested}' was found.";
         return CliException.Create(code, message, details);

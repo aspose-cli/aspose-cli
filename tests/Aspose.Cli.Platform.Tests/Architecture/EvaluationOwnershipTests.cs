@@ -190,7 +190,10 @@ public sealed partial class EvaluationOwnershipTests
             + Environment.NewLine + string.Join(Environment.NewLine, sdkTranslations));
     }
 
-    /// <summary>The SDK factory name of the <c>EVALUATION_LIMIT</c> error.</summary>
+    /// <summary>
+    /// The name the SDK's builders of the <c>EVALUATION_LIMIT</c> error carry, as
+    /// <c>EngineEvaluationLimit</c> and <c>EvaluationLimitOf</c> do.
+    /// </summary>
     private const string EvaluationLimitFactory = "EvaluationLimit";
 
     private static string? BaseName(TypeSyntax type) => type switch
