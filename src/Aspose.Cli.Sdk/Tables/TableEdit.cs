@@ -74,8 +74,7 @@ public static class TableEdit
         ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(documents);
         ArgumentNullException.ThrowIfNull(request);
-        // An evaluation limit the engine reaches is reported as one, before the guard calls it the engine's error.
-        return TableErrors.Guard(documents.Table, "Editing the document", () => outputs.ReportingEvaluationLimits(() => RunCore(outputs, documents, request)));
+        return TableErrors.Guard(documents.Table, "Editing the document", () => RunCore(outputs, documents, request));
     }
 
     private static TableEditOutcome RunCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableEditRequest request)

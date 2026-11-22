@@ -132,10 +132,10 @@ public abstract class OutputPipeline : ILicenseState
 
     /// <summary>
     /// Runs a command handler or a view call of the product, and reports an evaluation limit
-    /// the engine raised in it as <c>EVALUATION_LIMIT</c>: in evaluation mode, an exception that
-    /// is not already a CLI error and that the product's evaluation profile recognizes. This is
-    /// the one place that translates an engine's evaluation exception; the error keeps it as its
-    /// inner exception.
+    /// the engine raised in it as <c>EVALUATION_LIMIT</c>: in evaluation mode, an engine exception
+    /// that the product's evaluation profile recognizes, whether it escaped as it was thrown or
+    /// as the <c>ENGINE_ERROR</c> that reports it. This is the one place that translates an
+    /// engine's evaluation exception; the error keeps it as its inner exception.
     /// </summary>
     /// <param name="run">The handler or view call.</param>
     internal T ReportingEvaluationLimits<T>(Func<T> run)
@@ -153,15 +153,21 @@ public abstract class OutputPipeline : ILicenseState
     }
 
     /// <summary>
-    /// The <c>EVALUATION_LIMIT</c> error to report for <paramref name="exception"/>: the engine's
-    /// limit its profile recognizes, or a product's own refusal with the request named, or null
-    /// to let the exception through unchanged.
+    /// The <c>EVALUATION_LIMIT</c> error to report for <paramref name="exception"/>: the limit the
+    /// profile recognizes in the engine's exception, which an <c>ENGINE_ERROR</c> holds as its
+    /// inner exception, through every <c>ENGINE_ERROR</c> that restates it; or null to let the
+    /// exception through unchanged, as any other CLI error.
     /// </summary>
-    private CliException? EvaluationLimitOf(Exception exception) => exception switch
+    private CliException? EvaluationLimitOf(Exception exception)
     {
-        CliException => null,
-        _ => EngineEvaluationLimitOf(exception),
-    };
+        Exception? thrown = exception;
+        while (thrown is CliException error && error.Code == ErrorCodes.EngineError)
+        {
+            thrown = error.InnerException;
+        }
+
+        return thrown is null or CliException ? null : EngineEvaluationLimitOf(thrown);
+    }
 
     /// <summary>The <c>EVALUATION_LIMIT</c> error for an engine exception, or null when it reports no evaluation limit.</summary>
     private protected abstract CliException? EngineEvaluationLimitOf(Exception exception);
