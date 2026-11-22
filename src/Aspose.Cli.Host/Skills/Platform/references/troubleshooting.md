@@ -87,8 +87,9 @@ with a `code`, a `message` and, when there are any, `details`.
 
 - `ENGINE_ERROR`: the engine threw while it worked; `details.engineException`
   and `details.engineMessage` give its exception as it is.
-- `RENDER_FAILED`: the engine failed while drawing content it can otherwise
-  read. `RENDER_TOO_LARGE`: the image is over the pixel budget.
+- `RENDER_FAILED`: the engine lays out no page for a sheet the render
+  includes, so there is nothing to draw; `details.sheet` names it.
+  `RENDER_TOO_LARGE`: the image is over the pixel budget.
 - Slides rendering needs the Microsoft Visual C++ Redistributable (x64),
   which the package does not carry: https://aka.ms/vs/17/release/vc_redist.x64.exe.
 - `OPERATION_TIMEOUT` with `details.phase` `regex`: a regular expression you

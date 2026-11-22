@@ -1,0 +1,22 @@
+{
+  "name": "cells render of an empty sheet, which the engine lays out on no page, is RENDER_FAILED, exit 6, whose message says so and whose details name the sheet and hold no engineMessage, since the engine gave none; nothing is written",
+  "steps": [
+    { "args": ["cells", "create", "book.xlsx"], "expect": { "exitCode": 0 } },
+    {
+      "args": ["cells", "render", "book.xlsx", "--sheet", "Sheet1", "--out", "book.png"],
+      "expect": {
+        "exitCode": 6,
+        "error": "RENDER_FAILED",
+        "json": [
+          {
+            "path": "error.message",
+            "equals": "Sheet 'Sheet1' could not be rendered: the engine lays out no page for it (SheetRender.PageCount is 0)."
+          },
+          { "path": "error.details.sheet", "equals": "Sheet1" },
+          { "path": "error.details.engineMessage", "exists": false }
+        ],
+        "files": { "absent": ["book.png"], "nothingWritten": true }
+      }
+    }
+  ]
+}

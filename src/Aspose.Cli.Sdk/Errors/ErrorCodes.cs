@@ -67,10 +67,9 @@ public static partial class ErrorCodes
     public static readonly ErrorCode RenderTooLarge = new("RENDER_TOO_LARGE", ExitCode.ValidationError);
 
     /// <summary>
-    /// The engine failed while rasterizing selected content. The input can
-    /// still be structurally valid; this remains distinct from INTERNAL,
-    /// which is reserved for CLI defects. Content the engine cannot render is
-    /// unsupported content, so it exits as a format error (6).
+    /// The engine gives nothing to render for selected content it reads, such as a sheet it lays
+    /// out on no page. Content the engine does not render is unsupported content, so it exits as
+    /// a format error (6).
     /// </summary>
     public static readonly ErrorCode RenderFailed = new("RENDER_FAILED", ExitCode.FormatError);
 
