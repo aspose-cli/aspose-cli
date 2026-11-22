@@ -5,6 +5,9 @@ using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.TestKit;
+using System.Runtime.Versioning;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using Xunit;
 
 namespace Aspose.Cli.Sdk.Tests.IO;
@@ -352,6 +355,46 @@ public sealed class SafeFileWriterTests : IDisposable
 
         Assert.Equal(ErrorCodes.FileNotFound, error.Code);
         Assert.False(File.Exists(input));
+    }
+
+    /// <summary>
+    /// A target whose access rules deny the current user writing its attributes, and that is not
+    /// read-only, is replaced, whether it is another file or, as in an in-place edit, the input
+    /// itself, and its folder holds what it held before.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [SupportedOSPlatform("windows")]
+    public void Write_TargetThatDeniesAttributeWrites_IsReplacedAndLeavesItsFolderAsItWas(bool inPlace)
+    {
+        Requires.Windows();
+
+        string target = _temp.File("out.txt");
+        File.WriteAllText(target, "original");
+        var deny = new FileSystemAccessRule(
+            WindowsIdentity.GetCurrent().User!, FileSystemRights.WriteAttributes, AccessControlType.Deny);
+        FileSecurity denying = new FileInfo(target).GetAccessControl(AccessControlSections.Access);
+        denying.AddAccessRule(deny);
+        new FileInfo(target).SetAccessControl(denying);
+        try
+        {
+            FileWritePrecondition? input = inPlace ? FileWritePrecondition.Capture(target) : null;
+
+            _writer.Write(target, overwrite: true, input, temp => File.WriteAllText(temp, "replacement"));
+
+            Assert.Equal("replacement", File.ReadAllText(target));
+            Assert.Equal([target], Directory.EnumerateFileSystemEntries(_temp.Path));
+        }
+        finally
+        {
+            foreach (string file in Directory.EnumerateFiles(_temp.Path, "*", SearchOption.AllDirectories))
+            {
+                FileSecurity rules = new FileInfo(file).GetAccessControl(AccessControlSections.Access);
+                rules.RemoveAccessRuleSpecific(deny);
+                new FileInfo(file).SetAccessControl(rules);
+            }
+        }
     }
 
     [Fact]
