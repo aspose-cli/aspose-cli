@@ -1,5 +1,4 @@
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Output;
@@ -115,7 +114,7 @@ public static class TableRead
         ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(documents);
         ArgumentNullException.ThrowIfNull(request);
-        return TableErrors.Guard(documents.Table, "Reading the document", () => RunCore(outputs, documents, request));
+        return TableErrors.Guard("Reading the document", () => RunCore(outputs, documents, request));
     }
 
     private static TableReadOutcome RunCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableReadRequest request)
@@ -148,7 +147,7 @@ public static class TableRead
         for (int position = start; position < selected.Length && objects.Count < request.MaxObjects; position++)
         {
             (object item, ObjectKind kind, string address) = selected[position];
-            objects.Add(new TableObject { At = address, Kind = kind.Name, Props = Read(table, kind, item, address) });
+            objects.Add(new TableObject { At = address, Kind = kind.Name, Props = Read(kind, item, address) });
         }
 
         int next = start + objects.Count;
@@ -179,7 +178,7 @@ public static class TableRead
         ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(documents);
         ArgumentNullException.ThrowIfNull(request);
-        return TableErrors.Guard(documents.Table, "Searching the document", () => SearchCore(outputs, documents, request));
+        return TableErrors.Guard("Searching the document", () => SearchCore(outputs, documents, request));
     }
 
     private static TableSearchOutcome SearchCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableSearchRequest request)
@@ -195,7 +194,7 @@ public static class TableRead
             foreach ((ObjectKind _, string row) in table.TextRows.Where(text => text.Kind == kind))
             {
                 TableRow? target = kind.RowsOf(item).FirstOrDefault(candidate => candidate.Name == row);
-                if (target is null || ReadRow(table, target, item, address)?.GetValue<string>() is not { } text)
+                if (target is null || ReadRow(target, item, address)?.GetValue<string>() is not { } text)
                 {
                     continue;
                 }
@@ -211,7 +210,7 @@ public static class TableRead
 
             foreach ((ObjectKind _, string row, Func<object, TextSearch, IEnumerable<TableMatch>> search) in table.EngineSearches.Where(engine => engine.Kind == kind))
             {
-                foreach (TableMatch match in AddressResolver.Engine(table, address, () => EngineMatches(search, item, request.Query.Text)))
+                foreach (TableMatch match in AddressResolver.Engine(address, () => search(item, request.Query.Text).ToArray()))
                 {
                     if (!hits.Offer(() => new TableHit { At = address, Row = row, Text = match.Text, Rect = match.Rect }))
                     {
@@ -260,9 +259,9 @@ public static class TableRead
     {
         (Placement Placement, object Child)[] children = [.. table.Placements
             .Where(candidate => candidate.Parent == kind && (descend is null || descend(candidate)))
-            .SelectMany(placement => AddressResolver.Engine(table, address, () => placement.List(item).ToArray()).Select(child => (placement, child)))];
+            .SelectMany(placement => AddressResolver.Engine(address, () => placement.List(item).ToArray()).Select(child => (placement, child)))];
         return table.OrderOf(kind) is { } position
-            ? AddressResolver.Engine(table, address, () => children.OrderBy(found => position(item, found.Child)).ToArray())
+            ? AddressResolver.Engine(address, () => children.OrderBy(found => position(item, found.Child)).ToArray())
             : children;
     }
 
@@ -349,7 +348,7 @@ public static class TableRead
 
         return new TableInventory { Read = read, NotRead = notRead };
     }
-    private static JsonObject Read(DocumentTable table, ObjectKind kind, object item, string address)
+    private static JsonObject Read(ObjectKind kind, object item, string address)
     {
         try
         {
@@ -357,17 +356,17 @@ public static class TableRead
         }
         catch (RowReadException failure)
         {
-            throw TableErrors.RowRead(table, null, address, failure);
+            throw TableErrors.RowRead(null, address, failure);
         }
     }
 
-    private static JsonNode? ReadRow(DocumentTable table, TableRow row, object item, string address)
+    private static JsonNode? ReadRow(TableRow row, object item, string address)
     {
         try
         {
             return row.Read(item);
         }
-        catch (Exception exception) when (exception is not CliException and not OperationCanceledException && TableErrors.FromEngine(exception, table.Engine))
+        catch (Exception exception) when (ExceptionOrigin.FromEngine(exception))
         {
             throw TableErrors.Engine(null, address, row.Name, exception);
         }
@@ -388,20 +387,4 @@ public static class TableRead
     /// <summary>Checks an address an option gives, before any document is opened.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> naming the option.</exception>
     public static void CheckAddress(DocumentTable table, string text, string option) => _ = Parse(table, text, option);
-
-    /// <summary>
-    /// The matches of an engine's search. The regular expression it runs is the CLI's, with the
-    /// CLI's time budget, so running out of that time is the CLI's regex timeout, not the engine's error.
-    /// </summary>
-    private static TableMatch[] EngineMatches(Func<object, TextSearch, IEnumerable<TableMatch>> search, object item, TextSearch query)
-    {
-        try
-        {
-            return [.. search(item, query)];
-        }
-        catch (RegexMatchTimeoutException exception)
-        {
-            throw CliErrors.RegexTimeout(exception);
-        }
-    }
 }

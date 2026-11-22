@@ -6,21 +6,16 @@ namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>
 /// The one boundary for failures that escape a product without a <see cref="CliException"/>.
-/// The stack says who failed: when the first frame owned by neither .NET nor this CLI
-/// belongs to a third-party library (a document engine, its imaging stack), the engine failed,
-/// reported with the shared <see cref="EngineErrors.EngineFailed"/> wording. A failure first raised
-/// by CLI code stays an internal error, so our own defects are never reported as document problems.
+/// The stack says who failed (<see cref="ExceptionOrigin.FromEngine"/>): a failure the engine
+/// raised is reported with the shared <see cref="EngineErrors.EngineFailed"/> wording, named after
+/// the product it passed through. A failure first raised by CLI code stays an internal error, so
+/// our own defects are never reported as document problems.
 /// </summary>
 internal sealed class EngineFailureTranslator
 {
-    private readonly IReadOnlySet<Assembly> _own;
     private readonly IReadOnlyDictionary<Assembly, string> _products;
 
-    internal EngineFailureTranslator(IReadOnlySet<Assembly> ownAssemblies, IReadOnlyDictionary<Assembly, string> productNames)
-    {
-        _own = ownAssemblies;
-        _products = productNames;
-    }
+    internal EngineFailureTranslator(IReadOnlyDictionary<Assembly, string> productNames) => _products = productNames;
 
     internal static EngineFailureTranslator Create(ProductCatalog catalog)
     {
@@ -30,16 +25,7 @@ internal sealed class EngineFailureTranslator
         {
             products[package.ResourceAssembly] = catalog.Get(package.ProductId).Manifest.DisplayName;
         }
-        var own = new HashSet<Assembly>(products.Keys)
-        {
-            typeof(CliException).Assembly,
-            typeof(EngineFailureTranslator).Assembly,
-        };
-        if (Assembly.GetEntryAssembly() is { } launcher)
-        {
-            own.Add(launcher);
-        }
-        return new EngineFailureTranslator(own, products);
+        return new EngineFailureTranslator(products);
     }
 
     /// <summary>Returns the public error for an engine failure, or null for an internal one.</summary>
@@ -63,7 +49,7 @@ internal sealed class EngineFailureTranslator
             return null;
         }
 
-        if (ExceptionOrigin.IsThirdParty(exception, _own))
+        if (ExceptionOrigin.FromEngine(exception))
         {
             return EngineErrors.EngineFailed(product, exception);
         }

@@ -11,7 +11,6 @@ public sealed class EngineFailureTranslatorTests
 {
     // This test assembly plays a product; xunit.assert plays its third-party engine.
     private static readonly EngineFailureTranslator Translator = new(
-        new HashSet<Assembly> { typeof(EngineFailureTranslatorTests).Assembly, typeof(CliException).Assembly },
         new Dictionary<Assembly, string> { [typeof(EngineFailureTranslatorTests).Assembly] = "Sample" });
 
     [Fact]
@@ -35,9 +34,7 @@ public sealed class EngineFailureTranslatorTests
     [Fact]
     public void FailureOutsideEveryProduct_IsNotTranslated()
     {
-        var translator = new EngineFailureTranslator(
-            new HashSet<Assembly> { typeof(CliException).Assembly },
-            new Dictionary<Assembly, string>());
+        var translator = new EngineFailureTranslator(new Dictionary<Assembly, string>());
 
         Assert.Null(translator.Translate(Caught(static () => Assert.Fail("anything"))));
     }

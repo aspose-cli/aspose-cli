@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
@@ -137,55 +135,17 @@ public static class TableErrors
             });
 
     /// <summary>
-    /// Whether the engine threw <paramref name="exception"/>, the one place that decides an
-    /// <c>ENGINE_ERROR</c>: from the frame that threw outward, the first frame of the engine's
-    /// assembly or of the CLI's own (<c>Aspose.Cli.*</c>) decides; a frame of neither, such as the
-    /// runtime's, is passed over. An exception the CLI's own code threw is no engine's, and is not
-    /// reported as one.
-    /// </summary>
-    /// <param name="exception">What was thrown.</param>
-    /// <param name="engine">The engine's assembly, the one the document type comes from.</param>
-    internal static bool FromEngine(Exception exception, Assembly engine)
-    {
-        ArgumentNullException.ThrowIfNull(exception);
-        ArgumentNullException.ThrowIfNull(engine);
-        foreach (StackFrame frame in new StackTrace(exception, fNeedFileInfo: false).GetFrames())
-        {
-            if (Assembly(frame) is not { } assembly)
-            {
-                continue;
-            }
-
-            if (assembly == engine)
-            {
-                return true;
-            }
-
-            if (assembly.GetName().Name?.StartsWith("Aspose.Cli", StringComparison.Ordinal) == true)
-            {
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-    // A frame without metadata (none in an untrimmed build) is passed over.
-    private static Assembly? Assembly(StackFrame frame) => frame.GetMethod()?.DeclaringType?.Assembly;
-
-    /// <summary>
     /// Runs a whole read, search or edit; what the engine throws outside any operation, row or
     /// lookup that reports it more closely, such as while counting the inventory or listing
     /// objects, is reported as the engine's. What the CLI's own code throws passes as it is.
     /// </summary>
-    internal static T Guard<T>(DocumentTable table, string doing, Func<T> run)
+    internal static T Guard<T>(string doing, Func<T> run)
     {
         try
         {
             return run();
         }
-        catch (Exception exception) when (exception is not CliException and not OperationCanceledException and not RowReadException
-            && FromEngine(exception, table.Engine))
+        catch (Exception exception) when (ExceptionOrigin.FromEngine(exception))
         {
             throw EngineDuring(doing, exception);
         }
@@ -195,10 +155,10 @@ public static class TableErrors
     /// The <c>ENGINE_ERROR</c> of a row the engine threw on while it was read; what the CLI's own
     /// code threw is thrown again as it was, with its own stack.
     /// </summary>
-    internal static CliException RowRead(DocumentTable table, int? index, string at, RowReadException failure)
+    internal static CliException RowRead(int? index, string at, RowReadException failure)
     {
         Exception thrown = failure.InnerException!;
-        if (!FromEngine(thrown, table.Engine))
+        if (!ExceptionOrigin.FromEngine(thrown))
         {
             ExceptionDispatchInfo.Throw(thrown);
         }
@@ -213,7 +173,6 @@ public static class TableErrors
     /// <param name="exception">The engine's exception.</param>
     internal static CliException Engine(int? index, string? at, string? row, Exception exception)
     {
-        string type = exception.GetType().FullName ?? exception.GetType().Name;
         string place = (at, row) switch
         {
             (null, null) => string.Empty,
@@ -222,18 +181,7 @@ public static class TableErrors
             _ => $" at {at}, row '{row}'",
         };
         string subject = index is null ? (place.Length == 0 ? "The engine call" : place.TrimStart() is var where && where.StartsWith("at ", StringComparison.Ordinal) ? $"At {where[3..]}" : $"Reading {where}") : $"ops[{index}]{place}";
-        return CliException.Create(
-            ErrorCodes.EngineError,
-            $"{subject}: the engine threw {type}: {exception.Message}",
-            new JsonObject
-            {
-                ["index"] = index,
-                ["at"] = at,
-                ["row"] = row,
-                ["engineException"] = type,
-                ["engineMessage"] = exception.Message,
-            },
-            innerException: exception);
+        return EngineErrors.EngineFailed(subject, exception, new JsonObject { ["index"] = index, ["at"] = at, ["row"] = row });
     }
 
     /// <summary>The <c>ENGINE_ERROR</c> of an engine call no operation makes, such as the save of the edited document.</summary>
