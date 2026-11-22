@@ -108,7 +108,7 @@ public static class TableRead
     public const string FromOption = "--from";
 
     /// <summary>Reads a window of objects.</summary>
-    public static TableReadOutcome Run<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableReadRequest request)
+    public static TableReadOutcome Run<TDocument>(OutputPipeline outputs, ITableDocuments<TDocument> documents, TableReadRequest request)
         where TDocument : class
     {
         ArgumentNullException.ThrowIfNull(outputs);
@@ -117,7 +117,7 @@ public static class TableRead
         return TableErrors.Guard("Reading the document", () => RunCore(outputs, documents, request));
     }
 
-    private static TableReadOutcome RunCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableReadRequest request)
+    private static TableReadOutcome RunCore<TDocument>(OutputPipeline outputs, ITableDocuments<TDocument> documents, TableReadRequest request)
         where TDocument : class
     {
         // The license is applied before the engine opens anything.
@@ -172,7 +172,7 @@ public static class TableRead
     }
 
     /// <summary>Searches the text rows the table names.</summary>
-    public static TableSearchOutcome Search<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableSearchRequest request)
+    public static TableSearchOutcome Search<TDocument>(OutputPipeline outputs, ITableDocuments<TDocument> documents, TableSearchRequest request)
         where TDocument : class
     {
         ArgumentNullException.ThrowIfNull(outputs);
@@ -181,7 +181,7 @@ public static class TableRead
         return TableErrors.Guard("Searching the document", () => SearchCore(outputs, documents, request));
     }
 
-    private static TableSearchOutcome SearchCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableSearchRequest request)
+    private static TableSearchOutcome SearchCore<TDocument>(OutputPipeline outputs, ITableDocuments<TDocument> documents, TableSearchRequest request)
         where TDocument : class
     {
         LicenseState state = outputs.License;

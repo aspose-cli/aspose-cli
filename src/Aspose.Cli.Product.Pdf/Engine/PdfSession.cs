@@ -1,6 +1,5 @@
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Pdf;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -9,6 +8,6 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <param name="Budgets">The invocation's resource budgets.</param>
 /// <param name="Loader">The budgeted document loader.</param>
 internal sealed record PdfSession(
-    OutputPipeline<Document> Outputs,
+    OutputPipeline Outputs,
     ResourceBudgetLedger Budgets,
     PdfDocumentLoader Loader);

@@ -22,7 +22,7 @@ internal static class WordsRender
         IReadOnlyList<int> pages = RenderSelection.Resolve(request.Pages, document.PageCount, ErrorCodes.PageNotFound, "page");
         IReadOnlyList<string> paths = request.Output.Parts(pages);
         log.During = "save";
-        using OutputSet<Document> set = session.Outputs.BeginSet([request.Output.Directory], "words-render");
+        using OutputSet set = session.Outputs.BeginSet([request.Output.Directory], "words-render");
         var outputs = new List<WordsPageOutput>(pages.Count);
         foreach ((int page, string path) in pages.Zip(paths))
         {

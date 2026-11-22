@@ -170,7 +170,7 @@ internal static class SlidesExport
         }
 
         string directory = request.Output.Directory;
-        using OutputSet<Presentation> transaction = session.Outputs.BeginSet([directory], "slides-render");
+        using OutputSet transaction = session.Outputs.BeginSet([directory], "slides-render");
         var targets = new List<int>(slides.Count);
         ImageFormat? image = SlidesEngineFormats.SlideImageOf(request.Output.Format.Id);
         var options = new RenderingOptions { WarningCallback = new SlidesWarnings(log) };

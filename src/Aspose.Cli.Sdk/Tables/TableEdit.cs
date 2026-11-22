@@ -68,7 +68,7 @@ public sealed record TableEditOutcome
 public static class TableEdit
 {
     /// <summary>Runs one edit.</summary>
-    public static TableEditOutcome Run<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableEditRequest request)
+    public static TableEditOutcome Run<TDocument>(OutputPipeline outputs, ITableDocuments<TDocument> documents, TableEditRequest request)
         where TDocument : class
     {
         ArgumentNullException.ThrowIfNull(outputs);
@@ -77,7 +77,7 @@ public static class TableEdit
         return TableErrors.Guard("Editing the document", () => RunCore(outputs, documents, request));
     }
 
-    private static TableEditOutcome RunCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableEditRequest request)
+    private static TableEditOutcome RunCore<TDocument>(OutputPipeline outputs, ITableDocuments<TDocument> documents, TableEditRequest request)
         where TDocument : class
     {
         // The license is applied before the engine opens anything.

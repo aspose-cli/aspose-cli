@@ -1,7 +1,6 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Words;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
@@ -10,6 +9,6 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// publishing), the resource budgets and the document loader.
 /// </summary>
 internal sealed record WordsSession(
-    OutputPipeline<Document> Outputs,
+    OutputPipeline Outputs,
     ResourceBudgetLedger Budgets,
     WordsDocumentLoader Loader);

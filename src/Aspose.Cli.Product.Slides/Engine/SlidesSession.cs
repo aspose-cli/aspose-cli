@@ -1,6 +1,5 @@
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Slides;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
@@ -9,6 +8,6 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <param name="Budgets">The invocation's resource budgets.</param>
 /// <param name="Loader">Opens presentation inputs within those budgets.</param>
 internal sealed record SlidesSession(
-    OutputPipeline<Presentation> Outputs,
+    OutputPipeline Outputs,
     ResourceBudgetLedger Budgets,
     SlidesPresentationLoader Loader);

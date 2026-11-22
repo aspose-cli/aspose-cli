@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 internal static class CellsActivation
 {
     internal static ProductBinding<CellsSession> Activate(ProductActivationContext context) =>
-        ProductBinding.Create<CellsSession, Workbook>(
+        ProductBinding.Create<CellsSession>(
             context,
             ProductBuildMetadata.ProductId,
             ApplyLicense,
@@ -28,7 +28,7 @@ internal static class CellsActivation
 /// sheets the engine adds stay in the workbook and in what a read returns, as the engine made them.
 /// It recognizes the engine's one evaluation limit, which the SDK reports as <c>EVALUATION_LIMIT</c>.
 /// </summary>
-internal sealed class CellsEvaluationProfile : IEvaluationProfile<Workbook>
+internal sealed class CellsEvaluationProfile : IEvaluationProfile
 {
     // How many files Aspose.Cells evaluation mode opens in one process before it refuses more.
     private const int OpenLimit = 100;

@@ -116,15 +116,14 @@ public abstract class ProductBinding
     /// The product session and the font environment are deferred independently;
     /// <paramref name="applyLicense"/> applies the resolved license to the product's SDK once.
     /// </summary>
-    public static ProductBinding<TSession> Create<TSession, TDocument>(
+    public static ProductBinding<TSession> Create<TSession>(
         ProductActivationContext context,
         string productId,
         Action<Stream> applyLicense,
-        IEvaluationProfile<TDocument> evaluation,
-        Func<OutputPipeline<TDocument>, TSession> createSession,
+        IEvaluationProfile evaluation,
+        Func<OutputPipeline, TSession> createSession,
         Func<ILicenseState, IFontEnvironment> createFontEnvironment)
         where TSession : class
-        where TDocument : class
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(evaluation);
@@ -134,7 +133,7 @@ public abstract class ProductBinding
             context,
             productId,
             applyLicense);
-        var outputs = new OutputPipeline<TDocument>(license, evaluation, context.SafeFileWriter) { DeclaredFormats = context.Formats };
+        var outputs = new OutputPipeline(license, evaluation, context.SafeFileWriter) { DeclaredFormats = context.Formats };
         return new ProductBinding<TSession>(
             productId,
             new Lazy<TSession>(() => createSession(outputs)),

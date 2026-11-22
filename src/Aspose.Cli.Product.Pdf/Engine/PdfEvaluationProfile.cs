@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Pdf;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -9,7 +8,7 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// recognizes the engine's one evaluation limit, a collection element past the ones it shows,
 /// which the SDK reports as <c>EVALUATION_LIMIT</c> when a command lets it through.
 /// </summary>
-internal sealed class PdfEvaluationProfile : IEvaluationProfile<Document>
+internal sealed class PdfEvaluationProfile : IEvaluationProfile
 {
     // The engine's message on the IndexOutOfRangeException of an element evaluation mode does not show.
     private const string LimitMessage = "can be viewed in evaluation mode";

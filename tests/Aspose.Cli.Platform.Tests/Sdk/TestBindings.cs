@@ -14,7 +14,7 @@ namespace Aspose.Cli.Sdk.Tests;
 
 /// <summary>
 /// Product bindings for SDK tests over the SDK write pipeline that
-/// <see cref="ProductBinding.Create{TSession, TDocument}"/> gives products, but for an engine that
+/// <see cref="ProductBinding.Create{TSession}"/> gives products, but for an engine that
 /// is licensed without reading a license source and in whose documents no evaluation mark is found.
 /// </summary>
 internal static class TestBindings
@@ -47,7 +47,7 @@ internal static class TestBindings
             new Lazy<TSession>(session),
             Licensed.Instance,
             new Lazy<IFontEnvironment>(() => fonts?.Invoke() ?? new AvailableFonts()),
-            new OutputPipeline<object>(Licensed.Instance, new NoEvaluationMarks(), (context ?? Context(Path.GetTempPath())).SafeFileWriter));
+            new OutputPipeline(Licensed.Instance, new NoEvaluationMarks(), (context ?? Context(Path.GetTempPath())).SafeFileWriter));
 
     private sealed class Licensed : ILicenseGate
     {
@@ -60,7 +60,7 @@ internal static class TestBindings
         public LicenseState EnsureApplied() => LicenseState.Licensed;
     }
 
-    private sealed class NoEvaluationMarks : IEvaluationProfile<object>
+    private sealed class NoEvaluationMarks : IEvaluationProfile
     {
         public string Engine => "Aspose.Test";
     }

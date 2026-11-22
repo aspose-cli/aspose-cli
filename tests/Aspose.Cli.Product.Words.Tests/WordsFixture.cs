@@ -30,7 +30,7 @@ public sealed class WordsFixture : IDisposable
         {
             TestLicense.Require(EvaluationChanges);
             return ProductTestBudgets.StartEngine<WordsModule, WordsSession>(
-                (budgets, writer) => WordsActivation.Session(new OutputPipeline<Document>(Gate, new WordsEvaluationProfile(), writer), budgets));
+                (budgets, writer) => WordsActivation.Session(new OutputPipeline(Gate, new WordsEvaluationProfile(), writer), budgets));
         }
     }
 
