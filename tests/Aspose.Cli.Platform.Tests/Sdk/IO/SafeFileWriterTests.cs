@@ -358,6 +358,46 @@ public sealed class SafeFileWriterTests : IDisposable
     }
 
     /// <summary>
+    /// A read-only target is not replaced, whether it is another file or, as in an in-place edit,
+    /// the input itself: the error names the target, and its folder holds what it held before.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Write_ReadOnlyTarget_IsUnwritableAndLeavesItsFolderAsItWas(bool inPlace)
+    {
+        Requires.Windows();
+
+        string target = _temp.File("out.txt");
+        File.WriteAllText(target, "original");
+        File.SetAttributes(target, File.GetAttributes(target) | FileAttributes.ReadOnly);
+        FileAttributes attributes = File.GetAttributes(target);
+        try
+        {
+            FileWritePrecondition? input = inPlace ? FileWritePrecondition.Capture(target) : null;
+
+            CliException error = Assert.Throws<CliException>(() =>
+                _writer.Write(target, overwrite: true, input, temp => File.WriteAllText(temp, "replacement")));
+
+            Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+            Assert.Equal(
+                $"Output file could not be written: {target} (the file is read-only or access to it is denied)",
+                error.Message);
+            Assert.Equal(target, error.Details!["path"]!.GetValue<string>());
+            Assert.Equal("original", File.ReadAllText(target));
+            Assert.Equal(attributes, File.GetAttributes(target));
+            Assert.Equal([target], Directory.EnumerateFileSystemEntries(_temp.Path));
+        }
+        finally
+        {
+            foreach (string file in Directory.EnumerateFiles(_temp.Path, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+            }
+        }
+    }
+
+    /// <summary>
     /// A target whose access rules deny the current user writing its attributes, and that is not
     /// read-only, is replaced, whether it is another file or, as in an in-place edit, the input
     /// itself, and its folder holds what it held before.

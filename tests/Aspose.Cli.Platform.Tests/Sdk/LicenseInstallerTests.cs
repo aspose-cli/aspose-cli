@@ -268,6 +268,70 @@ public sealed class LicenseInstallerTests
         Assert.False(Directory.Exists(absentDirectory));
     }
 
+    /// <summary>
+    /// An install over a saved license that is read-only reports that license as unwritable,
+    /// leaves it as it was and leaves nothing else beside it.
+    /// </summary>
+    [Fact]
+    public void InstallMany_OverAReadOnlyLicense_IsUnwritableAndLeavesItsFolderAsItWas()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string source = temp.File("source.lic");
+        File.WriteAllText(source, "new license");
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
+        string target = Path.Combine(directory, "alpha.lic");
+        WriteFile(target, "previous license");
+        File.SetAttributes(target, File.GetAttributes(target) | FileAttributes.ReadOnly);
+        FileAttributes attributes = File.GetAttributes(target);
+        try
+        {
+            CliException error = Assert.Throws<CliException>(() =>
+                LicenseInstaller.InstallMany(TestBudgets.Create(), source, _ => [target]));
+
+            Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+            Assert.Equal(target, error.Details!["path"]!.GetValue<string>());
+            Assert.Equal("previous license", File.ReadAllText(target));
+            Assert.Equal(attributes, File.GetAttributes(target));
+            Assert.Equal([target], Directory.GetFileSystemEntries(directory));
+        }
+        finally
+        {
+            foreach (string file in Directory.EnumerateFiles(temp.Path, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A removed license that was read-only is gone with its transaction: the original the
+    /// removal moved aside is not kept beside the licenses.
+    /// </summary>
+    [Fact]
+    public void RemoveMany_OfAReadOnlyLicense_LeavesNothingInItsFolder()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
+        string target = Path.Combine(directory, "alpha.lic");
+        WriteFile(target, "alpha");
+        File.SetAttributes(target, File.GetAttributes(target) | FileAttributes.ReadOnly);
+        try
+        {
+            Assert.Equal([target], LicenseInstaller.RemoveMany(TestBudgets.Create(), [target]));
+
+            Assert.Empty(Directory.GetFileSystemEntries(directory));
+        }
+        finally
+        {
+            foreach (string file in Directory.EnumerateFiles(temp.Path, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+            }
+        }
+    }
+
     [Fact]
     public void InstallMany_ExactMaximumIsAccepted()
     {
