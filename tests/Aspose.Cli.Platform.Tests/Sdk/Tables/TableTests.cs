@@ -91,8 +91,8 @@ public sealed class TableTests
         Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
         Assert.Equal("card/8", error.Details["at"]!.GetValue<string>());
         Assert.Equal("width", error.Details["row"]!.GetValue<string>());
-        Assert.Equal(typeof(ArgumentOutOfRangeException).FullName, error.Details["engineException"]!.GetValue<string>());
-        Assert.Contains("the engine threw System.ArgumentOutOfRangeException", error.Message, StringComparison.Ordinal);
+        Assert.Equal(typeof(Xunit.Sdk.TrueException).FullName, error.Details["engineException"]!.GetValue<string>());
+        Assert.Contains("the engine threw Xunit.Sdk.TrueException", error.Message, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -110,18 +110,18 @@ public sealed class TableTests
     }
 
     /// <summary>
-    /// Only an exception the engine threw is reported as the engine's: the first frame of the
-    /// engine's assembly or of the CLI's own decides, past the runtime's frames.
+    /// Only an exception the engine threw is reported as the engine's: past the runtime's frames,
+    /// the first frame decides, the CLI's own when its assembly is one of the CLI's. xunit.assert
+    /// plays a third-party engine.
     /// </summary>
     [Fact]
-    public void FromEngine_IsDecidedByTheFirstFrameOfTheEngineOrOfTheCli()
+    public void FromEngine_IsDecidedByTheFirstFrameOutsideTheRuntime()
     {
-        System.Reflection.Assembly engine = typeof(JsonDocument).Assembly;
-        Exception engineThrew = Assert.ThrowsAny<JsonException>(static () => JsonDocument.Parse("{"));
+        Exception engineThrew = Assert.ThrowsAny<Xunit.Sdk.XunitException>(static () => Assert.Fail("engine choked"));
         Exception cliThrew = Assert.Throws<ArgumentException>(static () => TableSchema.Of(string.Empty, DeckTable.Table));
 
-        Assert.True(TableErrors.FromEngine(engineThrew, engine));
-        Assert.False(TableErrors.FromEngine(cliThrew, engine));
+        Assert.True(ExceptionOrigin.FromEngine(engineThrew));
+        Assert.False(ExceptionOrigin.FromEngine(cliThrew));
     }
 
     /// <summary>What the CLI's own code throws during an operation is no engine error: it passes as it was thrown.</summary>
@@ -339,7 +339,12 @@ public sealed class TableTests
         public double Width
         {
             get => _width;
-            set => _width = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), "A width is not negative.");
+            // xunit.assert plays the third-party engine that refuses a negative width.
+            set
+            {
+                Assert.True(value >= 0, "A width is not negative.");
+                _width = value;
+            }
         }
 
         public List<Line> Lines { get; } = [];

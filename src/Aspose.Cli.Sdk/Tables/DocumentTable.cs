@@ -352,9 +352,6 @@ public abstract class DocumentTable
     /// <summary>The document's own kind, addressed by its name alone.</summary>
     public ObjectKind Root { get; }
 
-    /// <summary>The engine's assembly: the one the document type comes from.</summary>
-    internal System.Reflection.Assembly Engine => Root.Type.Assembly;
-
     /// <summary>The id, relative to the product, every table's operation document schema is published under.</summary>
     public const string SchemaId = "ops";
 

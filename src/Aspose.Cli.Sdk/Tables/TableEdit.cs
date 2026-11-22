@@ -74,7 +74,7 @@ public static class TableEdit
         ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(documents);
         ArgumentNullException.ThrowIfNull(request);
-        return TableErrors.Guard(documents.Table, "Editing the document", () => RunCore(outputs, documents, request));
+        return TableErrors.Guard("Editing the document", () => RunCore(outputs, documents, request));
     }
 
     private static TableEditOutcome RunCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableEditRequest request)
@@ -105,7 +105,7 @@ public static class TableEdit
                 temp =>
                 {
                     warnings.During = "save";
-                    Engine(table, "Saving the document", () => documents.Save(opened, temp, opened.FormatId, protection, warnings));
+                    Engine("Saving the document", () => documents.Save(opened, temp, opened.FormatId, protection, warnings));
                 },
                 candidate =>
                 {
@@ -147,13 +147,13 @@ public static class TableEdit
     }
 
     /// <summary>Runs an engine call outside any operation, such as the save; what the engine throws is reported as it is.</summary>
-    private static void Engine(DocumentTable table, string doing, Action call)
+    private static void Engine(string doing, Action call)
     {
         try
         {
             call();
         }
-        catch (Exception exception) when (exception is not CliException and not OperationCanceledException && TableErrors.FromEngine(exception, table.Engine))
+        catch (Exception exception) when (ExceptionOrigin.FromEngine(exception))
         {
             throw TableErrors.EngineDuring(doing, exception);
         }
@@ -212,7 +212,7 @@ public static class TableEdit
             {
                 throw TableErrors.At(op.Index, at, error);
             }
-            catch (Exception exception) when (exception is not CliException and not OperationCanceledException && TableErrors.FromEngine(exception, table.Engine))
+            catch (Exception exception) when (ExceptionOrigin.FromEngine(exception))
             {
                 throw TableErrors.Engine(op.Index, at, row, exception);
             }
@@ -377,7 +377,7 @@ public static class TableEdit
             }
             catch (RowReadException failure)
             {
-                throw TableErrors.RowRead(table, op.Index, op.At, failure);
+                throw TableErrors.RowRead(op.Index, op.At, failure);
             }
 
             reports.Add(new TableOpReport

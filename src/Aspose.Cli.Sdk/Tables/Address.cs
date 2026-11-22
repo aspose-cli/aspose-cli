@@ -223,7 +223,7 @@ internal static class AddressResolver
             object? found;
             if (step.Alias is { } alias)
             {
-                IReadOnlyList<object> matches = Engine(table, address.Text, () => alias.Find(current, step.Key));
+                IReadOnlyList<object> matches = Engine(address.Text, () => alias.Find(current, step.Key));
                 if (matches.Count == 0)
                 {
                     throw TableErrors.NotFound(alias.Segment, step.Key.ToString(), here, [.. alias.List(current).Select(static key => key.ToString())], address.Text);
@@ -240,7 +240,7 @@ internal static class AddressResolver
             }
             else
             {
-                IReadOnlyList<object> matches = Engine(table, address.Text, () => step.Placement.Find(current, step.Key));
+                IReadOnlyList<object> matches = Engine(address.Text, () => step.Placement.Find(current, step.Key));
                 if (matches.Count == 0)
                 {
                     throw TableErrors.NotFound(step.Placement.Segment, step.Key.ToString(), path.Count == 0 ? null : here,
@@ -272,13 +272,13 @@ internal static class AddressResolver
     }
 
     /// <summary>Runs an engine lookup; an exception the engine throws is reported as the engine's, at the address.</summary>
-    internal static T Engine<T>(DocumentTable table, string address, Func<T> lookup)
+    internal static T Engine<T>(string address, Func<T> lookup)
     {
         try
         {
             return lookup();
         }
-        catch (Exception exception) when (exception is not CliException and not OperationCanceledException && TableErrors.FromEngine(exception, table.Engine))
+        catch (Exception exception) when (ExceptionOrigin.FromEngine(exception))
         {
             throw TableErrors.Engine(null, address, null, exception);
         }
