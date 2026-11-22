@@ -1,0 +1,39 @@
+{
+  "name": "words and slides edit --in-place --encrypt-env of an input whose format cannot carry a password, rtf and ppt, is refused naming that format and the ones that can, and writes nothing",
+  "files": {
+    "doc.rtf": { "fixture": "words.rtf" },
+    "deck.ppt": { "fixture": "slides.ppt" },
+    "words-ops.json": { "fixture": "words.ops" },
+    "slides-ops.json": { "fixture": "slides.ops" }
+  },
+  "steps": [
+    {
+      "args": ["words", "edit", "doc.rtf", "--ops", "words-ops.json", "--in-place", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --encrypt-env: the 'rtf' format cannot be password-protected; doc, dot, docx, docm, dotx, dotm, odt, ott can" },
+          { "path": "error.details.option", "equals": "--encrypt-env" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["slides", "edit", "deck.ppt", "--ops", "slides-ops.json", "--in-place", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --encrypt-env: the 'ppt' format cannot be password-protected; pptx, pptm can" },
+          { "path": "error.details.option", "equals": "--encrypt-env" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    }
+  ]
+}
