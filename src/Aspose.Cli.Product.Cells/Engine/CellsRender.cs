@@ -55,7 +55,7 @@ internal static class CellsRender
         {
             if (renders[i].PageCount == 0)
             {
-                throw CliErrors.RenderFailed($"Sheet '{sheets[i].Name}'", "SheetRender.PageCount is 0: the engine lays out no page for it",
+                throw CliErrors.RenderFailed($"Sheet '{sheets[i].Name}'", "the engine lays out no page for it (SheetRender.PageCount is 0)",
                     new JsonObject { ["sheet"] = sheets[i].Name });
             }
         }

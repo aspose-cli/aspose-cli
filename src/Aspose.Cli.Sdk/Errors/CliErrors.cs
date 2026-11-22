@@ -345,20 +345,16 @@ public static partial class CliErrors
     }
 
     /// <summary>
-    /// The engine failed while rasterizing content it could otherwise read.
+    /// Content the engine reads but gives nothing to render, such as a sheet it lays out on no
+    /// page.
     /// </summary>
     /// <param name="target">What could not be rendered, starting the message, such as <c>Sheet 'Q1'</c>.</param>
-    /// <param name="engineMessage">The engine's own message.</param>
+    /// <param name="reason">Why, completing the message, such as <c>the engine lays out no page for it (SheetRender.PageCount is 0)</c>.</param>
     /// <param name="facts">The product's facts that identify the target, if any.</param>
-    public static CliException RenderFailed(string target, string engineMessage, JsonObject? facts = null)
-    {
-        JsonObject details = facts ?? [];
-        details["engineMessage"] = engineMessage;
-        return CliException.Create(
-            ErrorCodes.RenderFailed,
-            $"{target} could not be rendered: the engine failed while rasterizing its content ({engineMessage}).",
-            details: details);
-    }
+    public static CliException RenderFailed(string target, string reason, JsonObject? facts = null) => CliException.Create(
+        ErrorCodes.RenderFailed,
+        $"{target} could not be rendered: {reason}.",
+        details: facts);
 
     public static CliException OperationTimeout(int seconds) => CliException.Create(
         ErrorCodes.OperationTimeout,
