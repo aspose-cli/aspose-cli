@@ -65,9 +65,9 @@ public sealed class CellsEvaluationLimitTests
         Assert.True(loader.IsLoadFailure(new InvalidDataException("damaged")));
     }
 
-    private static OutputPipeline<Workbook> Outputs(LicenseState state)
+    private static OutputPipeline Outputs(LicenseState state)
     {
         ResourceBudgetLedger budgets = ProductTestBudgets.Create<CellsModule>();
-        return new OutputPipeline<Workbook>(EvaluationLimits.Gate(state), new CellsEvaluationProfile(), new SafeFileWriter(budgets));
+        return new OutputPipeline(EvaluationLimits.Gate(state), new CellsEvaluationProfile(), new SafeFileWriter(budgets));
     }
 }

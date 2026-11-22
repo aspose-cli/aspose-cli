@@ -17,16 +17,22 @@ namespace Aspose.Cli.Sdk.Results;
 /// compares the two; the command template adds the warning to the result (<see cref="Disclose"/>).
 /// A command that publishes nothing, such as a read, discloses nothing.
 /// </summary>
-public abstract class OutputPipeline : ILicenseState
+public sealed class OutputPipeline : ILicenseState
 {
     private readonly ILicenseGate _licenseGate;
+    private readonly IEvaluationProfile _profile;
     private readonly object _sync = new();
     private bool _encryptedInput;
     private readonly SortedSet<string> _plainCopies = new(StringComparer.Ordinal);
 
-    private protected OutputPipeline(ILicenseGate licenseGate, SafeFileWriter writer)
+    /// <summary>Creates the pipeline of one product invocation.</summary>
+    /// <param name="licenseGate">The product's license gate, which the pipeline alone applies.</param>
+    /// <param name="profile">How the product recognizes its engine's evaluation limits.</param>
+    /// <param name="writer">The invocation's atomic file writer.</param>
+    public OutputPipeline(ILicenseGate licenseGate, IEvaluationProfile profile, SafeFileWriter writer)
     {
         _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _profile = profile ?? throw new ArgumentNullException(nameof(profile));
         Writer = writer ?? throw new ArgumentNullException(nameof(writer));
     }
 
@@ -43,7 +49,7 @@ public abstract class OutputPipeline : ILicenseState
     /// <summary>Whether the engine runs in evaluation mode.</summary>
     public bool IsEvaluation => License == LicenseState.Evaluation;
 
-    private protected SafeFileWriter Writer { get; }
+    private SafeFileWriter Writer { get; }
 
     /// <summary>
     /// Starts an extraction into <paramref name="root"/>, published when the guard commits. Files
@@ -166,40 +172,10 @@ public abstract class OutputPipeline : ILicenseState
             thrown = error.InnerException;
         }
 
-        return thrown is null or CliException ? null : EngineEvaluationLimitOf(thrown);
-    }
-
-    /// <summary>The <c>EVALUATION_LIMIT</c> error for an engine exception, or null when it reports no evaluation limit.</summary>
-    private protected abstract CliException? EngineEvaluationLimitOf(Exception exception);
-
-    /// <summary>A published file: its format id, whether that format is an image, and whether the file is encrypted.</summary>
-    internal sealed record Copy(string Format, bool Image, bool Encrypted);
-}
-
-/// <summary>
-/// The write pipeline of a product whose engine documents are <typeparamref name="TDocument"/>,
-/// whose evaluation profile recognizes the engine's evaluation limits.
-/// </summary>
-/// <typeparam name="TDocument">The engine's document type.</typeparam>
-public sealed class OutputPipeline<TDocument> : OutputPipeline
-    where TDocument : class
-{
-    private readonly IEvaluationProfile<TDocument> _profile;
-
-    /// <summary>Creates the pipeline of one product invocation.</summary>
-    /// <param name="licenseGate">The product's license gate, which the pipeline alone applies.</param>
-    /// <param name="profile">How the product recognizes its engine's evaluation limits.</param>
-    /// <param name="writer">The invocation's atomic file writer.</param>
-    public OutputPipeline(ILicenseGate licenseGate, IEvaluationProfile<TDocument> profile, SafeFileWriter writer)
-        : base(licenseGate, writer)
-    {
-        _profile = profile ?? throw new ArgumentNullException(nameof(profile));
-    }
-
-    private protected override CliException? EngineEvaluationLimitOf(Exception exception) =>
-        _profile.RecognizeLimit(exception) is { } limit && IsEvaluation
-            ? CliErrors.EngineEvaluationLimit(_profile.Engine, limit.Allows, limit.Limit, limit.Unit, exception)
+        return thrown is not null and not CliException && _profile.RecognizeLimit(thrown) is { } limit && IsEvaluation
+            ? CliErrors.EngineEvaluationLimit(_profile.Engine, limit.Allows, limit.Limit, limit.Unit, thrown)
             : null;
+    }
 
     /// <summary>Publishes one file that <paramref name="write"/> saves.</summary>
     /// <param name="targetPath">The output file.</param>
@@ -245,7 +221,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// Starts a set of outputs spanning directories on the same filesystem, published together
     /// when the set commits.
     /// </summary>
-    public OutputSet<TDocument> BeginSet(IEnumerable<string> targetDirectories, string operation) =>
+    public OutputSet BeginSet(IEnumerable<string> targetDirectories, string operation) =>
         new(this, new AtomicOutputSetWriter(Writer, targetDirectories, operation));
 
     /// <summary>
@@ -279,7 +255,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     {
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(save);
-        using OutputSet<TDocument> transaction = BeginSet([output.Directory], operation);
+        using OutputSet transaction = BeginSet([output.Directory], operation);
         StagedOutput staged = transaction.Stage(
             output.Path,
             output.Format,
@@ -295,23 +271,23 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
             FileObjects.Output(staged.Published, output.Format, encrypted), verification);
     }
 
+    /// <summary>A published file: its format id, whether that format is an image, and whether the file is encrypted.</summary>
+    internal sealed record Copy(string Format, bool Image, bool Encrypted);
 }
 
 /// <summary>
 /// A set of outputs staged together and published, refused or rolled back as a whole, through
-/// the product's <see cref="OutputPipeline{TDocument}"/>. Disposing a set that did not commit
+/// the product's <see cref="OutputPipeline"/>. Disposing a set that did not commit
 /// rolls it back.
 /// </summary>
-/// <typeparam name="TDocument">The engine's document type.</typeparam>
-public sealed class OutputSet<TDocument> : IDisposable
-    where TDocument : class
+public sealed class OutputSet : IDisposable
 {
-    private readonly OutputPipeline<TDocument> _pipeline;
+    private readonly OutputPipeline _pipeline;
     private readonly AtomicOutputSetWriter _transaction;
     private readonly List<StagedOutput> _staged = [];
     private readonly List<OutputPipeline.Copy> _copies = [];
 
-    internal OutputSet(OutputPipeline<TDocument> pipeline, AtomicOutputSetWriter transaction)
+    internal OutputSet(OutputPipeline pipeline, AtomicOutputSetWriter transaction)
     {
         _pipeline = pipeline;
         _transaction = transaction;

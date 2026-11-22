@@ -3,7 +3,6 @@ using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Words;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
@@ -11,7 +10,7 @@ namespace Aspose.Cli.Product.Words.Engine;
 internal static class WordsActivation
 {
     internal static ProductBinding<WordsSession> Activate(ProductActivationContext context) =>
-        ProductBinding.Create<WordsSession, Document>(
+        ProductBinding.Create<WordsSession>(
             context,
             ProductBuildMetadata.ProductId,
             ApplyLicense,
@@ -20,7 +19,7 @@ internal static class WordsActivation
             _ => new WordsFontEnvironment());
 
     /// <summary>The session of one invocation's write pipeline and budgets.</summary>
-    internal static WordsSession Session(OutputPipeline<Document> outputs, ResourceBudgetLedger budgets) =>
+    internal static WordsSession Session(OutputPipeline outputs, ResourceBudgetLedger budgets) =>
         new(outputs, budgets, new WordsDocumentLoader(budgets, outputs));
 
     /// <summary>Applies a license snapshot to Aspose.Words.</summary>
@@ -32,7 +31,7 @@ internal static class WordsActivation
 /// Aspose.Words evaluation mode: a run without a license says so in its result's license mode;
 /// what the engine writes into a document it opens in evaluation mode is read as it is.
 /// </summary>
-internal sealed class WordsEvaluationProfile : IEvaluationProfile<Document>
+internal sealed class WordsEvaluationProfile : IEvaluationProfile
 {
     public string Engine => "Aspose.Words";
 }

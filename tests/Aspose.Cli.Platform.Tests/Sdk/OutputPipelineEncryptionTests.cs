@@ -22,7 +22,7 @@ public sealed class OutputPipelineEncryptionTests
     public void PlainCopyOfAnEncryptedInput_IsDisclosedOnceNamingItsFormat()
     {
         using var temp = new TempDirectory();
-        OutputPipeline<object> pipeline = Pipeline();
+        OutputPipeline pipeline = Pipeline();
         pipeline.Opened(new InputProtection(false));
         pipeline.Opened(new InputProtection(true));
 
@@ -38,10 +38,10 @@ public sealed class OutputPipelineEncryptionTests
     public void PlainCopyInAnOutputSet_IsDisclosed()
     {
         using var temp = new TempDirectory();
-        OutputPipeline<object> pipeline = Pipeline();
+        OutputPipeline pipeline = Pipeline();
         pipeline.Opened(new InputProtection(true));
 
-        using (OutputSet<object> set = pipeline.BeginSet([temp.Path], "test"))
+        using (OutputSet set = pipeline.BeginSet([temp.Path], "test"))
         {
             set.Stage(temp.File("part.1.pdf"), Pdf, false, Save, encrypted: true);
             set.Stage(temp.File("part.2.pdf"), Pdf, false, Save);
@@ -55,7 +55,7 @@ public sealed class OutputPipelineEncryptionTests
     public void TextRenderedFromAnEncryptedInput_IsACopy()
     {
         using var temp = new TempDirectory();
-        OutputPipeline<object> pipeline = Pipeline();
+        OutputPipeline pipeline = Pipeline();
         pipeline.Opened(new InputProtection(true));
 
         pipeline.Write(temp.File("pages.txt"), Txt, false, Save);
@@ -67,7 +67,7 @@ public sealed class OutputPipelineEncryptionTests
     public void EncryptedCopiesImagesDataAndPlainInputs_DiscloseNothing()
     {
         using var temp = new TempDirectory();
-        OutputPipeline<object> encrypted = Pipeline();
+        OutputPipeline encrypted = Pipeline();
         encrypted.Opened(new InputProtection(true));
         encrypted.Write(temp.File("kept.pdf"), Pdf, false, Save, encrypted: true);
         encrypted.Write(temp.File("page.png"), Png, false, Save);
@@ -82,14 +82,14 @@ public sealed class OutputPipelineEncryptionTests
             extraction.Commit();
         }
 
-        using (OutputSet<object> set = encrypted.BeginSet([temp.Path], "test"))
+        using (OutputSet set = encrypted.BeginSet([temp.Path], "test"))
         {
             set.Stage(temp.File("page.2.png"), Png, false, Save);
             set.Stage(temp.File("page.3.tiff"), Tiff, false, Save);
             set.Commit();
         }
 
-        OutputPipeline<object> plain = Pipeline();
+        OutputPipeline plain = Pipeline();
         plain.Opened(new InputProtection(false));
         plain.Write(temp.File("plain.pdf"), Pdf, false, Save);
 
@@ -101,7 +101,7 @@ public sealed class OutputPipelineEncryptionTests
     public void AFormatNotDeclaredAnImage_IsACopy()
     {
         using var temp = new TempDirectory();
-        OutputPipeline<object> pipeline = Pipeline();
+        OutputPipeline pipeline = Pipeline();
         pipeline.Opened(new InputProtection(true));
 
         // Only the format the product declares decides; this gif is not declared an image.
@@ -114,9 +114,9 @@ public sealed class OutputPipelineEncryptionTests
     public void NothingPublished_DisclosesNothing()
     {
         using var temp = new TempDirectory();
-        OutputPipeline<object> pipeline = Pipeline();
+        OutputPipeline pipeline = Pipeline();
         pipeline.Opened(new InputProtection(true));
-        using (OutputSet<object> set = pipeline.BeginSet([temp.Path], "test"))
+        using (OutputSet set = pipeline.BeginSet([temp.Path], "test"))
         {
             // A set that does not commit, as a failed or dry run leaves it, publishes nothing.
             set.Stage(temp.File("part.pdf"), Pdf, false, Save);
@@ -143,10 +143,10 @@ public sealed class OutputPipelineEncryptionTests
     // An image format a product converts to but does not declare an image.
     private static readonly FormatDescriptor Gif = new("gif", FormatUse.Convert, ".gif");
 
-    private static OutputPipeline<object> Pipeline() =>
+    private static OutputPipeline Pipeline() =>
         new(new LicensedGate(), new NoMarks(), TestBudgets.Writer());
 
-    private sealed class NoMarks : IEvaluationProfile<object>
+    private sealed class NoMarks : IEvaluationProfile
     {
         public string Engine => "Aspose.Test";
     }

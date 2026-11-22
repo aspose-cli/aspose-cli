@@ -126,7 +126,7 @@ public sealed class InputOpeningTests
         using var temp = new TempDirectory();
         string path = temp.File("in.bin");
         File.WriteAllBytes(path, new byte[4]);
-        OutputPipeline<object> pipeline = Pipeline();
+        OutputPipeline pipeline = Pipeline();
 
         using Input input = InputOpening.Open(pipeline, TestBudgets.Create(), Reads, path, () => new Input(new InputProtection(encrypted)));
         pipeline.Write(temp.File("out.txt"), new FormatDescriptor("txt", FormatUse.Convert, ".txt"), false, Save);
@@ -152,7 +152,7 @@ public sealed class InputOpeningTests
     public void OpenPublished_NeitherAdmitsNorRecords()
     {
         using var temp = new TempDirectory();
-        OutputPipeline<object> pipeline = Pipeline();
+        OutputPipeline pipeline = Pipeline();
 
         // The candidate does not exist on disk: admission would refuse it.
         using Input input = InputOpening.OpenPublished(() => new Input(new InputProtection(true)));
@@ -163,7 +163,7 @@ public sealed class InputOpeningTests
 
     private static void Save(string path) => File.WriteAllText(path, "saved");
 
-    private static OutputPipeline<object> Pipeline(IReadOnlyList<FormatDescriptor>? declared = null) =>
+    private static OutputPipeline Pipeline(IReadOnlyList<FormatDescriptor>? declared = null) =>
         new(new LicensedGate(), new NoMarks(), TestBudgets.Writer()) { DeclaredFormats = declared ?? [] };
 
     /// <summary>An opened input whose protection getter fails when it has none.</summary>
@@ -176,7 +176,7 @@ public sealed class InputOpeningTests
         public void Dispose() => Disposed = true;
     }
 
-    private sealed class NoMarks : IEvaluationProfile<object>
+    private sealed class NoMarks : IEvaluationProfile
     {
         public string Engine => "Aspose.Test";
     }

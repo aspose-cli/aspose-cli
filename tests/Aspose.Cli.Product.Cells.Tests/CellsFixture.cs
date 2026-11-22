@@ -34,7 +34,7 @@ public sealed class CellsFixture : IDisposable
             return ProductTestBudgets.StartEngine<CellsModule, CellsSession>(
                 (budgets, writer) =>
                 {
-                    OutputPipeline<Workbook> outputs = new(Gate, new CellsEvaluationProfile(), writer);
+                    OutputPipeline outputs = new(Gate, new CellsEvaluationProfile(), writer);
                     return new CellsSession(outputs, budgets, new Engine.Mapping.CellsWorkbookLoader(budgets, outputs));
                 });
         }

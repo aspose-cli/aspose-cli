@@ -1,4 +1,3 @@
-using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.Results;
@@ -10,6 +9,6 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <param name="Budgets">The invocation's resource budgets.</param>
 /// <param name="Loader">Opens workbooks within those budgets.</param>
 internal sealed record CellsSession(
-    OutputPipeline<Workbook> Outputs,
+    OutputPipeline Outputs,
     ResourceBudgetLedger Budgets,
     CellsWorkbookLoader Loader);

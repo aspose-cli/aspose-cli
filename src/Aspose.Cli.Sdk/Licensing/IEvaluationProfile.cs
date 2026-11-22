@@ -5,9 +5,7 @@ namespace Aspose.Cli.Sdk.Licensing;
 /// without a license is stated once, as the result's license mode, and what evaluation mode
 /// writes stays in the output as the engine wrote it.
 /// </summary>
-/// <typeparam name="TDocument">The engine's document type.</typeparam>
-public interface IEvaluationProfile<in TDocument>
-    where TDocument : class
+public interface IEvaluationProfile
 {
     /// <summary>
     /// The engine whose evaluation mode the profile recognizes, which also names the license
@@ -27,7 +25,7 @@ public interface IEvaluationProfile<in TDocument>
 }
 
 /// <summary>
-/// An evaluation limit of an engine, as its <see cref="IEvaluationProfile{TDocument}"/> recognizes
+/// An evaluation limit of an engine, as its <see cref="IEvaluationProfile"/> recognizes
 /// it in the engine's exception. The SDK writes the <c>EVALUATION_LIMIT</c> error, its message
 /// and details, from these facts and the profile's engine, the same way for every product.
 /// </summary>

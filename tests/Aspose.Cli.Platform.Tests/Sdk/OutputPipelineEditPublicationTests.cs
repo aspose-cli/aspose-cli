@@ -10,7 +10,7 @@ using Xunit;
 namespace Aspose.Cli.Sdk.Tests;
 
 /// <summary>
-/// <see cref="OutputPipeline{TDocument}.PublishEdit"/> publishes an edited document as every
+/// <see cref="OutputPipeline.PublishEdit"/> publishes an edited document as every
 /// product edit does: an in-place edit backs up the file it replaces,
 /// the read-back sees the staged file before anything is published, a read-back that fails
 /// publishes nothing, and the output reports the encryption the product gave.
@@ -78,7 +78,7 @@ public sealed class OutputPipelineEditPublicationTests
     {
         using var temp = new TempDirectory();
         string input = Input(temp);
-        OutputPipeline<object> pipeline = Pipeline();
+        OutputPipeline pipeline = Pipeline();
         pipeline.Opened(new InputProtection(true));
 
         EditPublication<Checked> publication = pipeline.PublishEdit<Checked>(
@@ -105,10 +105,10 @@ public sealed class OutputPipelineEditPublicationTests
 
     private static void Save(string path) => File.WriteAllText(path, Edited);
 
-    private static OutputPipeline<object> Pipeline() =>
+    private static OutputPipeline Pipeline() =>
         new(new LicensedGate(), new NoMarks(), TestBudgets.Writer());
 
-    private sealed class NoMarks : IEvaluationProfile<object>
+    private sealed class NoMarks : IEvaluationProfile
     {
         public string Engine => "Aspose.Test";
     }

@@ -3,7 +3,7 @@ using Aspose.Cli.Sdk.Contracts;
 namespace Aspose.Cli.Sdk.Results;
 
 /// <summary>
-/// What publishing an edited document produced (<see cref="OutputPipeline{TDocument}.PublishEdit"/>):
+/// What publishing an edited document produced (<see cref="OutputPipeline.PublishEdit"/>):
 /// the output and the product's read-back of the staged output.
 /// </summary>
 /// <typeparam name="TVerification">The product's verification of the staged output.</typeparam>
