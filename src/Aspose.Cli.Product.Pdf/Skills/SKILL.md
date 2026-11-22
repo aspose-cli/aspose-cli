@@ -145,7 +145,7 @@ aspose-cli pdf sign contract.pdf --page 1 --certificate signer.pfx --certificate
 
 Without a PDF license the result says `"license": {"mode": "evaluation"}`. The engine then gives
 only the first four objects of any collection: read lists four pages while `pages` counts all
-of them, and an address past the fourth, such as `page/5`, is the engine's error. It prints a line
+of them, and an address past the fourth, such as `page/5`, is `EVALUATION_LIMIT`. It prints a line
 of notice on every page it saves and adds XMP entries to the file.
 
 ## More

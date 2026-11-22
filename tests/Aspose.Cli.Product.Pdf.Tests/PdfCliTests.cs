@@ -198,7 +198,7 @@ public sealed class PdfCliTests : IDisposable
     /// <summary>
     /// In evaluation mode the engine's page enumerator gives the first four pages while
     /// Pages.Count gives every one (KNOWN-ISSUES PDF-EVALUATION-COLLECTIONS): read lists what the
-    /// enumerator gives, counts with Count, and reports an address past the fourth as the engine's error.
+    /// enumerator gives, counts with Count, and reports an address past the fourth as the evaluation limit.
     /// </summary>
     [Fact]
     public void EvaluationMode_ListsWhatTheEngineGives_AndCountsWhatItCounts()
@@ -213,7 +213,7 @@ public sealed class PdfCliTests : IDisposable
         Assert.Equal("evaluation", result["license"]!["mode"]!.GetValue<string>());
         Assert.Equal(6, result["inventory"]!["read"]!["pages"]!.GetValue<int>());
         Assert.Equal(["page/1", "page/2", "page/3", "page/4"], result["objects"]!.AsArray().Select(static item => item!["at"]!.GetValue<string>()));
-        Assert.Equal("ENGINE_ERROR", Error(past)["code"]!.GetValue<string>());
+        Assert.Equal("EVALUATION_LIMIT", Error(past)["code"]!.GetValue<string>());
     }
 
     /// <summary>

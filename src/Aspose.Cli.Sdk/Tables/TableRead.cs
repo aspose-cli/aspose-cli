@@ -115,8 +115,7 @@ public static class TableRead
         ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(documents);
         ArgumentNullException.ThrowIfNull(request);
-        // An evaluation limit the engine reaches is reported as one, before the guard calls it the engine's error.
-        return TableErrors.Guard(documents.Table, "Reading the document", () => outputs.ReportingEvaluationLimits(() => RunCore(outputs, documents, request)));
+        return TableErrors.Guard(documents.Table, "Reading the document", () => RunCore(outputs, documents, request));
     }
 
     private static TableReadOutcome RunCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableReadRequest request)
@@ -180,7 +179,7 @@ public static class TableRead
         ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(documents);
         ArgumentNullException.ThrowIfNull(request);
-        return TableErrors.Guard(documents.Table, "Searching the document", () => outputs.ReportingEvaluationLimits(() => SearchCore(outputs, documents, request)));
+        return TableErrors.Guard(documents.Table, "Searching the document", () => SearchCore(outputs, documents, request));
     }
 
     private static TableSearchOutcome SearchCore<TDocument>(OutputPipeline<TDocument> outputs, ITableDocuments<TDocument> documents, TableSearchRequest request)
