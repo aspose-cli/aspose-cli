@@ -1,0 +1,119 @@
+{
+  "name": "words edit refuses an output password it cannot read and an --out that is '-', an input or given with --in-place, naming the option, and writes nothing",
+  "files": {
+    "input.docx": { "fixture": "words.docx" },
+    "ops.json": { "fixture": "words.ops" }
+  },
+  "steps": [
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json", "--out", "locked.docx", "--encrypt-env", "UNSET_PASSWORD_VARIABLE"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --encrypt-env: environment variable 'UNSET_PASSWORD_VARIABLE' is not set or is empty" },
+          { "path": "error.details.option", "equals": "--encrypt-env" },
+          { "path": "error.details.variable", "equals": "UNSET_PASSWORD_VARIABLE" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json", "--out", "locked.docx", "--encrypt", ""],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --encrypt: the password is empty" },
+          { "path": "error.details.option", "equals": "--encrypt" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json", "--out", "locked.docx", "--encrypt", "Scenario-New-Secret-7d2a", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --encrypt: more than one password source was given" },
+          { "path": "error.details.option", "equals": "--encrypt" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json", "--out", "locked.docx", "--encrypt-stdin"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --encrypt-stdin: no password was provided on stdin" },
+          { "path": "error.details.option", "equals": "--encrypt-stdin" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json", "--in-place", "--out", "copy.docx"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --in-place: cannot be combined with --out" },
+          { "path": "error.details.option", "equals": "--in-place" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json", "--in-place", "--out", "-"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --out: '-' names standard input, not an output" },
+          { "path": "error.details.option", "equals": "--out" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json", "--out", "input.docx"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "startsWith": "Invalid use of --out: the output resolves to an input file: " },
+          { "path": "error.details.path", "equals": "<workspace>/input.docx" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json", "--out", "ops.json"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "startsWith": "Invalid use of --out: the output resolves to an input file: " },
+          { "path": "error.details.path", "equals": "<workspace>/ops.json" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "output.path", "equals": "<workspace>/input.out.docx" },
+          { "path": "output.format", "equals": "docx" }
+        ],
+        "files": { "present": ["input.out.docx"], "unchanged": ["input.docx"] }
+      }
+    }
+  ]
+}

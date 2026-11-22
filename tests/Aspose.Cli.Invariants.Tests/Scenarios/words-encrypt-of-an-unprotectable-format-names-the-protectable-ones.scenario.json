@@ -1,0 +1,50 @@
+{
+  "name": "words convert and edit refuse an output password for a format that cannot carry one, naming the option given, the format and the formats that can, and write nothing",
+  "files": {
+    "source.docx": { "fixture": "words.docx" },
+    "wordml.xml": { "fixture": "words.wordml" },
+    "ops.json": { "fixture": "words.ops" }
+  },
+  "steps": [
+    {
+      "args": ["words", "convert", "source.docx", "--out", "copy.rtf", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --encrypt-env: the 'rtf' format cannot be password-protected; doc, dot, docx, docm, dotx, dotm, odt, ott can" },
+          { "path": "error.details.option", "equals": "--encrypt-env" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "convert", "source.docx", "--to", "flatopc", "--out", "flat.xml", "--encrypt", "Scenario-New-Secret-7d2a"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --encrypt: the 'flatopc' format cannot be password-protected; doc, dot, docx, docm, dotx, dotm, odt, ott can" },
+          { "path": "error.details.option", "equals": "--encrypt" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "wordml.xml", "--ops", "ops.json", "--in-place", "--encrypt-stdin"],
+      "stdin": "Scenario-New-Secret-7d2a",
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "Invalid use of --encrypt-stdin: the 'wordml' format cannot be password-protected; doc, dot, docx, docm, dotx, dotm, odt, ott can" },
+          { "path": "error.details.option", "equals": "--encrypt-stdin" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    }
+  ]
+}
