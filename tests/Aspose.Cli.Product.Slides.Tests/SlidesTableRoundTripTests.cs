@@ -308,7 +308,7 @@ public sealed class SlidesTableRoundTripTests
     {
         Input = input,
         Batch = TableBatch.Parse(ops, SlidesTable.Definition, new Inputs()),
-        Output = TestOutput.At(output),
+        Output = new EditOutput(output),
     };
 
     private static (JsonNode Write, Func<JsonNode?, bool> Reads) Equal(JsonNode value) =>

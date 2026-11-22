@@ -281,7 +281,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
         if (typeName == SdkMetadataNames.ProductDefinitionBuilder)
         {
             return member is
-                "Activator" or "Build" or "Describe" or "DetectFormat"
+                "Activator" or "Build" or "Describe"
                 or "Diagnostics" or "Formats" or "Guard" or "Json" or "View";
         }
         if (typeName == SdkMetadataNames.ProductMenu)

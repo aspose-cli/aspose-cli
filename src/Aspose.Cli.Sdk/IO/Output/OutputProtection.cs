@@ -40,7 +40,8 @@ public abstract record OutputProtection
     /// </summary>
     /// <exception cref="InvalidOperationException">
     /// <paramref name="encrypt"/> is given for a format that cannot carry a password, which the
-    /// command line refuses before the product runs, naming the option the caller passed; or the
+    /// command line refuses before the product runs, and an edit once its input opens, naming the
+    /// option the caller passed; or the
     /// output would keep the encryption of a primary input opened without a password, which a
     /// loader refuses, so the output would be reported encrypted without a password to write.
     /// </exception>

@@ -150,8 +150,9 @@ public sealed record InputDocument(
 /// Where a command publishes its result and the formats it can write there. The command
 /// template resolves the output once per invocation (<see cref="StandardInvocation.Output"/>):
 /// the format <c>--to</c> names when the command has one, else the format among those it writes
-/// that the named output's extension declares, else the edited input's format or the
-/// <c>--to</c> default; the output's extension must belong to that format.
+/// that the named output's extension declares, else the <c>--to</c> default; the output's
+/// extension must belong to that format. An edit writes its input's format, which it decides
+/// once the input is open.
 /// </summary>
 public sealed class OutputTarget
 {
@@ -161,8 +162,7 @@ public sealed class OutputTarget
         string? directoryDescription,
         bool required,
         IReadOnlyList<FormatDescriptor>? writes = null,
-        string? derivedMarker = null,
-        bool followsInput = false)
+        string? derivedMarker = null)
     {
         if (writes is { Count: 0 })
         {
@@ -175,7 +175,6 @@ public sealed class OutputTarget
         Required = required;
         Writes = writes;
         DerivedMarker = derivedMarker;
-        FollowsInput = followsInput;
     }
 
     internal OutputKind Kind { get; }
@@ -191,12 +190,6 @@ public sealed class OutputTarget
 
     /// <summary>What a derived output inserts before the extension, such as <c>.signed</c>.</summary>
     internal string? DerivedMarker { get; }
-
-    /// <summary>
-    /// Whether the output is written in the format of the input, which the command checks the
-    /// output's extension against once the input is open; binding refuses no extension.
-    /// </summary>
-    internal bool FollowsInput { get; }
 
     /// <summary>
     /// One file named by <c>--out</c>, beside <c>--overwrite</c>, in the format the command's
@@ -231,8 +224,8 @@ public sealed class OutputTarget
 
     /// <summary>
     /// The edited input document, published to <c>--out</c> (by default beside the input) or
-    /// atomically in place with <c>--in-place</c>, in the format among <paramref name="writes"/>
-    /// the output's extension declares.
+    /// atomically in place with <c>--in-place</c>, in the input's format among
+    /// <paramref name="writes"/>, which the edit decides once the input is open.
     /// </summary>
     internal static OutputTarget Mutation(IReadOnlyList<FormatDescriptor> writes) => new(
         OutputKind.Mutation,
@@ -240,18 +233,6 @@ public sealed class OutputTarget
         null,
         required: false,
         Declared(writes));
-
-    /// <summary>
-    /// The edited input of an object table edit, published as <see cref="Mutation"/> publishes it:
-    /// the edit reports what the saved file holds.
-    /// </summary>
-    internal static OutputTarget TableMutation(IReadOnlyList<FormatDescriptor> writes) => new(
-        OutputKind.Mutation,
-        "Output path. Default: the input path with '.out' inserted before the extension.",
-        null,
-        required: false,
-        Declared(writes),
-        followsInput: true);
 
     private static string Help(string description)
     {
@@ -582,7 +563,7 @@ public sealed class StandardOptions
 /// whether named or derived from the input, never names a file that any of the command's file
 /// parameters or file-backed JSON sources names (a bounded edit also refuses one that its
 /// operations read), and a password is refused for a format that cannot carry one before its
-/// secret is read.
+/// secret is read, except for an edit, whose format is known once its input is open.
 /// </summary>
 public partial class StandardInvocation
 {
@@ -775,9 +756,6 @@ public partial class StandardInvocation
 
     internal InputSource Inputs { get; }
 
-    /// <summary>The product's content format detector, which a menu edit command supplies; null otherwise.</summary>
-    internal Func<string, string?>? DetectFormat { get; init; }
-
     internal bool UsesFonts => _options.Fonts is not null;
 
     /// <summary>Resolves the input documents the command declares, so a password error names its input.</summary>
@@ -795,32 +773,41 @@ public partial class StandardInvocation
     }
 
     /// <summary>
-    /// The output of a mutation in <paramref name="format"/>: <c>--in-place</c> replaces
-    /// <see cref="Input"/>; otherwise the output is <c>--out</c> or the input path with '.out'
-    /// inserted before its extension.
+    /// Where an edit publishes its input: <c>--in-place</c> replaces <see cref="Input"/>;
+    /// otherwise the output is <c>--out</c> or the input path with '.out' inserted before its
+    /// extension. Its format is the input's, which the edit decides once the input is open.
     /// </summary>
-    /// <exception cref="CliException"><c>OPTION_INVALID</c> for a contradictory combination or an output that names an input.</exception>
-    private ResolvedOutput Mutated(FormatDescriptor format, IReadOnlyList<FormatDescriptor> alternatives)
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> for an output named <c>-</c>, a contradictory combination or an output that names an input.</exception>
+    internal EditOutput EditOutput
     {
-        Option<bool> inPlaceOption = Declared(_options.InPlace, "mutation output");
-        string? requested = _parse.GetValue(_options.OutputFile!.Option);
-        bool inPlace = _parse.GetValue(inPlaceOption);
-        if (requested is not null && inPlace)
+        get
         {
-            throw CliErrors.OptionInvalid(
-                StandardOptionNames.InPlace,
-                $"cannot be combined with {StandardOptionNames.Out}");
-        }
+            Option<bool> inPlaceOption = Declared(_options.InPlace, "mutation output");
+            string? requested = _parse.GetValue(_options.OutputFile!.Option);
+            if (requested is not null)
+            {
+                // An output named '-' is refused before its combination with --in-place.
+                OutputFileOption.RefuseStandardStream(requested, StandardOptionNames.Out);
+            }
 
-        if (inPlace)
-        {
-            return new ResolvedOutput(format, Input, overwrite: true, inPlace: true, alternatives);
-        }
+            bool inPlace = _parse.GetValue(inPlaceOption);
+            if (requested is not null && inPlace)
+            {
+                throw CliErrors.OptionInvalid(
+                    StandardOptionNames.InPlace,
+                    $"cannot be combined with {StandardOptionNames.Out}");
+            }
 
-        string output = requested is null
-            ? Derived(OutputFileOption.DerivePath(Input, Path.GetExtension(Input)))
-            : OutputFileOption.ResolveExplicit(Paths, requested, StandardOptionNames.Out, DeclaredInputs());
-        return new ResolvedOutput(format, output, Overwrite, inPlace: false, alternatives);
+            if (inPlace)
+            {
+                return new EditOutput(Input, Overwrite: true, InPlace: true);
+            }
+
+            string output = requested is null
+                ? Derived(OutputFileOption.DerivePath(Input, Path.GetExtension(Input)))
+                : OutputFileOption.ResolveExplicit(Paths, requested, StandardOptionNames.Out, DeclaredInputs());
+            return new EditOutput(output, Overwrite);
+        }
     }
 
     // A derived output is refused like a named one: the caller moves it with --out.

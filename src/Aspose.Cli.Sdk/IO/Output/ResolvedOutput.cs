@@ -11,24 +11,12 @@ namespace Aspose.Cli.Sdk.IO.Output;
 /// </summary>
 public sealed record ResolvedOutput
 {
-    private readonly IReadOnlyList<FormatDescriptor> _alternatives;
-
     /// <summary>Describes one resolved output.</summary>
     /// <param name="format">The format the output is written in.</param>
     /// <param name="path">The output path; it is made absolute.</param>
     /// <param name="overwrite">Whether an existing file may be replaced.</param>
     /// <param name="inPlace">Whether the output replaces the edited input itself.</param>
     public ResolvedOutput(FormatDescriptor format, string path, bool overwrite = false, bool inPlace = false)
-        : this(format, path, overwrite, inPlace, [])
-    {
-    }
-
-    internal ResolvedOutput(
-        FormatDescriptor format,
-        string path,
-        bool overwrite,
-        bool inPlace,
-        IReadOnlyList<FormatDescriptor> alternatives)
     {
         ArgumentNullException.ThrowIfNull(format);
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
@@ -36,7 +24,6 @@ public sealed record ResolvedOutput
         Path = System.IO.Path.GetFullPath(path);
         Overwrite = overwrite;
         InPlace = inPlace;
-        _alternatives = alternatives;
     }
 
     /// <summary>The format the output is written in.</summary>
@@ -53,18 +40,6 @@ public sealed record ResolvedOutput
 
     /// <summary>The directory the output is published in.</summary>
     public string Directory => System.IO.Path.GetDirectoryName(Path)!;
-
-    /// <summary>
-    /// The format to write a document whose own format is <paramref name="sourceFormatId"/>:
-    /// that format when the output's extension names it too and the command writes it, so an
-    /// edited WordML <c>.xml</c> file stays WordML; otherwise <see cref="Format"/>. Only an
-    /// output whose extension chose its format has such alternatives.
-    /// </summary>
-    public FormatDescriptor Keeping(string? sourceFormatId) =>
-        _alternatives.FirstOrDefault(format => string.Equals(format.Id, sourceFormatId, StringComparison.Ordinal)) ?? Format;
-
-    /// <summary>The formats the output's extension names, in declared order; empty when only one does.</summary>
-    internal IReadOnlyList<FormatDescriptor> Alternatives => _alternatives;
 
     /// <summary>
     /// The paths of an output written in parts numbered <paramref name="numbers"/>, such as the

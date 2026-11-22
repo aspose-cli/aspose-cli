@@ -21,7 +21,7 @@ public sealed class SlidesMutationAndSecurityTests
         {
             Input = input,
             Batch = TestBatch.Parse([new JsonObject { ["delete"] = slide }, new JsonObject { ["delete"] = slide }]),
-            Output = TestOutput.At(output),
+            Output = new EditOutput(output),
         }));
 
         Assert.Equal(ErrorCodes.AddressNotFound, error.Code);
@@ -66,7 +66,7 @@ public sealed class SlidesMutationAndSecurityTests
         {
             Input = input,
             Batch = TestBatch.Parse([new JsonObject { ["set"] = "presentation", ["props"] = new JsonObject { ["title"] = "Safe" } }]),
-            Output = TestOutput.At(output),
+            Output = new EditOutput(output),
             EncryptPassword = new Secret("correct"),
         });
 
@@ -106,7 +106,7 @@ public sealed class SlidesMutationAndSecurityTests
                 new JsonObject { ["set"] = "presentation", ["props"] = new JsonObject { ["title"] = "First" } },
                 new JsonObject { ["add"] = "slide", ["args"] = new JsonObject { ["index"] = 99, ["layout"] = layout } },
             ]),
-            Output = TestOutput.At(output),
+            Output = new EditOutput(output),
         }));
 
         Assert.Equal(ErrorCodes.EngineError, error.Code);

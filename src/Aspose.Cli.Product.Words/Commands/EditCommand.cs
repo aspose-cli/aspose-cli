@@ -22,6 +22,7 @@ internal static class EditCommand
                 Output = edit.Output,
                 Password = edit.Password,
                 EncryptPassword = edit.EncryptPassword,
+                EncryptOption = edit.EncryptOption,
             },
             examples:
             [

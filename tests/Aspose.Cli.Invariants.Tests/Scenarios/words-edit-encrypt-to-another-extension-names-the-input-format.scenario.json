@@ -1,0 +1,67 @@
+{
+  "name": "words edit --encrypt-env of a docx input to an --out of another extension, or in place in a .xml file, is refused for the extension, naming docx, the format the edit writes, and writes nothing",
+  "files": {
+    "input.docx": { "fixture": "words.docx" },
+    "disguised.xml": { "fixture": "words.docx" },
+    "ops.json": { "fixture": "words.ops" }
+  },
+  "steps": [
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json", "--out", "copy.rtf", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "--out 'copy.rtf' has the .rtf extension, and an edit writes the format of its input, docx. Must be one of: .docx." },
+          { "path": "error.details.option", "equals": "--out" },
+          { "path": "error.details.format", "equals": "docx" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "edit", "input.docx", "--ops", "ops.json", "--out", "copy.xml", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "--out 'copy.xml' has the .xml extension, and an edit writes the format of its input, docx. Must be one of: .docx." },
+          { "path": "error.details.format", "equals": "docx" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "edit", "disguised.xml", "--ops", "ops.json", "--out", "copy.xml", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "--out 'copy.xml' has the .xml extension, and an edit writes the format of its input, docx. Must be one of: .docx." },
+          { "path": "error.message", "notContains": "flatopc" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "edit", "disguised.xml", "--ops", "ops.json", "--in-place", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "equals": "The input 'disguised.xml', which --in-place replaces, has the .xml extension, and an edit writes the format of its input, docx. Must be one of: .docx." },
+          { "path": "error.details.option", "equals": "--in-place" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    }
+  ]
+}

@@ -51,7 +51,7 @@ public sealed class PdfEngineFixture : IDisposable
     {
         Input = input,
         Batch = Aspose.Cli.Sdk.Tables.TableBatch.Parse(ops, PdfTable.Definition, new Inputs()),
-        Output = TestOutput.At(output),
+        Output = new EditOutput(output),
         Password = password,
         EncryptPassword = encrypt,
     };

@@ -126,11 +126,7 @@ public sealed class CommandDefinition<TRequest, TResult>
             parse,
             scope.Paths,
             scope.Inputs,
-            scope.ReadEnvironment)
-        {
-            // Only an edit keeps its input's format; any other command judges the output's own.
-            DetectFormat = _traits.Output?.Kind == OutputKind.Mutation ? context.DetectFormat : null,
-        };
+            scope.ReadEnvironment);
         try
         {
             invocation.ResolveDocuments();
