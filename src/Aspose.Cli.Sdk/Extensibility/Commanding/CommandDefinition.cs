@@ -17,9 +17,9 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// at most one option may read standard input (<c>OPTION_INVALID</c> otherwise); the input documents are resolved (a missing one is <c>FILE_NOT_FOUND</c>); then
 /// <c>--font-dir</c> is validated before any secret or standard input is read; then <c>bind</c> runs, the
 /// product's usage checks first and then the inputs and secrets it reads; then the font scope is
-/// entered; then the product guard runs around the handler; then <see cref="Finish"/>; then the
-/// write pipeline discloses evaluation output. A password error about one of two input documents
-/// is restated with that document's own option. The font scope ends after the result is complete.
+/// entered; then the product guard runs around the handler; then the write pipeline discloses
+/// evaluation output. A password error about one of two input documents is restated with that
+/// document's own option. The font scope ends after the result is complete.
 /// </para>
 /// <para>How a product command is written:</para>
 /// <list type="bullet">
@@ -82,13 +82,6 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// <summary>The command help.</summary>
     public string Description { get; }
 
-    /// <summary>
-    /// Completes the result with what only the command line knows, such as the option values that
-    /// continue a truncated read; it runs after the handler, inside the
-    /// font scope, and receives the same parse, request and invocation as <c>bind</c>.
-    /// </summary>
-    public Func<ParseResult, TRequest, TResult, StandardInvocation, TResult>? Finish { get; init; }
-
     /// <summary>Help examples, written after the executable name.</summary>
     public IReadOnlyList<string> Examples { get; init; } = [];
 
@@ -136,10 +129,6 @@ public sealed class CommandDefinition<TRequest, TResult>
             using IDisposable? fontScope = fonts is null ? null : scope.Binding.UseFonts(fonts);
             TSession session = ((ProductBinding<TSession>)scope.Binding).Session;
             TResult result = context.Guarded(handler, session, request, scope.Binding.Publishing);
-            if (Finish is not null)
-            {
-                result = Finish(parse, request, result, invocation);
-            }
 
             // The write pipeline discloses evaluation output for every product command alike.
             return scope.Binding.Publishing.Disclose(result);

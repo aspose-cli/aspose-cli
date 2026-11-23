@@ -10,7 +10,6 @@ internal static class SearchCommand
         TableCommands.Search<SlidesSearchResult>(
             "Search the text of a presentation's shapes, table cells, notes and chart titles; each hit names the object's address.",
             new CommandTraits { Input = SlidesInputs.Presentation },
-            static (request, result) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
             examples:
             [
                 "slides search deck.pptx --pattern TODO",

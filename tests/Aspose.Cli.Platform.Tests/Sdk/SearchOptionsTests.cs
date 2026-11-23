@@ -58,8 +58,8 @@ public sealed class SearchOptionsTests
 
         Assert.Equal([2, 3], hits.Hits);
         Assert.Equal(4, offered);
-        Assert.Equal(new Dictionary<string, string> { ["skip"] = "3" }, SearchOptions.Continue(query, hits.Window()).Next);
-        Assert.Null(SearchOptions.Continue(query, query.Collect<int>().Window()).Next);
+        Assert.Equal(new Dictionary<string, string> { ["skip"] = "3" }, hits.Window().Next);
+        Assert.Null(query.Collect<int>().Window().Next);
     }
 
     [Theory]

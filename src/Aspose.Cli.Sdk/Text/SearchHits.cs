@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Sdk.Text;
@@ -11,6 +12,7 @@ namespace Aspose.Cli.Sdk.Text;
 public sealed class SearchHits<THit>
 {
     private readonly List<THit> _hits = [];
+    private readonly int _skip;
     private readonly int _maxHits;
     private int _toSkip;
 
@@ -21,6 +23,7 @@ public sealed class SearchHits<THit>
     {
         ArgumentOutOfRangeException.ThrowIfNegative(skip);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxHits);
+        _skip = skip;
         _toSkip = skip;
         _maxHits = maxHits;
     }
@@ -32,14 +35,17 @@ public sealed class SearchHits<THit>
     public bool Truncated { get; private set; }
 
     /// <summary>
-    /// The result window of these hits; the command adds <c>next</c> with
-    /// <see cref="Extensibility.Commanding.SearchOptions.Continue"/>.
+    /// The result window of these hits; when it is truncated, <c>next</c> holds the
+    /// <c>--skip</c> past the returned hits.
     /// </summary>
     public ResultWindow Window() => new()
     {
         Unit = "hit",
         Returned = _hits.Count,
         Truncated = Truncated,
+        Next = Truncated
+            ? ResultWindow.Options((SearchQuery.SkipOption, (_skip + _hits.Count).ToString(CultureInfo.InvariantCulture)))
+            : null,
     };
 
     /// <summary>

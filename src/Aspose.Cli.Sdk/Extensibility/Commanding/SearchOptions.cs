@@ -1,6 +1,4 @@
 using System.CommandLine;
-using System.Globalization;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
@@ -23,7 +21,6 @@ public sealed class SearchOptions
     internal const string RegexOption = "--regex";
     internal const string CaseSensitiveOption = "--case-sensitive";
     internal const string MaxHitsOption = "--max-hits";
-    internal const string SkipOption = "--skip";
 
     private readonly Option<string> _pattern;
     private readonly Option<bool> _regex;
@@ -52,25 +49,12 @@ public sealed class SearchOptions
             Description = "Maximum returned hits.",
             DefaultValueFactory = _ => DefaultMaxHits,
         }.InRange(1, MaximumHits);
-        _skip = new Option<int>(SkipOption)
+        _skip = new Option<int>(SearchQuery.SkipOption)
         {
             Description = "Matches to pass over before the returned hits; a truncated search's window.next sets it.",
             DefaultValueFactory = _ => 0,
         };
         Options = [_pattern, _regex, _caseSensitive, _maxHits, _skip];
-    }
-
-    /// <summary>
-    /// Completes the window a search returned: when hits remain, <c>next</c> holds the
-    /// <c>--skip</c> past the returned hits.
-    /// </summary>
-    public static ResultWindow Continue(SearchQuery query, ResultWindow window)
-    {
-        ArgumentNullException.ThrowIfNull(query);
-        ArgumentNullException.ThrowIfNull(window);
-        return window.Truncated
-            ? window with { Next = ResultWindow.Options((SkipOption, (query.Skip + window.Returned).ToString(CultureInfo.InvariantCulture))) }
-            : window;
     }
 
     /// <summary>The search options in help order, for a product command's option list.</summary>
@@ -82,7 +66,7 @@ public sealed class SearchOptions
         ArgumentNullException.ThrowIfNull(parse);
         int maxHits = parse.GetInRange(_maxHits);
         int skip = parse.GetValue(_skip);
-        OptionGuards.EnsureInRange(SkipOption, skip, 0, int.MaxValue);
+        OptionGuards.EnsureInRange(SearchQuery.SkipOption, skip, 0, int.MaxValue);
         return new SearchQuery(
             TextSearch.Create(
                 parse.GetRequiredValue(_pattern),
