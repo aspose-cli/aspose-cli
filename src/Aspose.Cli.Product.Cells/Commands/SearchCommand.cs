@@ -9,7 +9,6 @@ internal static class SearchCommand
         TableCommands.Search<CellsSearchResult>(
             "Search the text of a workbook's cells, as their number formats show it, their formulas and their comments; each hit names the object's address and row.",
             new CommandTraits { Input = CellsInputs.Workbook },
-            static (request, result) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
             examples:
             [
                 "cells search book.xlsx --pattern Total",

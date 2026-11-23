@@ -9,7 +9,6 @@ internal static class SearchCommand
         TableCommands.Search<PdfSearchResult>(
             "Search the text of a PDF's pages with the engine's TextFragmentAbsorber; each hit names the page's text and gives the engine's rectangle of the match.",
             new CommandTraits { Input = PdfInputs.Document },
-            static (request, result) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
             examples:
             [
                 "pdf search report.pdf --pattern Contoso",

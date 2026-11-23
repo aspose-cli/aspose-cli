@@ -72,15 +72,15 @@ public sealed class ProductMenuTests : IDisposable
     }
 
     [Fact]
-    public void Command_ChecksTheFontsThenBindsThenRunsTheGuardedHandlerAndFinishesInsideTheFontScope()
+    public void Command_ChecksTheFontsThenBindsThenRunsTheGuardedHandlerInsideTheFontScope()
     {
         Command product = Menu().Build().CreateCommand(_hosts.Run);
 
         TextResult result = Assert.IsType<TextResult>(Run(product, "inspect", "doc.test", "--font-dir", "fonts", "--password-env", "LEFT"));
 
-        Assert.Equal(_temp.File("doc.test") + "|a|finished", result.Value);
+        Assert.Equal(_temp.File("doc.test") + "|a", result.Value);
         Assert.Equal(
-            ["bind", "fonts " + _temp.File("fonts"), "guard >", "handler", "guard <", "finish", "fonts end"],
+            ["bind", "fonts " + _temp.File("fonts"), "guard >", "handler", "guard <", "fonts end"],
             Log);
     }
 
@@ -248,11 +248,6 @@ public sealed class ProductMenuTests : IDisposable
                         : new InfoRequest { Input = standard.Input, Password = standard.InputPassword?.Reveal() };
                 })
             {
-                Finish = static (_, _, result, _) =>
-                {
-                    Log.Add("finish");
-                    return result with { Value = result.Value + "|finished" };
-                },
                 Examples = ["menu inspect doc.test --font-dir fonts"],
             };
         }

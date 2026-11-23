@@ -57,6 +57,31 @@ public sealed class SlidesCoreWorkflowTests
         Assert.True(File.Exists(item.Path));
     }
 
+    /// <summary>
+    /// A search its hit budget cuts short names, in <c>window.next</c>, the <c>--skip</c> that
+    /// continues it: the matches passed over and the hits returned.
+    /// </summary>
+    [Fact]
+    public void Search_CutShort_NamesTheSkipThatContinuesIt()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("deck.pptx", slides: 3);
+
+        SlidesSearchResult cut = SlidesSearch.Run(fixture.Session, Search(input, skip: 1));
+        SlidesSearchResult last = SlidesSearch.Run(fixture.Session, Search(input, skip: 2));
+
+        Assert.True(cut.Window.Truncated);
+        Assert.Equal(new Dictionary<string, string> { ["skip"] = "2" }, cut.Window.Next);
+        Assert.False(last.Window.Truncated);
+        Assert.Null(last.Window.Next);
+
+        static TableSearchRequest Search(string input, int skip) => new()
+        {
+            Input = input,
+            Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: true), 1, skip),
+        };
+    }
+
     [Fact]
     public void ExtractMedia_WithSlides_WritesOnlyTheMediaThoseSlidesShow()
     {

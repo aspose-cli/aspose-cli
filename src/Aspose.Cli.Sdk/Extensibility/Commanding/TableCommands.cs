@@ -196,18 +196,15 @@ public static class TableCommands
     /// <summary>Defines the <c>search</c> command, over the text rows the table names.</summary>
     /// <param name="description">The command help.</param>
     /// <param name="traits">The searched document.</param>
-    /// <param name="finish">Completes the result's window with <see cref="SearchOptions.Continue"/>.</param>
     /// <param name="examples">The help examples.</param>
     /// <param name="links">The help links.</param>
     public static CommandDefinition<TableSearchRequest, TResult> Search<TResult>(
         string description,
         CommandTraits traits,
-        Func<TableSearchRequest, TResult, TResult> finish,
         IReadOnlyList<string>? examples = null,
         IReadOnlyList<CommandHelpLink>? links = null)
-        where TResult : WindowedResultEnvelope
+        where TResult : ResultEnvelope
     {
-        ArgumentNullException.ThrowIfNull(finish);
         var search = new SearchOptions();
         return new CommandDefinition<TableSearchRequest, TResult>(
             "search",
@@ -218,7 +215,6 @@ public static class TableCommands
         {
             Examples = examples ?? [],
             Links = links ?? [],
-            Finish = (_, request, result, _) => finish(request, result),
         };
     }
 
