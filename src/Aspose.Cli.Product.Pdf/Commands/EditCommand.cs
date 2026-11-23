@@ -1,11 +1,12 @@
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class EditCommand
 {
-    public static CommandDefinition<PdfEditRequest, PdfEditResult> Create() =>
-        TableCommands.Edit<PdfEditRequest, PdfEditResult>(
+    public static CommandDefinition<TableEditRequest, PdfEditResult> Create() =>
+        TableCommands.Edit<PdfEditResult>(
             PdfModule.Table,
             "Apply a batch of set, add, delete and do operations to a PDF; nothing is written when one fails.",
             new CommandTraits
@@ -15,15 +16,6 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             PdfFormats.Document,
-            static edit => new PdfEditRequest
-            {
-                Input = edit.Input,
-                Batch = edit.Batch,
-                Output = edit.Output,
-                Password = edit.Password,
-                EncryptPassword = edit.EncryptPassword,
-                EncryptOption = edit.EncryptOption,
-            },
             examples:
             [
                 "pdf edit form.pdf --ops ops.json --out filled.pdf",

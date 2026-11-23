@@ -91,7 +91,7 @@ public sealed class WordsFixture : IDisposable
     }
 
     /// <summary>A request of <c>words edit</c> over a parsed operation document.</summary>
-    internal static WordsEditRequest Edit(string input, string output, string ops) => new()
+    internal static TableEditRequest Edit(string input, string output, string ops) => new()
     {
         Input = input,
         Batch = TableBatch.Parse(ops, WordsTable.Definition, new Inputs()),

@@ -1,15 +1,15 @@
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class SearchCommand
 {
-    public static CommandDefinition<SlidesSearchRequest, SlidesSearchResult> Create() =>
-        TableCommands.Search<SlidesSearchRequest, SlidesSearchResult>(
+    public static CommandDefinition<TableSearchRequest, SlidesSearchResult> Create() =>
+        TableCommands.Search<SlidesSearchResult>(
             "Search the text of a presentation's shapes, table cells, notes and chart titles; each hit names the object's address.",
             new CommandTraits { Input = SlidesInputs.Presentation },
-            static search => new SlidesSearchRequest { Input = search.Input, Password = search.Password, Query = search.Query },
             static (request, result) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
             examples:
             [

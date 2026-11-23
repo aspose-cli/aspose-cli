@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Formats;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -164,7 +165,7 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
         string input = fixture.CreatePresentation("base.pptx", slides: 1);
         string source = fixture.CreatePresentation("locked-source.pptx", slides: 1, password: "deck-secret");
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new TableEditRequest
         {
             Input = input,
             Batch = TestBatch.Parse([new JsonObject

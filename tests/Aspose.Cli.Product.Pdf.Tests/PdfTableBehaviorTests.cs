@@ -163,7 +163,7 @@ public sealed partial class PdfTableBehaviorTests
         string input = fixture.CreateRich();
         string[] kinds = ["page", "annotation", "font", "layer", "bookmark", "field", "attachment", "pageLabel", "info", "xmp"];
 
-        PdfReadResult read = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = input, Kinds = kinds, MaxObjects = TableRead.MaximumObjects });
+        PdfReadResult read = PdfRead.Run(fixture.Session, new TableReadRequest { Input = input, Kinds = kinds, MaxObjects = TableRead.MaximumObjects });
 
         var listed = read.Objects.GroupBy(static item => item.Kind).ToDictionary(static group => group.Key, static group => (long)group.Count());
         foreach ((string key, string kind) in new[] { ("pages", "page"), ("annotations", "annotation"), ("fonts", "font"), ("layers", "layer"), ("bookmarks", "bookmark"), ("fields", "field"), ("attachments", "attachment"), ("pageLabels", "pageLabel"), ("info", "info"), ("xmp", "xmp") })
@@ -186,7 +186,7 @@ public sealed partial class PdfTableBehaviorTests
 
         PdfEditResult added = PdfEdit.Run(fixture.Session, PdfEngineFixture.Edit(input, output,
             """{"ops":[{"add":"info","args":{"key":"dept/team\\x","value":"ops"}}]}"""));
-        PdfReadResult read = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = output, At = """info/dept\/team\\x""" });
+        PdfReadResult read = PdfRead.Run(fixture.Session, new TableReadRequest { Input = output, At = """info/dept\/team\\x""" });
 
         Assert.Equal("""info/dept\/team\\x""", added.Ops[0].At);
         Assert.Equal("ops", Assert.Single(read.Objects).Props["value"]!.GetValue<string>());
@@ -200,10 +200,10 @@ public sealed partial class PdfTableBehaviorTests
         string input = fixture.CreateDocument();
         string output = fixture.File("out.pdf");
 
-        PdfReadResult listed = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = input });
+        PdfReadResult listed = PdfRead.Run(fixture.Session, new TableReadRequest { Input = input });
         PdfEditResult edited = PdfEdit.Run(fixture.Session, PdfEngineFixture.Edit(input, output,
             """{"ops":[{"set":"document","props":{"info.title":"One"}},{"set":"document","props":{"info.author":"Two"}}]}"""));
-        PdfReadResult tree = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = input, At = "taggedContent" });
+        PdfReadResult tree = PdfRead.Run(fixture.Session, new TableReadRequest { Input = input, At = "taggedContent" });
 
         Assert.DoesNotContain(listed.Objects, static item => item.Kind == "taggedContent");
         Assert.All(edited.Ops, static op => Assert.Equal("One", op.Now!["info.title"]!.GetValue<string>()));
@@ -220,7 +220,7 @@ public sealed partial class PdfTableBehaviorTests
         string input = fixture.CreateRawDocument("id.pdf", pages: 1, textContent: "BT /F1 12 Tf 72 720 Td (ID: 110101199003074518) Tj ET");
         string output = fixture.File("out.pdf");
 
-        PdfSearchResult search = PdfSearch.Run(fixture.Session, new PdfSearchRequest
+        PdfSearchResult search = PdfSearch.Run(fixture.Session, new TableSearchRequest
         {
             Input = input,
             Query = new Aspose.Cli.Sdk.Text.SearchQuery(Aspose.Cli.Sdk.Text.TextSearch.Create("110101199003074518", regex: false, caseSensitive: true), 20),
@@ -247,7 +247,7 @@ public sealed partial class PdfTableBehaviorTests
         string output = fixture.File("out.pdf");
 
         PdfEditResult added = PdfEdit.Run(fixture.Session, PdfEngineFixture.Edit(input, output, """{"ops":[{"add":"page"}]}"""));
-        PdfReadResult fonts = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = output, At = "page/2", Kinds = ["font"] });
+        PdfReadResult fonts = PdfRead.Run(fixture.Session, new TableReadRequest { Input = output, At = "page/2", Kinds = ["font"] });
 
         Assert.Equal("page/2", added.Ops[0].At);
         Assert.Equal([1, 2], added.Counts["pages"]);

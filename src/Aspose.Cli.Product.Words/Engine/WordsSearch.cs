@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary><c>words search</c>: the object table's search of the paragraphs' text.</summary>
 internal static class WordsSearch
 {
-    internal static WordsSearchResult Run(WordsSession session, WordsSearchRequest request)
+    internal static WordsSearchResult Run(WordsSession session, TableSearchRequest request)
     {
         TableSearchOutcome outcome = TableRead.Search(session.Outputs, new WordsDocuments(session.Loader), request);
         return new WordsSearchResult

@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary><c>words edit</c>: the object table's edit of a document.</summary>
 internal static class WordsEdit
 {
-    internal static WordsEditResult Run(WordsSession session, WordsEditRequest request)
+    internal static WordsEditResult Run(WordsSession session, TableEditRequest request)
     {
         TableEditOutcome outcome = TableEdit.Run(session.Outputs, new WordsDocuments(session.Loader), request);
         return new WordsEditResult

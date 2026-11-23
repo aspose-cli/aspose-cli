@@ -8,8 +8,8 @@ using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Tables;
 
-/// <summary>The fields every object table read takes; a product's request derives from it.</summary>
-public abstract record TableReadRequest
+/// <summary>One object table read, the same in every product: the document, the subtree, the kinds and the window.</summary>
+public sealed record TableReadRequest
 {
     /// <summary>The document to read.</summary>
     public required string Input { get; init; }
@@ -55,8 +55,8 @@ public sealed record TableReadOutcome
     public LicenseInfo? License { get; init; }
 }
 
-/// <summary>The fields every object table search takes; a product's request derives from it.</summary>
-public abstract record TableSearchRequest
+/// <summary>One object table search, the same in every product: the document and the search.</summary>
+public sealed record TableSearchRequest
 {
     /// <summary>The document to search.</summary>
     public required string Input { get; init; }

@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Slides;
 using Aspose.Slides.Export;
 using Xunit;
@@ -30,8 +31,8 @@ public sealed class SlidesResourceLoadingTests
         }
         Assert.True(Relink(input, Unreachable, server.Url) >= 2, "The deck must keep both external links.");
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input });
-        SlidesEditResult edited = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new TableReadRequest { Input = input });
+        SlidesEditResult edited = SlidesEdit.Run(fixture.Session, new TableEditRequest
         {
             Input = input,
             Batch = TestBatch.Parse([new JsonObject { ["set"] = "presentation", ["props"] = new JsonObject { ["title"] = "Linked" } }]),

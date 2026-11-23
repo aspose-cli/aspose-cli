@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Slides;
 using Xunit;
 
@@ -17,7 +18,7 @@ public sealed class SlidesMutationAndSecurityTests
         string output = fixture.File("deletions.out.pptx");
         string slide = $"slide/{SlideId(input, 0)}";
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new TableEditRequest
         {
             Input = input,
             Batch = TestBatch.Parse([new JsonObject { ["delete"] = slide }, new JsonObject { ["delete"] = slide }]),
@@ -40,14 +41,14 @@ public sealed class SlidesMutationAndSecurityTests
             password: "correct");
 
         CliException missing = Assert.Throws<CliException>(() =>
-            SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input }));
+            SlidesRead.Run(fixture.Session, new TableReadRequest { Input = input }));
         CliException wrong = Assert.Throws<CliException>(() =>
             SlidesRead.Run(
                 fixture.Session,
-                new SlidesReadRequest { Input = input, Password = new Secret("wrong") }));
+                new TableReadRequest { Input = input, Password = new Secret("wrong") }));
         SlidesReadResult opened = SlidesRead.Run(
             fixture.Session,
-            new SlidesReadRequest { Input = input, Password = new Secret("correct"), Kinds = ["slide"] });
+            new TableReadRequest { Input = input, Password = new Secret("correct"), Kinds = ["slide"] });
 
         Assert.Equal(ErrorCodes.PasswordRequired, missing.Code);
         Assert.Equal(ErrorCodes.PasswordInvalid, wrong.Code);
@@ -62,7 +63,7 @@ public sealed class SlidesMutationAndSecurityTests
         string input = fixture.CreatePresentation();
         string output = fixture.File("encrypted.pptx");
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new TableEditRequest
         {
             Input = input,
             Batch = TestBatch.Parse([new JsonObject { ["set"] = "presentation", ["props"] = new JsonObject { ["title"] = "Safe" } }]),
@@ -72,10 +73,10 @@ public sealed class SlidesMutationAndSecurityTests
 
         Assert.True(result.Output.Encrypted);
         Assert.Equal(ErrorCodes.PasswordRequired, Assert.Throws<CliException>(() =>
-            SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output })).Code);
+            SlidesRead.Run(fixture.Session, new TableReadRequest { Input = output })).Code);
         SlidesReadResult read = SlidesRead.Run(
             fixture.Session,
-            new SlidesReadRequest { Input = output, Password = new Secret("correct"), At = "presentation" });
+            new TableReadRequest { Input = output, Password = new Secret("correct"), At = "presentation" });
         Assert.Equal(3, read.Inventory.Read["slides"]);
         Assert.Equal("Safe", read.Objects[0].Props["title"]!.GetValue<string>());
     }
@@ -98,7 +99,7 @@ public sealed class SlidesMutationAndSecurityTests
 
         string output = fixture.File("past-the-end.out.pptx");
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new TableEditRequest
         {
             Input = input,
             Batch = TestBatch.Parse(

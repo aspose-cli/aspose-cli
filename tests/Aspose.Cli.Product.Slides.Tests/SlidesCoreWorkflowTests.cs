@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Slides;
 using Aspose.Slides.Export;
 using Xunit;
@@ -26,7 +27,7 @@ public sealed class SlidesCoreWorkflowTests
 
         SlidesSearchResult search = SlidesSearch.Run(
             fixture.Session,
-            new SlidesSearchRequest
+            new TableSearchRequest
             {
                 Input = searchable,
                 Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: true), 1),

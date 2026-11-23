@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Aspose.Cli.Sdk.IO.Publication;
+using Aspose.Cli.Sdk.Tables;
 using Aspose.Cli.TestKit;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -47,7 +48,7 @@ public sealed class PdfEngineFixture : IDisposable
         "Aspose.PDF evaluation mode gives only the first four objects of any collection and stamps every page it saves, which the in-process engine suite compares against.";
 
     /// <summary>A request of <c>pdf edit</c> over a parsed operation document.</summary>
-    internal static PdfEditRequest Edit(string input, string output, string ops, Aspose.Cli.Sdk.Contracts.Secret? password = null, Aspose.Cli.Sdk.Contracts.Secret? encrypt = null) => new()
+    internal static TableEditRequest Edit(string input, string output, string ops, Aspose.Cli.Sdk.Contracts.Secret? password = null, Aspose.Cli.Sdk.Contracts.Secret? encrypt = null) => new()
     {
         Input = input,
         Batch = Aspose.Cli.Sdk.Tables.TableBatch.Parse(ops, PdfTable.Definition, new Inputs()),

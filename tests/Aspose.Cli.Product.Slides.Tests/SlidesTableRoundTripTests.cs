@@ -195,8 +195,8 @@ public sealed class SlidesTableRoundTripTests
             writer.Write(xml.Replace("idx=\"1\"", "idx=\"4294967295\"", StringComparison.Ordinal));
         }
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, At = $"slide/{slide}/placeholder/Object/4294967295" });
-        CliException missing = Assert.Throws<CliException>(() => SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, At = $"slide/{slide}/placeholder/Object/7" }));
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new TableReadRequest { Input = input, At = $"slide/{slide}/placeholder/Object/4294967295" });
+        CliException missing = Assert.Throws<CliException>(() => SlidesRead.Run(fixture.Session, new TableReadRequest { Input = input, At = $"slide/{slide}/placeholder/Object/7" }));
 
         Assert.Equal("4294967295", read.Objects[0].Props["placeholder.index"]!.ToJsonString());
         Assert.Contains("Object/4294967295", missing.Details!["available"]!.AsArray().Select(static key => key!.GetValue<string>()));
@@ -249,7 +249,7 @@ public sealed class SlidesTableRoundTripTests
             presentation.Save(input, SaveFormat.Pptx);
         }
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Kinds = ["shape"] });
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new TableReadRequest { Input = input, Kinds = ["shape"] });
 
         // Evaluation mode adds a watermark text box of its own; every shape is checked by its type.
         (string Type, bool Line)[] found = [.. read.Objects.Select(static shape => (shape.Props["type"]!.GetValue<string>(), shape.Props.ContainsKey("line.fillType")))];
@@ -304,7 +304,7 @@ public sealed class SlidesTableRoundTripTests
         };
     }
 
-    private static SlidesEditRequest Request(string input, string output, string ops) => new()
+    private static TableEditRequest Request(string input, string output, string ops) => new()
     {
         Input = input,
         Batch = TableBatch.Parse(ops, SlidesTable.Definition, new Inputs()),

@@ -34,7 +34,8 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <item>A handler is any <c>static TResult Run(TSession session, TRequest request)</c> in the
 /// product's Engine; commands that share a body may point at one theme class. Handlers never see
 /// the command line, and commands never see the engine.</item>
-/// <item>The command file (<c>Commands/XxxCommand.cs</c>) holds the options and <c>bind</c>.</item>
+/// <item>The command file (<c>Commands/XxxCommand.cs</c>) holds the options and <c>bind</c>; for
+/// the commands of the object table, <see cref="TableCommands"/> holds both.</item>
 /// <item>Every request declares <c>required string Input</c> (or the paths it reads), so a binding
 /// that forgets it does not compile.</item>
 /// <item>Tests call the handlers directly with a session and a request; there are no test shims

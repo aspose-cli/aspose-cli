@@ -1,14 +1,14 @@
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class SearchCommand
 {
-    public static CommandDefinition<PdfSearchRequest, PdfSearchResult> Create() =>
-        TableCommands.Search<PdfSearchRequest, PdfSearchResult>(
+    public static CommandDefinition<TableSearchRequest, PdfSearchResult> Create() =>
+        TableCommands.Search<PdfSearchResult>(
             "Search the text of a PDF's pages with the engine's TextFragmentAbsorber; each hit names the page's text and gives the engine's rectangle of the match.",
             new CommandTraits { Input = PdfInputs.Document },
-            static search => new PdfSearchRequest { Input = search.Input, Password = search.Password, Query = search.Query },
             static (request, result) => result with { Window = SearchOptions.Continue(request.Query, result.Window) },
             examples:
             [

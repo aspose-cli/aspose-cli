@@ -1,11 +1,12 @@
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class EditCommand
 {
-    public static CommandDefinition<WordsEditRequest, WordsEditResult> Create() =>
-        TableCommands.Edit<WordsEditRequest, WordsEditResult>(
+    public static CommandDefinition<TableEditRequest, WordsEditResult> Create() =>
+        TableCommands.Edit<WordsEditResult>(
             WordsModule.Table,
             "Apply a batch of set, add, delete, move and do operations to a document; nothing is written when one fails.",
             new CommandTraits
@@ -15,15 +16,6 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             WordsFormats.Editable,
-            static edit => new WordsEditRequest
-            {
-                Input = edit.Input,
-                Batch = edit.Batch,
-                Output = edit.Output,
-                Password = edit.Password,
-                EncryptPassword = edit.EncryptPassword,
-                EncryptOption = edit.EncryptOption,
-            },
             examples:
             [
                 "words edit contract.docx --ops ops.json --out revised.docx",

@@ -1,11 +1,12 @@
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
 internal static class EditCommand
 {
-    public static CommandDefinition<CellsEditRequest, CellsEditResult> Create() =>
-        TableCommands.Edit<CellsEditRequest, CellsEditResult>(
+    public static CommandDefinition<TableEditRequest, CellsEditResult> Create() =>
+        TableCommands.Edit<CellsEditResult>(
             CellsModule.Table,
             "Apply a batch of set, add, delete, move and do operations to a workbook; nothing is written when one fails.",
             new CommandTraits
@@ -15,15 +16,6 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             CellsFormats.Editable,
-            static edit => new CellsEditRequest
-            {
-                Input = edit.Input,
-                Batch = edit.Batch,
-                Output = edit.Output,
-                Password = edit.Password,
-                EncryptPassword = edit.EncryptPassword,
-                EncryptOption = edit.EncryptOption,
-            },
             examples:
             [
                 "cells edit book.xlsx --ops ops.json --out revised.xlsx",

@@ -1,24 +1,16 @@
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class ReadCommand
 {
-    public static CommandDefinition<SlidesReadRequest, SlidesReadResult> Create() =>
-        TableCommands.Read<SlidesReadRequest, SlidesReadResult>(
+    public static CommandDefinition<TableReadRequest, SlidesReadResult> Create() =>
+        TableCommands.Read<SlidesReadResult>(
             SlidesModule.Table,
             "Read a presentation's objects, each with every row of the object table, and its inventory.",
             new CommandTraits { Input = SlidesInputs.Presentation },
-            static read => new SlidesReadRequest
-            {
-                Input = read.Input,
-                Password = read.Password,
-                At = read.At,
-                From = read.From,
-                Kinds = read.Kinds,
-                MaxObjects = read.MaxObjects,
-            },
             examples:
             [
                 "slides read deck.pptx",

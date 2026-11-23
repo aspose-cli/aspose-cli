@@ -103,7 +103,7 @@ public sealed class CellsFixture : IDisposable
     }
 
     /// <summary>A request of <c>cells edit</c> over a parsed operation document.</summary>
-    internal static CellsEditRequest Edit(string input, string output, string ops) => new()
+    internal static TableEditRequest Edit(string input, string output, string ops) => new()
     {
         Input = input,
         Batch = TableBatch.Parse(ops, Engine.Mapping.CellsTable.Definition, new Inputs()),

@@ -5,7 +5,7 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary><c>pdf edit</c>: the object table's edit of a document.</summary>
 internal static class PdfEdit
 {
-    internal static PdfEditResult Run(PdfSession session, PdfEditRequest request)
+    internal static PdfEditResult Run(PdfSession session, TableEditRequest request)
     {
         TableEditOutcome outcome = TableEdit.Run(session.Outputs, new PdfDocuments(session.Loader), request);
         return new PdfEditResult
