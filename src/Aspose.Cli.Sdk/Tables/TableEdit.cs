@@ -8,8 +8,8 @@ using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Sdk.Tables;
 
-/// <summary>The fields every object table edit takes; a product's request derives from it.</summary>
-public abstract record TableEditRequest
+/// <summary>One object table edit, the same in every product: the document, the checked operation batch and where the result goes.</summary>
+public sealed record TableEditRequest
 {
     /// <summary>The document to edit.</summary>
     public required string Input { get; init; }
@@ -29,7 +29,7 @@ public abstract record TableEditRequest
     /// <summary>
     /// The option that gave <see cref="EncryptPassword"/> (<c>--encrypt</c>, <c>--encrypt-env</c>
     /// or <c>--encrypt-stdin</c>), which the refusal of an input format that cannot carry a
-    /// password names; null without one.
+    /// password names; when it is null the refusal names <c>--encrypt</c>.
     /// </summary>
     public string? EncryptOption { get; init; }
 }
@@ -91,7 +91,7 @@ public static class TableEdit
         try
         {
             InputInfo input = precondition.Admit(opened.FormatId, opened.Protection);
-            ResolvedOutput output = InTheInputsFormat(request.Output, documents.Formats, opened.FormatId, request.EncryptOption);
+            ResolvedOutput output = InTheInputsFormat(request, documents.Formats, opened.FormatId);
 
             IReadOnlyDictionary<string, long> before = table.Count(opened.Document);
             IReadOnlyList<Applied> applied = Apply(table, opened.Document, request.Batch, context);
@@ -164,8 +164,9 @@ public static class TableEdit
     /// the output's extension must be one of that format's, and the refusal lists only those; an
     /// output password needs a format that can carry one.
     /// </summary>
-    private static ResolvedOutput InTheInputsFormat(EditOutput output, IReadOnlyList<FormatDescriptor> formats, string formatId, string? encryptOption)
+    private static ResolvedOutput InTheInputsFormat(TableEditRequest request, IReadOnlyList<FormatDescriptor> formats, string formatId)
     {
+        EditOutput output = request.Output;
         FormatDescriptor format = formats.FirstOrDefault(candidate => string.Equals(candidate.Id, formatId, StringComparison.OrdinalIgnoreCase))
             ?? throw CliErrors.OptionInvalid(output.InPlace ? "--in-place" : "--out", $"the input is {formatId}, a format edit does not write");
         string extension = Path.GetExtension(output.Path);
@@ -180,9 +181,10 @@ public static class TableEdit
                 : CliErrors.OutputExtensionInvalid("--out", output.Path, $"--out '{name}'", problem, format.Extensions, new JsonObject { ["format"] = format.Id });
         }
 
-        if (encryptOption is not null && !format.Protectable)
+        if (request.EncryptPassword is not null && !format.Protectable)
         {
-            throw CliErrors.Unprotectable(encryptOption, format.Id, [.. formats.Where(static candidate => candidate.Protectable).Select(static candidate => candidate.Id)]);
+            throw CliErrors.Unprotectable(
+                request.EncryptOption ?? "--encrypt", format.Id, [.. formats.Where(static candidate => candidate.Protectable).Select(static candidate => candidate.Id)]);
         }
 
         return new ResolvedOutput(format, output.Path, output.Overwrite, output.InPlace);

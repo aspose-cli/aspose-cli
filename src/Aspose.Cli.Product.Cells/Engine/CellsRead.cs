@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells read</c>: the object table's read of a workbook.</summary>
 internal static class CellsRead
 {
-    internal static CellsReadResult Run(CellsSession session, CellsReadRequest request)
+    internal static CellsReadResult Run(CellsSession session, TableReadRequest request)
     {
         TableReadOutcome outcome = TableRead.Run(session.Outputs, new CellsDocuments(session.Loader), request);
         return new CellsReadResult

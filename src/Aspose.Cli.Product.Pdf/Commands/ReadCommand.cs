@@ -1,23 +1,15 @@
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class ReadCommand
 {
-    public static CommandDefinition<PdfReadRequest, PdfReadResult> Create() =>
-        TableCommands.Read<PdfReadRequest, PdfReadResult>(
+    public static CommandDefinition<TableReadRequest, PdfReadResult> Create() =>
+        TableCommands.Read<PdfReadResult>(
             PdfModule.Table,
             "Read a PDF's objects, each with every row of the object table, and its inventory.",
             new CommandTraits { Input = PdfInputs.Document },
-            static read => new PdfReadRequest
-            {
-                Input = read.Input,
-                Password = read.Password,
-                At = read.At,
-                From = read.From,
-                Kinds = read.Kinds,
-                MaxObjects = read.MaxObjects,
-            },
             examples:
             [
                 "pdf read report.pdf",

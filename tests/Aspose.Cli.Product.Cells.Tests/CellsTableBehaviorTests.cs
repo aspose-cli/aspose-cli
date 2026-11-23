@@ -232,8 +232,8 @@ public sealed class CellsTableBehaviorTests
         using var fixture = new CellsFixture();
         string input = CellsTableRoundTripTests.Book(fixture);
 
-        CellsReadResult all = CellsRead.Run(fixture.Session, new CellsReadRequest { Input = input });
-        CellsReadResult cells = CellsRead.Run(fixture.Session, new CellsReadRequest { Input = input, At = "sheet/Data", Kinds = ["cell"], MaxObjects = 1000 });
+        CellsReadResult all = CellsRead.Run(fixture.Session, new TableReadRequest { Input = input });
+        CellsReadResult cells = CellsRead.Run(fixture.Session, new TableReadRequest { Input = input, At = "sheet/Data", Kinds = ["cell"], MaxObjects = 1000 });
 
         Assert.DoesNotContain(all.Objects, item => CellsKinds.ListedWhenNamed.Contains(item.Kind));
         Assert.Equal(CellsKinds.ListedWhenNamed.Order(StringComparer.Ordinal), all.Window!.NotListedUnlessNamed!.Order(StringComparer.Ordinal));
@@ -247,7 +247,7 @@ public sealed class CellsTableBehaviorTests
         using var fixture = new CellsFixture();
         string input = CellsTableRoundTripTests.Book(fixture);
 
-        CellsReadResult sheet = CellsRead.Run(fixture.Session, new CellsReadRequest { Input = input, At = "sheet/Data" });
+        CellsReadResult sheet = CellsRead.Run(fixture.Session, new TableReadRequest { Input = input, At = "sheet/Data" });
 
         string range = sheet.Objects.Single(item => item.At == "sheet/Data").Props["maxDisplayRange"]!.GetValue<string>();
         Assert.StartsWith("A1:", range, StringComparison.Ordinal);
@@ -262,8 +262,8 @@ public sealed class CellsTableBehaviorTests
         string input = fixture.File("book." + format);
         File.WriteAllText(input, format == "csv" ? "a,b\n1,2\n" : "a\tb\n1\t2\n");
 
-        CliException read = Assert.Throws<CliException>(() => CellsRead.Run(fixture.Session, new CellsReadRequest { Input = input }));
-        CliException search = Assert.Throws<CliException>(() => CellsSearch.Run(fixture.Session, new CellsSearchRequest
+        CliException read = Assert.Throws<CliException>(() => CellsRead.Run(fixture.Session, new TableReadRequest { Input = input }));
+        CliException search = Assert.Throws<CliException>(() => CellsSearch.Run(fixture.Session, new TableSearchRequest
         {
             Input = input,
             Query = new SearchQuery(TextSearch.Create("a", regex: false, caseSensitive: true), 10),
@@ -300,7 +300,7 @@ public sealed class CellsTableBehaviorTests
         using var fixture = new CellsFixture();
         string input = fixture.CreateSales();
 
-        CellsReadResult result = CellsRead.Run(fixture.Session, new CellsReadRequest { Input = input });
+        CellsReadResult result = CellsRead.Run(fixture.Session, new TableReadRequest { Input = input });
 
         Assert.Equal(fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed, result.License is null);
     }

@@ -7,10 +7,11 @@ namespace Aspose.Cli.Architecture.Tests;
 
 /// <summary>
 /// The layout of each product's <c>Contracts</c> folder, so adding a command touches only its own
-/// files: one flat request file and one result file per command, named after their types; a
-/// type one command uses lives in that command's file, a type several use lives in a file of its
-/// own; and every contract type carries the product's name. Products and commands are found from
-/// the source (every <c>Aspose.Cli.Product.*</c> project and every
+/// files: one flat request file and one result file per command, named after their types, where a
+/// command whose request is the SDK's table request (<c>Table&lt;Verb&gt;Request</c>) has only the
+/// result file; a type one command uses lives in that command's file, a type several use lives in a
+/// file of its own; and every contract type carries the product's name. Products and commands are
+/// found from the source (every <c>Aspose.Cli.Product.*</c> project and every
 /// <c>CommandDefinition&lt;TRequest, TResult&gt;</c> it writes), so a new product or command is
 /// checked without editing this test. The rules read syntax only.
 /// </summary>
@@ -49,7 +50,8 @@ public sealed class ContractFileLayoutTests
     /// Rule 1: each command's request and result is declared, all of its parts, in the contract
     /// file named after it, and no file declares the request or result of two commands. A
     /// contract file is named after a contract type it declares, so no shared
-    /// <c>…Requests.cs</c> or <c>…Results.cs</c> file holds the types of several commands.
+    /// <c>…Requests.cs</c> or <c>…Results.cs</c> file holds the types of several commands. A
+    /// command whose request is the SDK's table request declares no request in the product.
     /// </summary>
     [Fact]
     public void X1_EachRequestAndResult_IsInTheFileNamedAfterIt()
@@ -92,12 +94,21 @@ public sealed class ContractFileLayoutTests
                     + string.Join(", ", file.Declarations
                         .Where(static declaration => declaration.IsContractType)
                         .Select(static declaration => declaration.Name)));
-            return misplaced.Concat(shared).Concat(unnamed);
+            IEnumerable<string> redeclared = product.Commands
+                .Where(static command => TableRequests.Value.Contains(command.Request))
+                .DistinctBy(static command => command.Request)
+                .SelectMany(command => product.ContractFiles
+                    .SelectMany(static file => file.Declarations)
+                    .Where(declaration => declaration.Name == product.Id + command.Request["Table".Length..])
+                    .Select(declaration => declaration.File.Source.At(
+                        declaration.Node,
+                        $"{declaration.Name} is declared here; the request of {command.File.Relative} is the SDK's {command.Request}")));
+            return misplaced.Concat(shared).Concat(unnamed).Concat(redeclared);
         });
 
         OwnershipSourceFiles.AssertNone(violations,
-            "X1: a command's request and result each live in their own flat file Contracts/<Type>.cs, and a contract file "
-            + "is named after a type it declares:");
+            "X1: a command's request and result each live in their own flat file Contracts/<Type>.cs, a contract file "
+            + "is named after a type it declares, and a command that takes the SDK's table request declares none:");
     }
 
     /// <summary>
@@ -147,7 +158,8 @@ public sealed class ContractFileLayoutTests
     /// <summary>
     /// Rule 4: each command has one request and one result, <c>&lt;Product&gt;&lt;Verb&gt;Request</c>
     /// and <c>&lt;Product&gt;&lt;Verb&gt;Result</c>, where <c>&lt;Verb&gt;Command.cs</c> defines it;
-    /// no two commands share a request or a result.
+    /// no two commands share a request or a result. A command of the object table takes the
+    /// request the SDK declares for its verb, <c>Table&lt;Verb&gt;Request</c>, instead of one of its own.
     /// </summary>
     [Fact]
     public void X1_EachCommand_HasOneRequestAndOneResultOfItsOwn()
@@ -168,12 +180,12 @@ public sealed class ContractFileLayoutTests
                     CommandDeclaration command = pairs[0];
                     string fileName = Path.GetFileNameWithoutExtension(command.File.Path);
                     string verb = fileName.EndsWith("Command", StringComparison.Ordinal) ? fileName[..^"Command".Length] : fileName;
-                    string request = product.Id + verb + "Request";
+                    string[] requests = [product.Id + verb + "Request", .. TableRequests.Value.Where(name => name == "Table" + verb + "Request")];
                     string result = product.Id + verb + "Result";
-                    return command.Request == request && command.Result == result
+                    return requests.Contains(command.Request, StringComparer.Ordinal) && command.Result == result
                         ? []
                         : (IEnumerable<string>)[$"{command.File.Relative}: defines <{command.Request}, {command.Result}>; "
-                            + $"the {verb} command's request and result are <{request}, {result}>"];
+                            + $"the {verb} command's request is {string.Join(" or the SDK's ", requests)} and its result is {result}"];
                 });
             IEnumerable<string> shared = product.Commands
                 .DistinctBy(static command => command.File.Path, StringComparer.OrdinalIgnoreCase)
@@ -191,6 +203,18 @@ public sealed class ContractFileLayoutTests
     }
 
     private static readonly Lazy<ProductContracts[]> Products = new(LoadProducts);
+
+    /// <summary>
+    /// The requests the SDK declares for the commands of the object table, such as
+    /// <c>TableReadRequest</c>: the types of its <c>Tables</c> folder named <c>Table…Request</c>.
+    /// </summary>
+    private static readonly Lazy<HashSet<string>> TableRequests = new(static () => new HashSet<string>(
+        OwnershipSourceFiles.Sdk
+            .Where(static file => file.IsUnder(Path.Combine(OwnershipSourceFiles.SdkRoot, "Tables")))
+            .SelectMany(static file => file.Root.DescendantNodes().OfType<BaseTypeDeclarationSyntax>())
+            .Select(static type => type.Identifier.ValueText)
+            .Where(static name => name.StartsWith("Table", StringComparison.Ordinal) && name.EndsWith("Request", StringComparison.Ordinal)),
+        StringComparer.Ordinal));
 
     private static ProductContracts[] LoadProducts() =>
         [.. OwnershipSourceFiles.Products
@@ -211,7 +235,8 @@ public sealed class ContractFileLayoutTests
             ContractFiles = contractFiles;
             OpsFiles = opsFiles;
             CommandTypeNames = new HashSet<string>(
-                commands.SelectMany(static command => new[] { command.Request, command.Result }),
+                commands.SelectMany(static command => new[] { command.Request, command.Result })
+                    .Where(static name => !TableRequests.Value.Contains(name)),
                 StringComparer.Ordinal);
         }
 
@@ -223,6 +248,7 @@ public sealed class ContractFileLayoutTests
 
         public IReadOnlyList<OwnedSourceFile> OpsFiles { get; }
 
+        /// <summary>The requests and results the product declares for its commands: every one but the SDK's table requests.</summary>
         public HashSet<string> CommandTypeNames { get; }
 
         public static ProductContracts Create(string id, IReadOnlyList<OwnedSourceFile> files)
@@ -266,9 +292,9 @@ public sealed class ContractFileLayoutTests
                     .Append(command.File.Root);
                 if (roots.Any(root => Names(root, typeName)))
                 {
-                    users.Add(command.Request.EndsWith("Request", StringComparison.Ordinal)
-                        ? command.Request[..^"Request".Length]
-                        : command.Request);
+                    users.Add(command.Result.EndsWith("Result", StringComparison.Ordinal)
+                        ? command.Result[..^"Result".Length]
+                        : command.Result);
                 }
             }
 

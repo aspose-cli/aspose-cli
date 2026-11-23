@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells edit</c>: the object table edit of a workbook.</summary>
 internal static class CellsEdit
 {
-    internal static CellsEditResult Run(CellsSession session, CellsEditRequest request)
+    internal static CellsEditResult Run(CellsSession session, TableEditRequest request)
     {
         TableEditOutcome outcome = TableEdit.Run(session.Outputs, new CellsDocuments(session.Loader), request);
         return new CellsEditResult

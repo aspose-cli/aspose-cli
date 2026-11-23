@@ -38,11 +38,34 @@ public sealed class WordsTableBehaviorTests
         Assert.True(differ.Length == 0, "Parts that differ from the engine's own save: " + string.Join(", ", differ));
     }
 
+    /// <summary>
+    /// An output password for an input whose format cannot carry one is refused by the password
+    /// itself: a request that names no option for it is refused as <c>--encrypt</c>.
+    /// </summary>
+    [Fact]
+    public void Edit_WithAnOutputPassword_RefusesAFormatThatCannotCarryOne()
+    {
+        using var fixture = new WordsFixture();
+        string input = fixture.File("plain.rtf");
+        string output = fixture.File("edited.rtf");
+        TableEditRequest request = WordsFixture.Edit(input, output, $$$"""{"ops":[{"set":"{{{Body}}}/paragraph/0","props":{"paragraphFormat.alignment":"Center"}}]}""")
+            with { EncryptPassword = new Secret("output-secret") };
+        WordsSession session = fixture.Session;
+        new Document().Save(input, SaveFormat.Rtf);
+
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(session, request));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Equal("--encrypt", error.Details!["option"]!.GetValue<string>());
+        Assert.Contains("'rtf'", error.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+
     [Fact]
     public void Read_ListsParagraphsAndTablesInTheEnginesOrder()
     {
         using var fixture = new WordsFixture();
-        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = fixture.CreateProposal(), Kinds = ["paragraph", "table"] });
+        WordsReadResult read = WordsRead.Run(fixture.Session, new TableReadRequest { Input = fixture.CreateProposal(), Kinds = ["paragraph", "table"] });
 
         Assert.Equal(
             [.. Enumerable.Range(0, 7).Select(static index => $"{Body}/paragraph/{index}"), $"{Body}/table/0",
@@ -56,7 +79,7 @@ public sealed class WordsTableBehaviorTests
     public void Read_WithoutKind_ListsTheStructure_AndNamesWhatItLeftOut()
     {
         using var fixture = new WordsFixture();
-        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = fixture.CreateProposal() });
+        WordsReadResult read = WordsRead.Run(fixture.Session, new TableReadRequest { Input = fixture.CreateProposal() });
 
         Assert.Equal(["document", "section/0", $"{Body}", $"{Body}/table/0"], read.Objects.Select(static found => found.At));
         Assert.Equal(WordsKinds.ListedWhenNamed, read.Window.NotListedUnlessNamed);
@@ -146,16 +169,16 @@ public sealed class WordsTableBehaviorTests
         document.FirstSection.Body.AppendParagraph("After");
         document.Save(input);
 
-        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Kinds = ["paragraph", "sdt"] });
+        WordsReadResult read = WordsRead.Run(fixture.Session, new TableReadRequest { Input = input, Kinds = ["paragraph", "sdt"] });
         WordsEditResult added = WordsEdit.Run(fixture.Session, WordsFixture.Edit(input, fixture.File("out.docx"),
             $$$"""{"ops":[{"add":"paragraph","in":"{{{Body}}}/sdt/0"},{"add":"run","in":"{{{Body}}}/sdt/0/paragraph/1","args":{"text":"Second"}}]}"""));
-        WordsReadResult range = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = fixture.File("out.docx"), At = $"{Body}/sdt/0/range" });
+        WordsReadResult range = WordsRead.Run(fixture.Session, new TableReadRequest { Input = fixture.File("out.docx"), At = $"{Body}/sdt/0/range" });
         // The paragraph added in the control has two addresses, one object: a change made through
         // its address in the control reads back through the address read lists.
         WordsEditResult changed = WordsEdit.Run(fixture.Session, WordsFixture.Edit(fixture.File("out.docx"), fixture.File("changed.docx"),
             $$$"""{"ops":[{"set":"{{{Body}}}/sdt/0/paragraph/1/run/0","props":{"text":"Changed"}}]}"""));
-        WordsReadResult listed = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = fixture.File("changed.docx"), Kinds = ["paragraph"] });
-        WordsReadResult inParent = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = fixture.File("changed.docx"), At = $"{Body}/paragraph/3" });
+        WordsReadResult listed = WordsRead.Run(fixture.Session, new TableReadRequest { Input = fixture.File("changed.docx"), Kinds = ["paragraph"] });
+        WordsReadResult inParent = WordsRead.Run(fixture.Session, new TableReadRequest { Input = fixture.File("changed.docx"), At = $"{Body}/paragraph/3" });
         // remove_self_only takes the control away and leaves its content.
         WordsEdit.Run(fixture.Session, WordsFixture.Edit(input, fixture.File("unwrapped.docx"), $$$"""{"ops":[{"do":"remove_self_only","args":{"sdt":"{{{Body}}}/sdt/0"}}]}"""));
         var unwrapped = new Document(fixture.File("unwrapped.docx"));
@@ -215,14 +238,14 @@ public sealed class WordsTableBehaviorTests
         body.AppendChild(new Paragraph(document));
         document.Save(input);
 
-        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Kinds = ["sdt"] });
+        WordsReadResult read = WordsRead.Run(fixture.Session, new TableReadRequest { Input = input, Kinds = ["sdt"] });
 
         Assert.Equal(
             [$"{Body}/sdt/0", $"{Body}/sdt/0/sdt/0", $"{Body}/paragraph/2/sdt/0", $"{Body}/paragraph/2/sdt/0/sdt/0", $"{Body}/table/0/row/0/cell/0/sdt/0", $"{Body}/table/0/row/0/cell/0/sdt/0/sdt/0"],
             read.Objects.Select(static found => found.At));
         Assert.Equal(read.Inventory.Read["structuredDocumentTags"], read.Objects.Count);
         Assert.Equal(["outer", "inner", "inline-outer", "inline-inner", "cell-outer", "cell-inner"],
-            read.Objects.Select(found => Assert.Single(WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, At = found.At, Kinds = ["sdt"] }).Objects, item => item.At == found.At).Props["tag"]!.GetValue<string>()));
+            read.Objects.Select(found => Assert.Single(WordsRead.Run(fixture.Session, new TableReadRequest { Input = input, At = found.At, Kinds = ["sdt"] }).Objects, item => item.At == found.At).Props["tag"]!.GetValue<string>()));
     }
 
     /// <summary>
@@ -259,7 +282,7 @@ public sealed class WordsTableBehaviorTests
         builder.InsertField("NUMPAGES");
         document.Save(input);
 
-        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Kinds = ["field"] });
+        WordsReadResult read = WordsRead.Run(fixture.Session, new TableReadRequest { Input = input, Kinds = ["field"] });
         string[] listed = [.. read.Objects.Select(static found => found.At)];
         string body = Assert.Single(listed, static at => at.StartsWith($"{Body}/", StringComparison.Ordinal) && !at.Contains("/shape/", StringComparison.Ordinal));
         WordsEdit.Run(fixture.Session, WordsFixture.Edit(input, fixture.File("out.docx"), $$$"""{"ops":[{"set":"{{{body}}}","props":{"result":"Changed"}}]}"""));
@@ -292,7 +315,7 @@ public sealed class WordsTableBehaviorTests
     {
         using var fixture = new WordsFixture();
 
-        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = fixture.CreateProposal(), At = "layout" });
+        WordsReadResult read = WordsRead.Run(fixture.Session, new TableReadRequest { Input = fixture.CreateProposal(), At = "layout" });
 
         Assert.Equal(1, Assert.Single(read.Objects).Props["pageCount"]!.GetValue<int>());
     }

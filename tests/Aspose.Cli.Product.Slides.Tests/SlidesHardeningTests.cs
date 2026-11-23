@@ -1,6 +1,7 @@
 using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Tables;
 using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
@@ -147,7 +148,7 @@ public sealed class SlidesHardeningTests
         string input = fixture.File("malformed" + extension);
         File.WriteAllBytes(input, content);
         CliException readError = Assert.Throws<CliException>(() =>
-            SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input }));
+            SlidesRead.Run(fixture.Session, new TableReadRequest { Input = input }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, readError.Code);
     }
@@ -162,7 +163,7 @@ public sealed class SlidesHardeningTests
         File.WriteAllBytes(input, content);
 
         CliException error = Assert.Throws<CliException>(() =>
-            SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input }));
+            SlidesRead.Run(fixture.Session, new TableReadRequest { Input = input }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         Assert.DoesNotContain("Unknown", error.Message, StringComparison.Ordinal);

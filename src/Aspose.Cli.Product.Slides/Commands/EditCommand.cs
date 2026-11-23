@@ -1,12 +1,13 @@
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.Tables;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class EditCommand
 {
-    public static CommandDefinition<SlidesEditRequest, SlidesEditResult> Create() =>
-        TableCommands.Edit<SlidesEditRequest, SlidesEditResult>(
+    public static CommandDefinition<TableEditRequest, SlidesEditResult> Create() =>
+        TableCommands.Edit<SlidesEditResult>(
             SlidesModule.Table,
             "Apply a batch of set, add, delete, move and do operations to a presentation; nothing is written when one fails.",
             new CommandTraits
@@ -16,15 +17,6 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             SlidesFormats.Editable,
-            static edit => new SlidesEditRequest
-            {
-                Input = edit.Input,
-                Batch = edit.Batch,
-                Output = edit.Output,
-                Password = edit.Password,
-                EncryptPassword = edit.EncryptPassword,
-                EncryptOption = edit.EncryptOption,
-            },
             examples:
             [
                 "slides edit deck.pptx --ops ops.json --out revised.pptx",
