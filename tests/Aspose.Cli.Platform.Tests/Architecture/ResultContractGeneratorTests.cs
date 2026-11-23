@@ -218,7 +218,13 @@ public sealed class ResultContractGeneratorTests
         GeneratorDriverRunResult result = Run(
             """
             /// <summary>A bounded read.</summary>
-            public sealed record ReadResult() : WindowedResultEnvelope("read-result");
+            public sealed record ReadResult : WindowedResultEnvelope
+            {
+                public ReadResult(ResultWindow window)
+                    : base("read-result", window)
+                {
+                }
+            }
 
             public abstract record LocalEnvelope : ResultEnvelope
             {
@@ -259,7 +265,7 @@ public sealed class ResultContractGeneratorTests
             """);
 
         Diagnostic error = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Id == "APCLI013");
-        Assert.Contains("'LegacyResult' must pass the ResultEnvelope constructor a constant relative schema id", error.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'LegacyResult' must pass its envelope base's constructor a constant relative schema id first", error.GetMessage(), StringComparison.Ordinal);
         Assert.Empty(Assert.Single(result.Results).GeneratedSources);
     }
 

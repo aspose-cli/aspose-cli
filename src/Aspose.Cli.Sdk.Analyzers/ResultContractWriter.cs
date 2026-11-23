@@ -9,8 +9,8 @@ namespace Aspose.Cli.Sdk.Analyzers;
 /// context that lists one of them, as an implementation of <c>IResultSchemaSource</c>. A record is
 /// published when it is a concrete record that derives directly from one of the SDK's envelope
 /// bases (<c>ResultEnvelope</c> and its abstract descendants), whose constructor it passes a
-/// constant relative schema id, or when it declares <c>[SchemaId]</c>; the records it inherits
-/// from and the records its members hold are described with it.
+/// constant relative schema id first, or when it declares <c>[SchemaId]</c>; the records it
+/// inherits from and the records its members hold are described with it.
 /// </summary>
 internal sealed class ResultContractWriter(
     Compilation compilation,
@@ -108,7 +108,7 @@ internal sealed class ResultContractWriter(
         }
 
         // The arguments the record passes to its envelope base, from its primary constructor's
-        // base type or from a constructor initializer.
+        // base type or from a constructor initializer: the id first, then what else the base takes.
         foreach (SyntaxReference reference in type.DeclaringSyntaxReferences)
         {
             SyntaxNode syntax = reference.GetSyntax();
@@ -119,7 +119,7 @@ internal sealed class ResultContractWriter(
                     .Select(static initializer => initializer.ArgumentList));
             foreach (ArgumentListSyntax? arguments in calls)
             {
-                if (arguments is { Arguments.Count: 1 }
+                if (arguments is { Arguments.Count: >= 1 }
                     && compilation.GetSemanticModel(arguments.SyntaxTree).GetConstantValue(arguments.Arguments[0].Expression).Value is string id
                     && RelativeId.IsMatch(id))
                 {
@@ -128,7 +128,7 @@ internal sealed class ResultContractWriter(
             }
         }
 
-        Report(type, $"Result '{type.Name}' must pass the ResultEnvelope constructor a constant relative schema id, such as 'render-result'; the schema is published under that id.");
+        Report(type, $"Result '{type.Name}' must pass its envelope base's constructor a constant relative schema id first, such as 'render-result'; the schema is published under that id.");
         return null;
     }
 

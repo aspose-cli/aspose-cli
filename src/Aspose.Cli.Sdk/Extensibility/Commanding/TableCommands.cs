@@ -33,7 +33,7 @@ public static class TableCommands
         IReadOnlyList<FormatDescriptor> writes,
         IReadOnlyList<string>? examples = null,
         IReadOnlyList<CommandHelpLink>? links = null)
-        where TResult : ResultEnvelope
+        where TResult : TableEditResult
     {
         ArgumentNullException.ThrowIfNull(table);
         ArgumentNullException.ThrowIfNull(traits);
@@ -126,7 +126,7 @@ public static class TableCommands
         IReadOnlyList<string>? examples = null,
         IReadOnlyList<CommandHelpLink>? links = null,
         IReadOnlyList<string>? listedWhenNamed = null)
-        where TResult : ResultEnvelope
+        where TResult : TableReadResult
     {
         ArgumentNullException.ThrowIfNull(table);
         var at = new Option<string?>(AtOption)
@@ -203,7 +203,7 @@ public static class TableCommands
         CommandTraits traits,
         IReadOnlyList<string>? examples = null,
         IReadOnlyList<CommandHelpLink>? links = null)
-        where TResult : ResultEnvelope
+        where TResult : TableSearchResult
     {
         var search = new SearchOptions();
         return new CommandDefinition<TableSearchRequest, TResult>(
