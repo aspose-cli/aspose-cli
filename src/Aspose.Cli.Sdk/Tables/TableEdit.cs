@@ -34,31 +34,6 @@ public sealed record TableEditRequest
     public string? EncryptOption { get; init; }
 }
 
-/// <summary>What an object table edit reports; a product's result states each field.</summary>
-public sealed record TableEditOutcome
-{
-    /// <summary>The edited document.</summary>
-    public required InputInfo Input { get; init; }
-
-    /// <summary>The written document.</summary>
-    public required OutputInfo Output { get; init; }
-
-    /// <summary>What each operation left, in batch order.</summary>
-    public required IReadOnlyList<TableOpReport> Ops { get; init; }
-
-    /// <summary>The inventory counts that changed, each as [before, after].</summary>
-    public required IReadOnlyDictionary<string, IReadOnlyList<long>> Counts { get; init; }
-
-    /// <summary>The engine's warnings, or null when it reported none.</summary>
-    public IReadOnlyList<EngineWarning>? EngineWarnings { get; init; }
-
-    /// <summary>The CLI's own warnings about the documents, such as left-out external resources, or null.</summary>
-    public IReadOnlyList<Warning>? Warnings { get; init; }
-
-    /// <summary>The license mode when the engine ran without a license.</summary>
-    public LicenseInfo? License { get; init; }
-}
-
 /// <summary>
 /// The object table edit: opens the input, applies the batch in order, saves to a staged file,
 /// opens that file again with the same engine call and reads each operation's address from it,

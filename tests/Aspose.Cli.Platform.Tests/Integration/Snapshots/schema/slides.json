@@ -746,11 +746,11 @@
           "const": 3
         },
         "input": {
-          "description": "The edited presentation.",
+          "description": "The edited document.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "output": {
-          "description": "The written presentation.",
+          "description": "The written document.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/output.schema.json"
         },
         "counts": {
@@ -764,7 +764,7 @@
           }
         },
         "engineWarnings": {
-          "description": "The warnings Aspose.Slides reported while it loaded, saved and reopened the presentation, as it reported them; omitted when there were none.",
+          "description": "The warnings the engine reported while it loaded, saved and reopened the document, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
@@ -4772,7 +4772,7 @@
           "const": 3
         },
         "input": {
-          "description": "The presentation read.",
+          "description": "The document read.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "window": {
@@ -4780,11 +4780,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/result-window.schema.json"
         },
         "inventory": {
-          "description": "How many objects of each kind of content the presentation holds: under read the kinds read lists, under notRead the others.",
+          "description": "How many objects of each kind of content the document holds: under read the kinds read lists, under notRead the others.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-inventory.schema.json"
         },
         "engineWarnings": {
-          "description": "The warnings Aspose.Slides reported while it loaded the presentation, as it reported them; omitted when there were none.",
+          "description": "The warnings the engine reported while it loaded the document, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
@@ -5260,7 +5260,7 @@
           "const": 3
         },
         "input": {
-          "description": "The searched presentation.",
+          "description": "The searched document.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/input.schema.json"
         },
         "window": {
@@ -5268,7 +5268,7 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/result-window.schema.json"
         },
         "engineWarnings": {
-          "description": "The warnings Aspose.Slides reported while it loaded the presentation, as it reported them; omitted when there were none.",
+          "description": "The warnings the engine reported while it loaded the document, as it reported them; omitted when there were none.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/engine-warning.schema.json"
@@ -5286,7 +5286,7 @@
           }
         },
         "hits": {
-          "description": "The hits in document order: the object's address, the text row, and where the match is in it; last, since it grows with the document.",
+          "description": "The hits in document order: the address of the object, the row, the matched text and where the match is, as an offset and length in the row's text or as the rectangle the engine's own search gives; last, since it grows with the document.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v3/common/table-hit.schema.json"

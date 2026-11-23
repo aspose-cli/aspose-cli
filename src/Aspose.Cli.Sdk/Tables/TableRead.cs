@@ -30,31 +30,6 @@ public sealed record TableReadRequest
     public int MaxObjects { get; init; } = TableRead.DefaultMaxObjects;
 }
 
-/// <summary>What an object table read reports; a product's result states each field.</summary>
-public sealed record TableReadOutcome
-{
-    /// <summary>The read document.</summary>
-    public required InputInfo Input { get; init; }
-
-    /// <summary>The objects of the window, in document order.</summary>
-    public required IReadOnlyList<TableObject> Objects { get; init; }
-
-    /// <summary>The whole document's inventory.</summary>
-    public required TableInventory Inventory { get; init; }
-
-    /// <summary>The engine's warnings, or null when it reported none.</summary>
-    public IReadOnlyList<EngineWarning>? EngineWarnings { get; init; }
-
-    /// <summary>The window.</summary>
-    public required ResultWindow Window { get; init; }
-
-    /// <summary>The CLI's own warnings about the document, such as left-out external resources, or null.</summary>
-    public IReadOnlyList<Warning>? Warnings { get; init; }
-
-    /// <summary>The license mode when the engine ran without a license.</summary>
-    public LicenseInfo? License { get; init; }
-}
-
 /// <summary>One object table search, the same in every product: the document and the search.</summary>
 public sealed record TableSearchRequest
 {
@@ -66,28 +41,6 @@ public sealed record TableSearchRequest
 
     /// <summary>The search.</summary>
     public required SearchQuery Query { get; init; }
-}
-
-/// <summary>What an object table search reports; a product's result states each field.</summary>
-public sealed record TableSearchOutcome
-{
-    /// <summary>The searched document.</summary>
-    public required InputInfo Input { get; init; }
-
-    /// <summary>The hits of the window, in document order.</summary>
-    public required IReadOnlyList<TableHit> Hits { get; init; }
-
-    /// <summary>The engine's warnings, or null when it reported none.</summary>
-    public IReadOnlyList<EngineWarning>? EngineWarnings { get; init; }
-
-    /// <summary>The window.</summary>
-    public required ResultWindow Window { get; init; }
-
-    /// <summary>The CLI's own warnings about the document, such as left-out external resources, or null.</summary>
-    public IReadOnlyList<Warning>? Warnings { get; init; }
-
-    /// <summary>The license mode when the engine ran without a license.</summary>
-    public LicenseInfo? License { get; init; }
 }
 
 /// <summary>
