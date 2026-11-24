@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Input;
+using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -185,6 +186,20 @@ public sealed class VerifiedResourceReadTests
             temp.File("input.html"), new ResourceBudgetLedger(cancellation: cancellation.Token));
         cancellation.Cancel();
         Assert.Throws<OperationCanceledException>(() => resources.TryRead("https://example.invalid", out _));
+    }
+
+    [Fact]
+    public void Cancellation_AfterTheOutputsAreCommitted_NoLongerFailsTheWarning()
+    {
+        using var temp = new TempDirectory();
+        using var cancellation = new CancellationTokenSource();
+        var budgets = new ResourceBudgetLedger(cancellation: cancellation.Token);
+        using var resources = new LocalDocumentResourceLoader(temp.File("input.html"), budgets);
+        string output = temp.File("output.txt");
+        new SafeFileWriter(budgets).Write(output, overwrite: false, staged => File.WriteAllText(staged, "written"));
+        cancellation.Cancel();
+        Assert.Null(resources.Warning);
+        Assert.Equal("written", File.ReadAllText(output));
     }
 
     [Fact]

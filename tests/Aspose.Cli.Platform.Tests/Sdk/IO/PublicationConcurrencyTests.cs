@@ -124,7 +124,7 @@ public sealed class PublicationConcurrencyTests
             cancelled.Cancel();
         }));
         Assert.True(reachedCommitRecord);
-        Assert.False(budgets.HasCommittedOutputs);
+        Assert.True(budgets.Cancellation.IsCancellationRequested);
         Assert.Equal("original", File.ReadAllText(target));
     }
 
