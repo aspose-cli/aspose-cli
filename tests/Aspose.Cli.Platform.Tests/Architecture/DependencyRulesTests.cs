@@ -210,7 +210,7 @@ public sealed class DependencyRulesTests
             "Invocation",
             "CommandExecutor.cs"));
 
-        Assert.Equal(1, Occurrences(source, "OutputWriterFactory.Create("));
+        Assert.Equal(1, Occurrences(source, "new JsonOutputWriter("));
         Assert.Equal(1, Occurrences(source, "CompositionRoot.CreateBudgets("));
         Assert.Equal(1, Occurrences(source, "ProductInputAdmission.Admit("));
     }

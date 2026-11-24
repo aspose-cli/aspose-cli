@@ -126,9 +126,7 @@ internal sealed class CommandExecutor
         ArgumentNullException.ThrowIfNull(action);
 
         GlobalValues globals = globalOptions.Resolve(parseResult);
-        IOutputWriter writer = OutputWriterFactory.Create(
-            globals.OutputFormat,
-            _host.ContractJson);
+        var writer = new JsonOutputWriter(_host.ContractJson, globals.OutputFormat);
         var stopwatch = Stopwatch.StartNew();
         ExecutionScope? scope = null;
         try
@@ -167,7 +165,7 @@ internal sealed class CommandExecutor
     /// only through the exit code and a plain diagnostic line.
     /// </summary>
     private static int HandleFailure(
-        IOutputWriter writer,
+        JsonOutputWriter writer,
         GlobalValues globals,
         Stopwatch stopwatch,
         Exception exception,
@@ -221,11 +219,11 @@ internal sealed class CommandExecutor
 
     private sealed class ExecutionScope
     {
-        private readonly IOutputWriter _writer;
+        private readonly JsonOutputWriter _writer;
         private readonly Stopwatch _stopwatch;
         private ExecutionScope(
             GlobalValues globals,
-            IOutputWriter writer,
+            JsonOutputWriter writer,
             Stopwatch stopwatch,
             ResourceBudgetLedger budgets)
         {
@@ -243,7 +241,7 @@ internal sealed class CommandExecutor
             HostContext host,
             ParseResult parseResult,
             GlobalValues globals,
-            IOutputWriter writer,
+            JsonOutputWriter writer,
             Stopwatch stopwatch,
             bool admitInputs,
             CancellationToken cancellationToken)
