@@ -138,13 +138,13 @@ public sealed class LocalDocumentResourceLoader : IDisposable
                 throw refused;
             }
 
-            _budgets.Deadline.ThrowIfExpired("document-resource");
+            _budgets.Cancellation.ThrowIfCancellationRequested();
         }
     }
 
     /// <summary>
     /// Reads a verified local resource in full. Rejected resources return an empty result and
-    /// are recorded with their reason; shared budget, cancellation and deadline failures abort
+    /// are recorded with their reason; shared budget failures and cancellation abort
     /// the operation. An image that
     /// <see cref="ImageInput"/> refuses, when the caller reads an image, fails the load that
     /// reads it: it is thrown here and once more by the next <see cref="ThrowIfFailed"/>, in case
@@ -201,7 +201,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
                 int offset = 0;
                 while (offset < buffer.Length)
                 {
-                    _budgets.Deadline.ThrowIfExpired("document-resource");
+                    _budgets.Cancellation.ThrowIfCancellationRequested();
                     int read = stream.Read(buffer, offset, Math.Min(64 * 1024, buffer.Length - offset));
                     if (read == 0)
                     {
@@ -209,7 +209,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
                     }
                     offset += read;
                 }
-                _budgets.Deadline.ThrowIfExpired("document-resource");
+                _budgets.Cancellation.ThrowIfCancellationRequested();
                 if (stream.ReadByte() != -1 || stream.Length != length)
                 {
                     return Omit(named, "changed while it was read");

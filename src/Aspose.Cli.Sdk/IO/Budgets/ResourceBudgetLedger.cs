@@ -86,10 +86,10 @@ public sealed class ResourceBudgetLedger
     private readonly ConcurrentDictionary<string, AdmittedFile> _admitted;
 
     public ResourceBudgetLedger(
-        OperationDeadline deadline,
-        IReadOnlyDictionary<string, long>? limits = null)
+        IReadOnlyDictionary<string, long>? limits = null,
+        CancellationToken cancellation = default)
     {
-        Deadline = deadline ?? throw new ArgumentNullException(nameof(deadline));
+        Cancellation = cancellation;
         _limits = NormalizeLimits(limits);
         _consumed = new ConcurrentDictionary<string, long>(
             StringComparer.Ordinal);
@@ -97,8 +97,11 @@ public sealed class ResourceBudgetLedger
         Inputs = new InputSource(this);
     }
 
-    /// <summary>Absolute invocation deadline shared with all budget checks.</summary>
-    public OperationDeadline Deadline { get; }
+    /// <summary>
+    /// The caller's cancellation of this invocation: <see cref="Consume"/> and
+    /// <see cref="EnsureWithin"/> throw once it is requested, and so does each step that checks it.
+    /// </summary>
+    public CancellationToken Cancellation { get; }
 
     /// <summary>Whether this invocation has durably committed a final output set.</summary>
     public bool HasCommittedOutputs { get; private set; }
@@ -154,7 +157,7 @@ public sealed class ResourceBudgetLedger
         }
 
         ThrowIfFailed();
-        Deadline.ThrowIfExpired(phase);
+        Cancellation.ThrowIfCancellationRequested();
         long limit = Limit(kind);
         while (true)
         {
@@ -193,7 +196,7 @@ public sealed class ResourceBudgetLedger
             throw new ArgumentOutOfRangeException(nameof(observed));
         }
         ThrowIfFailed();
-        Deadline.ThrowIfExpired(phase);
+        Cancellation.ThrowIfCancellationRequested();
         long limit = Limit(kind);
         if (observed > limit)
         {

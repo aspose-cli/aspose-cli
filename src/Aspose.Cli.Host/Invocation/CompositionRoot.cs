@@ -18,31 +18,26 @@ internal static class CompositionRoot
     public static CommandContext Create(
         ProductCatalog catalog,
         GlobalValues globals,
-        OperationDeadline? deadline = null,
-        ResourceBudgetLedger? resourceBudgets = null,
+        ResourceBudgetLedger resourceBudgets,
         UserLicenseChanges? licenseChanges = null,
         Func<string, string?>? licenseEnvironment = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(globals);
+        ArgumentNullException.ThrowIfNull(resourceBudgets);
 
         string workDir = ResolveWorkDir(globals.WorkDir);
-        OperationDeadline effectiveDeadline =
-            resourceBudgets?.Deadline ?? deadline ?? OperationDeadline.Start(null);
-        ResourceBudgetLedger effectiveBudgets =
-            resourceBudgets ?? CreateBudgets(catalog, globals, effectiveDeadline);
-
         return new CommandContext
         {
-            ReadEnvironment = InvocationEnvironment.CreateSecretReader(effectiveBudgets),
+            ReadEnvironment = InvocationEnvironment.CreateSecretReader(resourceBudgets),
             Globals = globals,
-            ResourceBudgets = effectiveBudgets,
+            ResourceBudgets = resourceBudgets,
             Paths = new PathResolver(workDir),
             ProductActivation = CreateActivation(
                 catalog,
                 globals,
                 workDir,
-                effectiveBudgets,
+                resourceBudgets,
                 licenseChanges,
                 EnvironmentFor(catalog, licenseEnvironment)),
             Catalog = catalog,
@@ -111,7 +106,7 @@ internal static class CompositionRoot
     internal static ResourceBudgetLedger CreateBudgets(
         ProductCatalog catalog,
         GlobalValues globals,
-        OperationDeadline deadline,
+        CancellationToken cancellation,
         long? outputBytesLimit = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
@@ -141,6 +136,6 @@ internal static class CompositionRoot
                     $"Resource budget '{budget.Kind}' is declared more than once.");
             }
         }
-        return new ResourceBudgetLedger(deadline, limits);
+        return new ResourceBudgetLedger(limits, cancellation);
     }
 }

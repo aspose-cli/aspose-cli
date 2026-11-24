@@ -51,9 +51,7 @@ public static class ProductTestBudgets
             limits[kind] = limit;
         }
 
-        return new ResourceBudgetLedger(
-            OperationDeadline.Start(null),
-            limits);
+        return new ResourceBudgetLedger(limits);
     }
 }
 

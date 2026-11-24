@@ -19,8 +19,7 @@ public sealed class LocalDocumentResourceLoaderTests : IDisposable
         string local = Path.Combine(_root, "image.bin");
         File.WriteAllText(document, "document");
         File.WriteAllBytes(local, [1, 2, 3]);
-        using var deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(deadline);
+        var budgets = new ResourceBudgetLedger();
         using var loader = new LocalDocumentResourceLoader(document, budgets);
 
         Assert.True(loader.TryRead("image.bin", out byte[] bytes));
@@ -44,8 +43,7 @@ public sealed class LocalDocumentResourceLoaderTests : IDisposable
         Directory.CreateDirectory(_root);
         string document = Path.Combine(_root, "input.html");
         File.WriteAllText(document, "document");
-        using var deadline = OperationDeadline.Start(null);
-        using var loader = new LocalDocumentResourceLoader(document, new ResourceBudgetLedger(deadline));
+        using var loader = new LocalDocumentResourceLoader(document, new ResourceBudgetLedger());
 
         Assert.False(loader.TryRead(reference, out byte[] bytes));
         Assert.Empty(bytes);
@@ -59,9 +57,8 @@ public sealed class LocalDocumentResourceLoaderTests : IDisposable
         File.WriteAllText(document, "document");
         File.WriteAllBytes(Path.Combine(_root, "one.bin"), [1, 2]);
         File.WriteAllBytes(Path.Combine(_root, "two.bin"), [3, 4]);
-        using var deadline = OperationDeadline.Start(null);
         using var loader = new LocalDocumentResourceLoader(
-            document, new ResourceBudgetLedger(deadline),
+            document, new ResourceBudgetLedger(),
             maximumItems: 1,
             maximumItemBytes: 2,
             maximumTotalBytes: 2);

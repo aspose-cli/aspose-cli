@@ -20,7 +20,7 @@ internal sealed class EnvironmentSecrets(Func<string, string?> source, ResourceB
         }
         lock (_gate)
         {
-            _budgets.Deadline.ThrowIfExpired("environment-secret");
+            _budgets.Cancellation.ThrowIfCancellationRequested();
             if (_values.TryGetValue(name, out string? cached)) { return cached; }
             string? value = _source(name);
             _budgets.Consume(ResourceBudgetKinds.SecretCharacters, value?.Length ?? 0,

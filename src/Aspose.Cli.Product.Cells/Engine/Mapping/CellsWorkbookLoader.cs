@@ -215,7 +215,7 @@ internal sealed class CellsResourcePolicy : IStreamProvider, IDisposable
         options.Stream?.Dispose();
     }
 
-    /// <summary>Rethrows a budget, deadline or cancellation failure the engine swallowed.</summary>
+    /// <summary>Rethrows a budget or cancellation failure the engine swallowed.</summary>
     internal void ThrowIfFailed() => _local.ThrowIfFailed();
 
     /// <summary>The completeness warning for the resources left out so far, or null.</summary>

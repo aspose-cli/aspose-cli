@@ -86,7 +86,7 @@ public static class LicenseInstaller
             ValidateExistingTargets(destinations);
             foreach (string destination in destinations)
             {
-                resourceBudgets.Deadline.ThrowIfExpired("license-install-stage");
+                resourceBudgets.Cancellation.ThrowIfCancellationRequested();
                 transaction.Stage(destination, overwrite: true,
                     staged => CurrentUserFileAccess.Write(staged, contents));
             }
@@ -137,7 +137,7 @@ public static class LicenseInstaller
         var removed = new List<string>(destinations.Length);
         foreach (string destination in destinations)
         {
-            resourceBudgets.Deadline.ThrowIfExpired("license-remove-stage");
+            resourceBudgets.Cancellation.ThrowIfCancellationRequested();
             FilePublicationSnapshot original = FilePublicationSnapshot.Capture(destination);
             if (!original.Exists)
             {
@@ -165,7 +165,7 @@ public static class LicenseInstaller
         {
             while (true)
             {
-                budgets.Deadline.ThrowIfExpired("license-snapshot-read");
+                budgets.Cancellation.ThrowIfCancellationRequested();
                 int requested = Math.Min(chunk.Length, MaximumBytes - checked((int)contents.Length) + 1);
                 int read = bounded.Read(chunk[..requested]);
                 if (read == 0)
@@ -196,7 +196,7 @@ public static class LicenseInstaller
         int offset = 0;
         while (matches && offset < contents.Length)
         {
-            budgets.Deadline.ThrowIfExpired("license-snapshot-verify");
+            budgets.Cancellation.ThrowIfCancellationRequested();
             int read = snapshot.Read(buffer[..Math.Min(buffer.Length, contents.Length - offset)]);
             matches = read > 0 && buffer[..read].SequenceEqual(contents.AsSpan(offset, read));
             offset += read;

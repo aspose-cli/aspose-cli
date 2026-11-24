@@ -86,12 +86,11 @@ public sealed class PublicationConcurrencyTests
     }
 
     [Fact]
-    public void ExpirationBetweenFilesRestoresEarlierPublications()
+    public void CancellationBetweenFilesRestoresEarlierPublications()
     {
         using var temp = new TempDirectory();
         using var cancelled = new CancellationTokenSource();
-        using var deadline = OperationDeadline.Start(null, cancelled.Token);
-        var writer = new SafeFileWriter(new ResourceBudgetLedger(deadline));
+        var writer = new SafeFileWriter(new ResourceBudgetLedger(cancellation: cancelled.Token));
         string first = temp.File("one.txt");
         string second = temp.File("two.txt");
         File.WriteAllText(first, "original");
@@ -112,11 +111,10 @@ public sealed class PublicationConcurrencyTests
     {
         using var temp = new TempDirectory();
         using var cancelled = new CancellationTokenSource();
-        using var deadline = OperationDeadline.Start(null, cancelled.Token);
-        var budgets = new ResourceBudgetLedger(deadline);
+        var budgets = new ResourceBudgetLedger(cancellation: cancelled.Token);
         string target = temp.File("report.txt");
         File.WriteAllText(target, "original");
-        using var transaction = new AtomicOutputSetWriter(new SafeFileWriter(budgets), temp.Path, "commit-deadline");
+        using var transaction = new AtomicOutputSetWriter(new SafeFileWriter(budgets), temp.Path, "commit-cancelled");
         transaction.Stage(target, true, path => File.WriteAllText(path, "replacement"));
         bool reachedCommitRecord = false;
         Assert.ThrowsAny<OperationCanceledException>(() => transaction.Commit(() =>

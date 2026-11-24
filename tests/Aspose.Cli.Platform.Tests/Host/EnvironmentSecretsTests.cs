@@ -10,8 +10,7 @@ public sealed class EnvironmentSecretsTests
     [Fact]
     public void RepeatedConcurrentReads_ShareOneValueAndOneBudgetCharge()
     {
-        using var deadline = OperationDeadline.Start(TimeSpan.FromSeconds(5));
-        var budgets = new ResourceBudgetLedger(deadline);
+        var budgets = new ResourceBudgetLedger();
         int reads = 0;
         var secrets = new EnvironmentSecrets(_ => { Interlocked.Increment(ref reads); return "value"; }, budgets);
         Parallel.For(0, 20, _ => Assert.Equal("value", secrets.Read("secret.name")));
@@ -23,8 +22,7 @@ public sealed class EnvironmentSecretsTests
     [Fact]
     public void DifferentSecrets_ShareTheInvocationBudget()
     {
-        using var deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(deadline,
+        var budgets = new ResourceBudgetLedger(
             new Dictionary<string, long> { [ResourceBudgetKinds.SecretCharacters] = 5 });
         var secrets = new EnvironmentSecrets(_ => "abc", budgets);
         Assert.Equal("abc", secrets.Read("first"));
@@ -38,8 +36,7 @@ public sealed class EnvironmentSecretsTests
     public void CancellationAndMissingValues_KeepTheirMeaning()
     {
         using var cancellation = new CancellationTokenSource();
-        using var deadline = OperationDeadline.Start(null, cancellation.Token);
-        var budgets = new ResourceBudgetLedger(deadline);
+        var budgets = new ResourceBudgetLedger(cancellation: cancellation.Token);
         var secrets = new EnvironmentSecrets(name => name == "missing" ? null : "", budgets);
         Assert.Null(secrets.Read("missing"));
         Assert.Equal("", secrets.Read("empty"));
@@ -53,9 +50,8 @@ public sealed class EnvironmentSecretsTests
     [InlineData("bad\0name")]
     public void InvalidNames_FailBeforeReadingTheSource(string name)
     {
-        using var deadline = OperationDeadline.Start(null);
         var secrets = new EnvironmentSecrets(_ => throw new InvalidOperationException("Source must not run."),
-            new ResourceBudgetLedger(deadline));
+            new ResourceBudgetLedger());
         CliException error = Assert.Throws<CliException>(() => secrets.Read(name));
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
     }

@@ -55,7 +55,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         if (operation.Length > 128) { throw new ArgumentOutOfRangeException(nameof(operation)); }
         _faults = faults ?? throw new ArgumentNullException(nameof(faults));
         budgets.ThrowIfFailed();
-        budgets.Deadline.ThrowIfExpired("directory-start");
+        budgets.Cancellation.ThrowIfCancellationRequested();
         TargetDirectory = Path.TrimEndingDirectorySeparator(Path.GetFullPath(targetDirectory));
         _replace = replace;
         if (replace) { OutputPathValidator.EnsureSafeDirectory(TargetDirectory); }
@@ -116,7 +116,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_completed) { throw new InvalidOperationException("The directory output is already committed."); }
         _budgets.ThrowIfFailed();
-        _budgets.Deadline.ThrowIfExpired("directory-seal");
+        _budgets.Cancellation.ThrowIfCancellationRequested();
         NewDirectoryPublication.EnsureAnchor(_transaction, _transactionIdentity);
         NewDirectoryPublication.EnsureAnchor(StagingDirectory, _candidateIdentity);
         DirectoryTreeSnapshot tree = NewDirectoryPublication.Capture(StagingDirectory, _budgets);
@@ -126,7 +126,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         _budgets.Consume(ResourceBudgetKinds.OutputBytes, tree.Files.Sum(file => file.Snapshot.Length), "bytes", "directory-seal");
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
         DirectoryTreeSnapshot? previous = Admit(admitPrevious);
-        NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Deadline);
+        NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Cancellation);
         if (previous is not null)
         {
             // The cleanup deletes the replaced tree by this snapshot once the candidate takes its place.
@@ -134,12 +134,12 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         }
 
         _faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Publish, 0, TargetDirectory));
-        _budgets.Deadline.ThrowIfExpired("directory-rename");
+        _budgets.Cancellation.ThrowIfCancellationRequested();
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
         if (previous is null) { NewDirectoryPublication.EnsureAbsent(TargetDirectory); }
-        else { NewDirectoryPublication.ValidateTree(TargetDirectory, previous, _budgets.Deadline); }
-        NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Deadline);
-        _budgets.Deadline.ThrowIfExpired("directory-rename");
+        else { NewDirectoryPublication.ValidateTree(TargetDirectory, previous, _budgets.Cancellation); }
+        NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Cancellation);
+        _budgets.Cancellation.ThrowIfCancellationRequested();
         try
         {
             if (previous is not null)
@@ -186,7 +186,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     private DirectoryTreeSnapshot? CapturePrevious()
     {
         if (!Directory.Exists(TargetDirectory)) { return null; }
-        try { return NewDirectoryPublication.Capture(TargetDirectory, deadline: _budgets.Deadline); }
+        try { return NewDirectoryPublication.Capture(TargetDirectory, cancellation: _budgets.Cancellation); }
         catch (InvalidDataException error)
         {
             throw CliErrors.OutputUnwritable(TargetDirectory, $"the existing directory cannot be replaced: {error.Message}", error);
@@ -263,7 +263,7 @@ internal static class NewDirectoryPublication
     /// <summary>Where a replaced directory waits inside its publication transaction.</summary>
     internal static string PreviousPath(string transaction) => Path.Combine(transaction, "previous");
 
-    internal static DirectoryTreeSnapshot Capture(string root, ResourceBudgetLedger? budgets = null, OperationDeadline? deadline = null)
+    internal static DirectoryTreeSnapshot Capture(string root, ResourceBudgetLedger? budgets = null, CancellationToken cancellation = default)
     {
         OutputPathValidator.EnsureSafeDirectory(root);
         var files = new List<DirectoryOutputFile>();
@@ -273,7 +273,7 @@ internal static class NewDirectoryPublication
         long bytes = 0;
         while (pending.TryPop(out string? directory))
         {
-            (budgets?.Deadline ?? deadline)?.ThrowIfExpired("directory-snapshot");
+            (budgets?.Cancellation ?? cancellation).ThrowIfCancellationRequested();
             OutputPathValidator.EnsureSafeDirectory(directory);
             if (directories.Count >= PublicationLimits.MaximumDirectories)
             { throw new InvalidDataException("The directory output exceeds its directory limit."); }
@@ -281,7 +281,7 @@ internal static class NewDirectoryPublication
                 FilePublicationOwnedDelete.TryGetDirectoryIdentity(directory)));
             foreach (FileSystemInfo item in new DirectoryInfo(directory).EnumerateFileSystemInfos())
             {
-                (budgets?.Deadline ?? deadline)?.ThrowIfExpired("directory-snapshot");
+                (budgets?.Cancellation ?? cancellation).ThrowIfCancellationRequested();
                 if ((item.Attributes & FileAttributes.ReparsePoint) != 0 || item.LinkTarget is not null)
                 { throw new InvalidDataException("Directory outputs cannot contain links."); }
                 if (item is DirectoryInfo)
@@ -329,10 +329,9 @@ internal static class NewDirectoryPublication
         { throw CliErrors.OutputExists(target); }
     }
 
-    internal static void ValidateTree(string root, DirectoryTreeSnapshot expected, OperationDeadline? deadline = null)
+    internal static void ValidateTree(string root, DirectoryTreeSnapshot expected, CancellationToken cancellation = default)
     {
-        using OperationDeadline? owned = deadline is null ? OperationDeadline.Start(null) : null;
-        DirectoryTreeSnapshot actual = Capture(root, deadline: deadline ?? owned!);
+        DirectoryTreeSnapshot actual = Capture(root, cancellation: cancellation);
         if (actual.Files.Count != expected.Files.Count || actual.Directories.Count != expected.Directories.Count)
         { throw new IOException("The directory output tree changed after sealing."); }
         var files = expected.Files.ToDictionary(file => file.Path, FilePaths.Comparer);
@@ -342,7 +341,7 @@ internal static class NewDirectoryPublication
             || actual.Directories.Any(directory => !dirs.TryGetValue(directory.Path, out DirectoryOutputDirectory? was)
                 || was.Identity != directory.Identity))
         { throw new IOException("The directory output tree changed after sealing."); }
-        deadline?.ThrowIfExpired("directory-verification");
+        cancellation.ThrowIfCancellationRequested();
     }
 
     // Deletes a candidate or replaced tree that the publication's transaction owns; a read-only

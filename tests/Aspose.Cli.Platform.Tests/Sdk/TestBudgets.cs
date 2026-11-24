@@ -7,7 +7,7 @@ internal static class TestBudgets
 {
     public static ResourceBudgetLedger Create(
         IReadOnlyDictionary<string, long>? limits = null) =>
-        new(OperationDeadline.Start(null), limits);
+        new(limits);
 
     public static SafeFileWriter Writer() => new(Create());
 }

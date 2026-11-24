@@ -20,9 +20,7 @@ public sealed class ResourceBudgetLedgerTests
         string path = TemporaryFile(new byte[size]);
         try
         {
-            using OperationDeadline deadline = OperationDeadline.Start(null);
             ResourceBudgetLedger budgets = Create(
-                deadline,
                 (ResourceBudgetKinds.InputBytes, 8),
                 (ResourceBudgetKinds.MemoryBufferBytes, 8));
 
@@ -55,8 +53,7 @@ public sealed class ResourceBudgetLedgerTests
         string above = TemporaryFile(new byte[9]);
         try
         {
-            using OperationDeadline deadline = OperationDeadline.Start(null);
-            ResourceBudgetLedger budgets = Create(deadline, (ResourceBudgetKinds.InputBytes, 8));
+            ResourceBudgetLedger budgets = Create((ResourceBudgetKinds.InputBytes, 8));
 
             InputSizeGuard.Ensure(budgets, within);
             CliException tooLarge = Assert.Throws<CliException>(() => InputSizeGuard.Ensure(budgets, above));
@@ -80,9 +77,7 @@ public sealed class ResourceBudgetLedgerTests
     [InlineData(9, false)]
     public void StandardInput_IsBoundedWhileStreaming(int size, bool accepted)
     {
-        using OperationDeadline deadline = OperationDeadline.Start(null);
         ResourceBudgetLedger budgets = Create(
-            deadline,
             (ResourceBudgetKinds.StandardInputBytes, 8),
             (ResourceBudgetKinds.DecodedTextCharacters, 32));
         using var input = new MemoryStream(
@@ -110,10 +105,8 @@ public sealed class ResourceBudgetLedgerTests
     {
         byte[] utf8 = Encoding.UTF8.GetBytes("汉字");
 
-        using (OperationDeadline deadline = OperationDeadline.Start(null))
         {
             ResourceBudgetLedger bytes = Create(
-                deadline,
                 (ResourceBudgetKinds.StandardInputBytes, utf8.Length - 1),
                 (ResourceBudgetKinds.DecodedTextCharacters, 2));
             using var input = new MemoryStream(utf8);
@@ -124,10 +117,8 @@ public sealed class ResourceBudgetLedgerTests
                 error.Details!["resource"]!.GetValue<string>());
         }
 
-        using (OperationDeadline deadline = OperationDeadline.Start(null))
         {
             ResourceBudgetLedger characters = Create(
-                deadline,
                 (ResourceBudgetKinds.StandardInputBytes, utf8.Length),
                 (ResourceBudgetKinds.DecodedTextCharacters, 1));
             using var input = new MemoryStream(utf8);
@@ -145,9 +136,7 @@ public sealed class ResourceBudgetLedgerTests
         string path = TemporaryFile([1, 2, 3]);
         try
         {
-            using OperationDeadline deadline = OperationDeadline.Start(null);
             ResourceBudgetLedger budgets = Create(
-                deadline,
                 (ResourceBudgetKinds.InputBytes, 32));
             budgets.AdmitFile(path);
             using (var stream = new FileStream(
@@ -179,9 +168,7 @@ public sealed class ResourceBudgetLedgerTests
         File.WriteAllBytes(path, [1, 2, 3]);
         try
         {
-            using OperationDeadline deadline = OperationDeadline.Start(null);
             ResourceBudgetLedger budgets = Create(
-                deadline,
                 (ResourceBudgetKinds.InputBytes, 32));
             budgets.AdmitFile(path);
 
@@ -207,9 +194,7 @@ public sealed class ResourceBudgetLedgerTests
         string path = TemporaryFile([1]);
         try
         {
-            using OperationDeadline deadline = OperationDeadline.Start(null);
             ResourceBudgetLedger budgets = Create(
-                deadline,
                 (ResourceBudgetKinds.OutputBytes, 1));
 
             CliException error = Assert.Throws<CliException>(() =>
@@ -233,9 +218,7 @@ public sealed class ResourceBudgetLedgerTests
     [Fact]
     public void SecretWithoutNewline_StopsAtCharacterLimit()
     {
-        using OperationDeadline deadline = OperationDeadline.Start(null);
         ResourceBudgetLedger budgets = Create(
-            deadline,
             (ResourceBudgetKinds.SecretCharacters, 4));
 
         CliException error = Assert.Throws<CliException>(
@@ -248,31 +231,9 @@ public sealed class ResourceBudgetLedgerTests
     }
 
     [Fact]
-    public void ExpiredDeadlineWinsWhenBudgetWouldAlsoBeExceeded()
-    {
-        using OperationDeadline deadline =
-            OperationDeadline.Start(TimeSpan.FromMilliseconds(10));
-        ResourceBudgetLedger budgets = Create(
-            deadline,
-            (ResourceBudgetKinds.StandardInputBytes, 1));
-        Assert.True(deadline.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(30)), "The deadline never expired.");
-
-        CliException error = Assert.Throws<CliException>(() =>
-            budgets.Consume(
-                ResourceBudgetKinds.StandardInputBytes,
-                2,
-                "bytes",
-                "stdin-read"));
-
-        Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
-    }
-
-    [Fact]
     public void RejectedConsumption_PreservesCountersButTerminatesTheInvocation()
     {
-        using OperationDeadline deadline = OperationDeadline.Start(null);
         ResourceBudgetLedger budgets = Create(
-            deadline,
             (ResourceBudgetKinds.MemoryBufferBytes, 10));
         budgets.Consume(
             ResourceBudgetKinds.MemoryBufferBytes,
@@ -301,9 +262,7 @@ public sealed class ResourceBudgetLedgerTests
     [Fact]
     public void InvalidUtf8ReturnsEncodingError()
     {
-        using OperationDeadline deadline = OperationDeadline.Start(null);
         ResourceBudgetLedger budgets = Create(
-            deadline,
             (ResourceBudgetKinds.StandardInputBytes, 8),
             (ResourceBudgetKinds.DecodedTextCharacters, 8));
         using var input = new MemoryStream([0xC3, 0x28]);
@@ -317,9 +276,7 @@ public sealed class ResourceBudgetLedgerTests
     [Fact]
     public void BudgetedMemoryStream_ChargesGrowthBeforeAllocation()
     {
-        using OperationDeadline deadline = OperationDeadline.Start(null);
         ResourceBudgetLedger budgets = Create(
-            deadline,
             (ResourceBudgetKinds.MemoryBufferBytes, 8));
         using var stream = new BudgetedMemoryStream(
             budgets,
@@ -341,10 +298,8 @@ public sealed class ResourceBudgetLedgerTests
     }
 
     private static ResourceBudgetLedger Create(
-        OperationDeadline deadline,
         params (string Kind, long Limit)[] limits) =>
         new(
-            deadline,
             limits.ToDictionary(
                 static value => value.Kind,
                 static value => value.Limit,

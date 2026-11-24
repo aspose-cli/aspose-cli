@@ -43,7 +43,7 @@ internal sealed class SlidesResourcePolicy : IResourceLoadingCallback, IDisposab
         return ResourceLoadingAction.Skip;
     }
 
-    /// <summary>Rethrows a budget, deadline or cancellation failure the SDK swallowed.</summary>
+    /// <summary>Rethrows a budget or cancellation failure the SDK swallowed.</summary>
     internal void ThrowIfFailed() => _local?.ThrowIfFailed();
 
     /// <summary>The completeness warning for the resources skipped so far, or null.</summary>

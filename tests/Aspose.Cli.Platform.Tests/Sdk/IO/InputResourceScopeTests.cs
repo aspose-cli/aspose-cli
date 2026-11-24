@@ -15,8 +15,7 @@ public sealed class InputResourceScopeTests
         using var temp = new TempDirectory();
         File.WriteAllBytes(temp.File("first.bin"), [1, 2, 3, 4, 5]);
         File.WriteAllBytes(temp.File("second.bin"), [6, 7, 8, 9, 10]);
-        using var deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(deadline, new Dictionary<string, long> { [ResourceBudgetKinds.InputBytes] = 9 });
+        var budgets = new ResourceBudgetLedger(new Dictionary<string, long> { [ResourceBudgetKinds.InputBytes] = 9 });
         var scope = budgets.Inputs.CreateScope();
         Stream first = scope.OpenFile(temp.File("first.bin"));
         Stream second = scope.OpenFile(temp.File("second.bin"));
@@ -41,8 +40,7 @@ public sealed class InputResourceScopeTests
         using var temp = new TempDirectory();
         string image = temp.File("image.png");
         File.WriteAllBytes(image, [1, 2, 3]);
-        using var deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(deadline);
+        var budgets = new ResourceBudgetLedger();
         // A path as an operation states it, not yet resolved; the error names the file it resolves to.
         string stated = Path.Combine(temp.Path, "images", "..", "image.png");
         using (new FileStream(image, FileMode.Open, FileAccess.ReadWrite, FileShare.None))

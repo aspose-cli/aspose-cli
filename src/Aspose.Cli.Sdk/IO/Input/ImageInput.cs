@@ -254,7 +254,7 @@ public static class ImageInput
             {
                 for (int decoded = 0; decoded < info.Height;)
                 {
-                    budgets.Deadline.ThrowIfExpired("image-decode");
+                    budgets.Cancellation.ThrowIfCancellationRequested();
                     int wanted = Math.Min(strip, info.Height - decoded);
                     if (codec.GetScanlines(pixels, wanted, (int)rowBytes) < wanted)
                     {

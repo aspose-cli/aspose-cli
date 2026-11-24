@@ -37,7 +37,7 @@ public sealed class SdkLayeringTests
     /// snapshot, and the owned delete that removes only the file it captured.</item>
     /// <item>Formats: the format declarations and the byte-signature recognition of input
     /// files, on which Extensibility builds products and their routes; and IO.Budgets: the
-    /// invocation's resource ledger, the operation deadline, the input-size and output-set
+    /// invocation's resource ledger, the input-size and output-set
     /// limits and the streams that charge the ledger.</item>
     /// <item>IO.Paths: resolving and validating local paths, and the user storage roots.</item>
     /// <item>IO.Input: opening and loading input files, their protection and passwords, and

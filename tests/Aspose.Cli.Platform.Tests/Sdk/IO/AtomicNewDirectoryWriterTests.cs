@@ -66,10 +66,9 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         using var cancellation = new CancellationTokenSource();
-        using OperationDeadline deadline = OperationDeadline.Start(null, cancellation.Token);
         var faults = new Faults(point => { if (point.Kind == PublicationFaultKind.Publish) { cancellation.Cancel(); } });
         string target = temp.File("result");
-        using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(deadline), target, "test", faults))
+        using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(cancellation: cancellation.Token), target, "test", faults))
         {
             Write(output, "data.txt", "candidate");
             Assert.Throws<OperationCanceledException>(output.Commit);
@@ -82,8 +81,7 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         using var cancellation = new CancellationTokenSource();
-        using OperationDeadline deadline = OperationDeadline.Start(null, cancellation.Token);
-        var budgets = new ResourceBudgetLedger(deadline);
+        var budgets = new ResourceBudgetLedger(cancellation: cancellation.Token);
         var faults = new Faults(point =>
         {
             if (point.Kind == PublicationFaultKind.Cleanup)
