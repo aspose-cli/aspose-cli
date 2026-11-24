@@ -51,14 +51,16 @@ internal static class ConvertCommand
                     throw CliErrors.OptionInvalid(pages.Name, $"'{format}' output holds the whole document; it applies only with {fixedPageTargets}");
                 }
 
+                PageRange? range = pages.ReadRange(parse);
+                WordsTextInput? textInput = TextInput(standard.Input, parse, encoding, numbering, whitespaces, hyperlinks, leading);
                 return new WordsConvertRequest
                 {
                     Input = standard.Input,
                     Output = output,
-                    Pages = pages.ReadRange(parse),
+                    Pages = range,
                     Password = standard.InputPassword,
                     EncryptPassword = standard.EncryptPassword(),
-                    TextInput = TextInput(standard.Input, parse, encoding, numbering, whitespaces, hyperlinks, leading),
+                    TextInput = textInput,
                 };
             })
         {
