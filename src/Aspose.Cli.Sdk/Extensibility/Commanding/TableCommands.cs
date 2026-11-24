@@ -5,6 +5,7 @@ using Aspose.Cli.Sdk.Formats;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Tables;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -211,7 +212,11 @@ public static class TableCommands
             description,
             traits,
             search.Options,
-            (parse, standard) => new TableSearchRequest { Input = standard.Input, Password = standard.InputPassword, Query = search.Read(parse) })
+            (parse, standard) =>
+            {
+                SearchQuery query = search.Read(parse);
+                return new TableSearchRequest { Input = standard.Input, Password = standard.InputPassword, Query = query };
+            })
         {
             Examples = examples ?? [],
             Links = links ?? [],
