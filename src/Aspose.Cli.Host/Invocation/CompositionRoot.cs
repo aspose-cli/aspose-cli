@@ -19,8 +19,7 @@ internal static class CompositionRoot
         ProductCatalog catalog,
         GlobalValues globals,
         ResourceBudgetLedger resourceBudgets,
-        UserLicenseChanges? licenseChanges = null,
-        Func<string, string?>? licenseEnvironment = null)
+        UserLicenseChanges? licenseChanges = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(globals);
@@ -38,24 +37,9 @@ internal static class CompositionRoot
                 globals,
                 workDir,
                 resourceBudgets,
-                licenseChanges,
-                EnvironmentFor(catalog, licenseEnvironment)),
+                licenseChanges),
             Catalog = catalog,
         };
-    }
-
-    // The license variables come from the given environment alone, when there is one: a render
-    // for another process resolves that process's license, never this process's.
-    private static Func<string, string?> EnvironmentFor(
-        ProductCatalog catalog,
-        Func<string, string?>? licenseEnvironment)
-    {
-        if (licenseEnvironment is null)
-        {
-            return Environment.GetEnvironmentVariable;
-        }
-        var names = new HashSet<string>(InvocationEnvironment.LicenseVariables(catalog), StringComparer.OrdinalIgnoreCase);
-        return name => names.Contains(name) ? licenseEnvironment(name) : Environment.GetEnvironmentVariable(name);
     }
 
     private static ProductActivationContext CreateActivation(
@@ -63,8 +47,7 @@ internal static class CompositionRoot
         GlobalValues globals,
         string workDirectory,
         ResourceBudgetLedger resourceBudgets,
-        UserLicenseChanges? licenseChanges,
-        Func<string, string?> environmentVariable)
+        UserLicenseChanges? licenseChanges)
     {
         var writer = new SafeFileWriter(resourceBudgets);
         return new ProductActivationContext
@@ -74,7 +57,7 @@ internal static class CompositionRoot
             EvaluationRequested = globals.EvaluationRequested,
             UserLicenseChanges = licenseChanges,
             ConfigDirectory = Aspose.Cli.Sdk.Configuration.ConfigurationPaths.UserDirectory(),
-            EnvironmentVariable = environmentVariable,
+            EnvironmentVariable = Environment.GetEnvironmentVariable,
             SafeFileWriter = writer,
             ResourceBudgets = resourceBudgets,
             Formats = [.. catalog.Products.SelectMany(static product => product.Formats)],
