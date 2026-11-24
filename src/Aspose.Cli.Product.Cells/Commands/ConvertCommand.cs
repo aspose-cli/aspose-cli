@@ -83,6 +83,7 @@ internal static class ConvertCommand
                 }
 
                 bool byteOrderMark = bom.Read(parse, CellsFormats.Delimited.Contains(format, StringComparer.Ordinal) ? null : $"'{format}' output is not csv or tsv text");
+                CellsTextInput? textInput = TextInput(standard.Input, parse, separator, encoding, convertNumbers, convertDates, culture);
                 return new CellsConvertRequest
                 {
                     Input = standard.Input,
@@ -90,7 +91,7 @@ internal static class ConvertCommand
                     Sheets = named.Length == 0 ? null : named,
                     Password = standard.InputPassword,
                     EncryptPassword = standard.EncryptPassword(),
-                    TextInput = TextInput(standard.Input, parse, separator, encoding, convertNumbers, convertDates, culture),
+                    TextInput = textInput,
                     FormatStrategy = strategy,
                     ByteOrderMark = byteOrderMark,
                 };

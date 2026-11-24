@@ -24,12 +24,13 @@ internal static class ConvertCommand
             (parse, standard) =>
             {
                 ResolvedOutput output = standard.Output;
+                PageRange? range = slides.ReadRange(parse);
                 Secret? encryptPassword = standard.EncryptPassword();
                 return new SlidesConvertRequest
                 {
                     Input = standard.Input,
                     Output = output,
-                    Slides = slides.ReadRange(parse),
+                    Slides = range,
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,
                 };

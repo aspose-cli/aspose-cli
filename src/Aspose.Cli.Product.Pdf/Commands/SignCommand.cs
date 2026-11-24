@@ -57,6 +57,7 @@ internal static class SignCommand
 
                 int pageNumber = parse.GetValue(page);
                 OptionGuards.EnsureInRange("--page", pageNumber, 1, int.MaxValue);
+                System.Drawing.Rectangle? rectangle = rectangleText is null ? null : ParseRect(rectangleText);
                 return new PdfSignRequest
                 {
                     Input = standard.Input,
@@ -66,7 +67,7 @@ internal static class SignCommand
                     Password = standard.InputPassword,
                     Page = pageNumber,
                     Visible = isVisible,
-                    Rect = rectangleText is null ? null : ParseRect(rectangleText),
+                    Rect = rectangle,
                     Reason = parse.GetValue(reason),
                     Location = parse.GetValue(location),
                     Contact = parse.GetValue(contact),
