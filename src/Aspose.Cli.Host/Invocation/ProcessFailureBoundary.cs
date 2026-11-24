@@ -131,10 +131,7 @@ internal static class ProcessFailureBoundary
         try
         {
             OutputMode output = ResolveErrorOutput(host, args);
-            IOutputWriter writer = OutputWriterFactory.Create(
-                output,
-                host.ContractJson,
-                error: errorOutput);
+            var writer = new JsonOutputWriter(host.ContractJson, output, errorOutput);
             writer.WriteError(error.ToEnvelope());
             errorOutput.Flush();
         }
