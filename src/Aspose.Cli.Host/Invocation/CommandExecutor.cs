@@ -47,9 +47,12 @@ internal sealed class CommandExecutor
                     resourceBudgets: scope.Budgets)));
 
     /// <summary>
-    /// Runs a command that answers with one result. Ctrl+C cancels it as the caller's own
-    /// cancellation: the work stops at its next check, nothing is published, its staging is
-    /// removed and the process exits 130. A second Ctrl+C ends the process at once.
+    /// Runs a command that answers with one result. Until the command commits its outputs,
+    /// Ctrl+C cancels it as the caller's own cancellation: the work stops at its next check,
+    /// nothing is published, its staging is removed and the process exits 130. Once the outputs
+    /// are committed the command no longer listens to it
+    /// (<see cref="ResourceBudgetLedger.Cancellation"/>): it finishes, writes its result and
+    /// exits 0. A second Ctrl+C ends the process at once.
     /// </summary>
     private int RunEnvelope(
         ParseResult parseResult,
@@ -65,9 +68,9 @@ internal sealed class CommandExecutor
                 cancellationToken,
                 scope =>
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    scope.Budgets.Cancellation.ThrowIfCancellationRequested();
                     ResultEnvelope result = handler(scope);
-                    if (!scope.Budgets.HasCommittedOutputs) { cancellationToken.ThrowIfCancellationRequested(); }
+                    scope.Budgets.Cancellation.ThrowIfCancellationRequested();
                     return scope.Complete(result);
                 }));
     }

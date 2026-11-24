@@ -84,12 +84,16 @@ public sealed class ResourceBudgetLedger
     private CliException? _failure;
     private readonly ConcurrentDictionary<string, long> _consumed;
     private readonly ConcurrentDictionary<string, AdmittedFile> _admitted;
+    private readonly CancellationToken _cancellation;
+
+    // Written by the thread that commits, read by any thread that checks, such as an engine's callback.
+    private volatile bool _outputsCommitted;
 
     public ResourceBudgetLedger(
         IReadOnlyDictionary<string, long>? limits = null,
         CancellationToken cancellation = default)
     {
-        Cancellation = cancellation;
+        _cancellation = cancellation;
         _limits = NormalizeLimits(limits);
         _consumed = new ConcurrentDictionary<string, long>(
             StringComparer.Ordinal);
@@ -98,15 +102,19 @@ public sealed class ResourceBudgetLedger
     }
 
     /// <summary>
-    /// The caller's cancellation of this invocation: <see cref="Consume"/> and
-    /// <see cref="EnsureWithin"/> throw once it is requested, and so does each step that checks it.
+    /// The one answer to whether this invocation still listens to the caller's cancellation.
+    /// Until its outputs are committed it is the caller's token: <see cref="Consume"/>,
+    /// <see cref="EnsureWithin"/> and each step that checks it throw once the caller cancels,
+    /// and the command leaves nothing behind. Once the outputs are committed it is a token that
+    /// is never cancelled: the command finishes and reports what it wrote.
     /// </summary>
-    public CancellationToken Cancellation { get; }
+    public CancellationToken Cancellation => _outputsCommitted ? CancellationToken.None : _cancellation;
 
-    /// <summary>Whether this invocation has durably committed a final output set.</summary>
-    public bool HasCommittedOutputs { get; private set; }
-    internal void MarkOutputsCommitted() => HasCommittedOutputs = true;
-
+    /// <summary>
+    /// Records that this invocation's outputs are in their final place, which nothing undoes:
+    /// from here on <see cref="Cancellation"/> is never cancelled.
+    /// </summary>
+    internal void MarkOutputsCommitted() => _outputsCommitted = true;
 
     /// <summary>Bounded file/stdin/text reader backed by this ledger.</summary>
     public InputSource Inputs { get; }

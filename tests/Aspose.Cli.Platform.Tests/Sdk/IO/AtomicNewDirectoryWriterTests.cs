@@ -90,7 +90,7 @@ public sealed class AtomicNewDirectoryWriterTests
         string target = temp.File("result");
         using (var output = new AtomicNewDirectoryWriter(budgets, target, "test", faults))
         { Write(output, "data.txt", "committed"); output.Commit(); }
-        Assert.True(budgets.HasCommittedOutputs);
+        Assert.False(budgets.Cancellation.IsCancellationRequested);
         Assert.Equal("committed", File.ReadAllText(Path.Combine(target, "data.txt")));
     }
 
