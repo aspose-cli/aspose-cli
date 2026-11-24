@@ -62,12 +62,14 @@ public sealed class CliWorkerTests
     /// <summary>
     /// Each of a product's commands, in a workspace with the run's project license or in one
     /// without a license, runs in a worker with the exit code, stdout and stderr of a child
-    /// process, once the workspaces' paths are named alike. Text is compared exactly; in a JSON
-    /// document only a value that two child processes write differently, such as the size of a
-    /// document that records when it was saved, may differ, and the size of an output whose
-    /// content is the child process's in other bytes, such as an xlsx whose package relationships
-    /// Aspose.Cells wrote in another order. Each file a result names holds the child process's
-    /// content unless the two child processes saved different content.
+    /// process, once the workspaces' paths are named alike. Text is compared exactly and a JSON
+    /// document value by value, but for the size of an output whose content is the child
+    /// process's in other bytes, such as an xlsx whose package relationships Aspose.Cells wrote in
+    /// another order. Where the worker's run is not the child process's, a second child process
+    /// runs more than a second after the first: a value the two child processes write
+    /// differently, such as the time in a validation log or the size of a document that records
+    /// when it was saved, may differ in the worker's run too, and a file a result names may hold
+    /// other content where the two child processes saved different content.
     /// </summary>
     [Theory]
     [Category(TestCategory.Slow)]
@@ -86,13 +88,15 @@ public sealed class CliWorkerTests
             using (CliWorkers.ChildProcesses())
             {
                 child = Execute(invocation, projectLicense);
-                if (child.StdOut.Contains("\"output", StringComparison.Ordinal))
+                again = child;
+                if (!Matches(worker, child, child))
                 {
-                    // A document records when it was saved, to the second: a second apart, two
-                    // saves show which values of a result follow from that.
+                    // A result may hold a value that follows from when the command ran, to the
+                    // second, such as the time a document was saved or validated: more than a
+                    // second later, a second child process shows which values those are.
                     Thread.Sleep(TimeSpan.FromSeconds(1.1));
+                    again = Execute(invocation, projectLicense);
                 }
-                again = Execute(invocation, projectLicense);
             }
             Assert.False(child.InWorker || again.InWorker, $"{name} ran in a worker, not a child process.");
             if (!Matches(worker, child, again))
