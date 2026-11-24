@@ -1324,9 +1324,6 @@
             "targets": {
               "description": "The publication targets and their state; a target whose original was not moved back names where it is (originalPath)."
             },
-            "timeoutSeconds": {
-              "description": "The timeout that elapsed, in seconds."
-            },
             "unit": {
               "description": "The unit of a budget's limit and actual."
             },

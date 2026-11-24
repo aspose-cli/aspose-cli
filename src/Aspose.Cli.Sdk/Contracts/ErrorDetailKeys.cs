@@ -55,7 +55,6 @@ public static class ErrorDetailKeys
         ("subject", "What was looked up, such as sheet, page or file."),
         ("target", "The target the error is about."),
         ("targets", "The publication targets and their state; a target whose original was not moved back names where it is (originalPath)."),
-        ("timeoutSeconds", "The timeout that elapsed, in seconds."),
         ("unit", "The unit of a budget's limit and actual."),
         ("variable", "The environment variable the error is about."),
         ("width", "The width of a render, in pixels."),
