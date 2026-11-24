@@ -10,7 +10,7 @@ namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>
 /// Final process boundary for failures that occur outside a command execution
-/// pipeline, including background App startup and late worker-thread crashes.
+/// pipeline, including late worker-thread crashes.
 /// </summary>
 internal static class ProcessFailureBoundary
 {

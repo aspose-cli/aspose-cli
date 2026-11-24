@@ -17,7 +17,7 @@ public sealed record ProductCommandScope(
     Func<string, string?> ReadEnvironment);
 
 /// <summary>
-/// The host's command pipeline, which owns output rendering, errors, deadlines and admission: it
+/// The host's command pipeline, which owns output rendering, errors, cancellation and admission: it
 /// runs the body of one product command in a scope for that product and returns the exit code.
 /// </summary>
 /// <param name="parse">The parsed command line.</param>

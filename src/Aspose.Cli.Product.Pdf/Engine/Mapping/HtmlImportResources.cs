@@ -101,7 +101,7 @@ internal sealed class HtmlImportResources(string htmlPath, ResourceBudgetLedger 
         Uri.TryCreate(reference, UriKind.Absolute, out Uri? uri)
         && !uri.IsFile && !string.Equals(uri.Scheme, "data", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Rethrows a captured budget, deadline or resource failure.</summary>
+    /// <summary>Rethrows a captured budget, cancellation or resource failure.</summary>
     internal void ThrowIfFailed() => _local.ThrowIfFailed();
 
     /// <summary>The warning that names the resources left out, after any failure.</summary>

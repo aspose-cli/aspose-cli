@@ -47,7 +47,7 @@ public sealed class InputSource
     public Stream OpenFile(string path)
     {
         _budgets.ThrowIfFailed();
-        _budgets.Deadline.ThrowIfExpired("file-open");
+        _budgets.Cancellation.ThrowIfCancellationRequested();
         string full = Path.GetFullPath(path);
         _budgets.VerifyAdmission(full);
         FileStream stream = InputFailures.Read(full, () => InputFiles.OpenRead(full));
@@ -132,7 +132,7 @@ public sealed class InputSource
         var value = new StringBuilder((int)Math.Min(limit, 256));
         while (true)
         {
-            _budgets.Deadline.ThrowIfExpired("secret-read");
+            _budgets.Cancellation.ThrowIfCancellationRequested();
             int next = reader.Read();
             if (next is -1 or '\n')
             {
@@ -191,7 +191,7 @@ public sealed class InputSource
             {
                 while (true)
                 {
-                    _budgets.Deadline.ThrowIfExpired(phase);
+                    _budgets.Cancellation.ThrowIfCancellationRequested();
                     int read = decoder.GetChars(bytes, start, count - start, buffer, 0, flush: count == 0);
                     if (read > 0)
                     {

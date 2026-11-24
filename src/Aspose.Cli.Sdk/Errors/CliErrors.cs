@@ -356,20 +356,6 @@ public static partial class CliErrors
         $"{target} could not be rendered: {reason}.",
         details: facts);
 
-    public static CliException OperationTimeout(int seconds) => CliException.Create(
-        ErrorCodes.OperationTimeout,
-        $"The operation did not finish within the {seconds}s timeout.",
-        details: new JsonObject { ["timeoutSeconds"] = seconds });
-
-    public static CliException OperationTimeout(int seconds, string phase) => CliException.Create(
-        ErrorCodes.OperationTimeout,
-        $"The operation did not finish within the {seconds}s timeout.",
-        details: new JsonObject
-        {
-            ["timeoutSeconds"] = seconds,
-            ["phase"] = phase,
-        });
-
     /// <summary>
     /// A regular expression the caller supplied ran past its execution budget, which bounds
     /// the time any one match may take.

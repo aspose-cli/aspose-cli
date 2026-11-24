@@ -212,10 +212,6 @@ public sealed class DependencyRulesTests
 
         Assert.Equal(1, Occurrences(source, "OutputWriterFactory.Create("));
         Assert.Equal(1, Occurrences(source, "CompositionRoot.CreateBudgets("));
-        Assert.DoesNotContain(
-            "ResourceBudgetScope",
-            source,
-            StringComparison.Ordinal);
         Assert.Equal(1, Occurrences(source, "ProductInputAdmission.Admit("));
     }
 

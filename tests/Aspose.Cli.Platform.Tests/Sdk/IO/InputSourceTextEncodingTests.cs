@@ -79,8 +79,7 @@ public sealed class InputSourceTextEncodingTests
 
     private static string Read(Stream input)
     {
-        using OperationDeadline deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(deadline, new Dictionary<string, long>(StringComparer.Ordinal)
+        var budgets = new ResourceBudgetLedger(new Dictionary<string, long>(StringComparer.Ordinal)
         {
             [ResourceBudgetKinds.StandardInputBytes] = 1 << 20,
             [ResourceBudgetKinds.DecodedTextCharacters] = 1 << 20,

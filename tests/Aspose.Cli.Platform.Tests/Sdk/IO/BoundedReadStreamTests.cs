@@ -9,9 +9,8 @@ public sealed class BoundedReadStreamTests
     [Fact]
     public void DisposeTwice_DisposesOwnedInnerStreamOnce()
     {
-        using var deadline = OperationDeadline.Start(null);
         var inner = new CountingStream();
-        var stream = Wrap(inner, deadline, leaveOpen: false);
+        var stream = Wrap(inner, leaveOpen: false);
 
         stream.Dispose();
         stream.Dispose();
@@ -23,9 +22,8 @@ public sealed class BoundedReadStreamTests
     [Fact]
     public async Task DisposeAsyncTwice_DisposesOwnedInnerStreamOnceAsynchronously()
     {
-        using var deadline = OperationDeadline.Start(null);
         var inner = new CountingStream();
-        var stream = Wrap(inner, deadline, leaveOpen: false);
+        var stream = Wrap(inner, leaveOpen: false);
 
         await stream.DisposeAsync();
         await stream.DisposeAsync();
@@ -37,9 +35,8 @@ public sealed class BoundedReadStreamTests
     [Fact]
     public async Task DisposeThenDisposeAsync_DisposesOwnedInnerStreamOnce()
     {
-        using var deadline = OperationDeadline.Start(null);
         var inner = new CountingStream();
-        var stream = Wrap(inner, deadline, leaveOpen: false);
+        var stream = Wrap(inner, leaveOpen: false);
 
         stream.Dispose();
         await stream.DisposeAsync();
@@ -51,9 +48,8 @@ public sealed class BoundedReadStreamTests
     [Fact]
     public async Task DisposeAsyncThenDispose_DisposesOwnedInnerStreamOnce()
     {
-        using var deadline = OperationDeadline.Start(null);
         var inner = new CountingStream();
-        var stream = Wrap(inner, deadline, leaveOpen: false);
+        var stream = Wrap(inner, leaveOpen: false);
 
         await stream.DisposeAsync();
         stream.Dispose();
@@ -69,9 +65,8 @@ public sealed class BoundedReadStreamTests
     [InlineData(true, false)]
     public async Task LeaveOpen_NeverDisposesInnerStream(bool firstAsync, bool secondAsync)
     {
-        using var deadline = OperationDeadline.Start(null);
         var inner = new CountingStream();
-        var stream = Wrap(inner, deadline, leaveOpen: true);
+        var stream = Wrap(inner, leaveOpen: true);
 
         await DisposeAsync(stream, firstAsync);
         await DisposeAsync(stream, secondAsync);
@@ -81,8 +76,8 @@ public sealed class BoundedReadStreamTests
         Assert.Equal(1, inner.ReadByte());
     }
 
-    private static BoundedReadStream Wrap(CountingStream inner, OperationDeadline deadline, bool leaveOpen) =>
-        new(inner, new ResourceBudgetLedger(deadline), ResourceBudgetKinds.InputBytes, "test", leaveOpen);
+    private static BoundedReadStream Wrap(CountingStream inner, bool leaveOpen) =>
+        new(inner, new ResourceBudgetLedger(), ResourceBudgetKinds.InputBytes, "test", leaveOpen);
 
     private static async Task DisposeAsync(Stream stream, bool useAsync)
     {

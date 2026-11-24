@@ -26,9 +26,9 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             Publish(entry);
         }
 
-        plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-commit");
+        plan.ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
         beforeCommit?.Invoke();
-        plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-commit-record");
+        plan.ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
         plan.State = PublicationTransactionState.Committed;
         plan.ResourceBudgets?.MarkOutputsCommitted();
         return plan.Entries
@@ -73,7 +73,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
                     new Aspose.Cli.Sdk.Contracts.FileFingerprint { Sha256 = expectedInput.Sha256!.ToLowerInvariant() },
                     new Aspose.Cli.Sdk.Contracts.FileFingerprint { Sha256 = actualInput!.ToLowerInvariant() });
             }
-            plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-prepare");
+            plan.ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
             EnsureTargetUnchanged(entry, target);
 
             // The swap keeps each replaced target at its displaced path, the only copy of the
@@ -93,7 +93,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
 
     private void Publish(PublicationEntry entry)
     {
-        plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-file");
+        plan.ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
         plan.Faults.Hit(new PublicationFaultPoint(
             PublicationFaultKind.Publish,
             entry.Index,
@@ -107,7 +107,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         OutputPathValidator.EnsureParentUnchanged(
             entry.Target,
             entry.TargetParentIdentity);
-        plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-replace");
+        plan.ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
         // A secret was staged with current-user-only rules (CurrentUserFileAccess), which it keeps
         // wherever it is published. A replacement takes the replaced file's rules, so the file it
         // replaces is given them first.
@@ -161,7 +161,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
                 entry.Original,
                 current);
         }
-        plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-delete");
+        plan.ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
         File.Move(entry.Target, entry.Displaced, overwrite: false);
         FilePublicationSnapshot displaced =
             FilePublicationSnapshot.Capture(entry.Displaced);

@@ -107,7 +107,7 @@ internal sealed class AtomicPublicationPlan
         string relative = Path.GetRelativePath(TargetDirectory, full);
         if (Path.IsPathRooted(relative) || relative == ".." || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal))
         { throw new IOException("The output directory is outside the transaction root."); }
-        ResourceBudgets?.Deadline.ThrowIfExpired("output-directory-admission");
+        ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
         _outputDirectories.Ensure(full);
     }
 
@@ -136,7 +136,7 @@ internal sealed class AtomicPublicationPlan
 
     internal void BeginCommit()
     {
-        ResourceBudgets?.Deadline.ThrowIfExpired("publication-start");
+        ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
         if (_initialDirectoryIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(TargetDirectory))
         {
             throw new IOException("The publication root changed during production.");

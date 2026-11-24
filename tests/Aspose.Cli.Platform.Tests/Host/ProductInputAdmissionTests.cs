@@ -26,8 +26,7 @@ public sealed class ProductInputAdmissionTests
         globals.AddTo(root);
         var parse = root.Parse(["--workdir", directory.Path, "inspect", absolute ? input : "large.bin"]);
         Assert.Empty(parse.Errors);
-        using OperationDeadline deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(deadline, new Dictionary<string, long> { [ResourceBudgetKinds.InputBytes] = 64 });
+        var budgets = new ResourceBudgetLedger(new Dictionary<string, long> { [ResourceBudgetKinds.InputBytes] = 64 });
 
         CliException error = Assert.Throws<CliException>(() =>
             ProductInputAdmission.Admit(parse, globals.Resolve(parse), budgets));
@@ -54,8 +53,7 @@ public sealed class ProductInputAdmissionTests
         string[] option = equals ? [name + "=" + output] : [name, output];
         var parse = root.Parse(["convert", .. option]);
         Assert.Empty(parse.Errors);
-        using OperationDeadline deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(deadline, new Dictionary<string, long> { [ResourceBudgetKinds.InputBytes] = 64 });
+        var budgets = new ResourceBudgetLedger(new Dictionary<string, long> { [ResourceBudgetKinds.InputBytes] = 64 });
 
         ProductInputAdmission.Admit(parse, globals.Resolve(parse), budgets);
     }

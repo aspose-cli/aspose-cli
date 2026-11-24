@@ -13,8 +13,8 @@ using Aspose.Cli.Sdk.IO.Input;
 namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>
-/// Executes every command through one scope for output, deadline, resource
-/// admission, diagnostics, and cleanup.
+/// Executes every command through one scope for output, cancellation, resource
+/// admission and diagnostics.
 /// </summary>
 internal sealed class CommandExecutor
 {
@@ -65,9 +65,9 @@ internal sealed class CommandExecutor
                 cancellationToken,
                 scope =>
                 {
-                    scope.Deadline.ThrowIfExpired("command-start");
+                    cancellationToken.ThrowIfCancellationRequested();
                     ResultEnvelope result = handler(scope);
-                    if (!scope.Budgets.HasCommittedOutputs) { scope.Deadline.ThrowIfExpired("command-complete"); }
+                    if (!scope.Budgets.HasCommittedOutputs) { cancellationToken.ThrowIfCancellationRequested(); }
                     return scope.Complete(result);
                 }));
     }
@@ -91,14 +91,12 @@ internal sealed class CommandExecutor
             cancellationToken: default,
             scope =>
             {
-                scope.Deadline.ThrowIfExpired("raw-start");
                 string result = handler();
                 if (json && scope.Globals.OutputFormat == OutputMode.Compact)
                 {
                     result = Compact(result);
                 }
 
-                scope.Deadline.ThrowIfExpired("raw-complete");
                 return scope.Complete(() => Console.Out.WriteLine(result));
             });
     }
@@ -157,31 +155,27 @@ internal sealed class CommandExecutor
                 globals,
                 stopwatch,
                 _host.EngineFailures.Translate(exception) ?? exception,
-                scope?.Deadline,
+                cancellationToken,
                 scope?.ResultWritten == true);
-        }
-        finally
-        {
-            scope?.Dispose();
         }
     }
 
     /// <summary>
     /// The one failure path. A command answers with one result or one error:
-    /// once its result is on stdout, a later failure (a service ending on its
-    /// deadline, a failed shutdown) keeps that result and reports itself only
-    /// through the exit code and a plain diagnostic line.
+    /// once it has begun writing its result to stdout, a failure (of that write,
+    /// or of the verbose line after it) adds no error envelope and reports itself
+    /// only through the exit code and a plain diagnostic line.
     /// </summary>
     private static int HandleFailure(
         IOutputWriter writer,
         GlobalValues globals,
         Stopwatch stopwatch,
         Exception exception,
-        OperationDeadline? deadline,
+        CancellationToken cancellation,
         bool resultWritten)
     {
         if (exception is OperationCanceledException
-            && deadline?.Token.IsCancellationRequested == true)
+            && cancellation.IsCancellationRequested)
         {
             // The caller cancelled through the invocation's own token.
             return (int)ExitCode.Cancelled;
@@ -225,7 +219,7 @@ internal sealed class CommandExecutor
         return string.Join(' ', names);
     }
 
-    private sealed class ExecutionScope : IDisposable
+    private sealed class ExecutionScope
     {
         private readonly IOutputWriter _writer;
         private readonly Stopwatch _stopwatch;
@@ -233,19 +227,15 @@ internal sealed class CommandExecutor
             GlobalValues globals,
             IOutputWriter writer,
             Stopwatch stopwatch,
-            OperationDeadline deadline,
             ResourceBudgetLedger budgets)
         {
             Globals = globals;
             _writer = writer;
             _stopwatch = stopwatch;
-            Deadline = deadline;
             Budgets = budgets;
         }
 
         public GlobalValues Globals { get; }
-
-        public OperationDeadline Deadline { get; }
 
         public ResourceBudgetLedger Budgets { get; }
 
@@ -258,32 +248,21 @@ internal sealed class CommandExecutor
             bool admitInputs,
             CancellationToken cancellationToken)
         {
-            OperationDeadline deadline =
-                OperationDeadline.Start(null, cancellationToken);
-            try
+            ResourceBudgetLedger budgets =
+                CompositionRoot.CreateBudgets(host.Catalog, globals, cancellationToken,
+                    parseResult.CommandResult.Command.Policy().OutputBytesLimit);
+            if (admitInputs)
             {
-                ResourceBudgetLedger budgets =
-                    CompositionRoot.CreateBudgets(host.Catalog, globals, deadline,
-                        parseResult.CommandResult.Command.Policy().OutputBytesLimit);
-                if (admitInputs)
-                {
-                    ProductInputAdmission.Admit(
-                        parseResult,
-                        globals,
-                        budgets);
-                }
-                return new ExecutionScope(
+                ProductInputAdmission.Admit(
+                    parseResult,
                     globals,
-                    writer,
-                    stopwatch,
-                    deadline,
                     budgets);
             }
-            catch
-            {
-                deadline.Dispose();
-                throw;
-            }
+            return new ExecutionScope(
+                globals,
+                writer,
+                stopwatch,
+                budgets);
         }
 
         /// <summary>Whether the command's result has reached stdout.</summary>
@@ -313,11 +292,6 @@ internal sealed class CommandExecutor
                 Globals,
                 _stopwatch.ElapsedMilliseconds);
             return (int)ExitCode.Success;
-        }
-
-        public void Dispose()
-        {
-            Deadline.Dispose();
         }
     }
 

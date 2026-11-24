@@ -29,9 +29,8 @@ public sealed class VerifiedResourceReadTests
         Directory.CreateDirectory(temp.File("root-other"));
         File.WriteAllBytes(Path.Combine(root, "image.bin"), [1, 2]);
         File.WriteAllBytes(temp.File("root-other/image.bin"), [3, 4]);
-        using var deadline = OperationDeadline.Start(null);
         using var resources = new LocalDocumentResourceLoader(
-            Path.Combine(root, "input.html"), new ResourceBudgetLedger(deadline));
+            Path.Combine(root, "input.html"), new ResourceBudgetLedger());
         Assert.False(resources.TryRead(reference, out byte[] bytes));
         Assert.Empty(bytes);
         Assert.Equal(1, resources.OmittedCount);
@@ -42,9 +41,8 @@ public sealed class VerifiedResourceReadTests
     {
         using var temp = new TempDirectory();
         File.WriteAllBytes(temp.File("local image.bin"), [1, 2]);
-        using var deadline = OperationDeadline.Start(null);
         using var resources = new LocalDocumentResourceLoader(
-            temp.File("input.html"), new ResourceBudgetLedger(deadline));
+            temp.File("input.html"), new ResourceBudgetLedger());
         bool accepted = resources.TryRead("local%20image.bin", out byte[] bytes);
         Assert.Equal(OperatingSystem.IsWindows(), accepted);
         Assert.Equal(accepted ? [1, 2] : Array.Empty<byte>(), bytes);
@@ -150,8 +148,7 @@ public sealed class VerifiedResourceReadTests
         Requires.Windows();
         using var temp = new TempDirectory();
         File.WriteAllBytes(temp.File("data"), [1, 2, 3]);
-        using var deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(deadline, new Dictionary<string, long> { [kind] = 5 });
+        var budgets = new ResourceBudgetLedger(new Dictionary<string, long> { [kind] = 5 });
         using var first = new LocalDocumentResourceLoader(temp.File("one.html"), budgets);
         using var second = new LocalDocumentResourceLoader(temp.File("two.html"), budgets);
         Assert.True(first.TryRead("data", out _));
@@ -169,9 +166,8 @@ public sealed class VerifiedResourceReadTests
         Requires.Windows();
         using var temp = new TempDirectory();
         File.WriteAllBytes(temp.File("data"), [1, 2]);
-        using var deadline = OperationDeadline.Start(null);
         using var resources = new LocalDocumentResourceLoader(temp.File("input.html"),
-            new ResourceBudgetLedger(deadline), maximumTotalBytes: 6);
+            new ResourceBudgetLedger(), maximumTotalBytes: 6);
         bool[] results = await Task.WhenAll(Enumerable.Range(0, 12).Select(index =>
             Task.Run(() => resources.TryRead("data", out _))));
         Assert.Equal(3, results.Count(static accepted => accepted));
@@ -185,9 +181,8 @@ public sealed class VerifiedResourceReadTests
     {
         using var temp = new TempDirectory();
         using var cancellation = new CancellationTokenSource();
-        using var deadline = OperationDeadline.Start(null, cancellation.Token);
         using var resources = new LocalDocumentResourceLoader(
-            temp.File("input.html"), new ResourceBudgetLedger(deadline));
+            temp.File("input.html"), new ResourceBudgetLedger(cancellation: cancellation.Token));
         cancellation.Cancel();
         Assert.Throws<OperationCanceledException>(() => resources.TryRead("https://example.invalid", out _));
     }
@@ -196,8 +191,7 @@ public sealed class VerifiedResourceReadTests
     public void Disposal_ClosesCallbackLifetime()
     {
         using var temp = new TempDirectory();
-        using var deadline = OperationDeadline.Start(null);
-        var resources = new LocalDocumentResourceLoader(temp.File("input.html"), new ResourceBudgetLedger(deadline));
+        var resources = new LocalDocumentResourceLoader(temp.File("input.html"), new ResourceBudgetLedger());
         resources.Dispose();
         Assert.Throws<ObjectDisposedException>(() => resources.TryRead("missing", out _));
     }

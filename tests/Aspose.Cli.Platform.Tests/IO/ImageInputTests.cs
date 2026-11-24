@@ -10,11 +10,9 @@ namespace Aspose.Cli.Platform.Tests.IO;
 public sealed class ImageInputTests : IDisposable
 {
     private readonly string _directory = Directory.CreateTempSubdirectory("image-input-").FullName;
-    private readonly OperationDeadline _deadline = OperationDeadline.Start(null);
 
     public void Dispose()
     {
-        _deadline.Dispose();
         Directory.Delete(_directory, recursive: true);
     }
 
@@ -250,7 +248,7 @@ public sealed class ImageInputTests : IDisposable
         byte[] gif = Encode("gif", 1, 1);
         gif[6] = gif[8] = gif[32] = gif[34] = 20;
         string path = Write("frame.gif", gif);
-        var budgets = new ResourceBudgetLedger(_deadline, new Dictionary<string, long> { [ResourceBudgetKinds.RasterPixels] = 100 });
+        var budgets = new ResourceBudgetLedger(new Dictionary<string, long> { [ResourceBudgetKinds.RasterPixels] = 100 });
 
         CliException refused = Assert.Throws<CliException>(() => ImageInput.Read(budgets.Inputs, path));
 
@@ -273,7 +271,7 @@ public sealed class ImageInputTests : IDisposable
             limits[ResourceBudgetKinds.RasterPixels] = rasterLimit;
         }
 
-        return new ResourceBudgetLedger(_deadline, limits);
+        return new ResourceBudgetLedger(limits);
     }
 
     private string Write(string name, byte[] content)
