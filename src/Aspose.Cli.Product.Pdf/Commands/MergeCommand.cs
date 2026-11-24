@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -25,6 +26,11 @@ internal static class MergeCommand
             (parse, standard) =>
             {
                 string[] inputPaths = standard.InputFiles(inputs);
+                if (inputPaths.Length < 2)
+                {
+                    throw CliErrors.Usage(["Pass at least two PDF inputs to merge."]);
+                }
+
                 return new PdfMergeRequest
                 {
                     InputPaths = inputPaths,

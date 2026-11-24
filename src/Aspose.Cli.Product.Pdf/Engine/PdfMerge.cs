@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.IO.Output;
 using Aspose.Cli.Sdk.Licensing;
@@ -17,11 +16,6 @@ internal static class PdfMerge
 {
     internal static PdfMergeResult Run(PdfSession session, PdfMergeRequest request)
     {
-        if (request.InputPaths.Count < 2)
-        {
-            throw CliErrors.Usage(["Pass at least two PDF inputs to merge."]);
-        }
-
         LicenseState state = session.Outputs.License;
         var opened = new List<LoadedPdf>(request.InputPaths.Count);
         try
