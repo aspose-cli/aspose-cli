@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Files;
+using Aspose.Cli.Sdk.IO.Input;
 using Aspose.Cli.Sdk.IO.Paths;
 using Aspose.Cli.Sdk.IO.Publication;
 
@@ -36,12 +37,13 @@ public static class LicenseInstaller
         ArgumentNullException.ThrowIfNull(validateAndSelectDestinations);
         ArgumentNullException.ThrowIfNull(faults);
         resourceBudgets.AdmitFile(sourcePath);
-        byte[] contents;
-        using (var source = new FileStream(Path.GetFullPath(sourcePath),
-            FileMode.Open, FileAccess.Read, FileShare.Read))
+        string sourceFile = Path.GetFullPath(sourcePath);
+        // The source is an input: one that cannot be opened or read is the error any input reports.
+        byte[] contents = InputFailures.Read(sourceFile, () =>
         {
-            contents = ReadSource(resourceBudgets, source);
-        }
+            using Stream source = resourceBudgets.Inputs.OpenFile(sourceFile);
+            return ReadSource(resourceBudgets, source);
+        });
         return InstallSnapshot(resourceBudgets, contents, validateAndSelectDestinations, faults);
     }
 
@@ -156,18 +158,19 @@ public static class LicenseInstaller
         {
             throw CliErrors.FileTooLarge(source.Length - source.Position, MaximumBytes);
         }
-        using var bounded = new BoundedReadStream(source, budgets,
-            ResourceBudgetKinds.InputBytes, "license-snapshot-read", leaveOpen: true);
         using var contents = new BudgetedMemoryStream(budgets,
             ResourceBudgetKinds.MemoryBufferBytes, "license-snapshot-buffer");
-        Span<byte> chunk = stackalloc byte[4096];
+        // A license is a secret, so the read leaves no copy of it behind. The input stream serves
+        // a read smaller than its own buffer through that buffer, which nothing clears; every
+        // read here asks for a whole chunk of that size, goes straight into the chunk, and the
+        // chunk is cleared below.
+        byte[] chunk = new byte[InputFiles.BufferSize];
         try
         {
             while (true)
             {
                 budgets.Cancellation.ThrowIfCancellationRequested();
-                int requested = Math.Min(chunk.Length, MaximumBytes - checked((int)contents.Length) + 1);
-                int read = bounded.Read(chunk[..requested]);
+                int read = source.Read(chunk);
                 if (read == 0)
                 {
                     break;
@@ -176,7 +179,7 @@ public static class LicenseInstaller
                 {
                     throw CliErrors.FileTooLarge(contents.Length + read, MaximumBytes);
                 }
-                contents.Write(chunk[..read]);
+                contents.Write(chunk, 0, read);
             }
             budgets.Consume(ResourceBudgetKinds.MemoryBufferBytes,
                 contents.Length, "bytes", "license-snapshot-copy");
