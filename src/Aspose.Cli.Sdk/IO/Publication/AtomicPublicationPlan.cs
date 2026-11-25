@@ -19,11 +19,13 @@ internal sealed class AtomicPublicationPlan
         string stagingDirectory,
         IPublicationFaultInjector faults,
         string targetDirectory,
-        OwnedOutputDirectories outputDirectories)
+        OwnedOutputDirectories outputDirectories,
+        ResourceBudgetLedger resourceBudgets)
     {
         StagingDirectory = stagingDirectory;
         _faults = faults;
         _outputDirectories = outputDirectories;
+        ResourceBudgets = resourceBudgets;
         TargetDirectory = targetDirectory;
         _initialDirectoryIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(targetDirectory);
     }
@@ -38,7 +40,7 @@ internal sealed class AtomicPublicationPlan
 
     public IPublicationFaultInjector Faults => _faults;
 
-    internal ResourceBudgetLedger? ResourceBudgets { get; set; }
+    internal ResourceBudgetLedger ResourceBudgets { get; }
 
     public string StagedPath(string target, int index) => StagedPath(StagingDirectory, target, index);
 
@@ -56,7 +58,7 @@ internal sealed class AtomicPublicationPlan
     public static AtomicPublicationPlan Create(
         string targetDirectory,
         string operation,
-        IPublicationFaultInjector faults, ResourceBudgetLedger? resourceBudgets)
+        IPublicationFaultInjector faults, ResourceBudgetLedger resourceBudgets)
     {
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
         ArgumentException.ThrowIfNullOrEmpty(operation);
@@ -66,13 +68,12 @@ internal sealed class AtomicPublicationPlan
         {
             directories.Ensure(root);
             string stagingDirectory = CreateLocalStagingDirectory(root);
-            var plan = new AtomicPublicationPlan(
+            return new AtomicPublicationPlan(
                 stagingDirectory,
                 faults,
                 root,
-                directories);
-            plan.ResourceBudgets = resourceBudgets;
-            return plan;
+                directories,
+                resourceBudgets);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -107,7 +108,7 @@ internal sealed class AtomicPublicationPlan
         string relative = Path.GetRelativePath(TargetDirectory, full);
         if (Path.IsPathRooted(relative) || relative == ".." || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal))
         { throw new IOException("The output directory is outside the transaction root."); }
-        ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
+        ResourceBudgets.Cancellation.ThrowIfCancellationRequested();
         _outputDirectories.Ensure(full);
     }
 
@@ -121,7 +122,7 @@ internal sealed class AtomicPublicationPlan
     {
         if (_sealed) { throw new InvalidOperationException("The output set is already sealed."); }
         EnsureNoUnknownArtifacts();
-        ResourceBudgets?.EnsureWithin(ResourceBudgetKinds.OutputSetDirectories, OutputDirectories.Count(), "items", "output-directory-admission");
+        ResourceBudgets.EnsureWithin(ResourceBudgetKinds.OutputSetDirectories, OutputDirectories.Count(), "items", "output-directory-admission");
         _sealed = true;
     }
 
@@ -129,14 +130,14 @@ internal sealed class AtomicPublicationPlan
     {
         if (_sealed || State != PublicationTransactionState.Staging)
         { throw new InvalidOperationException("The output set is sealed."); }
-        ResourceBudgets?.EnsureWithin(ResourceBudgetKinds.OutputSetEntries, Entries.Count + 1L, "items", "output-set-admission");
+        ResourceBudgets.EnsureWithin(ResourceBudgetKinds.OutputSetEntries, Entries.Count + 1L, "items", "output-set-admission");
         if (Entries.Count >= PublicationLimits.MaximumEntries)
         { throw Aspose.Cli.Sdk.Errors.CliErrors.OutputBudgetExceeded(ResourceBudgetKinds.OutputSetEntries, Entries.Count + 1L, PublicationLimits.MaximumEntries, "items", "output-set-admission"); }
     }
 
     internal void BeginCommit()
     {
-        ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
+        ResourceBudgets.Cancellation.ThrowIfCancellationRequested();
         if (_initialDirectoryIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(TargetDirectory))
         {
             throw new IOException("The publication root changed during production.");
