@@ -109,7 +109,7 @@ public sealed class PublicationOwnershipTests
 
             CliException error = Assert.Throws<CliException>(() =>
             {
-                using var publication = new AtomicNewDirectoryWriter(budgets, target, "test", replace: true);
+                using var publication = new AtomicNewDirectoryWriter(budgets, target, replace: true);
                 File.WriteAllText(Path.Combine(publication.StagingDirectory, "index.html"), "replacement");
                 publication.Commit();
             });

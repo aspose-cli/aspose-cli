@@ -26,7 +26,7 @@ public sealed class PathCaseTests : IDisposable
     [Fact]
     public void PublicationPlan_TreatsACaseVariantOfItsDirectoryAndArtifactsAsItsOwn()
     {
-        AtomicPublicationPlan plan = AtomicPublicationPlan.Create(_temp.Path, "case", NoPublicationFaultInjector.Instance, new ResourceBudgetLedger());
+        AtomicPublicationPlan plan = AtomicPublicationPlan.Create(_temp.Path, NoPublicationFaultInjector.Instance, new ResourceBudgetLedger());
         string target = _temp.File("report.txt");
         string staged = AtomicPublicationPlan.StagedPath(plan.StagingDirectory, target, index: 0);
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
@@ -74,7 +74,7 @@ public sealed class PathCaseTests : IDisposable
     [InlineData("a", @"x", false)]
     public void Boundaries_ForAPublicationTarget(string directory, string target, bool inside)
     {
-        AtomicPublicationPlan plan = AtomicPublicationPlan.Create(_temp.File(directory), "boundary", NoPublicationFaultInjector.Instance, new ResourceBudgetLedger());
+        AtomicPublicationPlan plan = AtomicPublicationPlan.Create(_temp.File(directory), NoPublicationFaultInjector.Instance, new ResourceBudgetLedger());
 
         Exception? error = Record.Exception(() => plan.EnsureTarget(_temp.File(target)));
 

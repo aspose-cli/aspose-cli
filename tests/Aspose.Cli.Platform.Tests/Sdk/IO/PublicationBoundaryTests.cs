@@ -32,7 +32,7 @@ public sealed class PublicationBoundaryTests
                 throw new IOException("The replacement stopped halfway.");
             }
         });
-        using (var outputs = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "halfway", faults))
+        using (var outputs = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults))
         {
             outputs.Stage(target, true, path => File.WriteAllText(path, "candidate"));
             CliException error = Assert.Throws<CliException>(() => outputs.Commit());
@@ -60,7 +60,7 @@ public sealed class PublicationBoundaryTests
             }
         });
         CliException error;
-        using (var outputs = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "halfway", faults))
+        using (var outputs = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults))
         {
             outputs.Stage(target, true, path => File.WriteAllText(path, "candidate"));
             error = Assert.Throws<CliException>(() => outputs.Commit());
@@ -88,7 +88,7 @@ public sealed class PublicationBoundaryTests
             }
         });
         CliException error;
-        using (var outputs = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "halfway", faults))
+        using (var outputs = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults))
         {
             outputs.Stage(target, true, path => File.WriteAllText(path, "candidate"));
             error = Assert.Throws<CliException>(() => outputs.Commit());
@@ -164,7 +164,7 @@ public sealed class PublicationBoundaryTests
     public void UnknownProducerArtifactsDoNotBlockTheNextPublication()
     {
         using var temp = new TempDirectory();
-        using (var outputs = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "producer"))
+        using (var outputs = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path))
         {
             outputs.Stage(temp.File("bad.txt"), false, file =>
             {
@@ -197,7 +197,7 @@ public sealed class PublicationBoundaryTests
         bool produced = false;
         var writer = new SafeFileWriter(TestBudgets.Create(
             new Dictionary<string, long> { [ResourceBudgetKinds.OutputSetEntries] = 3 }));
-        using (var outputs = new AtomicOutputSetWriter(writer, temp.Path, "capacity"))
+        using (var outputs = new AtomicOutputSetWriter(writer, temp.Path))
         {
             for (int i = 0; i < 3; i++) { outputs.Stage(temp.File($"item-{i}.txt"), false, file => File.WriteAllText(file, "x")); }
             Assert.Throws<CliException>(() => outputs.Stage(temp.File("overflow.txt"), false, _ => produced = true));

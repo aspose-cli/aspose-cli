@@ -21,31 +21,27 @@ public sealed class AtomicOutputSetWriter : IDisposable
     /// <summary>Creates a staging area beneath the target directory.</summary>
     public AtomicOutputSetWriter(
         SafeFileWriter writer,
-        string targetDirectory,
-        string operation)
+        string targetDirectory)
         : this(
             writer,
             targetDirectory,
-            operation,
             NoPublicationFaultInjector.Instance)
     {
     }
 
     /// <summary>Creates one transaction spanning directories on the same filesystem.</summary>
-    public AtomicOutputSetWriter(SafeFileWriter writer, IEnumerable<string> targetDirectories, string operation)
-        : this(writer, OutputSetPaths.CommonDirectory(targetDirectories), operation) { }
+    public AtomicOutputSetWriter(SafeFileWriter writer, IEnumerable<string> targetDirectories)
+        : this(writer, OutputSetPaths.CommonDirectory(targetDirectories)) { }
 
     internal AtomicOutputSetWriter(
         SafeFileWriter writer,
         string targetDirectory,
-        string operation,
         IPublicationFaultInjector faults)
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(faults);
         _plan = AtomicPublicationPlan.Create(
             targetDirectory,
-            operation,
             faults, writer.ResourceBudgets);
         _staging = new AtomicPublicationStaging(_plan, writer);
         _commit = new AtomicPublicationCommit(_plan);

@@ -57,11 +57,9 @@ internal sealed class AtomicPublicationPlan
 
     public static AtomicPublicationPlan Create(
         string targetDirectory,
-        string operation,
         IPublicationFaultInjector faults, ResourceBudgetLedger resourceBudgets)
     {
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
-        ArgumentException.ThrowIfNullOrEmpty(operation);
         string root = Path.GetFullPath(targetDirectory);
         var directories = new OwnedOutputDirectories();
         try

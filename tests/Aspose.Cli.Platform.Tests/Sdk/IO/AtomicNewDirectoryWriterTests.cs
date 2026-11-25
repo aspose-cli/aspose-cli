@@ -21,7 +21,7 @@ public sealed class AtomicNewDirectoryWriterTests
         {
             if (point.Kind == PublicationFaultKind.Publish) { Assert.False(Directory.Exists(target)); }
         });
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", faults))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, faults))
         {
             Write(output, "index.html", "index");
             Write(output, Path.Combine("parts", "page.txt"), "page");
@@ -38,7 +38,7 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         string target = temp.File(Path.Combine("created", "result"));
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test"))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target))
         { Write(output, "data.txt", "candidate"); }
         Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
     }
@@ -48,7 +48,7 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         string target = temp.File("result");
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test"))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target))
         {
             Write(output, "data.txt", "candidate");
             Directory.CreateDirectory(target);
@@ -68,7 +68,7 @@ public sealed class AtomicNewDirectoryWriterTests
         using var cancellation = new CancellationTokenSource();
         var faults = new Faults(point => { if (point.Kind == PublicationFaultKind.Publish) { cancellation.Cancel(); } });
         string target = temp.File("result");
-        using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(cancellation: cancellation.Token), target, "test", faults))
+        using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(cancellation: cancellation.Token), target, faults))
         {
             Write(output, "data.txt", "candidate");
             Assert.Throws<OperationCanceledException>(output.Commit);
@@ -88,7 +88,7 @@ public sealed class AtomicNewDirectoryWriterTests
             { cancellation.Cancel(); throw new IOException("cleanup fault after rename"); }
         });
         string target = temp.File("result");
-        using (var output = new AtomicNewDirectoryWriter(budgets, target, "test", faults))
+        using (var output = new AtomicNewDirectoryWriter(budgets, target, faults))
         { Write(output, "data.txt", "committed"); output.Commit(); }
         Assert.False(budgets.Cancellation.IsCancellationRequested);
         Assert.Equal("committed", File.ReadAllText(Path.Combine(target, "data.txt")));
@@ -99,7 +99,7 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(
-            new Dictionary<string, long> { [ResourceBudgetKinds.OutputBytes] = 3 }), temp.File("result"), "test"))
+            new Dictionary<string, long> { [ResourceBudgetKinds.OutputBytes] = 3 }), temp.File("result")))
         {
             Write(output, "data.txt", "too large");
             Assert.Throws<CliException>(output.Commit);
@@ -117,7 +117,7 @@ public sealed class AtomicNewDirectoryWriterTests
             if (point.Kind == PublicationFaultKind.Publish) { File.WriteAllText(Path.Combine(staging!, "unknown.txt"), "preserve"); }
         });
         string target = temp.File("result");
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", faults))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, faults))
         {
             staging = output.StagingDirectory;
             Write(output, "data.txt", "candidate");
@@ -132,7 +132,7 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         string target = Existing(temp);
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, replace: true))
         {
             Write(output, "data.txt", "replacement");
             output.Commit();
@@ -153,7 +153,7 @@ public sealed class AtomicNewDirectoryWriterTests
         File.SetAttributes(readOnly, File.GetAttributes(readOnly) | FileAttributes.ReadOnly);
         try
         {
-            using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+            using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, replace: true))
             {
                 Write(output, "data.txt", "replacement");
                 output.Commit();
@@ -161,7 +161,7 @@ public sealed class AtomicNewDirectoryWriterTests
             // The replaced tree, read-only file included, goes with its transaction, so no
             // committed transaction is left for the next publication's recovery to finish.
             Assert.Equal(["result"], Directory.EnumerateFileSystemEntries(temp.Path).Select(Path.GetFileName));
-            using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+            using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, replace: true))
             {
                 Write(output, "data.txt", "again");
                 output.Commit();
@@ -183,7 +183,7 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         string target = temp.File("result");
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, replace: true))
         {
             Write(output, "data.txt", "new");
             output.Commit();
@@ -197,7 +197,7 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         string target = Existing(temp);
-        CliException error = Assert.Throws<CliException>(() => new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test"));
+        CliException error = Assert.Throws<CliException>(() => new AtomicNewDirectoryWriter(TestBudgets.Create(), target));
         Assert.Equal(ErrorCodes.OutputExists, error.Code);
         AssertPrevious(target);
     }
@@ -208,7 +208,7 @@ public sealed class AtomicNewDirectoryWriterTests
         using var temp = new TempDirectory();
         string target = temp.File("result");
         File.WriteAllText(target, "a file");
-        Assert.Throws<CliException>(() => new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true));
+        Assert.Throws<CliException>(() => new AtomicNewDirectoryWriter(TestBudgets.Create(), target, replace: true));
         Assert.Equal("a file", File.ReadAllText(target));
     }
 
@@ -225,7 +225,7 @@ public sealed class AtomicNewDirectoryWriterTests
                 throw new IOException("after the previous directory moved");
             }
         });
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", faults, replace: true))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, faults, replace: true))
         {
             Write(output, "data.txt", "replacement");
             Assert.Throws<IOException>(output.Commit);
@@ -250,7 +250,7 @@ public sealed class AtomicNewDirectoryWriterTests
         });
         string transaction;
         CliException error;
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", faults, replace: true))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, faults, replace: true))
         {
             Write(output, "data.txt", "replacement");
             error = Assert.Throws<CliException>(output.Commit);
@@ -276,7 +276,7 @@ public sealed class AtomicNewDirectoryWriterTests
                 Assert.Single(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
             }
         });
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", faults, replace: true, transactionParent: temp.Path))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, faults, replace: true, transactionParent: temp.Path))
         {
             Write(output, "data.txt", "replacement");
             output.Commit();
@@ -291,7 +291,7 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         string target = Existing(temp);
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, replace: true))
         {
             Write(output, "data.txt", "replacement");
             // The admission runs after the replaced tree is captured, so a change it lets in is seen.
@@ -311,7 +311,7 @@ public sealed class AtomicNewDirectoryWriterTests
     {
         using var temp = new TempDirectory();
         string target = Existing(temp);
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, replace: true))
         {
             Write(output, "data.txt", "replacement");
             InvalidOperationException error = Assert.Throws<InvalidOperationException>(
@@ -328,9 +328,9 @@ public sealed class AtomicNewDirectoryWriterTests
         using var temp = new TempDirectory();
         string target = temp.File(Path.Combine("root", "result"));
         Assert.Throws<ArgumentException>(() => new AtomicNewDirectoryWriter(
-            TestBudgets.Create(), target, "test", transactionParent: temp.File("elsewhere")));
+            TestBudgets.Create(), target, transactionParent: temp.File("elsewhere")));
         Assert.Throws<ArgumentException>(() => new AtomicNewDirectoryWriter(
-            TestBudgets.Create(), target, "test", transactionParent: target));
+            TestBudgets.Create(), target, transactionParent: target));
         Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
     }
 
@@ -358,7 +358,7 @@ public sealed class AtomicNewDirectoryWriterTests
         using var temp = new TempDirectory();
         string source = temp.File("outside.txt");
         File.WriteAllText(source, "preserve");
-        using var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), temp.File("result"), "test");
+        using var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), temp.File("result"));
         string link = Path.Combine(output.StagingDirectory, "link.txt");
         FileSystemLinks.CreateFileSymbolicLink(link, source);
         Assert.Throws<InvalidDataException>(output.Commit);
@@ -393,7 +393,7 @@ public sealed class AtomicNewDirectoryWriterTests
         info.SetAccessControl(security);
         string target = Path.Combine(parent, "result");
 
-        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test"))
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target))
         {
             Write(output, "index.html", "index");
             Assert.DoesNotContain(Rules(output.StagingDirectory), rule => rule.IdentityReference.Equals(users));

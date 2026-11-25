@@ -18,7 +18,7 @@ public sealed class AtomicOutputSetWriterTests
     {
         using var temp = new TempDirectory();
         string target = temp.File("same.txt");
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
         set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "first"));
 
         CliException exception = Assert.Throws<CliException>(() =>
@@ -36,8 +36,7 @@ public sealed class AtomicOutputSetWriterTests
         File.WriteAllText(target, "original");
         using var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
-            temp.Path,
-            "stage-identity");
+            temp.Path);
         set.Stage(
             target,
             overwrite: true,
@@ -66,7 +65,7 @@ public sealed class AtomicOutputSetWriterTests
     {
         using var temp = new TempDirectory();
         string target = temp.File("target.txt");
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "stage-identity");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
         set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "verified"));
         string transaction = Assert.Single(Directory.GetDirectories(temp.Path));
         string staged = AtomicPublicationPlan.StagedPath(transaction, target, index: 0);
@@ -98,7 +97,6 @@ public sealed class AtomicOutputSetWriterTests
         using var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
             temp.Path,
-            "test",
             faults);
         set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
         set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
@@ -127,7 +125,6 @@ public sealed class AtomicOutputSetWriterTests
         using var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
             temp.Path,
-            "test",
             faults);
         set.StageDeletionPrepared(
             deleted,
@@ -155,8 +152,7 @@ public sealed class AtomicOutputSetWriterTests
         File.WriteAllText(replaced, "original");
         using var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
-            temp.Path,
-            "test");
+            temp.Path);
         set.StageDeletionPrepared(
             deleted,
             FilePublicationSnapshot.Capture(deleted));
@@ -189,7 +185,6 @@ public sealed class AtomicOutputSetWriterTests
         using var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
             temp.Path,
-            "test",
             faults);
         set.Stage(first, overwrite: true, staged =>
             File.WriteAllText(staged, "replacement-one"));
@@ -228,7 +223,6 @@ public sealed class AtomicOutputSetWriterTests
         using var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
             temp.Path,
-            "test",
             faults);
         set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement-one"));
         set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
@@ -264,7 +258,7 @@ public sealed class AtomicOutputSetWriterTests
                     ? new IOException("rollback fault")
                     : null);
         CliException error;
-        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults))
+        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults))
         {
             set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement-one"));
             set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
@@ -297,7 +291,7 @@ public sealed class AtomicOutputSetWriterTests
             File.WriteAllText(first, "changed by someone else");
             return new IOException("publish fault");
         });
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults);
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults);
         set.Stage(first, overwrite: existed, staged => File.WriteAllText(staged, "replacement-one"));
         set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
 
@@ -331,7 +325,7 @@ public sealed class AtomicOutputSetWriterTests
             File.Move(other, first, overwrite: true);
             return new IOException("publish fault");
         });
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults);
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults);
         set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement-one"));
         set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
 
@@ -359,7 +353,7 @@ public sealed class AtomicOutputSetWriterTests
             }
             return null;
         });
-        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults))
+        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults))
         {
             set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
             set.Commit();
@@ -388,7 +382,6 @@ public sealed class AtomicOutputSetWriterTests
         using var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
             temp.Path,
-            "test",
             faults);
         set.Stage(first, overwrite: true, staged =>
             File.WriteAllText(staged, "replacement-one"));
@@ -419,7 +412,6 @@ public sealed class AtomicOutputSetWriterTests
         var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
             temp.Path,
-            "test",
             faults);
         set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement-one"));
         set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
@@ -453,7 +445,7 @@ public sealed class AtomicOutputSetWriterTests
             }
             return null;
         });
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults);
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults);
         set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
 
         Assert.Throws<CliException>(() => set.Commit());
@@ -475,7 +467,6 @@ public sealed class AtomicOutputSetWriterTests
         var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
             temp.Path,
-            "test",
             faults);
         set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "content"));
         set.Commit();
@@ -492,7 +483,7 @@ public sealed class AtomicOutputSetWriterTests
         using var temp = new TempDirectory();
         string target = temp.File("target.txt");
         File.WriteAllText(target, "original");
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
         set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
         File.WriteAllText(target, "external-update");
 
@@ -511,7 +502,7 @@ public sealed class AtomicOutputSetWriterTests
         using var temp = new TempDirectory();
         string target = temp.File("target.txt");
         File.WriteAllText(target, "original");
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
         set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
 
         CliException error;
@@ -543,7 +534,7 @@ public sealed class AtomicOutputSetWriterTests
         FileAttributes attributes = File.GetAttributes(second);
         try
         {
-            using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+            using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
             set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement-one"));
             set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
 
@@ -586,7 +577,7 @@ public sealed class AtomicOutputSetWriterTests
                 UnixFileMode.UserRead | UnixFileMode.UserWrite);
         }
 
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
         set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
         set.Commit();
 
@@ -611,8 +602,7 @@ public sealed class AtomicOutputSetWriterTests
         string unknown;
         var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
-            temp.Path,
-            "test");
+            temp.Path);
         set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "content"));
         transaction = Assert.Single(
             Directory.EnumerateDirectories(temp.Path, ".aspose-*"));
@@ -643,7 +633,7 @@ public sealed class AtomicOutputSetWriterTests
             AccessControlType.Allow));
         new DirectoryInfo(shared).SetAccessControl(sharedSecurity);
 
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), shared, "test");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), shared);
         set.Stage(Path.Combine(shared, "out.txt"), overwrite: false, staged => File.WriteAllText(staged, "x"));
         string transaction = Assert.Single(Directory.GetDirectories(shared, ".aspose-publication-*"));
 
@@ -683,7 +673,7 @@ public sealed class AtomicOutputSetWriterTests
             point => point.Kind == PublicationFaultKind.Publish && point.EntryIndex == 1
                 ? new IOException("publish fault")
                 : null);
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults);
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults);
         set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
         set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
 
@@ -707,16 +697,14 @@ public sealed class AtomicOutputSetWriterTests
         string second = temp.File("second.txt");
         var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
-            temp.Path,
-            "cross-thread");
+            temp.Path);
         set.Stage(first, overwrite: false, staged => File.WriteAllText(staged, "first"));
 
         await Task.Run(() => set.Commit());
         set.Dispose();
         using (var next = new AtomicOutputSetWriter(
                    TestBudgets.Writer(),
-                   temp.Path,
-                   "next"))
+                   temp.Path))
         {
             next.Stage(second, overwrite: false, staged => File.WriteAllText(staged, "second"));
             next.Commit();
@@ -742,7 +730,7 @@ public sealed class AtomicOutputSetWriterTests
             }
             return null;
         });
-        var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "stage-before-swap", faults);
+        var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults);
         set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "verified"));
         transaction = Assert.Single(Directory.GetDirectories(temp.Path));
 
@@ -772,7 +760,7 @@ public sealed class AtomicOutputSetWriterTests
             }
             return null;
         });
-        var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "new-stage-before-swap", faults);
+        var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults);
         set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "verified"));
         transaction = Assert.Single(Directory.GetDirectories(temp.Path));
 
@@ -804,7 +792,7 @@ public sealed class AtomicOutputSetWriterTests
             }
             return null;
         });
-        var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "external-before-swap", faults);
+        var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, faults);
         set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "published-content"));
 
         CliException error = Assert.Throws<CliException>(() => set.Commit());
@@ -840,7 +828,7 @@ public sealed class AtomicOutputSetWriterTests
         using var temp = new TempDirectory();
         string first = temp.File("first.txt");
         string second = temp.File("second.txt");
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
         set.Stage(first, overwrite: false, staged => File.WriteAllText(staged, "one"));
         set.Stage(second, overwrite: false, staged => File.WriteAllText(staged, "two"));
 
@@ -896,8 +884,7 @@ public sealed class AtomicOutputSetWriterTests
 
         using var set = new AtomicOutputSetWriter(
             TestBudgets.Writer(),
-            directory,
-            "test");
+            directory);
         set.Stage(
             target,
             overwrite: true,
@@ -918,7 +905,7 @@ public sealed class AtomicOutputSetWriterTests
         string target = temp.File("published.txt");
         string reference = temp.File("reference.txt");
         File.WriteAllText(reference, "reference");
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
         set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "content"));
 
         _ = set.Commit();
@@ -954,7 +941,7 @@ public sealed class AtomicOutputSetWriterTests
         info.SetAccessControl(security);
         string target = Path.Combine(folder, "published.txt");
 
-        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
         set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "content"));
         _ = set.Commit();
 

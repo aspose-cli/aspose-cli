@@ -219,7 +219,7 @@ internal sealed record BundledSkill(
         try
         {
             using var publication = new AtomicNewDirectoryWriter(
-                resourceBudgets, target, "skill-install", replace: true, transactionParent);
+                resourceBudgets, target, replace: true, transactionParent);
             files = ExtractTo(publication.StagingDirectory);
             ValidateManagedTarget(publication.StagingDirectory);
             // Admitted after the publication captures the tree it replaces.

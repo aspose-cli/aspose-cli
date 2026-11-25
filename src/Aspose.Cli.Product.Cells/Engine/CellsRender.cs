@@ -62,7 +62,7 @@ internal static class CellsRender
 
         IReadOnlyList<string> paths = Paths(request.Output, sheets);
         log.During = "save";
-        using OutputSet set = session.Outputs.BeginSet([request.Output.Directory], "cells-render");
+        using OutputSet set = session.Outputs.BeginSet([request.Output.Directory]);
         var outputs = new List<CellsSheetOutput>();
         for (int i = 0; i < sheets.Length; i++)
         {

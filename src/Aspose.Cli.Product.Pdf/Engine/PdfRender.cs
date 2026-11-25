@@ -16,7 +16,7 @@ internal static class PdfRender
         IReadOnlyList<int> pages = RenderSelection.Resolve(request.Pages, loaded.Document.Pages.Count, ErrorCodes.PageNotFound, "page");
         IReadOnlyList<string> paths = request.Output.Parts(pages);
         string outputDirectory = request.Output.Directory;
-        using OutputSet writer = session.Outputs.BeginSet([outputDirectory], "pdf-render");
+        using OutputSet writer = session.Outputs.BeginSet([outputDirectory]);
         var staged = new List<(int Page, string Path)>();
         foreach ((int pageNumber, string path) in pages.Zip(paths))
         {

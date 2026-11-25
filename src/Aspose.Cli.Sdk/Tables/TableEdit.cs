@@ -89,7 +89,6 @@ public static class TableEdit
                     // Reading the saved file back is the engine's read: an exception of a row's member is reported as the engine's.
                     return new Report(ReadBack(table, reopened.Document, applied), Changed(before, table.Count(reopened.Document)));
                 },
-                "table-edit",
                 beforeCommit: () =>
                 {
                     // The input is closed before the output replaces it, so an in-place edit

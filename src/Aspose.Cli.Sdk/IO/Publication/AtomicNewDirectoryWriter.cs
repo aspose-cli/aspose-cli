@@ -35,7 +35,6 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     /// <summary>Starts the publication of a directory at <paramref name="targetDirectory"/>.</summary>
     /// <param name="budgets">The invocation's budgets.</param>
     /// <param name="targetDirectory">The directory to publish.</param>
-    /// <param name="operation">The operation, a name of at most 128 characters.</param>
     /// <param name="replace">
     /// Whether the publication replaces a directory that exists at the target (<c>--overwrite</c>);
     /// otherwise an existing target is refused with <c>OUTPUT_EXISTS</c>. A file at the target is
@@ -46,16 +45,14 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     /// a farther ancestor of the target on the same volume, for a parent whose readers treat every
     /// directory in it as content.
     /// </param>
-    public AtomicNewDirectoryWriter(ResourceBudgetLedger budgets, string targetDirectory, string operation, bool replace = false,
+    public AtomicNewDirectoryWriter(ResourceBudgetLedger budgets, string targetDirectory, bool replace = false,
         string? transactionParent = null)
-        : this(budgets, targetDirectory, operation, NoPublicationFaultInjector.Instance, replace, transactionParent) { }
+        : this(budgets, targetDirectory, NoPublicationFaultInjector.Instance, replace, transactionParent) { }
 
-    internal AtomicNewDirectoryWriter(ResourceBudgetLedger budgets, string targetDirectory, string operation,
+    internal AtomicNewDirectoryWriter(ResourceBudgetLedger budgets, string targetDirectory,
         IPublicationFaultInjector faults, bool replace = false, string? transactionParent = null)
     {
         _budgets = budgets ?? throw new ArgumentNullException(nameof(budgets));
-        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
-        if (operation.Length > 128) { throw new ArgumentOutOfRangeException(nameof(operation)); }
         _faults = faults ?? throw new ArgumentNullException(nameof(faults));
         budgets.ThrowIfFailed();
         budgets.Cancellation.ThrowIfCancellationRequested();

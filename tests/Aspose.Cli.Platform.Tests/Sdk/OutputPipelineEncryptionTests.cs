@@ -41,7 +41,7 @@ public sealed class OutputPipelineEncryptionTests
         OutputPipeline pipeline = Pipeline();
         pipeline.Opened(new InputProtection(true));
 
-        using (OutputSet set = pipeline.BeginSet([temp.Path], "test"))
+        using (OutputSet set = pipeline.BeginSet([temp.Path]))
         {
             set.Stage(temp.File("part.1.pdf"), Pdf, false, Save, encrypted: true);
             set.Stage(temp.File("part.2.pdf"), Pdf, false, Save);
@@ -82,7 +82,7 @@ public sealed class OutputPipelineEncryptionTests
             extraction.Commit();
         }
 
-        using (OutputSet set = encrypted.BeginSet([temp.Path], "test"))
+        using (OutputSet set = encrypted.BeginSet([temp.Path]))
         {
             set.Stage(temp.File("page.2.png"), Png, false, Save);
             set.Stage(temp.File("page.3.tiff"), Tiff, false, Save);
@@ -116,7 +116,7 @@ public sealed class OutputPipelineEncryptionTests
         using var temp = new TempDirectory();
         OutputPipeline pipeline = Pipeline();
         pipeline.Opened(new InputProtection(true));
-        using (OutputSet set = pipeline.BeginSet([temp.Path], "test"))
+        using (OutputSet set = pipeline.BeginSet([temp.Path]))
         {
             // A set that does not commit, as a failed or dry run leaves it, publishes nothing.
             set.Stage(temp.File("part.pdf"), Pdf, false, Save);

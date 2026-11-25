@@ -23,7 +23,7 @@ internal static class PdfSplit
         IReadOnlyList<string> paths = request.Output.Parts(Path.GetFileNameWithoutExtension(request.Input), "pdf", numbers);
         OutputProtection protection = OutputProtection.For(PdfFormats.Document[0], request.EncryptPassword, new InputProtection(Encrypted: false), inputPassword: null);
         var documents = new PdfDocuments(session.Loader);
-        using OutputSet writer = session.Outputs.BeginSet([request.Output.Path], "pdf-split");
+        using OutputSet writer = session.Outputs.BeginSet([request.Output.Path]);
         var parts = new List<Document>();
         try
         {
