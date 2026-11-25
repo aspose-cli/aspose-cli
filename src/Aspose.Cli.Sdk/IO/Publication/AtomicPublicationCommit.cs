@@ -47,7 +47,6 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         {
             entry.State = PublicationEntryState.Publishing;
         }
-        plan.State = PublicationTransactionState.Publishing;
     }
 
     private void Prepare()
@@ -80,8 +79,6 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             // original that the rollback and, after a partial rollback, the user restore from.
             entry.State = PublicationEntryState.Prepared;
         }
-
-        plan.State = PublicationTransactionState.Prepared;
     }
 
     /// <summary>Creates the directory that receives the displaced targets.</summary>
@@ -251,7 +248,6 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
     /// </summary>
     public PublicationRecoveryReport RollBack()
     {
-        plan.State = PublicationTransactionState.RollingBack;
         var items = new List<PublicationRecoveryItem>();
         foreach (PublicationEntry entry in plan.Entries
                      .OrderByDescending(static item => item.Index))
