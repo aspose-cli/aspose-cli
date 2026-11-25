@@ -25,7 +25,10 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     private readonly FilePhysicalIdentity? _anchorIdentity;
     private readonly bool _replace;
     private readonly string? _transactionParent;
-    private NewDirectoryOutput? _output;
+    // The candidate tree as it was sealed and, when the publication replaces a directory, the tree
+    // it replaces, recorded before that directory moves into the transaction.
+    private DirectoryTreeSnapshot? _tree;
+    private DirectoryTreeSnapshot? _previous;
     private bool _completed;
     private bool _disposed;
 
@@ -120,18 +123,15 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         NewDirectoryPublication.EnsureAnchor(_transaction, _transactionIdentity);
         NewDirectoryPublication.EnsureAnchor(StagingDirectory, _candidateIdentity);
         DirectoryTreeSnapshot tree = NewDirectoryPublication.Capture(StagingDirectory, _budgets);
-        _output = new NewDirectoryOutput(TargetDirectory, StagingDirectory, _anchor, _anchorIdentity, _transactionIdentity, tree, _replace);
+        _tree = tree;
         _budgets.Consume(ResourceBudgetKinds.OutputSetEntries, 1, "items", "directory-seal");
         _budgets.Consume(ResourceBudgetKinds.OutputSetDirectories, tree.Directories.Count + _parents.Declared.Count(), "items", "directory-seal");
         _budgets.Consume(ResourceBudgetKinds.OutputBytes, tree.Files.Sum(file => file.Snapshot.Length), "bytes", "directory-seal");
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
         DirectoryTreeSnapshot? previous = Admit(admitPrevious);
         NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Cancellation);
-        if (previous is not null)
-        {
-            // The cleanup deletes the replaced tree by this snapshot once the candidate takes its place.
-            _output = _output with { Previous = previous };
-        }
+        // The cleanup deletes the replaced tree by this snapshot once the candidate takes its place.
+        _previous = previous;
 
         _faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Publish, 0, TargetDirectory));
         _budgets.Cancellation.ThrowIfCancellationRequested();
@@ -229,10 +229,10 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
             {
                 NewDirectoryPublication.EnsureAnchor(_transaction, _transactionIdentity);
                 NewDirectoryPublication.EnsureAnchor(StagingDirectory, _candidateIdentity);
-                DirectoryTreeSnapshot tree = _output?.Tree ?? NewDirectoryPublication.Capture(StagingDirectory);
+                DirectoryTreeSnapshot tree = _tree ?? NewDirectoryPublication.Capture(StagingDirectory);
                 NewDirectoryPublication.DeleteTree(StagingDirectory, tree);
             }
-            if (_completed && _output?.Previous is { } previous && Directory.Exists(PreviousDirectory))
+            if (_completed && _previous is { } previous && Directory.Exists(PreviousDirectory))
             {
                 NewDirectoryPublication.DeleteTree(PreviousDirectory, previous);
             }
@@ -247,14 +247,6 @@ internal sealed record DirectoryOutputFile(string Path, FilePublicationSnapshot 
 internal sealed record DirectoryOutputDirectory(string Path, FilePhysicalIdentity? Identity);
 internal sealed record DirectoryTreeSnapshot(
     IReadOnlyList<DirectoryOutputFile> Files, IReadOnlyList<DirectoryOutputDirectory> Directories);
-/// <summary>
-/// One directory publication: the candidate tree staged for the target and, when it replaces a
-/// directory (<see cref="Replace"/>), the tree it replaces (<see cref="Previous"/>), recorded
-/// before that directory moves into the transaction.
-/// </summary>
-internal sealed record NewDirectoryOutput(string Target, string Staged, string ParentAnchor,
-    FilePhysicalIdentity? ParentIdentity, FilePhysicalIdentity? TransactionIdentity, DirectoryTreeSnapshot Tree,
-    bool Replace = false, DirectoryTreeSnapshot? Previous = null);
 
 /// <summary>Bounded tree validation of directory production.</summary>
 internal static class NewDirectoryPublication
