@@ -84,6 +84,37 @@ public sealed class LicenseManagementTests
         Assert.Equal(2, message.Split("was rejected").Length);
     }
 
+    /// <summary>
+    /// `license remove` of a saved license another program holds open without sharing it: the
+    /// system refused the removal, so the directory the saved licenses share is unwritable and
+    /// holds what it held before.
+    /// </summary>
+    [Theory]
+    [InlineData("license.lic")]
+    [InlineData("licenses/words.lic")]
+    public void RemoveOfASavedLicenseAnotherProgramHolds_IsUnwritableAndLeavesIt(string held)
+    {
+        Requires.Windows();
+        using var workspace = new TempWorkspace();
+        string saved = Path.GetFullPath(Path.Combine(workspace.ConfigDirectory, held));
+        Directory.CreateDirectory(Path.GetDirectoryName(saved)!);
+        File.WriteAllText(saved, "a saved license");
+
+        CliResult result;
+        using (new FileStream(saved, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            result = workspace.Run("license", "remove", "--output-format", "json");
+        }
+
+        Assert.True(result.ExitCode == 5, result.StdErr);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OUTPUT_UNWRITABLE", error["code"]!.GetValue<string>());
+        Assert.Equal(workspace.ConfigDirectory, error["details"]!["path"]!.GetValue<string>());
+        Assert.Equal("a saved license", File.ReadAllText(saved));
+        Assert.Equal([saved], Directory.GetFiles(workspace.ConfigDirectory, "*", SearchOption.AllDirectories));
+        Assert.Empty(Directory.GetDirectories(workspace.ConfigDirectory, ".aspose-publication-*", SearchOption.AllDirectories));
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
