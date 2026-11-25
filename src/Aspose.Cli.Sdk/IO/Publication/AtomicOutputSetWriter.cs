@@ -170,16 +170,14 @@ public sealed class AtomicOutputSetWriter : IDisposable
     /// A failed commit is rolled back and reported as a stable publication error;
     /// an incomplete rollback is OUTPUT_PUBLICATION_PARTIAL.
     /// </summary>
-    public IReadOnlyList<long> Commit() => Commit(beforeCommit: null);
-
-    internal IReadOnlyList<long> Commit(Action? beforeCommit)
+    public IReadOnlyList<long> Commit()
     {
         ThrowIfDisposed();
         try
         {
             _plan.Seal();
             _plan.BeginCommit();
-            return _commit.Execute(beforeCommit);
+            return _commit.Execute();
         }
         catch (Exception commitFailure)
         {

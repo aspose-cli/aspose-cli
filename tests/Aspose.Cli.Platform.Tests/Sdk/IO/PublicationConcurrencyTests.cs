@@ -114,16 +114,19 @@ public sealed class PublicationConcurrencyTests
         var budgets = new ResourceBudgetLedger(cancellation: cancelled.Token);
         string target = temp.File("report.txt");
         File.WriteAllText(target, "original");
-        using var transaction = new AtomicOutputSetWriter(new SafeFileWriter(budgets), temp.Path, "commit-cancelled");
+        bool published = false;
+        using var transaction = new AtomicOutputSetWriter(new SafeFileWriter(budgets), temp.Path, "commit-cancelled",
+            new Callback(point =>
+            {
+                // The swap has put the staged file at the target and the commit is still ahead.
+                if (point.Kind != PublicationFaultKind.Access) { return; }
+                published = true;
+                Assert.Equal("replacement", File.ReadAllText(target));
+                cancelled.Cancel();
+            }));
         transaction.Stage(target, true, path => File.WriteAllText(path, "replacement"));
-        bool reachedCommitRecord = false;
-        Assert.ThrowsAny<OperationCanceledException>(() => transaction.Commit(() =>
-        {
-            reachedCommitRecord = true;
-            Assert.Equal("replacement", File.ReadAllText(target));
-            cancelled.Cancel();
-        }));
-        Assert.True(reachedCommitRecord);
+        Assert.ThrowsAny<OperationCanceledException>(() => transaction.Commit());
+        Assert.True(published);
         Assert.True(budgets.Cancellation.IsCancellationRequested);
         Assert.Equal("original", File.ReadAllText(target));
     }
