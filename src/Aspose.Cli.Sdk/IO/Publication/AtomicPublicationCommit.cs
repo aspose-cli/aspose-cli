@@ -11,7 +11,7 @@ namespace Aspose.Cli.Sdk.IO.Publication;
 /// </summary>
 internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
 {
-    public IReadOnlyList<long> Execute(Action? beforeCommit = null)
+    public IReadOnlyList<long> Execute()
     {
         if (plan.State != PublicationTransactionState.Staging)
         {
@@ -26,8 +26,6 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             Publish(entry);
         }
 
-        plan.ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
-        beforeCommit?.Invoke();
         plan.ResourceBudgets?.Cancellation.ThrowIfCancellationRequested();
         plan.State = PublicationTransactionState.Committed;
         plan.ResourceBudgets?.MarkOutputsCommitted();
