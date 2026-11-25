@@ -190,4 +190,30 @@ public sealed class LicenseManagementTests
         Assert.Empty(Directory.GetFiles(Path.Combine(workspace.ConfigDirectory, "licenses"), "*.lic"));
         Assert.Equal(0, workspace.Run("license", "remove", "--output-format", "json").ExitCode);
     }
+
+    /// <summary>
+    /// `license install` of a file another program holds open without sharing it is an input in
+    /// use, as it is for every command that reads a file, and nothing is logged as an internal
+    /// error.
+    /// </summary>
+    [Fact]
+    public void InstallOfAFileAnotherProgramHolds_IsALockedInput()
+    {
+        Requires.Windows();
+        using var workspace = new TempWorkspace();
+        string source = workspace.File("held.lic");
+        File.WriteAllText(source, "not a license");
+
+        CliResult result;
+        using (new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            result = workspace.Run("license", "install", "held.lic", "--output-format", "json");
+        }
+
+        Assert.True(result.ExitCode == 3, result.StdErr);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("FILE_LOCKED", error["code"]!.GetValue<string>());
+        Assert.Equal(source, error["details"]!["path"]!.GetValue<string>());
+        Assert.False(File.Exists(Path.Combine(workspace.ConfigDirectory, "process-errors.log")));
+    }
 }

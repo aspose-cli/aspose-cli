@@ -127,6 +127,72 @@ public sealed class LicenseInstallerTests
         Assert.False(Directory.Exists(Path.GetDirectoryName(target)));
     }
 
+    /// <summary>
+    /// A source another program holds open without sharing it, holds open for writing or has
+    /// locked the bytes of is an input in use, as any input a command reads is: nothing
+    /// validates it and nothing is installed. The first two refuse the open; the locked bytes
+    /// let the file open and refuse the read.
+    /// </summary>
+    [Theory]
+    [InlineData(FileAccess.Read, FileShare.None, false)]
+    [InlineData(FileAccess.Write, FileShare.ReadWrite, false)]
+    [InlineData(FileAccess.Read, FileShare.ReadWrite, true)]
+    [SupportedOSPlatform("windows")]
+    public void InstallMany_SourceHeldByAnotherProgram_IsALockedInput(FileAccess access, FileShare share, bool lockBytes)
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string source = temp.File("source.lic");
+        File.WriteAllText(source, "candidate");
+        string target = temp.File("licenses/alpha.lic");
+        bool validated = false;
+
+        CliException error;
+        using (var holder = new FileStream(source, FileMode.Open, access, share))
+        {
+            if (lockBytes) { holder.Lock(0, holder.Length); }
+            error = Assert.Throws<CliException>(() => LicenseInstaller.InstallMany(
+                TestBudgets.Create(), source, _ => { validated = true; return [target]; }));
+        }
+
+        Assert.Equal(ErrorCodes.FileLocked, error.Code);
+        Assert.Equal(source, error.Details!["path"]!.GetValue<string>());
+        Assert.False(validated);
+        Assert.False(Directory.Exists(Path.GetDirectoryName(target)));
+    }
+
+    /// <summary>A source whose access rules deny reading it is an input that access is denied to.</summary>
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void InstallMany_SourceThatDeniesReading_IsAnInputAccessIsDeniedTo()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string source = temp.File("source.lic");
+        File.WriteAllText(source, "candidate");
+        string target = temp.File("licenses/alpha.lic");
+        var deny = new FileSystemAccessRule(
+            WindowsIdentity.GetCurrent().User!, FileSystemRights.ReadData, AccessControlType.Deny);
+        FileSecurity denying = new FileInfo(source).GetAccessControl(AccessControlSections.Access);
+        denying.AddAccessRule(deny);
+        new FileInfo(source).SetAccessControl(denying);
+        try
+        {
+            CliException error = Assert.Throws<CliException>(() =>
+                LicenseInstaller.InstallMany(TestBudgets.Create(), source, _ => [target]));
+
+            Assert.Equal(ErrorCodes.FileAccessDenied, error.Code);
+            Assert.Equal(source, error.Details!["path"]!.GetValue<string>());
+            Assert.False(Directory.Exists(Path.GetDirectoryName(target)));
+        }
+        finally
+        {
+            FileSecurity rules = new FileInfo(source).GetAccessControl(AccessControlSections.Access);
+            rules.RemoveAccessRuleSpecific(deny);
+            new FileInfo(source).SetAccessControl(rules);
+        }
+    }
+
     [Fact]
     public void InstallMany_LaterInvalidDestinationPreservesExistingAndMissingTargets()
     {
