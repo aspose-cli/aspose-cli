@@ -216,6 +216,68 @@ public sealed class LicenseInstallerTests
         Assert.Equal("user file", File.ReadAllText(Path.Combine(occupied, "keep.txt")));
     }
 
+    /// <summary>
+    /// A saved license another program holds open without sharing it, or has locked the bytes
+    /// of, is one the system refuses to read. Installing over it and removing it report the
+    /// directory the licenses are published in as unwritable; every saved license stays as it
+    /// was and nothing is left beside them.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    [SupportedOSPlatform("windows")]
+    public void SavedLicenseHeldByAnotherProgram_IsUnwritableAndLeavesEverySavedLicense(bool removing, bool lockBytes)
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
+        string first = Path.Combine(directory, "alpha.lic");
+        string held = Path.Combine(directory, "beta.lic");
+        WriteFile(first, "old alpha");
+        WriteFile(held, "old beta");
+        string source = temp.File("source.lic");
+        File.WriteAllText(source, "new license");
+
+        CliException error;
+        using (var holder = new FileStream(held, FileMode.Open, FileAccess.Read,
+            lockBytes ? FileShare.ReadWrite | FileShare.Delete : FileShare.None))
+        {
+            if (lockBytes) { holder.Lock(0, holder.Length); }
+            error = Assert.Throws<CliException>(() => removing
+                ? LicenseInstaller.RemoveMany(TestBudgets.Create(), [first, held])
+                : LicenseInstaller.InstallMany(TestBudgets.Create(), source, _ => [first, held]));
+        }
+
+        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+        Assert.Equal(directory, error.Details!["path"]!.GetValue<string>());
+        Assert.Equal("old alpha", File.ReadAllText(first));
+        Assert.Equal("old beta", File.ReadAllText(held));
+        Assert.Equal([first, held], Directory.GetFileSystemEntries(directory).Order());
+    }
+
+    /// <summary>
+    /// A file that stands where the directory of the licenses belongs is a directory the system
+    /// refuses to create: the installation reports that path as unwritable and leaves the file.
+    /// </summary>
+    [Fact]
+    public void InstallMany_WhereAFileStandsForTheLicensesDirectory_IsUnwritableAndLeavesTheFile()
+    {
+        using var temp = new TempDirectory();
+        string source = temp.File("source.lic");
+        File.WriteAllText(source, "new license");
+        string occupied = temp.File("licenses");
+        File.WriteAllText(occupied, "user file");
+
+        CliException error = Assert.Throws<CliException>(() => LicenseInstaller.InstallMany(
+            TestBudgets.Create(), source, _ => [Path.Combine(occupied, "alpha.lic")]));
+
+        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+        Assert.Equal(occupied, error.Details!["path"]!.GetValue<string>());
+        Assert.Equal("user file", File.ReadAllText(occupied));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

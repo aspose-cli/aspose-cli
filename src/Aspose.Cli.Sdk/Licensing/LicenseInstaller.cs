@@ -17,7 +17,11 @@ public static class LicenseInstaller
     /// <summary>
     /// Captures one source snapshot, lets the caller validate that exact
     /// snapshot and select compatible destinations, then publishes its bytes as
-    /// one recoverable output set that replaces existing targets.
+    /// one recoverable output set that replaces existing targets. What the operating system
+    /// refuses before the commit and the publication does not report itself, such as reading a
+    /// saved license another program has open without sharing it, is <c>OUTPUT_UNWRITABLE</c>
+    /// for the directory the destinations share; the publication's own errors, the commit's
+    /// among them, pass unchanged.
     /// </summary>
     public static IReadOnlyList<string> InstallMany(
         ResourceBudgetLedger resourceBudgets,
@@ -76,24 +80,31 @@ public static class LicenseInstaller
             {
                 throw new ArgumentException("A license destination cannot be inside its temporary snapshot.");
             }
-            ValidateExistingTargets(destinations);
-            EnsureDirectory(directory);
-            foreach (string parent in destinations.Select(static path => Path.GetDirectoryName(path)!).Distinct())
+            try
             {
-                EnsureDirectory(parent);
-            }
+                ValidateExistingTargets(destinations);
+                EnsureDirectory(directory);
+                foreach (string parent in destinations.Select(static path => Path.GetDirectoryName(path)!).Distinct())
+                {
+                    EnsureDirectory(parent);
+                }
 
-            using var transaction = new AtomicOutputSetWriter(
-                new SafeFileWriter(resourceBudgets), directory, faults);
-            ValidateExistingTargets(destinations);
-            foreach (string destination in destinations)
-            {
-                resourceBudgets.Cancellation.ThrowIfCancellationRequested();
-                transaction.Stage(destination, overwrite: true,
-                    staged => CurrentUserFileAccess.Write(staged, contents));
+                using var transaction = new AtomicOutputSetWriter(
+                    new SafeFileWriter(resourceBudgets), directory, faults);
+                ValidateExistingTargets(destinations);
+                foreach (string destination in destinations)
+                {
+                    resourceBudgets.Cancellation.ThrowIfCancellationRequested();
+                    transaction.Stage(destination, overwrite: true,
+                        staged => CurrentUserFileAccess.Write(staged, contents));
+                }
+                transaction.Commit();
+                return destinations;
             }
-            transaction.Commit();
-            return destinations;
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                throw CliErrors.OutputUnwritable(directory, "the license could not be installed", exception);
+            }
         }
         finally
         {
@@ -107,7 +118,11 @@ public static class LicenseInstaller
 
     /// <summary>
     /// Removes existing licenses as one recoverable output set and
-    /// returns their paths. Missing files are a no-op.
+    /// returns their paths. Missing files are a no-op. What the operating system refuses
+    /// before the commit and the publication does not report itself, such as reading a license
+    /// another program has open without sharing it, is <c>OUTPUT_UNWRITABLE</c> for the
+    /// directory the licenses share; the publication's own errors, the commit's among them,
+    /// pass unchanged.
     /// </summary>
     public static IReadOnlyList<string> RemoveMany(
         ResourceBudgetLedger resourceBudgets,
@@ -132,24 +147,31 @@ public static class LicenseInstaller
             return [];
         }
         string directory = CommonDirectory(destinations);
-        EnsureDirectory(directory);
-        using var transaction = new AtomicOutputSetWriter(
-            new SafeFileWriter(resourceBudgets), directory, faults);
-        ValidateExistingTargets(destinations);
-        var removed = new List<string>(destinations.Length);
-        foreach (string destination in destinations)
+        try
         {
-            resourceBudgets.Cancellation.ThrowIfCancellationRequested();
-            FilePublicationSnapshot original = FilePublicationSnapshot.Capture(destination);
-            if (!original.Exists)
+            EnsureDirectory(directory);
+            using var transaction = new AtomicOutputSetWriter(
+                new SafeFileWriter(resourceBudgets), directory, faults);
+            ValidateExistingTargets(destinations);
+            var removed = new List<string>(destinations.Length);
+            foreach (string destination in destinations)
             {
-                continue;
+                resourceBudgets.Cancellation.ThrowIfCancellationRequested();
+                FilePublicationSnapshot original = FilePublicationSnapshot.Capture(destination);
+                if (!original.Exists)
+                {
+                    continue;
+                }
+                transaction.StageDeletionPrepared(destination, original);
+                removed.Add(destination);
             }
-            transaction.StageDeletionPrepared(destination, original);
-            removed.Add(destination);
+            transaction.Commit();
+            return removed;
         }
-        transaction.Commit();
-        return removed;
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            throw CliErrors.OutputUnwritable(directory, "the license could not be removed", exception);
+        }
     }
 
     private static byte[] ReadSource(ResourceBudgetLedger budgets, Stream source)
