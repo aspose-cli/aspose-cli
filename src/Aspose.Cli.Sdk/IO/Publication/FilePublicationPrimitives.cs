@@ -7,10 +7,7 @@ namespace Aspose.Cli.Sdk.IO.Publication;
 internal enum PublicationTransactionState
 {
     Staging,
-    Prepared,
-    Publishing,
     Committed,
-    RollingBack,
     RolledBack,
     Partial,
 }
