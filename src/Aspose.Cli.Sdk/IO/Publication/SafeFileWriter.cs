@@ -42,7 +42,7 @@ public sealed class SafeFileWriter
             return [FileObjects.Output(written, output.Format, encrypted)];
         }
 
-        using var transaction = new AtomicOutputSetWriter(this, output.Directory, "write");
+        using var transaction = new AtomicOutputSetWriter(this, output.Directory);
         IReadOnlyList<StagedOutput> staged;
         try
         {
@@ -64,7 +64,7 @@ public sealed class SafeFileWriter
         FileWritePrecondition? inputPrecondition, Action<string> writeToTemp)
     {
         string target = OutputPathValidator.NormalizeFile(targetPath);
-        using var transaction = new AtomicOutputSetWriter(this, [System.IO.Path.GetDirectoryName(target)!], "write");
+        using var transaction = new AtomicOutputSetWriter(this, [System.IO.Path.GetDirectoryName(target)!]);
         StagedOutput staged;
         try
         {

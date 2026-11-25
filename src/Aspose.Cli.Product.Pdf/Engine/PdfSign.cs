@@ -36,7 +36,7 @@ internal static class PdfSign
         // The facade closes the document when it is disposed, so it outlives the publication,
         // whose pipeline inspects the signed document after the save.
         using var facade = new PdfFileSignature(loaded.Document);
-        using OutputSet transaction = session.Outputs.BeginSet([request.Output.Directory], "pdf-sign");
+        using OutputSet transaction = session.Outputs.BeginSet([request.Output.Directory]);
         // Signing saves the document with the encryption it was opened with.
         bool encrypted = loaded.Document.IsEncrypted;
         StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Format, request.Output.Overwrite, temp =>

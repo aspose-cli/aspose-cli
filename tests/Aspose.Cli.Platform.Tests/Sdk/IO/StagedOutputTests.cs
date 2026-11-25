@@ -13,7 +13,7 @@ public sealed class StagedOutputTests
     {
         using var temp = new TempDirectory();
         string target = temp.File("output.txt");
-        using var transaction = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "candidate");
+        using var transaction = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
         StagedOutput staged = transaction.Stage(target, false, path => File.WriteAllText(path, "candidate bytes"));
         Assert.False(File.Exists(target));
         Assert.Equal(target, staged.TargetPath);
@@ -29,7 +29,7 @@ public sealed class StagedOutputTests
         Requires.Windows();
         using var temp = new TempDirectory();
         string target = temp.File("output.txt");
-        using var transaction = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "candidate");
+        using var transaction = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
         StagedOutput staged = transaction.Stage(target, false, path => File.WriteAllText(path, "same bytes"));
         string external = temp.File("external.txt");
         File.WriteAllText(external, "same bytes");

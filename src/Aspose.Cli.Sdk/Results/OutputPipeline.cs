@@ -221,8 +221,8 @@ public sealed class OutputPipeline : ILicenseState
     /// Starts a set of outputs spanning directories on the same filesystem, published together
     /// when the set commits.
     /// </summary>
-    public OutputSet BeginSet(IEnumerable<string> targetDirectories, string operation) =>
-        new(this, new AtomicOutputSetWriter(Writer, targetDirectories, operation));
+    public OutputSet BeginSet(IEnumerable<string> targetDirectories) =>
+        new(this, new AtomicOutputSetWriter(Writer, targetDirectories));
 
     /// <summary>
     /// Publishes an edited document: stages <paramref name="output"/> with the input
@@ -236,7 +236,6 @@ public sealed class OutputPipeline : ILicenseState
     /// <param name="encrypted">Whether the written output carries a password.</param>
     /// <param name="save">Saves the staged file and checks that it opens again.</param>
     /// <param name="verify">Reads the staged file back, or null when the edit is not verified. Issues are reported, not refused.</param>
-    /// <param name="operation">The name of the publication, such as <c>pdf-edit</c>.</param>
     /// <param name="byteOrderMark">Whether the output keeps the UTF-8 byte order mark <paramref name="save"/> starts it with (<see cref="ByteOrderMarks"/>).</param>
     /// <param name="beforeCommit">
     /// Runs after the staged file is read back and before it is published, such as closing the
@@ -248,14 +247,13 @@ public sealed class OutputPipeline : ILicenseState
         bool encrypted,
         Action<string> save,
         Func<string, TVerification>? verify,
-        string operation,
         bool byteOrderMark = false,
         Action? beforeCommit = null)
         where TVerification : class
     {
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(save);
-        using OutputSet transaction = BeginSet([output.Directory], operation);
+        using OutputSet transaction = BeginSet([output.Directory]);
         StagedOutput staged = transaction.Stage(
             output.Path,
             output.Format,

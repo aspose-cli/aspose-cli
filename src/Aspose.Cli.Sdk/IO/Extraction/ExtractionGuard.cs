@@ -54,7 +54,7 @@ public sealed class ExtractionGuard : IDisposable
         _budget = new ExtractionBudgetLedger(maxItems,
             Math.Min(maxBytes, resourceBudgets.Remaining(ResourceBudgetKinds.OutputBytes)));
         _root = Path.GetFullPath(root);
-        _transaction = new AtomicOutputSetWriter(new SafeFileWriter(resourceBudgets), _root, "extraction", faults);
+        _transaction = new AtomicOutputSetWriter(new SafeFileWriter(resourceBudgets), _root, faults);
     }
 
     /// <summary>

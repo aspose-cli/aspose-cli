@@ -26,8 +26,7 @@ public sealed class PublicationConcurrencyTests
             string target = temp.File($"output-{index:00}.txt");
             using var set = new AtomicOutputSetWriter(
                 TestBudgets.Writer(),
-                temp.Path,
-                $"concurrent-{index:00}");
+                temp.Path);
             set.Stage(
                 target,
                 overwrite: false,
@@ -53,7 +52,7 @@ public sealed class PublicationConcurrencyTests
         using var resume = new ManualResetEventSlim();
         string first = temp.File(Path.Combine("a", "one.txt"));
         string second = temp.File(Path.Combine("b", "two.txt"));
-        using var transaction = new AtomicOutputSetWriter(TestBudgets.Writer(), Path.GetDirectoryName(first)!, "paused",
+        using var transaction = new AtomicOutputSetWriter(TestBudgets.Writer(), Path.GetDirectoryName(first)!,
             new Callback(point =>
             {
                 if (point.Kind == PublicationFaultKind.Publish)
@@ -94,7 +93,7 @@ public sealed class PublicationConcurrencyTests
         string first = temp.File("one.txt");
         string second = temp.File("two.txt");
         File.WriteAllText(first, "original");
-        using var transaction = new AtomicOutputSetWriter(writer, temp.Path, "cancelled",
+        using var transaction = new AtomicOutputSetWriter(writer, temp.Path,
             new Callback(point =>
             {
                 if (point.Kind == PublicationFaultKind.Publish && point.EntryIndex == 0) { cancelled.Cancel(); }
@@ -115,7 +114,7 @@ public sealed class PublicationConcurrencyTests
         string target = temp.File("report.txt");
         File.WriteAllText(target, "original");
         bool published = false;
-        using var transaction = new AtomicOutputSetWriter(new SafeFileWriter(budgets), temp.Path, "commit-cancelled",
+        using var transaction = new AtomicOutputSetWriter(new SafeFileWriter(budgets), temp.Path,
             new Callback(point =>
             {
                 // The swap has put the staged file at the target and the commit is still ahead.

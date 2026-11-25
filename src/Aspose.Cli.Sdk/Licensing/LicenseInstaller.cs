@@ -82,7 +82,7 @@ public static class LicenseInstaller
             }
 
             using var transaction = new AtomicOutputSetWriter(
-                new SafeFileWriter(resourceBudgets), directory, "license-install", faults);
+                new SafeFileWriter(resourceBudgets), directory, faults);
             ValidateExistingTargets(destinations);
             foreach (string destination in destinations)
             {
@@ -132,7 +132,7 @@ public static class LicenseInstaller
         string directory = CommonDirectory(destinations);
         EnsureDirectory(directory);
         using var transaction = new AtomicOutputSetWriter(
-            new SafeFileWriter(resourceBudgets), directory, "license-remove", faults);
+            new SafeFileWriter(resourceBudgets), directory, faults);
         ValidateExistingTargets(destinations);
         var removed = new List<string>(destinations.Length);
         foreach (string destination in destinations)

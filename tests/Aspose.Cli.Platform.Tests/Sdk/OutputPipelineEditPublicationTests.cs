@@ -28,7 +28,7 @@ public sealed class OutputPipelineEditPublicationTests
 
         EditPublication<Checked> publication = Pipeline().PublishEdit<Checked>(
             InPlace(input), FileWritePrecondition.Capture(input), encrypted: false,
-            Save, verify: null, "test-edit");
+            Save, verify: null);
 
         Assert.Equal(Edited, File.ReadAllText(input));
         Assert.Equal(input, publication.Output!.Path);
@@ -49,8 +49,7 @@ public sealed class OutputPipelineEditPublicationTests
             {
                 targetDuringVerify = File.ReadAllText(input);
                 return new Checked(File.ReadAllText(candidate));
-            },
-            "test-edit");
+            });
 
         Assert.Equal(Original, targetDuringVerify);
         Assert.Equal(new Checked(Edited), publication.Verification);
@@ -65,7 +64,7 @@ public sealed class OutputPipelineEditPublicationTests
 
         Assert.Throws<InvalidOperationException>(() => Pipeline().PublishEdit<Checked>(
             InPlace(input), FileWritePrecondition.Capture(input), encrypted: false,
-            Save, static _ => throw new InvalidOperationException("read-back failed"), "test-edit"));
+            Save, static _ => throw new InvalidOperationException("read-back failed")));
 
         Assert.Equal(Original, File.ReadAllText(input));
         Assert.Equal([input], Directory.GetFiles(temp.Path));
@@ -83,7 +82,7 @@ public sealed class OutputPipelineEditPublicationTests
 
         EditPublication<Checked> publication = pipeline.PublishEdit<Checked>(
             InPlace(input), FileWritePrecondition.Capture(input), encrypted,
-            Save, verify: null, "test-edit");
+            Save, verify: null);
 
         Assert.Equal(encrypted, publication.Output!.Encrypted);
         Assert.Equal(encrypted ? null : WarningCodes.EncryptionRemoved, pipeline.EncryptionRemoved()?.Code);

@@ -25,7 +25,7 @@ public sealed class InPlaceReadSharingTests
         FileWritePrecondition precondition = FileWritePrecondition.Capture(target);
 
         using Stream open = reader.Inputs.OpenFile(target);
-        using (var set = new AtomicOutputSetWriter(new SafeFileWriter(editor), temp.Path, "edit"))
+        using (var set = new AtomicOutputSetWriter(new SafeFileWriter(editor), temp.Path))
         {
             set.Stage(target, overwrite: true, precondition,
                 staged => File.WriteAllText(staged, "edited"));
@@ -45,7 +45,7 @@ public sealed class InPlaceReadSharingTests
         FileWritePrecondition precondition = FileWritePrecondition.Capture(target);
 
         using var open = new FileStream(target, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
-        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "edit"))
+        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path))
         {
             set.Stage(target, overwrite: true, precondition,
                 staged => File.WriteAllText(staged, "edited"));
