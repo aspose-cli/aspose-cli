@@ -44,7 +44,6 @@ internal sealed class AtomicPublicationStaging(
         using var temporary = OwnedTemporaryFile.Create(staged);
         write(staged);
         temporary.BindAndVerify(verify);
-        temporary.BindProducedFile();
         temporary.FlushBound();
         FilePublicationSnapshot stagedSnapshot = temporary.CaptureBoundSnapshot();
         writer.ConsumeOutput(stagedSnapshot.Length, "output-set-stage");
