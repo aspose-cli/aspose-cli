@@ -135,8 +135,18 @@ public sealed class SkillInstallTests : IDisposable
         SkillsRootLayout.AssertTransactionArtifactsBeside(root, ".aspose-publication-*", 0);
     }
 
-    [Fact]
-    public void Install_ThatFailsWhileReplacingTheSkill_LeavesTheInstalledSkill()
+    /// <summary>
+    /// Another program has a file of the installed Skill open. Held without sharing its deletion,
+    /// the file lets the install read the Skill but not move the installed tree aside; held
+    /// without sharing anything, it does not even let the install read the Skill it would
+    /// replace. Either way the system refused the install: the target is unwritable, the
+    /// installed Skill stays as it was and nothing is logged as an internal error.
+    /// </summary>
+    [Theory]
+    [InlineData("SKILL.md", FileShare.Read)]
+    [InlineData("SKILL.md", FileShare.None)]
+    [InlineData(".aspose-skill-manifest.json", FileShare.None)]
+    public void Install_OverASkillWithAFileAnotherProgramHolds_IsUnwritableAndLeavesTheInstalledSkill(string held, FileShare share)
     {
         Requires.Windows();
         string skill = FirstSkill();
@@ -145,19 +155,20 @@ public sealed class SkillInstallTests : IDisposable
         string installed = Path.Combine(root, skill);
         string[] before = Tree(installed);
 
-        // Another program holds a file of the installed Skill open without sharing its deletion,
-        // so the install's publication cannot move the installed tree aside and fails there.
         CliResult failed;
-        using (new FileStream(Path.Combine(installed, "SKILL.md"), FileMode.Open, FileAccess.Read, FileShare.Read))
+        using (new FileStream(Path.Combine(installed, held), FileMode.Open, FileAccess.Read, share))
         {
             failed = _workspace.Run("skill", "install", skill, "--target", "skills-root", "--output-format", "json");
         }
 
-        Assert.True(failed.ExitCode != 0, failed.StdOut);
-        Assert.Equal("OUTPUT_UNWRITABLE", Parse(failed.StdErr)["error"]!["code"]!.GetValue<string>());
+        Assert.True(failed.ExitCode == 5, failed.StdErr);
+        JsonNode error = Parse(failed.StdErr)["error"]!;
+        Assert.Equal("OUTPUT_UNWRITABLE", error["code"]!.GetValue<string>());
+        Assert.Equal(installed, error["details"]!["path"]!.GetValue<string>());
         Assert.Equal(before, Tree(installed));
         Assert.Equal([skill], Directory.EnumerateFileSystemEntries(root).Select(Path.GetFileName));
         Assert.Empty(Directory.EnumerateDirectories(_workspace.Path, ".aspose-publication-*"));
+        Assert.False(File.Exists(Path.Combine(_workspace.ConfigDirectory, "process-errors.log")));
     }
 
     [Fact]

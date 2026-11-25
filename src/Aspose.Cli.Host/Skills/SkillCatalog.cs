@@ -182,13 +182,11 @@ internal sealed record BundledSkill(
     }
 
     /// <summary>
-    /// What <see cref="InstallInto"/> checks before it writes: the target is absent, empty or a
-    /// Skill this CLI installed, under no link; returns the absolute target.
+    /// What <see cref="InstallInto"/> checks before it writes: the absolute
+    /// <paramref name="target"/> is absent, empty or a Skill this CLI installed, under no link.
     /// </summary>
-    private string CheckInstallTarget(string directory)
+    private void CheckInstallTarget(string target)
     {
-        ArgumentException.ThrowIfNullOrEmpty(directory);
-        string target = Path.GetFullPath(directory);
         string parent = Path.GetDirectoryName(target)
             ?? throw ManagedSkillConflict(target, "the target has no parent directory");
         if (Directory.Exists(parent))
@@ -197,27 +195,29 @@ internal sealed record BundledSkill(
         }
 
         ValidateExistingTarget(target);
-        return target;
     }
 
     /// <summary>
     /// Publishes the Skill at <paramref name="directory"/>, replacing a Skill this CLI installed
     /// there, as one directory publication: a replacement that fails or is interrupted puts the
-    /// installed Skill back.
+    /// installed Skill back. A target the operating system refuses to read or to replace, such
+    /// as a file of the installed Skill another program has open, is <c>OUTPUT_UNWRITABLE</c>.
     /// </summary>
     public SkillInstallResult InstallInto(
         ResourceBudgetLedger resourceBudgets,
         string directory)
     {
         ArgumentNullException.ThrowIfNull(resourceBudgets);
-        string target = CheckInstallTarget(directory);
-        // A host loads every directory under its Skills root, so the publication's transaction
-        // stays beside the root, on the same volume, where no host reads it as a Skill.
-        string transactionParent = Path.GetDirectoryName(Path.GetDirectoryName(target)!)
-            ?? throw ManagedSkillConflict(target, "the Skills root has no parent directory for the installation's staging");
+        ArgumentException.ThrowIfNullOrEmpty(directory);
+        string target = Path.GetFullPath(directory);
         int files;
         try
         {
+            CheckInstallTarget(target);
+            // A host loads every directory under its Skills root, so the publication's transaction
+            // stays beside the root, on the same volume, where no host reads it as a Skill.
+            string transactionParent = Path.GetDirectoryName(Path.GetDirectoryName(target)!)
+                ?? throw ManagedSkillConflict(target, "the Skills root has no parent directory for the installation's staging");
             using var publication = new AtomicNewDirectoryWriter(
                 resourceBudgets, target, replace: true, transactionParent);
             files = ExtractTo(publication.StagingDirectory);
