@@ -203,16 +203,6 @@ public sealed class AtomicOutputSetWriter : IDisposable
         }
     }
 
-    internal FilePublicationSnapshot PublishedSnapshot(string targetPath)
-    {
-        string target = Path.GetFullPath(targetPath);
-        PublicationEntry entry = _plan.Entries.Single(
-            candidate => FilePaths.Same(candidate.Target, target));
-        return entry.PublishedSnapshot
-            ?? throw new InvalidOperationException(
-                $"Publication snapshot for '{target}' is unavailable.");
-    }
-
     /// <inheritdoc />
     public void Dispose()
     {
