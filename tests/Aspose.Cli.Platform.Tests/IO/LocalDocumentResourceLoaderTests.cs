@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO.Budgets;
 using Aspose.Cli.Sdk.IO.Input;
 using Xunit;
@@ -65,6 +66,28 @@ public sealed class LocalDocumentResourceLoaderTests : IDisposable
 
         Assert.True(loader.TryRead("one.bin", out _));
         Assert.False(loader.TryRead("two.bin", out _));
+    }
+
+    /// <summary>
+    /// An engine asks for resources on several threads, so the loader lists what it left out by
+    /// reference, whatever order it was asked in, and its warning names the first ten of them.
+    /// </summary>
+    [Fact]
+    public void Omitted_AreListedByReference()
+    {
+        Directory.CreateDirectory(_root);
+        string document = Path.Combine(_root, "input.html");
+        File.WriteAllText(document, "document");
+        using var loader = new LocalDocumentResourceLoader(document, new ResourceBudgetLedger());
+
+        foreach (int index in Enumerable.Range(0, 12).Reverse())
+        {
+            Assert.False(loader.TryRead($"{index:D2}.png", out _));
+        }
+
+        Assert.Equal(Enumerable.Range(0, 12).Select(static index => $"{index:D2}.png"), loader.Omitted.Select(static item => item.Reference));
+        string listed = string.Join(", ", Enumerable.Range(0, 10).Select(static index => $"{index:D2}.png (not found)"));
+        Assert.Equal($"12 resource(s) the document references were omitted: {listed}, and 2 more.", Assert.IsType<Warning>(loader.Warning).Message);
     }
 
     public void Dispose()
