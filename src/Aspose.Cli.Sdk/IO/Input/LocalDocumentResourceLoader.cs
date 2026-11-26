@@ -29,7 +29,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     private readonly long _maximumItemBytes;
     private readonly long _maximumTotalBytes;
     private readonly object _gate = new();
-    private readonly List<OmittedResource> _omitted = [];
+    private readonly SortedDictionary<string, string> _omitted = new(StringComparer.Ordinal);
     private int _items;
     private long _totalBytes;
     private bool _disposed;
@@ -65,10 +65,14 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     public string BaseUri => _baseUri.AbsoluteUri;
 
     /// <summary>
-    /// The resources left out so far, each reference once with the first reason it was left out
-    /// for: an engine that asks for one resource several times leaves it out once.
+    /// The resources left out so far, in ordinal order of their references, each reference once
+    /// with the first reason it was left out for: an engine that asks for one resource several
+    /// times leaves it out once, and one that asks on several threads asks in no fixed order.
     /// </summary>
-    public IReadOnlyList<OmittedResource> Omitted { get { lock (_gate) { return [.. _omitted]; } } }
+    public IReadOnlyList<OmittedResource> Omitted
+    {
+        get { lock (_gate) { return [.. _omitted.Select(static item => new OmittedResource(item.Key, item.Value))]; } }
+    }
 
     public int OmittedCount { get { lock (_gate) { return _omitted.Count; } } }
 
@@ -283,12 +287,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
 
     private bool Omit(string reference, string reason)
     {
-        var omitted = new OmittedResource(ReferenceName(reference), reason);
-        if (!_omitted.Exists(item => string.Equals(item.Reference, omitted.Reference, StringComparison.Ordinal)))
-        {
-            _omitted.Add(omitted);
-        }
-
+        _omitted.TryAdd(ReferenceName(reference), reason);
         return false;
     }
 
