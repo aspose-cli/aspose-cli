@@ -16,7 +16,8 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 internal sealed class HtmlImportResources(string htmlPath, ResourceBudgetLedger budgets) : IDisposable
 {
     private readonly LocalDocumentResourceLoader _local = new(htmlPath, budgets);
-    private readonly List<string> _network = [];
+    // The engine requests resources on several threads: kept in ordinal order, not as they came.
+    private readonly SortedSet<string> _network = new(StringComparer.Ordinal);
 
     /// <summary>The native directory form of the page's folder, with its trailing separator.</summary>
     internal string BaseDirectory => new Uri(_local.BaseUri).LocalPath;
@@ -44,7 +45,8 @@ internal sealed class HtmlImportResources(string htmlPath, ResourceBudgetLedger 
 
     /// <summary>
     /// The references the loader supplied no bytes for, each with why, once each: network
-    /// addresses, and local references the local loader left out. Null when there are none.
+    /// addresses, and then local references the local loader left out, each part in ordinal
+    /// order of its references. Null when there are none.
     /// </summary>
     internal JsonObject? NotSupplied()
     {
