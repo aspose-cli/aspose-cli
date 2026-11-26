@@ -102,7 +102,9 @@ public static class NetworkGate
     /// <summary>
     /// The completeness warning for the addresses the gate blocked since the invocation was
     /// admitted, apart from the files a resource loader permitted later, and for the references
-    /// withheld from the engine, or null when there are none.
+    /// withheld from the engine, or null when there are none. The blocked addresses come first,
+    /// then the withheld references, each by the name the warning gives it in ordinal order:
+    /// an engine requests resources on several threads, so the order of its requests varies.
     /// </summary>
     public static Warning? Warning
     {
@@ -110,15 +112,13 @@ public static class NetworkGate
         {
             lock (Sync)
             {
-                string[] omitted = [.. Blocked.Where(static address => !Permitted.Contains(address)), .. Withheld];
+                string[] omitted = [.. Named(Blocked.Where(static address => !Permitted.Contains(address))), .. Named(Withheld)];
                 if (omitted.Length == 0)
                 {
                     return null;
                 }
 
-                // Each is listed once by what it resolves to, and named as the loaders name it.
-                string listed = string.Join(", ", omitted.Take(ListedAddresses)
-                    .Select(static reference => LocalDocumentResourceLoader.NameOf(reference, _inputFolder)));
+                string listed = string.Join(", ", omitted.Take(ListedAddresses));
                 string more = omitted.Length > ListedAddresses ? $", and {omitted.Length - ListedAddresses} more" : "";
                 return new Warning(WarningCodes.RemoteResourcesBlocked,
                     $"{omitted.Length} resource(s) outside the input were blocked or removed before the document engine could read them: {listed}{more}.")
@@ -128,6 +128,11 @@ public static class NetworkGate
             }
         }
     }
+
+    // Each is listed once by what it resolves to, and named as the loaders name it.
+    private static IEnumerable<string> Named(IEnumerable<string> references) => references
+        .Select(static reference => LocalDocumentResourceLoader.NameOf(reference, _inputFolder))
+        .Order(StringComparer.Ordinal);
 
     private static void Install()
     {

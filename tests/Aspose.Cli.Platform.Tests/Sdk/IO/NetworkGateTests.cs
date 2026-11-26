@@ -149,5 +149,47 @@ public sealed class NetworkGateTests
             NetworkGate.Admit();
         }
     }
+
+    /// <summary>
+    /// An engine requests resources on several threads, so the warning lists what the gate
+    /// blocked by the names it gives, whatever order the requests came in, and then what was
+    /// withheld, by name too; of more than it names, it names the first by name.
+    /// </summary>
+    [Fact]
+    public void BlockedAndWithheldReferences_AreListedByName()
+    {
+        using var workspace = new TempWorkspace();
+        string input = workspace.File("input.html");
+        File.WriteAllText(input, "<html></html>");
+        try
+        {
+            NetworkGate.Admit();
+            using var loader = new LocalDocumentResourceLoader(input, TestBudgets.Create());
+            foreach (Uri uri in new Uri[] { new("ftp://example.invalid/z.png"), new(workspace.File("m.png")), new("ftp://example.invalid/a.png"), new(workspace.File("b.png")) })
+            {
+                Assert.Throws<WebException>(() => WebRequest.Create(uri).GetResponse());
+            }
+            NetworkGate.Withhold(["https://example.invalid/y.png", "https://example.invalid/c.png"]);
+
+            Assert.Equal(
+                "6 resource(s) outside the input were blocked or removed before the document engine could read them: b.png, ftp://example.invalid/a.png, ftp://example.invalid/z.png, m.png, https://example.invalid/c.png, https://example.invalid/y.png.",
+                Assert.IsType<Warning>(NetworkGate.Warning).Message);
+
+            NetworkGate.Admit();
+            foreach (int index in Enumerable.Range(0, 22).Reverse())
+            {
+                Assert.Throws<WebException>(() => WebRequest.Create(new Uri($"ftp://example.invalid/{index:D2}.png")).GetResponse());
+            }
+
+            string listed = string.Join(", ", Enumerable.Range(0, 20).Select(static index => $"ftp://example.invalid/{index:D2}.png"));
+            Assert.Equal(
+                $"22 resource(s) outside the input were blocked or removed before the document engine could read them: {listed}, and 2 more.",
+                Assert.IsType<Warning>(NetworkGate.Warning).Message);
+        }
+        finally
+        {
+            NetworkGate.Admit();
+        }
+    }
 #pragma warning restore SYSLIB0014
 }
