@@ -193,6 +193,27 @@ public sealed class PdfResourceLoadingTests
         Assert.Empty(resources.Warnings);
     }
 
+    // The engine requests resources on several threads, so the references the loader supplied
+    // nothing for are listed by reference whatever order they came in: network addresses first.
+    [Fact]
+    public void HtmlImport_ListsTheReferencesItSuppliedNothingForByReference()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("input.html");
+        File.WriteAllText(input, "<html><body>Local</body></html>");
+        using var resources = new HtmlImportResources(input, ProductTestBudgets.Create<PdfModule>());
+
+        foreach (string reference in new[] { "https://example.invalid/z.png", "z.png", "https://example.invalid/a.png", "a.png", "https://example.invalid/z.png" })
+        {
+            resources.Load(reference);
+        }
+
+        Assert.Equal(
+            [("https://example.invalid/a.png", "a network address"), ("https://example.invalid/z.png", "a network address"), ("a.png", "not found"), ("z.png", "not found")],
+            resources.NotSupplied()!["notSupplied"]!.AsArray()
+                .Select(static item => (item!["reference"]!.GetValue<string>(), item["reason"]!.GetValue<string>())));
+    }
+
     // A document must not read a local file outside its input directory: a sentinel image
     // beside it, named by a plain path, a UNC path to the same file (an SMB request) or a file
     // URI, must not appear in the output.
