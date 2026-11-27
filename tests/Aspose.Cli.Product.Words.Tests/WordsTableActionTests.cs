@@ -79,7 +79,7 @@ public sealed class WordsTableActionTests
         WordsFixture.RequireLicense();
         using var fixture = new WordsFixture();
         string listed = fixture.File("listed.docx");
-        WordsEditResult added = WordsEdit.Run(fixture.Session, WordsFixture.Edit(fixture.CreateProposal(), listed, """{"ops":[{"add":"list","args":{"listTemplate":"NumberDefault"}}]}"""));
+        WordsEditResult added = WordsEdit.Run(fixture.Session, WordsFixture.Edit(fixture.CreateProposal(), listed, """{"ops":[{"add":"list","in":"document","args":{"listTemplate":"NumberDefault"}}]}"""));
         string id = added.Ops[0].At!.Split('/')[1];
 
         WordsEdit.Run(fixture.Session, WordsFixture.Edit(listed, fixture.File("numbered.docx"), $$$"""{"ops":[{"set":"{{{Body}}}/paragraph/2","props":{"listFormat.list":{{{id}}}}}]}"""));

@@ -137,7 +137,8 @@ public sealed partial class PdfTableBehaviorTests
     [InlineData("""{"set":"page/1/annotation/1","props":{"value":"x"}}""", "OPS_INVALID")]
     [InlineData("""{"set":"page/1/annotation/1","props":{"action.uri":"https://example.com/"}}""", "OPS_INVALID")]
     [InlineData("""{"set":"page/2/annotation/4","props":{"action.uri":"https://example.com/"}}""", "OPS_INVALID")]
-    [InlineData("""{"add":"page","args":{"page":"field/name"}}""", "OPS_INVALID")]
+    [InlineData("""{"add":"page","in":"document","args":{"page":"field/name"}}""", "OPS_INVALID")]
+    [InlineData("""{"add":"page"}""", "OPS_INVALID")]
     [InlineData("""{"do":"redact_area","args":{"page":"page/1","rect":"1,2,3"}}""", "OPS_INVALID")]
     [InlineData("""{"set":"attachment/9","props":{"mimeType":"text/plain"}}""", "ADDRESS_NOT_FOUND")]
     [InlineData("""{"set":"info/Custom","props":{"value":"x"}},{"delete":"bookmark/9"}""", "ADDRESS_NOT_FOUND")]
@@ -185,7 +186,7 @@ public sealed partial class PdfTableBehaviorTests
         string output = fixture.File("out.pdf");
 
         PdfEditResult added = PdfEdit.Run(fixture.Session, PdfEngineFixture.Edit(input, output,
-            """{"ops":[{"add":"info","args":{"key":"dept/team\\x","value":"ops"}}]}"""));
+            """{"ops":[{"add":"info","in":"document","args":{"key":"dept/team\\x","value":"ops"}}]}"""));
         PdfReadResult read = PdfRead.Run(fixture.Session, new TableReadRequest { Input = output, At = """info/dept\/team\\x""" });
 
         Assert.Equal("""info/dept\/team\\x""", added.Ops[0].At);
@@ -246,7 +247,7 @@ public sealed partial class PdfTableBehaviorTests
         string input = fixture.CreateDocument(pages: 1);
         string output = fixture.File("out.pdf");
 
-        PdfEditResult added = PdfEdit.Run(fixture.Session, PdfEngineFixture.Edit(input, output, """{"ops":[{"add":"page"}]}"""));
+        PdfEditResult added = PdfEdit.Run(fixture.Session, PdfEngineFixture.Edit(input, output, """{"ops":[{"add":"page","in":"document"}]}"""));
         PdfReadResult fonts = PdfRead.Run(fixture.Session, new TableReadRequest { Input = output, At = "page/2", Kinds = ["font"] });
 
         Assert.Equal("page/2", added.Ops[0].At);

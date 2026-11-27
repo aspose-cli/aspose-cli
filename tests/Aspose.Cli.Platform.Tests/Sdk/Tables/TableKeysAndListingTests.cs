@@ -149,8 +149,8 @@ public sealed class TableKeysAndListingTests
 
     /// <summary>An operation that leaves its object at an address another object has too fails as ambiguous, at its position.</summary>
     [Theory]
-    [InlineData("""{"ops":[{"add":"sheet","args":{"name":"Data"}}]}""")]
-    [InlineData("""{"ops":[{"add":"sheet","args":{"name":"Notes"}},{"set":"sheet/Notes","props":{"name":"DATA"}}]}""")]
+    [InlineData("""{"ops":[{"add":"sheet","in":"book","args":{"name":"Data"}}]}""")]
+    [InlineData("""{"ops":[{"add":"sheet","in":"book","args":{"name":"Notes"}},{"set":"sheet/Notes","props":{"name":"DATA"}}]}""")]
     public void Apply_ThatLeavesAnObjectAtAnAddressAnotherHas_IsAmbiguous(string json)
     {
         TableBatch batch = Parse(json);

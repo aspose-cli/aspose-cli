@@ -2253,13 +2253,18 @@
           "type": "object",
           "description": "Adds a page to a document: Document.Pages.Insert(pageNumber), a new empty page, or Pages.Insert(pageNumber, page), a copy of a page of this document; without pageNumber Pages.Add() or Pages.Add(page), at the end",
           "required": [
-            "add"
+            "add",
+            "in"
           ],
           "additionalProperties": false,
           "properties": {
             "add": {
               "const": "page",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document to add to."
             },
             "args": {
               "type": "object",
@@ -2341,6 +2346,7 @@
           "description": "Adds a bookmark to a document: new OutlineItemCollection(Document.Outlines) { Title = title, Destination = new GoToAction(page) }, without a Destination when page is not given, then Document.Outlines.Add(item); it goes last. Adds a bookmark to a bookmark: new OutlineItemCollection(Document.Outlines) { Title = title, Destination = new GoToAction(page) }, without a Destination when page is not given, then the parent's OutlineItemCollection.Add(item); it goes last.",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -2348,6 +2354,10 @@
             "add": {
               "const": "bookmark",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document or bookmark to add to."
             },
             "args": {
               "type": "object",
@@ -2382,6 +2392,7 @@
           "description": "Adds a attachment to a document: Document.EmbeddedFiles.Add(new FileSpecification(stream, name, description)): the engine writes name to both Name and UnicodeName, and keys the file by its name, or by the name and a number when the name is taken",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -2389,6 +2400,10 @@
             "add": {
               "const": "attachment",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document to add to."
             },
             "args": {
               "type": "object",
@@ -2425,6 +2440,7 @@
           "description": "Adds a pageLabel to a document: Document.PageLabels.UpdateLabel(pageIndex, new PageLabel()): a label of the engine's defaults that starts at the page, replacing one that starts there",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -2432,6 +2448,10 @@
             "add": {
               "const": "pageLabel",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document to add to."
             },
             "args": {
               "type": "object",
@@ -2458,6 +2478,7 @@
           "description": "Adds a info to a document: Document.Info.Add(key, value)",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -2465,6 +2486,10 @@
             "add": {
               "const": "info",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document to add to."
             },
             "args": {
               "type": "object",

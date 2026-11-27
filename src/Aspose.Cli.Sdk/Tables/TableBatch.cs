@@ -16,7 +16,7 @@ internal sealed record PropValue(string Name, object? Value);
 internal sealed record SetOp(int Index, TableAddress Address, IReadOnlyList<PropValue> Props) : TableOp(Index);
 
 /// <summary>Makes an add's engine call below the object at <paramref name="In"/>, then sets rows of the new object.</summary>
-internal sealed record AddOp(int Index, AdderEntry Adder, TableAddress? In, Arguments Arguments, IReadOnlyList<PropValue> Props) : TableOp(Index);
+internal sealed record AddOp(int Index, AdderEntry Adder, TableAddress In, Arguments Arguments, IReadOnlyList<PropValue> Props) : TableOp(Index);
 
 /// <summary>Deletes the object at an address.</summary>
 internal sealed record DeleteOp(int Index, TableAddress Address) : TableOp(Index);
@@ -221,29 +221,19 @@ public sealed class TableBatch
                     available: table.Adders.Select(static candidate => candidate.Name).Distinct(StringComparer.Ordinal));
             }
 
-            string parents = "an object of kind " + string.Join(" or ", adders.Select(static candidate => candidate.Placement.Parent.Name));
-            AdderEntry adder;
-            TableAddress? parent = null;
-            if (op.TryGetProperty("in", out _))
+            string parents = string.Join(" or ", adders.Select(static candidate => candidate.Placement.Parent.Name));
+            if (!op.TryGetProperty("in", out _))
             {
-                parent = Address(index, op, "in");
-                adder = adders.FirstOrDefault(candidate => candidate.Placement.Parent == parent.Kind)
-                    ?? throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, "in",
-                        $"in names an object of kind {parent.Kind.Name}; '{name}' adds to {parents}", parent.Text);
-                if (adder.Placement.Parent == table.Root)
-                {
-                    throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, "in", $"'{name}' adds to the {table.Root.Name} itself, so it takes no in");
-                }
-            }
-            else
-            {
-                adder = adders.FirstOrDefault(candidate => candidate.Placement.Parent == table.Root)
-                    ?? throw TableErrors.Invalid(index, OpsInvalidReasons.MissingField, "in", $"'{name}' adds to {parents}; in names which one");
+                throw TableErrors.Invalid(index, OpsInvalidReasons.MissingField, "in", $"an add has no in, the address of the {parents} to add to");
             }
 
+            TableAddress parent = Address(index, op, "in");
+            AdderEntry adder = adders.FirstOrDefault(candidate => candidate.Placement.Parent == parent.Kind)
+                ?? throw TableErrors.Invalid(index, OpsInvalidReasons.InvalidValue, "in",
+                    $"in names an object of kind {parent.Kind.Name}; '{name}' adds to an object of kind {parents}", parent.Text);
             Arguments arguments = Arguments(index, op, adder.Arguments, name);
             IReadOnlyList<PropValue> props = op.TryGetProperty("props", out JsonElement values)
-                ? Props(index, values, adder.Placement.Kind, parent?.Text)
+                ? Props(index, values, adder.Placement.Kind, parent.Text)
                 : [];
             return new AddOp(index, adder, parent, arguments, props);
         }

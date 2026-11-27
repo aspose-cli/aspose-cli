@@ -210,16 +210,9 @@ public static class TableEdit
 
     private static Applied Add(DocumentTable table, object document, AddOp op, ref string? at, ref string? row)
     {
-        object parent = document;
-        string parentAddress = table.Root.Name;
-        ObjectKind parentKind = table.Root;
-        if (op.In is { } address)
-        {
-            at = address.Text;
-            Located located = AddressResolver.Resolve(table, document, address);
-            (parent, parentAddress, parentKind) = (located.Item, located.Address, located.Kind);
-        }
-
+        at = op.In.Text;
+        Located located = AddressResolver.Resolve(table, document, op.In);
+        (object parent, string parentAddress, ObjectKind parentKind) = (located.Item, located.Address, located.Kind);
         at = parentAddress;
         if (!op.Adder.Target.IsInstanceOfType(parent))
         {

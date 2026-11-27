@@ -8,7 +8,7 @@
       "base64": "77u/cmVnaW9uLDEwCg=="
     },
     "ops.json": {
-      "text": "{\"ops\":[{\"add\":\"attachment\",\"args\":{\"file\":\"marked.csv\",\"name\":\"marked.csv\"}}]}"
+      "text": "{\"ops\":[{\"add\":\"attachment\",\"in\":\"document\",\"args\":{\"file\":\"marked.csv\",\"name\":\"marked.csv\"}}]}"
     }
   },
   "steps": [

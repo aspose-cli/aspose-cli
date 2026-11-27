@@ -41,8 +41,9 @@ only `convert` reads.
 
 Each product names the engine's objects and their members in one table:
 
-- **An address** names one object: `document`, or segments and keys from the
-  document down, such as `sheet/Sales/cell/B2`, `page/1/annotation/2` or
+- **An address** names one object: the document itself (`workbook` in Cells,
+  `document` in PDF and Words, `presentation` in Slides), or segments and keys
+  from it down, such as `sheet/Sales/cell/B2`, `page/1/annotation/2` or
   `slide/256/shape/3`. `read` gives every object's address in `at`. A key is an
   ordinal from 1, an index from 0, an id or a name, as each kind's address forms
   in the table say; in a name, `/` is written `\/` and `\` is written `\\`.
@@ -63,7 +64,7 @@ A row a read returns is set under the same name.
 | Shape | Does |
 |-------|------|
 | `{"set": "<address>", "props": {...}}` | Sets rows of one object |
-| `{"add": "<kind>", "in": "<address>", "args": {...}, "props": {...}}` | Makes the engine call that creates one object, with the arguments its add takes, then sets rows of it; `in` names the parent where the add needs one |
+| `{"add": "<kind>", "in": "<address>", "args": {...}, "props": {...}}` | Makes the engine call that creates one object, with the arguments its add takes, then sets rows of it; `in` is the address of the parent, in every add |
 | `{"delete": "<address>"}` | Deletes one object |
 | `{"move": "<address>", "to": <position>}` | Moves one object among its siblings, to the engine's position from 0, where its kind allows it |
 | `{"do": "<action>", "args": {...}}` | Makes one engine call, with every argument stated |

@@ -325,7 +325,7 @@ public sealed class WordsTableBehaviorTests
     [InlineData("""{"ops":[{"add":"paragraph","in":"section/0/body","args":{"before":"section/0/body/table/0/row/0"}}]}""", "OPS_INVALID")]
     [InlineData("""{"ops":[{"set":"section/0/body/paragraph/0/run/5","props":{"text":"x"}}]}""", "ADDRESS_NOT_FOUND")]
     [InlineData("""{"ops":[{"set":"section/0/body/paragraph/0","props":{"listFormat.list":42}}]}""", "ADDRESS_NOT_FOUND")]
-    [InlineData("""{"ops":[{"add":"bookmark","args":{"paragraph":"section/0/body/paragraph/1","name":"B1"}},{"add":"bookmark","args":{"paragraph":"section/0/body/paragraph/3","name":"b1"}}]}""", "ADDRESS_AMBIGUOUS")]
+    [InlineData("""{"ops":[{"add":"bookmark","in":"document","args":{"paragraph":"section/0/body/paragraph/1","name":"B1"}},{"add":"bookmark","in":"document","args":{"paragraph":"section/0/body/paragraph/3","name":"b1"}}]}""", "ADDRESS_AMBIGUOUS")]
     [InlineData("""{"ops":[{"add":"paragraph","in":"section/0/body","args":{"before":"section/0/body/table/0/row/0/cell/0/paragraph/0"}}]}""", "ENGINE_ERROR")]
     [InlineData("""{"ops":[{"set":"section/0/body/paragraph/0","props":{"paragraphFormat.styleName":"No Such Style"}}]}""", "ENGINE_ERROR")]
     [InlineData("""{"ops":[{"add":"field","in":"section/0/body/paragraph/2","args":{"fieldCode":"PAGE"}},{"do":"update_toc_page_numbers","args":{"field":"section/0/body/paragraph/2/field/0"}}]}""", "ADDRESS_NOT_FOUND")]

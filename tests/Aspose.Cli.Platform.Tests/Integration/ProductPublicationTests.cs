@@ -142,7 +142,7 @@ public sealed class ProductPublicationTests
         using var workspace = new TempWorkspace();
         workspace.Run("cells", "create", "input.xlsx").Succeeded();
         workspace.Run("cells", "edit", "input.xlsx", "--in-place", "--ops", """
-            {"ops":[{"add":"sheet","args":{"index":1,"sheetType":"Worksheet","sheetName":"Second"}},
+            {"ops":[{"add":"sheet","in":"workbook","args":{"index":1,"sheetType":"Worksheet","sheetName":"Second"}},
             {"set":"sheet/Sheet1/cell/A1","props":{"value":1}},{"set":"sheet/Second/cell/A1","props":{"value":2}}]}
             """).Succeeded();
         File.WriteAllText(workspace.File("render.Second.png"), "existing second sheet");

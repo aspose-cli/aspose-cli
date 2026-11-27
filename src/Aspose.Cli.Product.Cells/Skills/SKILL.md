@@ -80,7 +80,7 @@ aspose-cli cells read book.xlsx --at sheet/Sales --kind cell --max-objects 500
   {"set": "sheet/Sales/range/A1:C2", "props": {"value": [["Region", "Q1", "Q2"], ["East", 1250, 1380]]}},
   {"set": "sheet/Sales/cell/D2", "props": {"formula": "=SUM(B2:C2)"}},
   {"set": "sheet/Sales/cell/A1/style", "props": {"font.isBold": true}},
-  {"add": "sheet", "args": {"index": 1, "sheetType": "Worksheet", "sheetName": "Summary"}},
+  {"add": "sheet", "in": "workbook", "args": {"index": 1, "sheetType": "Worksheet", "sheetName": "Summary"}},
   {"do": "calculate"}
 ]}
 ```

@@ -115,14 +115,9 @@ internal static class TableSchemaWriter
             var properties = new JsonObject
             {
                 ["add"] = new JsonObject { ["const"] = adder.Name, ["description"] = "The add's name." },
+                ["in"] = With(Ref("address"), $"The address of the {Either(parents)} to add to."),
             };
-            var required = new JsonArray("add");
-            if (adder.Placement.Parent != table.Root)
-            {
-                properties["in"] = With(Ref("address"), $"The address of the {Either(parents)} to add to.");
-                required.Add("in");
-            }
-
+            var required = new JsonArray("add", "in");
             properties["args"] = With(Arguments(table, adder.Arguments), "The engine call's parameters, by name.");
             if (adder.Arguments.Any(static argument => argument.Required))
             {

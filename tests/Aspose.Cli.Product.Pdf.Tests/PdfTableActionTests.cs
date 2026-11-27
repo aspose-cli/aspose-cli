@@ -95,7 +95,7 @@ public sealed class PdfTableActionTests
         string output = fixture.File("out.pdf");
 
         PdfEditResult result = PdfEdit.Run(fixture.Session, PdfEngineFixture.Edit(input, output,
-            """{"ops":[{"add":"page","args":{"pageNumber":1,"page":"page/3"}},{"delete":"page/4"}]}"""));
+            """{"ops":[{"add":"page","in":"document","args":{"pageNumber":1,"page":"page/3"}},{"delete":"page/4"}]}"""));
 
         using var saved = new Document(output);
         Assert.Equal(["page 3", "page 1", "page 2"], saved.Pages.Cast<Page>().Select(static page => PdfTable.PageText(page, null).Trim()[^6..]));
@@ -117,11 +117,11 @@ public sealed class PdfTableActionTests
         PdfEditResult result = PdfEdit.Run(fixture.Session, PdfEngineFixture.Edit(input, output, $$$"""
             {"ops":[
               {"add":"link","in":"page/2","args":{"rect":"10,10,100,30","uri":"https://example.com/"}},
-              {"add":"bookmark","args":{"title":"Two","page":"page/2"}},
+              {"add":"bookmark","in":"document","args":{"title":"Two","page":"page/2"}},
               {"add":"bookmark","in":"bookmark/1","args":{"title":"Two.a"}},
-              {"add":"attachment","args":{"file":"{{{escaped}}}","name":"note.txt","description":"d"}},
-              {"add":"pageLabel","args":{"pageIndex":1},"props":{"prefix":"B-"}},
-              {"add":"info","args":{"key":"Department","value":"Ops"}}
+              {"add":"attachment","in":"document","args":{"file":"{{{escaped}}}","name":"note.txt","description":"d"}},
+              {"add":"pageLabel","in":"document","args":{"pageIndex":1},"props":{"prefix":"B-"}},
+              {"add":"info","in":"document","args":{"key":"Department","value":"Ops"}}
             ]}
             """));
 

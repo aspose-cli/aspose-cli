@@ -1,0 +1,82 @@
+{
+  "name": "pdf edit adds a page whose in is the document's address and bookmarks whose in is the document's or a bookmark's, two levels down, and refuses an add without in with OPS_INVALID, exit 4, a missing field in, before the document is written",
+  "files": {
+    "report.pdf": {
+      "fixture": "pdf.pdf"
+    }
+  },
+  "steps": [
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "report.pdf",
+        "--out",
+        "added.pdf",
+        "--ops",
+        "{\"ops\":[{\"add\":\"page\",\"in\":\"document\"},{\"add\":\"bookmark\",\"in\":\"document\",\"args\":{\"title\":\"One\",\"page\":\"page/1\"}},{\"add\":\"bookmark\",\"in\":\"bookmark/1\",\"args\":{\"title\":\"One.a\"}},{\"add\":\"bookmark\",\"in\":\"bookmark/1/bookmark/1\",\"args\":{\"title\":\"One.a.i\"}}]}"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          {
+            "path": "ops[0].at",
+            "startsWith": "page/"
+          },
+          {
+            "path": "ops[1].at",
+            "equals": "bookmark/1"
+          },
+          {
+            "path": "ops[2].at",
+            "equals": "bookmark/1/bookmark/1"
+          },
+          {
+            "path": "ops[3].at",
+            "equals": "bookmark/1/bookmark/1/bookmark/1"
+          },
+          {
+            "path": "ops[3].now.title",
+            "equals": "One.a.i"
+          }
+        ]
+      }
+    },
+    {
+      "args": [
+        "pdf",
+        "edit",
+        "report.pdf",
+        "--out",
+        "refused.pdf",
+        "--ops",
+        "{\"ops\":[{\"add\":\"bookmark\",\"args\":{\"title\":\"One\"}}]}"
+      ],
+      "expect": {
+        "exitCode": 4,
+        "error": "OPS_INVALID",
+        "json": [
+          {
+            "path": "error.details.index",
+            "equals": 0
+          },
+          {
+            "path": "error.details.reason",
+            "equals": "missing-field"
+          },
+          {
+            "path": "error.details.field",
+            "equals": "in"
+          },
+          {
+            "path": "error.message",
+            "contains": "an add has no in, the address of the document or bookmark to add to"
+          }
+        ],
+        "files": {
+          "nothingWritten": true
+        }
+      }
+    }
+  ]
+}

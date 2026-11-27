@@ -365,7 +365,7 @@ internal static class OwnershipCases
         ScenarioLicense.Project(workspace.Path);
         File.WriteAllBytes(workspace.File("source.pdf"), ScenarioFixtures.Read("pdf.pdf"));
         File.WriteAllBytes(workspace.File("attachment.pdf"), ScenarioFixtures.Read("pdf.pdf"));
-        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"add":"attachment","args":{"file":"attachment.pdf","name":"input.pdf"}}]}""");
+        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"add":"attachment","in":"document","args":{"file":"attachment.pdf","name":"input.pdf"}}]}""");
         CliResult result = workspace.Run("pdf", "edit", "source.pdf", "--ops", "ops.json", "--out", "attached.pdf");
         return result.ExitCode == 0
             ? File.ReadAllBytes(workspace.File("attached.pdf"))

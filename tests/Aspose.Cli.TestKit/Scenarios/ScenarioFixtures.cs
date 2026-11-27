@@ -163,7 +163,7 @@ public static class ScenarioFixtures
                     $"<html><body><p>{SampleText}</p><p>The second paragraph of the seed document.</p></body></html>");
                 Require(workspace.Run("pdf", "convert", "source.html", "--out", file, "--output-format", "json"));
                 // A custom information entry, so a read lists more than the document.
-                File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"add":"info","args":{"key":"Department","value":"Invariants"}}]}""");
+                File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"add":"info","in":"document","args":{"key":"Department","value":"Invariants"}}]}""");
                 Require(workspace.Run("pdf", "edit", file, "--ops", "ops.json", "--in-place", "--output-format", "json"));
                 break;
             case "slides":
@@ -197,7 +197,7 @@ public static class ScenarioFixtures
             .First(item => item!["kind"]!.GetValue<string>() == "layout" && item["props"]!["layoutType"]!.GetValue<string>() == type)!["props"]!["slideId"]!.ToJsonString();
         string blank = objects.First(static item => item!["kind"]!.GetValue<string>() == "slide")!["at"]!.GetValue<string>();
         File.WriteAllText(workspace.File("deck.ops.json"),
-            $$$"""{"ops":[{"add":"slide","args":{"index":0,"layout":{{{Layout("Title")}}}}},{"add":"slide","args":{"index":1,"layout":{{{Layout("TitleAndObject")}}}}},{"delete":"{{{blank}}}"}]}""");
+            $$$"""{"ops":[{"add":"slide","in":"presentation","args":{"index":0,"layout":{{{Layout("Title")}}}}},{"add":"slide","in":"presentation","args":{"index":1,"layout":{{{Layout("TitleAndObject")}}}}},{"delete":"{{{blank}}}"}]}""");
         JsonArray added = Require(workspace.Run("slides", "edit", file, "--ops", "deck.ops.json", "--in-place", "--output-format", "json"))["ops"]!.AsArray();
         return (added[0]!["at"]!.GetValue<string>(), added[1]!["at"]!.GetValue<string>());
     }
@@ -239,7 +239,7 @@ public static class ScenarioFixtures
         string target = "media." + primary;
         Require(workspace.Run("pdf", "convert", "media.html", "--out", target, "--output-format", "json"));
         File.WriteAllText(workspace.File("note.txt"), SampleText);
-        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"add":"attachment","args":{"file":"note.txt","name":"note.txt"}}]}""");
+        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"add":"attachment","in":"document","args":{"file":"note.txt","name":"note.txt"}}]}""");
         Require(workspace.Run("pdf", "edit", target, "--ops", "ops.json", "--in-place", "--output-format", "json"));
         return File.ReadAllBytes(workspace.File(target));
     }
@@ -336,14 +336,14 @@ public static class ScenarioFixtures
                     {"add":"headerFooter","in":"section/0","args":{"headerFooterType":"FooterFirst"}},
                     {"add":"paragraph","in":"section/0/headerFooter/FooterFirst"},
                     {"add":"run","in":"section/0/headerFooter/FooterFirst/paragraph/0","args":{"text":"{{{Marker("footer")}}}"}},
-                    {"add":"comment","args":{"paragraph":"{{{anchor}}}","author":"Invariant","initial":"I","dateTime":"2026-01-01T00:00:00"}},
+                    {"add":"comment","in":"document","args":{"paragraph":"{{{anchor}}}","author":"Invariant","initial":"I","dateTime":"2026-01-01T00:00:00"}},
                     {"add":"paragraph","in":"comment/0"},
                     {"add":"run","in":"comment/0/paragraph/0","args":{"text":"{{{Marker("comment")}}}"}},
                     {"add":"table","in":"section/0/body"},
                     {"add":"row","in":"section/0/body/table/0"},
                     {"add":"cell","in":"section/0/body/table/0/row/0"},
                     {"add":"paragraph","in":"section/0/body/table/0/row/0/cell/0"},
-                    {"add":"list","args":{"listTemplate":"NumberDefault"}}]
+                    {"add":"list","in":"document","args":{"listTemplate":"NumberDefault"}}]
                     """;
                 break;
             default:

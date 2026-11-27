@@ -3278,6 +3278,7 @@
           "description": "Adds a sheet to a workbook: WorksheetCollection.Insert(int index, SheetType sheetType, string sheetName)",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -3285,6 +3286,10 @@
             "add": {
               "const": "sheet",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the workbook to add to."
             },
             "args": {
               "type": "object",
@@ -3330,6 +3335,7 @@
           "description": "Adds a name to a workbook: NameCollection.Add(string text); the text is the name, or the sheet's name, !, and the name for a worksheet-level one",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -3337,6 +3343,10 @@
             "add": {
               "const": "name",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the workbook to add to."
             },
             "args": {
               "type": "object",

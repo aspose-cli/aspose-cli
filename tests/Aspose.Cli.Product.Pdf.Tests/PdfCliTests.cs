@@ -313,7 +313,7 @@ public sealed class PdfCliTests : IDisposable
     {
         WritePdf("doc.pdf", pages: 1);
         File.WriteAllBytes(_workspace.File("big.bin"), new byte[300_000]);
-        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"add":"attachment","args":{"file":"big.bin","name":"big.bin"}}]}""");
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"add":"attachment","in":"document","args":{"file":"big.bin","name":"big.bin"}}]}""");
 
         CliResult result = _workspace.Run("pdf", "edit", "doc.pdf", "--ops", "ops.json", "--out", "out.pdf", "--max-input-bytes", "200000", "--output-format", "json");
 
