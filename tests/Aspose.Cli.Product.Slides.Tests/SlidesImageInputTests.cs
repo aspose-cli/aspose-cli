@@ -25,7 +25,7 @@ public sealed class SlidesImageInputTests : IDisposable
     [InlineData("text", "pictureFrame", "FILE_CORRUPT")]
     [InlineData("truncated", "background", "FILE_CORRUPT")]
     [InlineData("svgz", "pictureFrame", "FEATURE_UNSUPPORTED")]
-    [InlineData("unparsed-svg", "pictureFrame", "FILE_CORRUPT")]
+    [InlineData("unparsed-svg", "pictureFrame", "FORMAT_UNSUPPORTED")]
     public void AnImageThatIsNotIntact_IsRefusedBeforeAnythingIsWritten(string content, string target, string code)
     {
         uint slide = Deck();
@@ -54,7 +54,8 @@ public sealed class SlidesImageInputTests : IDisposable
     /// <summary>
     /// An SVG image is refused as a picture frame's image or a slide's background picture, one
     /// that names a picture outside the input's folder and a network address too: its bytes
-    /// would reach the engine as they are. Nothing is written, and no part names the picture.
+    /// would reach the engine as they are, so the input does not take the format
+    /// (<c>FORMAT_UNSUPPORTED</c>). Nothing is written, and no part names the picture.
     /// </summary>
     [Theory]
     [InlineData("pictureFrame")]
@@ -71,9 +72,9 @@ public sealed class SlidesImageInputTests : IDisposable
 
         CliResult edited = _workspace.Run("slides", "edit", "deck.pptx", "--ops", "ops.json", "--out", "out.pptx", "--output-format", "json");
 
-        Assert.Equal(3, edited.ExitCode);
+        Assert.Equal(6, edited.ExitCode);
         JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
-        Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
+        Assert.Equal("FORMAT_UNSUPPORTED", error["code"]!.GetValue<string>());
         Assert.Contains("SVG", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("out.pptx")));
     }

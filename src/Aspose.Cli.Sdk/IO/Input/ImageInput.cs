@@ -95,8 +95,8 @@ public static class ImageInput
 
     /// <summary>
     /// Reads an image file in full, as <see cref="Read(InputSource, string)"/> does, and refuses
-    /// an SVG image too: its bytes reach the engine as they are, so only an image that names
-    /// nothing outside itself is taken.
+    /// an SVG image too, as <c>FORMAT_UNSUPPORTED</c>: its bytes reach the engine as they are, so
+    /// only an image that names nothing outside itself is taken.
     /// </summary>
     /// <param name="inputs">The invocation's input reader.</param>
     /// <param name="path">The image file.</param>
@@ -107,7 +107,7 @@ public static class ImageInput
         byte[] content = inputs.ReadAllBytes(path);
         if (IsSvg(content))
         {
-            throw Corrupt(path, "its content is an SVG image, which this input does not take");
+            throw CliErrors.FormatUnsupported(Corrupt(path, "its content is an SVG image, which this input does not take"));
         }
 
         Check(inputs.Budgets, content, path, Corrupt);
@@ -202,7 +202,7 @@ public static class ImageInput
     }
 
     /// <summary>The <c>FILE_CORRUPT</c> error for an image input that is not an intact image.</summary>
-    internal static Exception Corrupt(string path, string reason) => CliErrors.InputUnreadable(path, "image", reason);
+    internal static CliException Corrupt(string path, string reason) => CliErrors.InputUnreadable(path, "image", reason);
 
     /// <summary>Why the bytes are not an intact image, or null when they are.</summary>
     internal static string? Problem(byte[] content, ResourceBudgetLedger budgets)
