@@ -293,11 +293,14 @@ internal static class FilePublicationOwnedDelete
         return SetFileInformationByHandle(handle, FileBasicInfoClass, ref info, Marshal.SizeOf<FileBasicInfo>());
     }
 
+    // Shares reading and deleting, never writing: another handle that may only read the file or
+    // delete it does not keep the file, and no handle that may write it is open beside this one,
+    // so the bytes a snapshot checked cannot change before the deletion.
     private static SafeFileHandle OpenDeleteHandle(string path, uint additionalAccess = 0) =>
         CreateFile(
             ToWin32Path(path),
             DeleteAccess | FileReadAttributes | additionalAccess,
-            FileShareRead,
+            FileShareRead | FileShareDelete,
             IntPtr.Zero,
             OpenExisting,
             FileFlagOpenReparsePoint,

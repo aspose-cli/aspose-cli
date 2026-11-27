@@ -3,8 +3,10 @@ using Aspose.Cli.Sdk.IO.Files;
 using Aspose.Cli.Sdk.IO.Paths;
 using Aspose.Cli.Sdk.IO.Publication;
 using Aspose.Cli.TestKit;
+using Microsoft.Win32.SafeHandles;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text.Json.Nodes;
 using Xunit;
@@ -518,6 +520,53 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     /// <summary>
+    /// Another application holds the target with the right to delete it and shares everything:
+    /// the replacement is published and the displaced original is deleted with the transaction.
+    /// </summary>
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void TargetHeldWithDeleteAccessIsReplacedAndLeavesNoTransaction()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string target = temp.File("target.txt");
+        File.WriteAllText(target, "original");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path);
+        set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
+
+        using (SafeFileHandle holder = CreateFile(target, DeleteAccess, ShareEverything, IntPtr.Zero, OpenExisting, 0, IntPtr.Zero))
+        {
+            Assert.False(holder.IsInvalid);
+            set.Commit();
+        }
+
+        Assert.Equal("replacement", File.ReadAllText(target));
+        Assert.Equal(["target.txt"], Directory.EnumerateFileSystemEntries(temp.Path).Select(Path.GetFileName));
+    }
+
+    /// <summary>
+    /// Another application holds a file the publication owns with the right to write it and
+    /// shares everything: the bytes its snapshot checked could change, so the file is kept.
+    /// </summary>
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void OwnedDeleteKeepsAFileAnotherHandleMayWrite()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string owned = temp.File("owned.txt");
+        File.WriteAllText(owned, "original");
+        FilePublicationSnapshot snapshot = FilePublicationSnapshot.Capture(owned);
+
+        using (new FileStream(owned, FileMode.Open, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+        {
+            Assert.False(FilePublicationOwnedDelete.TryDelete(owned, snapshot, clearReadOnly: true));
+        }
+
+        Assert.Equal("original", File.ReadAllText(owned));
+    }
+
+    /// <summary>
     /// A read-only target after one that was already replaced fails the set as unwritable: the
     /// replaced target gets its original back, and the folder holds what it held before.
     /// </summary>
@@ -979,4 +1028,18 @@ public sealed class AtomicOutputSetWriterTests
         }
     }
 
+    // The right to delete a file and nothing else, which no FileStream asks for alone.
+    private const uint DeleteAccess = 0x00010000;
+    private const uint ShareEverything = 0x00000007;
+    private const uint OpenExisting = 3;
+
+    [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern SafeFileHandle CreateFile(
+        string name,
+        uint access,
+        uint share,
+        IntPtr security,
+        uint disposition,
+        uint flags,
+        IntPtr template);
 }
