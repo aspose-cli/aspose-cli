@@ -2,6 +2,7 @@ using System.Globalization;
 using Aspose.Cli.TestKit;
 using Aspose.Words;
 using Aspose.Words.Drawing;
+using Aspose.Words.Loading;
 using Aspose.Words.Saving;
 using Aspose.Words.Tables;
 using Xunit;
@@ -14,6 +15,31 @@ namespace Aspose.Cli.Product.Words.Tests;
 /// </summary>
 public sealed class WordsKnownIssueTests
 {
+    [Fact]
+    public void HtmlLoad_FailsOnAnSvgImageWhoseOwnImageIsSkipped()
+    {
+        WordsFixture.RequireLicense();
+        using var fixture = new WordsFixture();
+        File.WriteAllText(fixture.File("picture.svg"),
+            """<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="blue"/><image href="missing.png" width="2" height="2"/></svg>""");
+        File.WriteAllText(fixture.File("page.html"), """<html><body><p>Text</p><img src="picture.svg"></body></html>""");
+
+        Exception? skipped = Load(ResourceLoadingAction.Skip);
+        Exception? defaulted = Load(ResourceLoadingAction.Default);
+
+        KnownIssue.Reproduces(
+            "WORDS-HTML-SVG-SKIP",
+            skipped is FileCorruptedException { InnerException: ArgumentNullException } && defaulted is null,
+            $"Skip: {Outcome(skipped)}; Default: {Outcome(defaulted)}");
+
+        Exception? Load(ResourceLoadingAction image) => Record.Exception(() => new Document(
+            fixture.File("page.html"),
+            new HtmlLoadOptions { ResourceLoadingCallback = new SvgOwnImage(image) }));
+
+        static string Outcome(Exception? load) =>
+            load is null ? "loaded" : $"{load.GetType().Name} <- {load.InnerException?.GetType().Name ?? "none"}";
+    }
+
     [Fact]
     public void TextSave_WritesAFootnoteIntoTheBodyText()
     {
@@ -602,5 +628,12 @@ public sealed class WordsKnownIssueTests
     {
         using var saved = new MemoryStream();
         document.Save(saved, SaveFormat.Docx);
+    }
+
+    /// <summary>Lets the engine read the SVG image itself, and answers the image the SVG names with <paramref name="image"/>.</summary>
+    private sealed class SvgOwnImage(ResourceLoadingAction image) : IResourceLoadingCallback
+    {
+        public ResourceLoadingAction ResourceLoading(ResourceLoadingArgs args) =>
+            args.OriginalUri.EndsWith(".svg", StringComparison.Ordinal) ? ResourceLoadingAction.Default : image;
     }
 }

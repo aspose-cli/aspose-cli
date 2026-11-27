@@ -1005,6 +1005,20 @@ Saving a document as plain text (`SaveFormat.Text`) writes a footnote's text int
 its reference stands, and ends the line there: a paragraph `Body` + footnote `Note text.` +
 ` continues.` is written as `Body Note text.` and, on the next line, ` continues.`
 
+### WORDS-HTML-SVG-SKIP
+
+Loading HTML, the engine asks `HtmlLoadOptions.ResourceLoadingCallback` for each image that an SVG
+image of the page names in an `<image>` element (`href` or `xlink:href`). When the callback
+answers with `ResourceLoadingAction.Skip`, the official way to leave a resource out, `new Document`
+throws `FileCorruptedException` "The document appears to be corrupted and cannot be loaded.",
+whose inner exception is an `ArgumentNullException` for `inArray`, whether the image is a network
+address, a missing file or a file that exists. Answered with `Default`, the page loads, even when
+the engine then finds no image; so it does when the callback supplies the image's bytes
+(`UserProvided`), when the image is a `data:` URI, and when the SVG has no `<image>`.
+
+The CLI answers `Skip` for every resource it does not supply, so `words convert` of such a page
+reports `FILE_CORRUPT`.
+
 ## Memory on untrusted documents
 
 An SDK expands a document in memory while it loads it, before `--max-input-bytes` can count what
