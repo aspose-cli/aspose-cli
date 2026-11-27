@@ -23,7 +23,7 @@ public sealed class TableTests
             {"ops":[
               {"set":"deck","props":{"title":"T"}},
               {"set":"card/7","props":{"text":"seven","width":2.5}},
-              {"add":"card","args":{"id":9,"index":0},"props":{"text":"nine"}},
+              {"add":"card","in":"deck","args":{"id":9,"index":0},"props":{"text":"nine"}},
               {"add":"line","in":"card/7","args":{"index":1},"props":{"text":"mid"}},
               {"delete":"card/8"},
               {"move":"card/7","to":0},
@@ -160,7 +160,7 @@ public sealed class TableTests
     [InlineData("""{"ops":[{"add":"box","args":{}}]}""", "unknown-op", "add")]
     [InlineData("""{"ops":[{"add":"line","args":{"index":0}}]}""", "missing-field", "in")]
     [InlineData("""{"ops":[{"add":"line","in":"deck","args":{"index":0}}]}""", "invalid-value", "in")]
-    [InlineData("""{"ops":[{"add":"card","args":{"id":1}}]}""", "missing-field", "args.index")]
+    [InlineData("""{"ops":[{"add":"card","in":"deck","args":{"id":1}}]}""", "missing-field", "args.index")]
     [InlineData("""{"ops":[{"set":"card/7","props":{"width":"wide"}}]}""", "invalid-value", "props.width")]
     [InlineData("""{"ops":[{"set":"card/x","props":{"text":"x"}}]}""", "invalid-value", "set")]
     [InlineData("""{"ops":[{"set":"lines/0","props":{"text":"x"}}]}""", "invalid-value", "set")]
@@ -174,6 +174,17 @@ public sealed class TableTests
         Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
         Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
         Assert.Equal(field, error.Details["field"]!.GetValue<string>());
+    }
+
+    /// <summary>An add to the document itself names it in in like any other add; without in it is refused, saying what in is.</summary>
+    [Fact]
+    public void Parse_RefusesAnAddToTheDocumentWithoutIn()
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse("""{"ops":[{"add":"card","args":{"id":1,"index":0}}]}"""));
+
+        Assert.Equal(("missing-field", "in"), (error.Details!["reason"]!.GetValue<string>(), error.Details["field"]!.GetValue<string>()));
+        Assert.Null(error.Details["at"]);
+        Assert.Equal("ops[0]: an add has no in, the address of the deck to add to", error.Message);
     }
 
     /// <summary>The operation document has one shape; a bare array is refused with the shape stated.</summary>
@@ -241,6 +252,8 @@ public sealed class TableTests
         Assert.Contains("id", directory["kinds"]!["card"]!["readOnlyRows"]!.AsArray().Select(static row => row!.GetValue<string>()));
         Assert.DoesNotContain("id", directory["kinds"]!["card"]!["rows"]!.AsArray().Select(static row => row!.GetValue<string>()));
         Assert.Equal("card", directory["adds"]!["line"]!["in"]![0]!.GetValue<string>());
+        Assert.Equal(["add", "in", "args"], document["$defs"]!["add.card"]!["required"]!.AsArray().Select(static field => field!.GetValue<string>()));
+        Assert.Equal("The address of the deck to add to.", document["$defs"]!["add.card"]!["properties"]!["in"]!["description"]!.GetValue<string>());
         Assert.Equal(["card/<id>"], document["$defs"]!["card"]!["x-addresses"]!.AsArray().Select(static form => form!.GetValue<string>()));
         Assert.All(schema.Views.Values, static view => Assert.NotNull(JsonNode.Parse(view)));
         Assert.Equal(schema.Document, TableSchema.Of("deck", DeckTable.Table).Document);

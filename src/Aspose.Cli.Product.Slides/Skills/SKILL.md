@@ -68,7 +68,7 @@ aspose-cli slides read deck.pptx --at slide/257
 ```json
 {"ops": [
   {"set": "slide/256/placeholder/Title", "props": {"text": "2026 plan"}},
-  {"add": "slide", "args": {"index": 1, "layout": 2147483650}},
+  {"add": "slide", "in": "presentation", "args": {"index": 1, "layout": 2147483650}},
   {"add": "autoShape", "in": "slide/256", "args": {"shapeType": "Rectangle", "x": 36, "y": 400, "width": 300, "height": 60}, "props": {"text": "Note"}},
   {"delete": "slide/258"},
   {"move": "slide/257", "to": 0},

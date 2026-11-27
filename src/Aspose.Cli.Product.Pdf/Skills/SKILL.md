@@ -104,8 +104,9 @@ Tasks, as the table does them:
   `allowedStates` as `value`, a radio group one of its `options`' names. The engine takes any
   text as a value.
 - Reorder pages: there is no move. Copy the page where it should go, then delete the original:
-  `{"add": "page", "args": {"pageNumber": 1, "page": "page/4"}}`, then `{"delete": "page/5"}`. A
-  link that led to the deleted page then leads nowhere; bookmarks follow the engine's renumbering.
+  `{"add": "page", "in": "document", "args": {"pageNumber": 1, "page": "page/4"}}`, then
+  `{"delete": "page/5"}`. A link that led to the deleted page then leads nowhere; bookmarks
+  follow the engine's renumbering.
 - Page numbers, headers, watermarks: one `stamp_text` per page, with the text you want on it.
 - Redact text: `pdf search` gives each match's `rect`; one `redact_area` per rectangle. Its
   read-back is the text the engine still finds there; search the output again to see what is

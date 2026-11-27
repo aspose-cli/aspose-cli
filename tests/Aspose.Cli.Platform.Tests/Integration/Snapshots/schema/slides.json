@@ -3118,6 +3118,7 @@
           "description": "Adds a section to a presentation: ISectionCollection.AddSection(string name, ISlide startedFromSlide)",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -3125,6 +3126,10 @@
             "add": {
               "const": "section",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the presentation to add to."
             },
             "args": {
               "type": "object",
@@ -3158,6 +3163,7 @@
           "description": "Adds a slide to a presentation: ISlideCollection.InsertEmptySlide(int index, ILayoutSlide layout)",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -3165,6 +3171,10 @@
             "add": {
               "const": "slide",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the presentation to add to."
             },
             "args": {
               "type": "object",

@@ -28,7 +28,7 @@ public sealed class RepeatableOptionTests : IDisposable
             """
             { "ops": [
               { "set": "sheet/Sheet1/range/A1:B3", "props": { "value": [["Region","Sales"],["East",10],["West",20]] } },
-              { "add": "name", "args": { "text": "SalesTotal" }, "props": { "refersTo": "=Sheet1!$B$2:$B$3" } },
+              { "add": "name", "in": "workbook", "args": { "text": "SalesTotal" }, "props": { "refersTo": "=Sheet1!$B$2:$B$3" } },
               { "add": "chart", "in": "sheet/Sheet1", "args": { "type": "Column", "area": "E2:J12" }, "props": { "title.text": "Sales" } }
             ] }
             """);

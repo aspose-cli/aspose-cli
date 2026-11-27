@@ -105,7 +105,7 @@ public sealed class SlidesMutationAndSecurityTests
             Batch = TestBatch.Parse(
             [
                 new JsonObject { ["set"] = "presentation", ["props"] = new JsonObject { ["title"] = "First" } },
-                new JsonObject { ["add"] = "slide", ["args"] = new JsonObject { ["index"] = 99, ["layout"] = layout } },
+                new JsonObject { ["add"] = "slide", ["in"] = "presentation", ["args"] = new JsonObject { ["index"] = 99, ["layout"] = layout } },
             ]),
             Output = new EditOutput(output),
         }));

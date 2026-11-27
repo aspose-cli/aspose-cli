@@ -50,6 +50,7 @@ public sealed class CellsTableBehaviorTests
             ["ops"] = new JsonArray(new JsonObject
             {
                 ["add"] = "sheet",
+                ["in"] = "workbook",
                 ["args"] = new JsonObject { ["index"] = index, ["sheetType"] = "Worksheet", ["sheetName"] = name },
             }),
         }.ToJsonString();
@@ -199,7 +200,7 @@ public sealed class CellsTableBehaviorTests
         CellsEditResult result = Edit(fixture, input, output, $$$"""
             {"ops":[
               {"do":"copy_range","args":{"range":"sheet/Other/range/A1:B2","sourceRange":"sheet/销售 Sales/range/A1:B2","pasteType":"Values","file":{{{JsonValue.Create(source).ToJsonString()}}}}},
-              {"add":"sheet","args":{"index":2,"sheetType":"Worksheet","sheetName":"Copy"}},
+              {"add":"sheet","in":"workbook","args":{"index":2,"sheetType":"Worksheet","sheetName":"Copy"}},
               {"do":"copy_sheet","args":{"sheet":"sheet/Copy","sourceSheet":"sheet/汇总 Summary","file":{{{JsonValue.Create(source).ToJsonString()}}}}}]}
             """);
 

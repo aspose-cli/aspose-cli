@@ -4105,6 +4105,7 @@
           "description": "Adds a comment to a document: new Comment(document, author, initial, dateTime), then Paragraph.AppendChild(comment); it holds no paragraph",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -4112,6 +4113,10 @@
             "add": {
               "const": "comment",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document to add to."
             },
             "args": {
               "type": "object",
@@ -4164,6 +4169,7 @@
           "description": "Adds a footnote to a document: new Footnote(document, footnoteType), then Paragraph.AppendChild(footnote); it holds no paragraph",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -4171,6 +4177,10 @@
             "add": {
               "const": "footnote",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document to add to."
             },
             "args": {
               "type": "object",
@@ -4216,6 +4226,7 @@
           "description": "Adds a bookmark to a document: new BookmarkStart(document, name) as the paragraph's first child and new BookmarkEnd(document, name) as its last",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -4223,6 +4234,10 @@
             "add": {
               "const": "bookmark",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document to add to."
             },
             "args": {
               "type": "object",
@@ -4264,6 +4279,7 @@
           "description": "Adds a style to a document: StyleCollection.Add(styleType, name)",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -4271,6 +4287,10 @@
             "add": {
               "const": "style",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document to add to."
             },
             "args": {
               "type": "object",
@@ -4308,6 +4328,7 @@
           "description": "Adds a list to a document: ListCollection.Add(listTemplate)",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -4315,6 +4336,10 @@
             "add": {
               "const": "list",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document to add to."
             },
             "args": {
               "type": "object",
@@ -4365,6 +4390,7 @@
           "description": "Adds a customProperty to a document: CustomDocumentProperties.Add(name, value), the overload of the value's type: string, bool, int or double",
           "required": [
             "add",
+            "in",
             "args"
           ],
           "additionalProperties": false,
@@ -4372,6 +4398,10 @@
             "add": {
               "const": "customProperty",
               "description": "The add's name."
+            },
+            "in": {
+              "$ref": "#/$defs/address",
+              "description": "The address of the document to add to."
             },
             "args": {
               "type": "object",
